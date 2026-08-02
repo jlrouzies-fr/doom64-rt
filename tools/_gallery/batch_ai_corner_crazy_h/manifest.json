@@ -1,0 +1,52 @@
+[
+  {
+    "index": 0,
+    "texture": "SPACEBE",
+    "shot_after": "0000_after.png",
+    "exists_after": true,
+    "size_after": 2290124,
+    "shot": "0000_after.png",
+    "exists": true,
+    "size": 2290124
+  },
+  {
+    "index": 1,
+    "texture": "SFLATBF",
+    "shot_after": "0001_after.png",
+    "exists_after": true,
+    "size_after": 2023138,
+    "shot": "0001_after.png",
+    "exists": true,
+    "size": 2023138
+  },
+  {
+    "index": 2,
+    "texture": "SPACEBD",
+    "shot_after": "0002_after.png",
+    "exists_after": true,
+    "size_after": 2011798,
+    "shot": "0002_after.png",
+    "exists": true,
+    "size": 2011798
+  },
+  {
+    "index": 3,
+    "texture": "C53",
+    "shot_after": "0003_after.png",
+    "exists_after": true,
+    "size_after": 1694626,
+    "shot": "0003_after.png",
+    "exists": true,
+    "size": 1694626
+  },
+  {
+    "index": 4,
+    "texture": "C65",
+    "shot_after": "0004_after.png",
+    "exists_after": true,
+    "size_after": 1530224,
+    "shot": "0004_after.png",
+    "exists": true,
+    "size": 1530224
+  }
+]

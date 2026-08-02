@@ -1,0 +1,74 @@
+version "4.12"
+
+// Debug: spawn a facing pinky + a few shooters ahead. Never teleports the player.
+class D64RtShooterDebug : EventHandler
+{
+	private bool done;
+	private int ticksLeft;
+
+	override void WorldLoaded(WorldEvent e)
+	{
+		done = false;
+		ticksLeft = 45;
+	}
+
+	private Actor SpawnAt(String cls, double x, double y, double z, Actor foe)
+	{
+		Actor a = Actor.Spawn(cls, (x, y, z), ALLOW_REPLACE);
+		if (a == null)
+			return null;
+		if (!a.TestMobjLocation())
+		{
+			a.Destroy();
+			return null;
+		}
+		a.angle = a.AngleTo(foe);
+		a.target = foe;
+		a.SetStateLabel("See");
+		return a;
+	}
+
+	override void WorldTick()
+	{
+		if (done || level.maptime < 12)
+			return;
+
+		Actor mo = players[consoleplayer].mo;
+		if (mo == null)
+			return;
+
+		if (ticksLeft > 0)
+		{
+			ticksLeft--;
+			return;
+		}
+		done = true;
+
+		double ang = mo.angle;
+		double cx = cos(ang);
+		double sx = sin(ang);
+		int placed = 0;
+
+		// Pinky dead-ahead, facing the player (eye check).
+		Actor pinky = SpawnAt("Demon", mo.pos.x + cx * 128, mo.pos.y + sx * 128, mo.floorz, mo);
+		if (pinky)
+		{
+			placed++;
+			mo.pitch = -10; // look slightly down at eyes
+		}
+
+		// Shooters beside / further ahead
+		if (SpawnAt("DoomImp", mo.pos.x + cx * 200 - sx * 80, mo.pos.y + sx * 200 + cx * 80, mo.floorz, mo))
+			placed++;
+		if (SpawnAt("Cacodemon", mo.pos.x + cx * 200 + sx * 80, mo.pos.y + sx * 200 - cx * 80, mo.floorz + 32, mo))
+			placed++;
+		if (SpawnAt("HellKnight", mo.pos.x + cx * 240, mo.pos.y + sx * 240, mo.floorz, mo))
+			placed++;
+		if (SpawnAt("Revenant", mo.pos.x + cx * 220 - sx * 40, mo.pos.y + sx * 220 + cx * 40, mo.floorz, mo))
+			placed++;
+		if (SpawnAt("Arachnotron", mo.pos.x + cx * 260 + sx * 40, mo.pos.y + sx * 260 - cx * 40, mo.floorz, mo))
+			placed++;
+
+		Console.Printf("D64RtShooterDebug: placed %d (pinky ahead + shooters). No player teleport.", placed);
+	}
+}

@@ -1,0 +1,91 @@
+# =============================================================================
+# Doom64-RT — keep tooling, docs, authored RT materials; drop rebuildable bulk
+# =============================================================================
+
+# --- Python / AI ---
+tools/.venv-ai/
+tools/**/__pycache__/
+**/__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.python-version
+
+# --- Engine builds & vendored binaries (multi‑GB) ---
+sourcecode/
+gzdoom-rt-1.0.2/
+runtime-mod/
+deps/
+**/build/
+**/RelWithDebInfo/
+**/Debug/
+**/Release/
+**/CMakeFiles/
+**/CMakeCache.txt
+*.exe
+*.dll
+*.lib
+*.pdb
+*.ilk
+*.exp
+*.obj
+
+# --- Game / mod content not authored here (redistribute separately) ---
+Doom64-Retribution/D64RTR_v15.WAD
+Doom64-Retribution/D64RTR\[v1.5\].WAD
+Doom64-Retribution/D64MUS.PK3
+Doom64-Retribution/DOOMSND.SF2
+Doom64-Retribution/libfluidsynth*.dll
+Doom64-Retribution/*.SF2
+tools/_gallery/*.bmp
+tools/_gallery/*.jpg
+tools/_gallery/*.jpeg
+# Prefer shipping materials under Retribution-RT-Materials/; ignore engine-local copies
+sourcecode/**/rt/mat/
+sourcecode/**/rt/mat_dev/
+
+# --- Gallery capture bulk (keep JSON/manifests/scripts; drop PNG screenshots) ---
+tools/_gallery/**/*.png
+tools/_gallery/**/Screenshot_*.png
+tools/_gallery/**/stdout*.txt
+# large generated UDMF dump (rebuild via build_texture_gallery.py)
+tools/_gallery/TEXTMAP.txt
+
+# --- Ephemeral map isolation / compare dumps ---
+tools/_map_cmp/
+tools/_map_isol/
+tools/**/map01_*.wad
+tools/map01_*.wad
+
+# --- Local smoke / crash / screenshot dumps ---
+smoke-*.txt
+smoke-*.err
+crash-*.txt
+crash-*.err
+build-gzdoom-rt.log
+cmd.txt
+screen/
+screenshots/
+*.log
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
+.vscode/
+*.swp
+*~
+
+# --- Archives / temp ---
+*.zip
+*.7z
+*.rar
+*.tmp
+*.bak
+
+# --- Hugging Face / model caches (if ever dropped in-tree) ---
+.cache/
+**/huggingface/
+**/.huggingface/

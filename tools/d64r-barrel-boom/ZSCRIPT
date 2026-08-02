@@ -1,0 +1,97 @@
+version "4.12"
+
+// Debug: place a barrel near the player on valid floor; step back to view it.
+class D64RtBarrelBoomTest : EventHandler
+{
+	private int stage;
+	private int ticksLeft;
+	private Actor target;
+
+	override void WorldLoaded(WorldEvent e)
+	{
+		stage = 0;
+		ticksLeft = 25;
+		target = null;
+	}
+
+	private Actor SpawnBarrelAt(double x, double y, double z)
+	{
+		let a = Actor.Spawn("64ExplosiveBarrel", (x, y, z), ALLOW_REPLACE);
+		if (!a)
+			return null;
+		if (!a.TestMobjLocation())
+		{
+			a.Destroy();
+			return null;
+		}
+		return a;
+	}
+
+	override void WorldTick()
+	{
+		if (stage >= 2 || level.maptime < 8)
+			return;
+
+		let mo = players[consoleplayer].mo;
+		if (!mo)
+			return;
+
+		if (ticksLeft > 0)
+		{
+			ticksLeft--;
+			return;
+		}
+
+		if (stage == 0)
+		{
+			double dists[3];
+			dists[0] = 96; dists[1] = 72; dists[2] = 120;
+			double yaws[5];
+			yaws[0] = 0; yaws[1] = 45; yaws[2] = -45; yaws[3] = 90; yaws[4] = -90;
+
+			for (int di = 0; di < 3 && !target; di++)
+			{
+				for (int yi = 0; yi < 5 && !target; yi++)
+				{
+					double yaw = mo.angle + yaws[yi];
+					double x = mo.pos.x + cos(yaw) * dists[di];
+					double y = mo.pos.y + sin(yaw) * dists[di];
+					target = SpawnBarrelAt(x, y, mo.floorz);
+				}
+			}
+
+			if (!target)
+				target = SpawnBarrelAt(mo.pos.x, mo.pos.y, mo.floorz);
+
+			if (!target)
+			{
+				Console.Printf("D64RtBarrelBoomTest: could not place barrel");
+				stage = 2;
+				return;
+			}
+
+			// Stand back from the barrel along the view axis toward it.
+			double ang = mo.AngleTo(target);
+			double x = target.pos.x - cos(ang) * 96;
+			double y = target.pos.y - sin(ang) * 96;
+			mo.SetOrigin((x, y, mo.pos.z), false);
+			mo.angle = ang;
+			mo.pitch = -8;
+			Console.Printf("D64RtBarrelBoomTest: barrel placed for idle green");
+			stage = 1;
+			ticksLeft = 80;
+			return;
+		}
+
+		if (stage == 1 && target && target.health > 0)
+		{
+			target.DamageMobj(mo, mo, 999, 'None');
+			Console.Printf("D64RtBarrelBoomTest: detonated barrel");
+			stage = 2;
+		}
+		else if (stage == 1)
+		{
+			stage = 2;
+		}
+	}
+}

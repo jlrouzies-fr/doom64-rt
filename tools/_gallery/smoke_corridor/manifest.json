@@ -1,0 +1,44 @@
+[
+  {
+    "index": 0,
+    "texture": "SPACEBE",
+    "shot": "0000.png",
+    "exists": true,
+    "size": 170632
+  },
+  {
+    "index": 1,
+    "texture": "SFLATBF",
+    "shot": "0001.png",
+    "exists": true,
+    "size": 290024
+  },
+  {
+    "index": 2,
+    "texture": "SPACEBD",
+    "shot": "0002.png",
+    "exists": true,
+    "size": 302647
+  },
+  {
+    "index": 3,
+    "texture": "C53",
+    "shot": "0003.png",
+    "exists": true,
+    "size": 311722
+  },
+  {
+    "index": 4,
+    "texture": "C65",
+    "shot": "0004.png",
+    "exists": true,
+    "size": 313016
+  },
+  {
+    "index": 5,
+    "texture": "SPACEBO1",
+    "shot": "0005.png",
+    "exists": true,
+    "size": 321251
+  }
+]

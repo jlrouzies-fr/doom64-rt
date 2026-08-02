@@ -1,0 +1,16 @@
+[
+  {
+    "index": 8,
+    "texture": "SPACEART",
+    "shot_before": "0008_before.png",
+    "exists_before": true,
+    "size_before": 2175874
+  },
+  {
+    "index": 9,
+    "texture": "C52",
+    "shot_before": "0009_before.png",
+    "exists_before": true,
+    "size_before": 1482599
+  }
+]

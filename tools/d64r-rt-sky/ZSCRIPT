@@ -1,0 +1,21 @@
+version "4.12"
+
+class D64RtSkyFix : EventHandler
+{
+	override void WorldLoaded(WorldEvent e)
+	{
+		// Prefer Doom II RSKY1 (working RT sky path). Avoid GLDEFS cubic skyboxes —
+		// their faces often show as pink checker / white under RTGL1.
+		TextureID sky = TexMan.CheckForTexture("RSKY1", TexMan.Type_Any);
+		if (!sky.IsValid())
+			sky = TexMan.CheckForTexture("SPACEAA", TexMan.Type_Any);
+		if (!sky.IsValid())
+			sky = TexMan.CheckForTexture("ISUCK", TexMan.Type_Any);
+
+		if (sky.IsValid())
+		{
+			level.ChangeSky(sky, sky);
+			Console.Printf("D64RtSkyFix: sky -> %s", TexMan.GetName(sky));
+		}
+	}
+}

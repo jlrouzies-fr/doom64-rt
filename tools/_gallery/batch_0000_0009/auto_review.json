@@ -1,0 +1,42 @@
+{
+  "SPACEBE": {
+    "status": "done",
+    "notes": "gallery bulk (metal); ok mean=57.4 var=1925"
+  },
+  "SFLATBF": {
+    "status": "done",
+    "notes": "gallery bulk (floor); ok mean=54.8 var=1552"
+  },
+  "SPACEBD": {
+    "status": "done",
+    "notes": "gallery bulk (metal); ok mean=56.8 var=1840"
+  },
+  "C53": {
+    "status": "done",
+    "notes": "gallery bulk (industrial); ok mean=45.1 var=1282"
+  },
+  "C65": {
+    "status": "done",
+    "notes": "gallery bulk (industrial); ok mean=39.6 var=1447"
+  },
+  "SPACEBO1": {
+    "status": "done",
+    "notes": "gallery bulk (metal); ok mean=52.6 var=1694"
+  },
+  "SPACEAA": {
+    "status": "done",
+    "notes": "gallery bulk (metal); ok mean=59.9 var=2361"
+  },
+  "C35": {
+    "status": "done",
+    "notes": "gallery bulk (industrial); ok mean=43.2 var=1262"
+  },
+  "SPACEART": {
+    "status": "done",
+    "notes": "gallery bulk (metal); ok mean=59.0 var=2250"
+  },
+  "C52": {
+    "status": "done",
+    "notes": "gallery bulk (industrial); ok mean=43.8 var=1350"
+  }
+}

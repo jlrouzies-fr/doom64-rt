@@ -1,0 +1,103 @@
+{
+  "version": 0,
+  "array": [
+    {
+      "textureName": "BEXPA0",
+      "emissiveMult": 0.35,
+      "noShadow": true,
+      "lightIntensity": 800,
+      "lightColorHEX": "ff9a40"
+    },
+    {
+      "textureName": "BEXPB0",
+      "emissiveMult": 0.45,
+      "noShadow": true,
+      "lightIntensity": 1400,
+      "lightColorHEX": "ffb380"
+    },
+    {
+      "textureName": "BEXPC0",
+      "emissiveMult": 0.5,
+      "noShadow": true,
+      "lightIntensity": 2200,
+      "lightColorHEX": "ffb380"
+    },
+    {
+      "textureName": "BEXPD0",
+      "emissiveMult": 0.45,
+      "noShadow": true,
+      "lightIntensity": 1800,
+      "lightColorHEX": "ff8c4d"
+    },
+    {
+      "textureName": "BEXPE0",
+      "emissiveMult": 0.35,
+      "noShadow": true,
+      "lightIntensity": 1200,
+      "lightColorHEX": "cc6633"
+    },
+    {
+      "textureName": "BEXPF0",
+      "emissiveMult": 0.5,
+      "noShadow": true,
+      "lightIntensity": 2400,
+      "lightColorHEX": "ffb380"
+    },
+    {
+      "textureName": "BEXPG0",
+      "emissiveMult": 0.45,
+      "noShadow": true,
+      "lightIntensity": 1800,
+      "lightColorHEX": "ff8c4d"
+    },
+    {
+      "textureName": "BEXPH0",
+      "emissiveMult": 0.3,
+      "noShadow": true,
+      "lightIntensity": 1000,
+      "lightColorHEX": "994422"
+    },
+    {
+      "textureName": "BEXPI0",
+      "emissiveMult": 0.2,
+      "noShadow": true,
+      "lightIntensity": 600,
+      "lightColorHEX": "662211"
+    },
+    {
+      "textureName": "MISLB0",
+      "emissiveMult": 0.5,
+      "noShadow": true,
+      "lightIntensity": 2500,
+      "lightColorHEX": "ffb380"
+    },
+    {
+      "textureName": "MISLC0",
+      "emissiveMult": 0.45,
+      "noShadow": true,
+      "lightIntensity": 2000,
+      "lightColorHEX": "ff8c4d"
+    },
+    {
+      "textureName": "MISLD0",
+      "emissiveMult": 0.35,
+      "noShadow": true,
+      "lightIntensity": 1400,
+      "lightColorHEX": "cc6633"
+    },
+    {
+      "textureName": "MISLE0",
+      "emissiveMult": 0.25,
+      "noShadow": true,
+      "lightIntensity": 900,
+      "lightColorHEX": "994422"
+    },
+    {
+      "textureName": "MISLF0",
+      "emissiveMult": 0.15,
+      "noShadow": true,
+      "lightIntensity": 500,
+      "lightColorHEX": "662211"
+    }
+  ]
+}

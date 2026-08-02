@@ -1,0 +1,4 @@
+GameInfo
+{
+	AddEventHandlers = "D64RtShooterDebug"
+}
