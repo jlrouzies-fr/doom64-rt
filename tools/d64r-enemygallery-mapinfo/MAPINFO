@@ -1,0 +1,10 @@
+map MAP98 "D64RT Enemy Gallery"
+{
+	levelnum = 98
+	sky1 = "ISUCK"
+	music = ""
+	cluster = 1
+	sucktime = 0
+	par = 0
+	nointermission
+}

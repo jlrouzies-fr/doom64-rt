@@ -1,0 +1,87 @@
+version "4.10.0"
+
+// Soft RT cast-light under Lost Souls. Does not replace or redefine LostSoul.
+class D64RtSoulGlow : Actor
+{
+	Default
+	{
+		+NOINTERACTION
+		+NOBLOCKMAP
+		+NOGRAVITY
+		+NOCLIP
+		+SYNCHRONIZED
+		+DONTBLAST
+		+NOTONAUTOMAP
+		+FORCEXYBILLBOARD
+		Radius 6;
+		Height 6;
+		RenderStyle "Add";
+		Alpha 0.45;
+		Scale 1.1;
+	}
+	States
+	{
+	Spawn:
+		LSGL A -1;
+		Stop;
+	}
+}
+
+class D64RtSoulLightHandler : EventHandler
+{
+	private void AttachGlow(Actor soul)
+	{
+		if (soul == null || !(soul is "LostSoul") || (soul is "D64RtSoulGlow"))
+			return;
+		// Avoid duplicates.
+		ThinkerIterator it = ThinkerIterator.Create("D64RtSoulGlow");
+		Actor g;
+		while ((g = Actor(it.Next())) != null)
+		{
+			if (g.master == soul)
+				return;
+		}
+		g = Actor.Spawn("D64RtSoulGlow", soul.pos);
+		if (g != null)
+		{
+			g.master = soul;
+			Console.Printf("D64RtSoulGlow: attached to %s", soul.GetClassName());
+		}
+	}
+
+	override void WorldThingSpawned(WorldEvent e)
+	{
+		if (e.Thing != null)
+			AttachGlow(e.Thing);
+	}
+
+	override void WorldLoaded(WorldEvent e)
+	{
+		ThinkerIterator it = ThinkerIterator.Create("Actor");
+		Actor a;
+		while ((a = Actor(it.Next())) != null)
+		{
+			if (a is "LostSoul")
+				AttachGlow(a);
+		}
+	}
+
+	override void WorldTick()
+	{
+		ThinkerIterator it = ThinkerIterator.Create("D64RtSoulGlow");
+		Actor g;
+		while ((g = Actor(it.Next())) != null)
+		{
+			if (g.master == null || g.master.health <= 0)
+			{
+				g.Destroy();
+				continue;
+			}
+			// Sit on the floor under the soul — reads as a light pool, not a second fireball.
+			Vector3 p = g.master.pos;
+			double fz = g.master.floorz + 2.0;
+			g.SetOrigin((p.x, p.y, fz), true);
+			g.angle = g.master.angle;
+		}
+	}
+}

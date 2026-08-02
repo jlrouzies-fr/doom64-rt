@@ -1,0 +1,2456 @@
+namespace = "zdoom";
+
+vertex
+{
+x = -480.000;
+y = -480.000;
+}
+
+vertex
+{
+x = 1760.000;
+y = -480.000;
+}
+
+vertex
+{
+x = 1760.000;
+y = 1760.000;
+}
+
+vertex
+{
+x = -480.000;
+y = 1760.000;
+}
+
+vertex
+{
+x = 128.000;
+y = 128.000;
+}
+
+vertex
+{
+x = 192.000;
+y = 128.000;
+}
+
+vertex
+{
+x = 192.000;
+y = 192.000;
+}
+
+vertex
+{
+x = 128.000;
+y = 192.000;
+}
+
+vertex
+{
+x = 448.000;
+y = 128.000;
+}
+
+vertex
+{
+x = 512.000;
+y = 128.000;
+}
+
+vertex
+{
+x = 512.000;
+y = 192.000;
+}
+
+vertex
+{
+x = 448.000;
+y = 192.000;
+}
+
+vertex
+{
+x = 768.000;
+y = 128.000;
+}
+
+vertex
+{
+x = 832.000;
+y = 128.000;
+}
+
+vertex
+{
+x = 832.000;
+y = 192.000;
+}
+
+vertex
+{
+x = 768.000;
+y = 192.000;
+}
+
+vertex
+{
+x = 1088.000;
+y = 128.000;
+}
+
+vertex
+{
+x = 1152.000;
+y = 128.000;
+}
+
+vertex
+{
+x = 1152.000;
+y = 192.000;
+}
+
+vertex
+{
+x = 1088.000;
+y = 192.000;
+}
+
+vertex
+{
+x = 128.000;
+y = 448.000;
+}
+
+vertex
+{
+x = 192.000;
+y = 448.000;
+}
+
+vertex
+{
+x = 192.000;
+y = 512.000;
+}
+
+vertex
+{
+x = 128.000;
+y = 512.000;
+}
+
+vertex
+{
+x = 448.000;
+y = 448.000;
+}
+
+vertex
+{
+x = 512.000;
+y = 448.000;
+}
+
+vertex
+{
+x = 512.000;
+y = 512.000;
+}
+
+vertex
+{
+x = 448.000;
+y = 512.000;
+}
+
+vertex
+{
+x = 768.000;
+y = 448.000;
+}
+
+vertex
+{
+x = 832.000;
+y = 448.000;
+}
+
+vertex
+{
+x = 832.000;
+y = 512.000;
+}
+
+vertex
+{
+x = 768.000;
+y = 512.000;
+}
+
+vertex
+{
+x = 1088.000;
+y = 448.000;
+}
+
+vertex
+{
+x = 1152.000;
+y = 448.000;
+}
+
+vertex
+{
+x = 1152.000;
+y = 512.000;
+}
+
+vertex
+{
+x = 1088.000;
+y = 512.000;
+}
+
+vertex
+{
+x = 128.000;
+y = 768.000;
+}
+
+vertex
+{
+x = 192.000;
+y = 768.000;
+}
+
+vertex
+{
+x = 192.000;
+y = 832.000;
+}
+
+vertex
+{
+x = 128.000;
+y = 832.000;
+}
+
+vertex
+{
+x = 448.000;
+y = 768.000;
+}
+
+vertex
+{
+x = 512.000;
+y = 768.000;
+}
+
+vertex
+{
+x = 512.000;
+y = 832.000;
+}
+
+vertex
+{
+x = 448.000;
+y = 832.000;
+}
+
+vertex
+{
+x = 768.000;
+y = 768.000;
+}
+
+vertex
+{
+x = 832.000;
+y = 768.000;
+}
+
+vertex
+{
+x = 832.000;
+y = 832.000;
+}
+
+vertex
+{
+x = 768.000;
+y = 832.000;
+}
+
+vertex
+{
+x = 1088.000;
+y = 768.000;
+}
+
+vertex
+{
+x = 1152.000;
+y = 768.000;
+}
+
+vertex
+{
+x = 1152.000;
+y = 832.000;
+}
+
+vertex
+{
+x = 1088.000;
+y = 832.000;
+}
+
+vertex
+{
+x = 128.000;
+y = 1088.000;
+}
+
+vertex
+{
+x = 192.000;
+y = 1088.000;
+}
+
+vertex
+{
+x = 192.000;
+y = 1152.000;
+}
+
+vertex
+{
+x = 128.000;
+y = 1152.000;
+}
+
+vertex
+{
+x = 424.000;
+y = 1064.000;
+}
+
+vertex
+{
+x = 536.000;
+y = 1064.000;
+}
+
+vertex
+{
+x = 536.000;
+y = 1176.000;
+}
+
+vertex
+{
+x = 424.000;
+y = 1176.000;
+}
+
+vertex
+{
+x = 744.000;
+y = 1064.000;
+}
+
+vertex
+{
+x = 856.000;
+y = 1064.000;
+}
+
+vertex
+{
+x = 856.000;
+y = 1176.000;
+}
+
+vertex
+{
+x = 744.000;
+y = 1176.000;
+}
+
+sector
+{
+heightfloor = 0;
+heightceiling = 192;
+texturefloor = "FLAT5_4";
+textureceiling = "CEIL5_2";
+lightlevel = 16;
+}
+
+sector
+{
+heightfloor = 8;
+heightceiling = 192;
+texturefloor = "FLAT20";
+textureceiling = "CEIL5_2";
+lightlevel = 16;
+}
+
+sector
+{
+heightfloor = 8;
+heightceiling = 192;
+texturefloor = "FLAT20";
+textureceiling = "CEIL5_2";
+lightlevel = 16;
+}
+
+sector
+{
+heightfloor = 8;
+heightceiling = 192;
+texturefloor = "FLAT20";
+textureceiling = "CEIL5_2";
+lightlevel = 16;
+}
+
+sector
+{
+heightfloor = 8;
+heightceiling = 192;
+texturefloor = "FLAT20";
+textureceiling = "CEIL5_2";
+lightlevel = 16;
+}
+
+sector
+{
+heightfloor = 8;
+heightceiling = 192;
+texturefloor = "FLAT20";
+textureceiling = "CEIL5_2";
+lightlevel = 16;
+}
+
+sector
+{
+heightfloor = 8;
+heightceiling = 192;
+texturefloor = "FLAT20";
+textureceiling = "CEIL5_2";
+lightlevel = 16;
+}
+
+sector
+{
+heightfloor = 8;
+heightceiling = 192;
+texturefloor = "FLAT20";
+textureceiling = "CEIL5_2";
+lightlevel = 16;
+}
+
+sector
+{
+heightfloor = 8;
+heightceiling = 192;
+texturefloor = "FLAT20";
+textureceiling = "CEIL5_2";
+lightlevel = 16;
+}
+
+sector
+{
+heightfloor = 8;
+heightceiling = 192;
+texturefloor = "FLAT20";
+textureceiling = "CEIL5_2";
+lightlevel = 16;
+}
+
+sector
+{
+heightfloor = 8;
+heightceiling = 192;
+texturefloor = "FLAT20";
+textureceiling = "CEIL5_2";
+lightlevel = 16;
+}
+
+sector
+{
+heightfloor = 8;
+heightceiling = 192;
+texturefloor = "FLAT20";
+textureceiling = "CEIL5_2";
+lightlevel = 16;
+}
+
+sector
+{
+heightfloor = 8;
+heightceiling = 192;
+texturefloor = "FLAT20";
+textureceiling = "CEIL5_2";
+lightlevel = 16;
+}
+
+sector
+{
+heightfloor = 8;
+heightceiling = 192;
+texturefloor = "FLAT20";
+textureceiling = "CEIL5_2";
+lightlevel = 16;
+}
+
+sector
+{
+heightfloor = 8;
+heightceiling = 192;
+texturefloor = "FLAT20";
+textureceiling = "CEIL5_2";
+lightlevel = 16;
+}
+
+sector
+{
+heightfloor = 8;
+heightceiling = 192;
+texturefloor = "FLAT20";
+textureceiling = "CEIL5_2";
+lightlevel = 16;
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "BIGDOOR2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "BIGDOOR2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "BIGDOOR2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "BIGDOOR2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 1;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 1;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 1;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 1;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 2;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 2;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 2;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 2;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 3;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 3;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 3;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 3;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 4;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 4;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 4;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 4;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 5;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 5;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 5;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 5;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 6;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 6;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 6;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 6;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 7;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 7;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 7;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 7;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 8;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 8;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 8;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 8;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 9;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 9;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 9;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 9;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 10;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 10;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 10;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 10;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 11;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 11;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 11;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 11;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 12;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 12;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 12;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 12;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 13;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 13;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 13;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 13;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 14;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 14;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 14;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 14;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 15;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 15;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 15;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 0;
+texturemiddle = "STEP2";
+texturetop = "-";
+texturebottom = "-";
+}
+
+sidedef
+{
+sector = 15;
+texturemiddle = "-";
+texturetop = "-";
+texturebottom = "-";
+}
+
+linedef
+{
+v1 = 0;
+v2 = 1;
+sidefront = 0;
+blocking = true;
+}
+
+linedef
+{
+v1 = 1;
+v2 = 2;
+sidefront = 1;
+blocking = true;
+}
+
+linedef
+{
+v1 = 2;
+v2 = 3;
+sidefront = 2;
+blocking = true;
+}
+
+linedef
+{
+v1 = 3;
+v2 = 0;
+sidefront = 3;
+blocking = true;
+}
+
+linedef
+{
+v1 = 4;
+v2 = 5;
+sidefront = 4;
+sideback = 5;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 5;
+v2 = 6;
+sidefront = 6;
+sideback = 7;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 6;
+v2 = 7;
+sidefront = 8;
+sideback = 9;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 7;
+v2 = 4;
+sidefront = 10;
+sideback = 11;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 8;
+v2 = 9;
+sidefront = 12;
+sideback = 13;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 9;
+v2 = 10;
+sidefront = 14;
+sideback = 15;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 10;
+v2 = 11;
+sidefront = 16;
+sideback = 17;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 11;
+v2 = 8;
+sidefront = 18;
+sideback = 19;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 12;
+v2 = 13;
+sidefront = 20;
+sideback = 21;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 13;
+v2 = 14;
+sidefront = 22;
+sideback = 23;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 14;
+v2 = 15;
+sidefront = 24;
+sideback = 25;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 15;
+v2 = 12;
+sidefront = 26;
+sideback = 27;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 16;
+v2 = 17;
+sidefront = 28;
+sideback = 29;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 17;
+v2 = 18;
+sidefront = 30;
+sideback = 31;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 18;
+v2 = 19;
+sidefront = 32;
+sideback = 33;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 19;
+v2 = 16;
+sidefront = 34;
+sideback = 35;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 20;
+v2 = 21;
+sidefront = 36;
+sideback = 37;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 21;
+v2 = 22;
+sidefront = 38;
+sideback = 39;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 22;
+v2 = 23;
+sidefront = 40;
+sideback = 41;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 23;
+v2 = 20;
+sidefront = 42;
+sideback = 43;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 24;
+v2 = 25;
+sidefront = 44;
+sideback = 45;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 25;
+v2 = 26;
+sidefront = 46;
+sideback = 47;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 26;
+v2 = 27;
+sidefront = 48;
+sideback = 49;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 27;
+v2 = 24;
+sidefront = 50;
+sideback = 51;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 28;
+v2 = 29;
+sidefront = 52;
+sideback = 53;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 29;
+v2 = 30;
+sidefront = 54;
+sideback = 55;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 30;
+v2 = 31;
+sidefront = 56;
+sideback = 57;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 31;
+v2 = 28;
+sidefront = 58;
+sideback = 59;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 32;
+v2 = 33;
+sidefront = 60;
+sideback = 61;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 33;
+v2 = 34;
+sidefront = 62;
+sideback = 63;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 34;
+v2 = 35;
+sidefront = 64;
+sideback = 65;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 35;
+v2 = 32;
+sidefront = 66;
+sideback = 67;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 36;
+v2 = 37;
+sidefront = 68;
+sideback = 69;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 37;
+v2 = 38;
+sidefront = 70;
+sideback = 71;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 38;
+v2 = 39;
+sidefront = 72;
+sideback = 73;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 39;
+v2 = 36;
+sidefront = 74;
+sideback = 75;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 40;
+v2 = 41;
+sidefront = 76;
+sideback = 77;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 41;
+v2 = 42;
+sidefront = 78;
+sideback = 79;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 42;
+v2 = 43;
+sidefront = 80;
+sideback = 81;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 43;
+v2 = 40;
+sidefront = 82;
+sideback = 83;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 44;
+v2 = 45;
+sidefront = 84;
+sideback = 85;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 45;
+v2 = 46;
+sidefront = 86;
+sideback = 87;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 46;
+v2 = 47;
+sidefront = 88;
+sideback = 89;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 47;
+v2 = 44;
+sidefront = 90;
+sideback = 91;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 48;
+v2 = 49;
+sidefront = 92;
+sideback = 93;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 49;
+v2 = 50;
+sidefront = 94;
+sideback = 95;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 50;
+v2 = 51;
+sidefront = 96;
+sideback = 97;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 51;
+v2 = 48;
+sidefront = 98;
+sideback = 99;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 52;
+v2 = 53;
+sidefront = 100;
+sideback = 101;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 53;
+v2 = 54;
+sidefront = 102;
+sideback = 103;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 54;
+v2 = 55;
+sidefront = 104;
+sideback = 105;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 55;
+v2 = 52;
+sidefront = 106;
+sideback = 107;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 56;
+v2 = 57;
+sidefront = 108;
+sideback = 109;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 57;
+v2 = 58;
+sidefront = 110;
+sideback = 111;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 58;
+v2 = 59;
+sidefront = 112;
+sideback = 113;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 59;
+v2 = 56;
+sidefront = 114;
+sideback = 115;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 60;
+v2 = 61;
+sidefront = 116;
+sideback = 117;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 61;
+v2 = 62;
+sidefront = 118;
+sideback = 119;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 62;
+v2 = 63;
+sidefront = 120;
+sideback = 121;
+blocking = false;
+twosided = true;
+}
+
+linedef
+{
+v1 = 63;
+v2 = 60;
+sidefront = 122;
+sideback = 123;
+blocking = false;
+twosided = true;
+}
+
+thing
+{
+x = 160.000;
+y = 160.000;
+angle = 270;
+type = 3004;
+skill1 = true;
+skill2 = true;
+skill3 = true;
+skill4 = true;
+skill5 = true;
+single = true;
+coop = true;
+dm = true;
+friend = true;
+countsecret = false;
+countkill = false;
+}
+
+thing
+{
+x = 480.000;
+y = 160.000;
+angle = 270;
+type = 9;
+skill1 = true;
+skill2 = true;
+skill3 = true;
+skill4 = true;
+skill5 = true;
+single = true;
+coop = true;
+dm = true;
+friend = true;
+countsecret = false;
+countkill = false;
+}
+
+thing
+{
+x = 800.000;
+y = 160.000;
+angle = 270;
+type = 3001;
+skill1 = true;
+skill2 = true;
+skill3 = true;
+skill4 = true;
+skill5 = true;
+single = true;
+coop = true;
+dm = true;
+friend = true;
+countsecret = false;
+countkill = false;
+}
+
+thing
+{
+x = 1120.000;
+y = 160.000;
+angle = 270;
+type = 3007;
+skill1 = true;
+skill2 = true;
+skill3 = true;
+skill4 = true;
+skill5 = true;
+single = true;
+coop = true;
+dm = true;
+friend = true;
+countsecret = false;
+countkill = false;
+}
+
+thing
+{
+x = 160.000;
+y = 480.000;
+angle = 270;
+type = 3002;
+skill1 = true;
+skill2 = true;
+skill3 = true;
+skill4 = true;
+skill5 = true;
+single = true;
+coop = true;
+dm = true;
+friend = true;
+countsecret = false;
+countkill = false;
+}
+
+thing
+{
+x = 480.000;
+y = 480.000;
+angle = 270;
+type = 58;
+skill1 = true;
+skill2 = true;
+skill3 = true;
+skill4 = true;
+skill5 = true;
+single = true;
+coop = true;
+dm = true;
+friend = true;
+countsecret = false;
+countkill = false;
+}
+
+thing
+{
+x = 800.000;
+y = 480.000;
+angle = 270;
+type = 3005;
+skill1 = true;
+skill2 = true;
+skill3 = true;
+skill4 = true;
+skill5 = true;
+single = true;
+coop = true;
+dm = true;
+friend = true;
+countsecret = false;
+countkill = false;
+}
+
+thing
+{
+x = 1120.000;
+y = 480.000;
+angle = 270;
+type = 69;
+skill1 = true;
+skill2 = true;
+skill3 = true;
+skill4 = true;
+skill5 = true;
+single = true;
+coop = true;
+dm = true;
+friend = true;
+countsecret = false;
+countkill = false;
+}
+
+thing
+{
+x = 160.000;
+y = 800.000;
+angle = 270;
+type = 3003;
+skill1 = true;
+skill2 = true;
+skill3 = true;
+skill4 = true;
+skill5 = true;
+single = true;
+coop = true;
+dm = true;
+friend = true;
+countsecret = false;
+countkill = false;
+}
+
+thing
+{
+x = 480.000;
+y = 800.000;
+angle = 270;
+type = 67;
+skill1 = true;
+skill2 = true;
+skill3 = true;
+skill4 = true;
+skill5 = true;
+single = true;
+coop = true;
+dm = true;
+friend = true;
+countsecret = false;
+countkill = false;
+}
+
+thing
+{
+x = 800.000;
+y = 800.000;
+angle = 270;
+type = 68;
+skill1 = true;
+skill2 = true;
+skill3 = true;
+skill4 = true;
+skill5 = true;
+single = true;
+coop = true;
+dm = true;
+friend = true;
+countsecret = false;
+countkill = false;
+}
+
+thing
+{
+x = 1120.000;
+y = 800.000;
+angle = 270;
+type = 71;
+skill1 = true;
+skill2 = true;
+skill3 = true;
+skill4 = true;
+skill5 = true;
+single = true;
+coop = true;
+dm = true;
+friend = true;
+countsecret = false;
+countkill = false;
+}
+
+thing
+{
+x = 160.000;
+y = 1120.000;
+angle = 270;
+type = 3006;
+skill1 = true;
+skill2 = true;
+skill3 = true;
+skill4 = true;
+skill5 = true;
+single = true;
+coop = true;
+dm = true;
+friend = true;
+countsecret = false;
+countkill = false;
+}
+
+thing
+{
+x = 480.000;
+y = 1120.000;
+angle = 270;
+type = 16;
+skill1 = true;
+skill2 = true;
+skill3 = true;
+skill4 = true;
+skill5 = true;
+single = true;
+coop = true;
+dm = true;
+friend = true;
+countsecret = false;
+countkill = false;
+}
+
+thing
+{
+x = 800.000;
+y = 1120.000;
+angle = 270;
+type = 3013;
+skill1 = true;
+skill2 = true;
+skill3 = true;
+skill4 = true;
+skill5 = true;
+single = true;
+coop = true;
+dm = true;
+friend = true;
+countsecret = false;
+countkill = false;
+}
+
+thing
+{
+x = 160.000;
+y = -20.000;
+angle = 90;
+type = 1;
+skill1 = true;
+skill2 = true;
+skill3 = true;
+skill4 = true;
+skill5 = true;
+single = true;
+coop = true;
+dm = true;
+}
+
+// D64RT enemy gallery: 15 booths, dark, friendly

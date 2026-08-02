@@ -277,10 +277,22 @@ def write_maps(
             hpath.unlink()
 
 
-def resolve_names(names: list[str], indices: str) -> list[str]:
+def resolve_names(
+    names: list[str],
+    indices: str,
+    *,
+    start: int | None = None,
+    count: int | None = None,
+    all_booths: bool = False,
+) -> list[str]:
     out = list(names)
-    if indices.strip():
-        booths = json.loads(BOOTHS.read_text(encoding="utf-8"))["booths"]
+    booths = json.loads(BOOTHS.read_text(encoding="utf-8"))["booths"]
+    if all_booths:
+        out.extend(b["texture"] for b in booths)
+    elif start is not None:
+        n = len(booths) if count is None else max(0, count)
+        out.extend(b["texture"] for b in booths[start : start + n])
+    elif indices.strip():
         for part in indices.split(","):
             out.append(booths[int(part.strip())]["texture"])
     seen, uniq = set(), []
@@ -290,7 +302,7 @@ def resolve_names(names: list[str], indices: str) -> list[str]:
             seen.add(u)
             uniq.append(n)
     if not uniq:
-        raise SystemExit("Provide --names or --indices")
+        raise SystemExit("Provide --names, --indices, --start/--count, or --all")
     return uniq
 
 
@@ -298,6 +310,9 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--names", nargs="*")
     ap.add_argument("--indices", default="")
+    ap.add_argument("--start", type=int, default=None, help="Booth index start (with --count)")
+    ap.add_argument("--count", type=int, default=None, help="Booth count from --start")
+    ap.add_argument("--all", action="store_true", help="All booths in booths.json")
     ap.add_argument("--mode", choices=("ai", "solid"), default="ai")
     ap.add_argument("--normals-model", default=DEFAULT_NORMALS)
     ap.add_argument("--iid-model", default=DEFAULT_IID)
@@ -321,7 +336,13 @@ def main() -> None:
     )
     args = ap.parse_args()
 
-    names = resolve_names(list(args.names or []), args.indices)
+    names = resolve_names(
+        list(args.names or []),
+        args.indices,
+        start=args.start,
+        count=args.count,
+        all_booths=args.all,
+    )
     report = []
 
     def _height_for(albedo: Image.Image) -> Image.Image | None:
@@ -329,9 +350,19 @@ def main() -> None:
             return make_height(albedo, crazy=float(args.height_crazy))
         return None
 
+    def _try_albedo(n: str) -> Image.Image | None:
+        try:
+            return wad_png(n)
+        except KeyError:
+            print(f"{n}: SKIP (no PNG/TEXTURES albedo in WAD)", flush=True)
+            report.append({"texture": n, "mode": "skip", "reason": "missing_albedo"})
+            return None
+
     if args.mode == "solid":
         for n in names:
-            albedo = wad_png(n)
+            albedo = _try_albedo(n)
+            if albedo is None:
+                continue
             orm = solid_orm_image(n, albedo.size)
             write_maps(n, orm, None, None)  # strip normals + height
             st = {"texture": n, "size": list(albedo.size), "mode": "solid"}
@@ -346,7 +377,9 @@ def main() -> None:
             iid_pipe = load_iid_pipe(args.iid_model, args.dtype)
             iid_cache: dict[str, tuple[Image.Image, dict]] = {}
             for n in names:
-                albedo = wad_png(n)
+                albedo = _try_albedo(n)
+                if albedo is None:
+                    continue
                 print(f"  iid {n} {albedo.size[0]}x{albedo.size[1]}…", flush=True)
                 orm, st = estimate_orm_iid(
                     iid_pipe,
@@ -368,6 +401,8 @@ def main() -> None:
             npipe = load_normals_pipe(args.normals_model, args.dtype)
 
             for n in names:
+                if n not in iid_cache:
+                    continue
                 albedo = wad_png(n)
                 print(f"  normals {n}…", flush=True)
                 normal = estimate_normal(
@@ -397,7 +432,9 @@ def main() -> None:
             print(f"loading normals {args.normals_model}…", flush=True)
             npipe = load_normals_pipe(args.normals_model, args.dtype)
             for n in names:
-                albedo = wad_png(n)
+                albedo = _try_albedo(n)
+                if albedo is None:
+                    continue
                 print(f"  normals {n} {albedo.size[0]}x{albedo.size[1]}…", flush=True)
                 normal = estimate_normal(
                     npipe,

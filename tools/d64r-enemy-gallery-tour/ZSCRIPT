@@ -1,0 +1,143 @@
+version "4.12"
+
+// Auto-generated enemy gallery tour (no-aggro review).
+class D64RtEnemyGalleryTour : EventHandler
+{
+	const COUNT = 15;
+	const DWELL = 105;
+	const SHOT_AT = 45;
+	private int idx;
+	private int wait;
+	private bool done;
+	private bool shot;
+
+	static const double PosX[] = { 160.0, 480.0, 800.0, 1120.0, 160.0, 480.0, 800.0, 1120.0, 160.0, 480.0, 800.0, 1120.0, 160.0, 480.0, 800.0 };
+	static const double PosY[] = { 20.0, 20.0, 20.0, 20.0, 340.0, 340.0, 340.0, 340.0, 660.0, 660.0, 660.0, 660.0, 980.0, 980.0, 980.0 };
+	static const double MonX[] = { 160.0, 480.0, 800.0, 1120.0, 160.0, 480.0, 800.0, 1120.0, 160.0, 480.0, 800.0, 1120.0, 160.0, 480.0, 800.0 };
+	static const double MonY[] = { 160.0, 160.0, 160.0, 160.0, 480.0, 480.0, 480.0, 480.0, 800.0, 800.0, 800.0, 800.0, 1120.0, 1120.0, 1120.0 };
+	static const int AbsIndex[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 };
+	static const String Label[] = {
+		"Zombieman",
+		"ShotgunGuy",
+		"Imp",
+		"NightmareImp",
+		"Demon",
+		"Spectre",
+		"Cacodemon",
+		"HellKnight",
+		"BaronOfHell",
+		"Mancubus",
+		"Arachnotron",
+		"PainElemental",
+		"LostSoul",
+		"Cyberdemon",
+		"MotherDemon"
+	};
+
+	override void WorldLoaded(WorldEvent e)
+	{
+		idx = 0;
+		wait = 30;
+		done = false;
+		shot = true;
+	}
+
+	private void PacifyMonsters(int booth)
+	{
+		// Pin the booth monster in front of the camera (flying souls drift otherwise).
+		Actor best = null;
+		double bestDist = 1e9;
+		ThinkerIterator it = ThinkerIterator.Create("Actor");
+		Actor a;
+		while ((a = Actor(it.Next())) != null)
+		{
+			if (!a.bIsMonster)
+				continue;
+			a.bFriendly = true;
+			a.target = null;
+			a.vel = (0, 0, 0);
+			double dx = a.pos.x - MonX[booth];
+			double dy = a.pos.y - MonY[booth];
+			double d = dx * dx + dy * dy;
+			if (d < bestDist)
+			{
+				bestDist = d;
+				best = a;
+			}
+		}
+		if (best != null)
+		{
+			// Flyers: absolute Z (floorz-relative was still collapsing to the ground).
+			double z = 16.0;
+			String lab = Label[booth];
+			if (lab == "LostSoul" || lab == "Cacodemon" || lab == "PainElemental")
+			{
+				z = 104.0;
+				best.bNoGravity = true;
+				best.bFloat = true;
+				best.bCanPass = true;
+			}
+			best.SetXYZ((MonX[booth], MonY[booth], z));
+			best.angle = 270;
+			best.vel = (0, 0, 0);
+			if (level.maptime % 35 == 0)
+				Console.Printf("D64RtEnemyPin: %s z=%.1f (want %.1f)", best.GetClassName(), best.pos.z, z);
+		}
+	}
+
+	private void HoldView(int booth)
+	{
+		Actor mo = players[consoleplayer].mo;
+		if (mo == null)
+			return;
+		players[consoleplayer].camera = mo;
+		mo.SetOrigin((PosX[booth], PosY[booth], 0), false);
+		mo.SetOrigin((PosX[booth], PosY[booth], mo.floorz), false);
+		mo.angle = 90;
+		mo.pitch = 0;
+		mo.vel = (0, 0, 0);
+		PacifyMonsters(booth);
+	}
+
+	override void WorldTick()
+	{
+		if (done || level.maptime < 8)
+			return;
+		if (players[consoleplayer].mo == null)
+			return;
+
+		if (wait > 0)
+		{
+			Actor mo = players[consoleplayer].mo;
+			if (mo != null)
+			{
+				mo.angle = 90;
+				mo.pitch = 0;
+				mo.vel = (0, 0, 0);
+			}
+			if (idx > 0)
+				PacifyMonsters(idx - 1);
+			if (!shot && idx > 0 && wait == (DWELL - SHOT_AT))
+			{
+				level.MakeScreenShot();
+				Console.Printf("D64RtEnemyGalleryShot: %d %s", AbsIndex[idx - 1], Label[idx - 1]);
+				shot = true;
+			}
+			wait--;
+			return;
+		}
+
+		if (idx >= COUNT)
+		{
+			Console.Printf("D64RtEnemyGalleryTour: done (%d booths)", COUNT);
+			done = true;
+			return;
+		}
+
+		HoldView(idx);
+		Console.Printf("D64RtEnemyGalleryTour: %d %s", AbsIndex[idx], Label[idx]);
+		idx++;
+		wait = DWELL;
+		shot = false;
+	}
+}

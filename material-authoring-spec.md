@@ -70,8 +70,10 @@ For **red glowing eyes** on monsters:
 
 1. Prefer eye masks from `D64RTR_BRIGHTMAPS.PK3` (`brightmaps/bd64/<SPRITE>B.png`) even if unbound in GLDEFS.
 2. Write `rt/mat/<SPRITE>_e.png` with **only the eye pixels** tinted red.
-3. JSON `"emissiveMult": 4.25` (~5× the earlier pinky tune) — **no** `lightIntensity` (eyes glow / feed GI, not room lamps).
-4. Frames without brightmaps: auto-detect small red/hot spots in the upper half of the sprite.
+3. JSON `"emissiveMult": 5` + `"lightIntensity": 1600` / `"lightColorHEX": "ff241c"` + **`"lightEvenOnDynamic": true`** (required for sprite attached lights).
+4. Lost Soul (`SKUL*`): stock actor. `d64r-lostsoul-rt.pk3` replaces SKUL sprites (yellow/orange fire only). Yellow `_e` + `"emissiveMult": 0.18` + `"lightIntensity": 900` / `"ff9028"` + `lightEvenOnDynamic`.
+5. For dark maps, raise `rt_emis_mapboost` (gallery uses 4000) so `_e` feeds GI, not just on-sprite glow.
+6. Frames without brightmaps: auto-detect small red/hot spots in the upper half of the sprite.
 
 Generator: `python tools/gen_enemy_eye_emissives.py`
 

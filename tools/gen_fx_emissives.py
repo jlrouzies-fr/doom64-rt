@@ -76,7 +76,7 @@ PREFIX_RULES: list[tuple[str, float, float, str | None]] = [
     ("APLS", 0.4, 1000, "88fa84"),
     ("APBX", 0.4, 1200, "6eff69"),
     ("FATB", 0.35, 900, "ff7020"),
-    ("SKUL", 0.5, 800, "ff7020"),  # lost soul
+    ("SKUL", 0.12, 500, "ff9028"),  # lost soul — dim yellow sprites + low emis; cast light
     # plasma / bfg
     ("PLSS", 0.45, 900, "55aaff"),
     ("PLSE", 0.45, 1100, "66bbff"),

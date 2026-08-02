@@ -51,6 +51,10 @@ tools/_gallery/**/Screenshot_*.png
 tools/_gallery/**/stdout*.txt
 # large generated UDMF dump (rebuild via build_texture_gallery.py)
 tools/_gallery/TEXTMAP.txt
+tools/_enemy_gallery/**/*.png
+tools/_enemy_gallery/**/Screenshot_*.png
+tools/_enemy_gallery/**/stdout*.txt
+tools/_decorate_extract.txt
 
 # --- Ephemeral map isolation / compare dumps ---
 tools/_map_cmp/
