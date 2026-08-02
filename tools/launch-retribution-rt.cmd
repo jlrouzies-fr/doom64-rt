@@ -8,13 +8,29 @@ set "FIX=G:\AI\Doom64-RT\Doom64-Retribution\d64r-map01-rtfix.wad"
 set "SKY=G:\AI\Doom64-RT\Doom64-Retribution\d64r-rt-sky.pk3"
 set "MUS=G:\AI\Doom64-RT\Doom64-Retribution\D64MUS.PK3"
 
-cd /d "%ENGINE%"
+cd /d "%ENGINE%" || exit /b 1
+
+rem Native RTGL1 path tracing + DLSS Ray Reconstruction (NOT RTX Remix).
+rem No -rtxremix. Uses +rt_rayreconstr 1 (native), not +rt_remix_rayreconstr.
+rem Requires tools\build-rtgl.cmd (RTGL1.dll + nvngx_dlssd.dll in rt\bin\).
 rem MAP01: d64r-map01-rtfix.wad disables hangy 3D floor.
-rem Sky: Retribution sky1=ISUCK is a black dummy; real look is SkyViewpoint skyboxes.
-rem Sky: +gl_noskyboxes (sector SkyViewpoint portals = white/black in RT) + D64RTSKY cubemap.
-rem D64MUS.PK3 = OGG music pack. Playtest cheats: god / noclip / fly. RT path tracing (not classic).
-rem PBR: rt/mat_dev/*_{orm,n,h}.png (developerMode) — gallery-tuned bump strengths below.
-rem Only textures processed by gen_ai_pbr (e.g. first 40 gallery booths) have N/H maps.
+rem Sky: +gl_noskyboxes + D64RTSKY cubemap. D64MUS.PK3 = OGG music.
+
+if not exist "gzdoom.exe" (
+  echo ERROR: missing gzdoom.exe under %ENGINE%
+  exit /b 1
+)
+if not exist "rt\bin\RTGL1.dll" (
+  echo ERROR: missing rt\bin\RTGL1.dll — run tools\build-rtgl.cmd
+  exit /b 1
+)
+if not exist "rt\bin\nvngx_dlssd.dll" (
+  echo ERROR: missing rt\bin\nvngx_dlssd.dll — run tools\build-rtgl.cmd
+  exit /b 1
+)
+
+echo Native RT + DLSS Ray Reconstruction (no Remix^)
+echo   +rt_upscale_dlss 2 +rt_rayreconstr 1 +rt_framegen 0
 
 start "" gzdoom.exe ^
   -iwad "%IWAD%" ^
@@ -24,7 +40,8 @@ start "" gzdoom.exe ^
   +god +noclip +fly ^
   +rt_mod_compat 3 +r_drawvoxels 0 ^
   +d64_enterfade 0 +d64_exitfade 0 ^
-  +rt_fluid false +rt_autoexport false +rt_upscale_dlss 0 ^
+  +rt_fluid false +rt_autoexport false ^
+  +rt_upscale_dlss 2 +rt_rayreconstr 1 +rt_framegen 0 ^
   +gl_noskyboxes true ^
   +rt_sky 200 +rt_sky_always true ^
   +rt_classic 0 ^

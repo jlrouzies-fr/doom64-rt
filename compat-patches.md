@@ -140,3 +140,24 @@ Rebuild: VS18 MSBuild `build\src\zdoom.vcxproj` RelWithDebInfo.
 - `hw_portal.cpp`: always process portals; drop `Skybox` when `gl_noskyboxes`; if no `Sky` portal drew, emulate raster sky
 - `rt_main.cpp`: non-black `skyColorDefault` fallback
 - `d64r-rt-sky.pk3`: `ChangeSky` → Doom II `RSKY1` (no GLDEFS cube)
+
+---
+
+## Native DLSS Ray Reconstruction (2026-08-02)
+
+Remix RR (-rtxremix + t_remix_rayreconstr) blacks out Retribution. Native path only had A-SVGF.
+
+**RTGL (deps/RTGL):**
+- RgStartFrameRenderResolutionParams.rayReconstruction — when set with NVIDIA_DLSS, skip A-SVGF, run noisy compose + NGX DLSS-RR
+- CmNoisyCompose.comp writes PreFinal + RR staging (normals/roughness in DiffPing, specular albedo in DiffPong)
+- DLSSRR.cpp — NGX Vulkan Ray Reconstruction (shares NGX init with DLSS2; needs 
+vngx_dlssd.dll)
+- Build: 	ools/build-rtgl.cmd (clones SDK at deps/DLSS, stages DLL + shaders)
+
+**gzdoom-rt:**
+- `+rt_rayreconstr 1` (native; not remix). Forces DLSS mode + frameGeneration off
+- Launch: `tools/launch-retribution-rt.cmd` (remix RR script disabled)
+
+**Playtest (2026-08-02):** Native RR much less noisy than A-SVGF on Retribution MAP01.
+
+**MVP out of scope:** Frame Gen + RR, specular motion vectors, Remix path fix.
