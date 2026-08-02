@@ -4,9 +4,9 @@ Path-traced Doom 64: Retribution work on top of [gzdoom-rt](https://github.com/v
 
 ## What’s in this repo
 
-- **`tools/`** — gallery review, PBR map generation (`gen_ai_pbr.py`, Marigold normals + sparse ORM + height), launch scripts
-- **`Doom64-Retribution/Retribution-RT-Materials/`** — authored RT companions (`*_orm.png`, `*_n.png`, `*_h.png`) + scene `textures.json`
-- **Docs** — material authoring notes, texture review status, compat notes
+- **`tools/`** — launchers, texture/enemy galleries, PBR helpers (`gen_ai_pbr.py`), eye/Lost Soul generators
+- **`Doom64-Retribution/Retribution-RT-Materials/`** — authored RT companions (`*_orm.png`, `*_n.png`, `*_h.png`, `*_e.png`) + scene `textures.json`
+- **Docs** — start with **`AGENTS.md`** (agent handoff), then `doom64-retribution-pathtracing-plan.md`, `material-authoring-spec.md`, `compat-patches.md`
 
 ## Not in git (see `.gitignore`)
 
@@ -14,10 +14,23 @@ Engine builds, Python venv, upstream `sourcecode/gzdoom-rt` checkout, stock WADs
 
 ## Quick start (local)
 
-1. Build or install gzdoom-rt under `sourcecode/gzdoom-rt/build/RelWithDebInfo` (or your engine path).
-2. Ensure `rt/RTGL1.json` has `"developerMode": true` for PNG overrides in `rt/mat_dev/`.
-3. Copy materials from `Doom64-Retribution/Retribution-RT-Materials/rt/` into the engine `rt/` tree (or point the engine at them).
-4. Launch: `tools\launch-retribution-rt.cmd`
+1. Build or install gzdoom-rt under `sourcecode/gzdoom-rt/build/RelWithDebInfo`.
+2. Ensure `rt/RTGL1.json` has `"developerMode": true` for PNG overrides.
+3. Sync materials from `Doom64-Retribution/Retribution-RT-Materials/rt/` into the engine `rt/` tree (generators also write both).
+4. Play: `tools\launch-retribution-rt.cmd` (MAP01, DLSS-RR, Lost Soul pack).
+5. Enemy eye debug hall: `tools\launch-enemy-gallery-rt.cmd` (MAP98).
+6. Texture PBR gallery: `tools\launch-texture-gallery-rt.cmd` (MAP99).
+
+## Enemy eyes / Lost Soul
+
+```powershell
+# Prefer the Python that has Pillow (see AGENTS.md)
+python tools\gen_enemy_eye_emissives.py
+python tools\pack_lostsoul_rt.py
+python tools\build_enemy_gallery.py
+```
+
+Policy summary: brightmap-only eyes, no cast light on eyes, no `noShadow` on monster sprites. Full rules in `material-authoring-spec.md` / `AGENTS.md`.
 
 ## AI PBR pilot
 
@@ -31,4 +44,4 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools\review_ai_pbr_pair.ps1
   -Strength 4.5 -HeightCrazy 3.0 -NormalMapStren 3.5
 ```
 
-Requires an RTX GPU for Marigold via Diffusers.
+Requires an RTX GPU for Marigold via Diffusers. For in-game normal strength while playing Retribution, keep launcher `rt_normalmap_stren` near **1** so Ray Reconstruction stays stable.

@@ -14,14 +14,14 @@
 
 ---
 
-## Status (living â€” update this)
+## Status (living — update this)
 
 | Field | Value |
 |---|---|
-| **Last updated** | 2026-08-02 |
-| **Current phase** | **Phase 3→4** — MAP01 PBR stubs; Phase 6 RR MVP playtested |
+| **Last updated** | 2026-08-02 (evening) |
+| **Current phase** | **Phase 4** materials + emissives; Phase 5 launchers usable; Phase 6 RR default |
 | **Blocked on** | — |
-| **Next action** | Continue Phase 4 materials; keep native RR as default launch (`tools/launch-retribution-rt.cmd`) |
+| **Next action** | Continue world/texture PBR (MAP99 gallery / `gen_ai_pbr.py`); optional HEAD/BOSS eye masks; finish or drop Lost Soul LSGL offset-light |
 
 ### Progress
 
@@ -29,14 +29,21 @@
 |---|---|
 | 0 Prerequisites / vanilla RT validate | **Done** |
 | 1 Acquire / inventory Retribution | **Done** |
-| 2 Baseline compatibility | **Mostly done** â€” hang/sky/live-upload fixes; residual sky-holes OK for now |
-| 2.5 Engine fork (Steam / scene collision) | **Done** â€” built `sourcecode/gzdoom-rt/build/RelWithDebInfo/gzdoom.exe` |
-| 3 Material / lighting authoring spec | **Done** â€” `material-authoring-spec.md` |
-| 4 Author RT content for Retribution | **Started** â€” MAP01 auto stubs via `tools/gen_map01_pbr.py` |
-| 5 Integration / load order / launcher | Not started |
-| 6 Performance tuning | **Started** — native DLSS-RR preferred over A-SVGF (user: much less noisy) |
+| 2 Baseline compatibility | **Mostly done** — hang/sky/live-upload fixes; residual sky-holes OK for now |
+| 2.5 Engine fork (Steam / scene collision) | **Done** — built `sourcecode/gzdoom-rt/build/RelWithDebInfo/gzdoom.exe` |
+| 3 Material / lighting authoring spec | **Done** — `material-authoring-spec.md` (keep in sync with eye/SKUL policy) |
+| 4 Author RT content for Retribution | **In progress** — MAP01 stubs; AI/ORM gallery; **enemy eyes** (brightmap-only); Lost Soul yellow sprites; MAP98 enemy gallery |
+| 5 Integration / load order / launcher | **Started** — `launch-retribution-rt.cmd`, enemy/texture gallery launchers, `d64r-lostsoul-rt.pk3` on load order |
+| 6 Performance tuning | **Started** — native DLSS-RR default; keep `rt_normalmap_stren` / `rt_heightmap_stren` ≈ **1** (high values break RR) |
 | 7 Polish | Not started |
 | 8 Distribution | Not started |
+
+### Recent session notes (enemy emissives)
+
+- Eyes: brightmap-only `_e`, `emissiveMult≈2`, pure red; **no** eye `lightIntensity`; **no** `noShadow` on monster sprites.
+- Auto eye detect disabled (soldiers/pinky-back false positives).
+- Lost Soul: sprite tint pk3 only (no actor replace); same-sprite attached light abandoned (white bloom); LSGL offset glow experimental/unfinished.
+- Debug: MAP98 enemy gallery + `review_enemy_gallery_batch.ps1`. Details in `AGENTS.md` + `material-authoring-spec.md`.
 
 ### Workspace (this machine)
 
@@ -174,11 +181,11 @@ Bulk creative/technical work â€” Doom 64 look into RTGL1 materials. Use inv
 
 ## 5. Integration & Load Order
 
-- [ ] Package Phase 4 work as overlay pk3 (e.g. `Retribution-RT-Materials.pk3`) â€” never edit Retribution in place
-- [ ] Load order: `DOOM2.WAD` â†’ `D64RTR[v1.5].WAD` â†’ `D64RTR_BRIGHTMAPS.PK3` (optional) â†’ `Retribution-RT-Materials.pk3` last
-- [ ] Launch script / ini profile for one-click RT play
+- [ ] Package Phase 4 work as a single overlay pk3 (materials currently live as `Retribution-RT-Materials/` folder sync) — never edit Retribution in place
+- [x] Load order via launchers: DOOM2 → `D64RTR_v15.WAD` → brightmaps → `d64r-lostsoul-rt.pk3` → (gallery packs when debugging) → sky/music/fixes
+- [x] Launch scripts: `tools/launch-retribution-rt.cmd`, `launch-enemy-gallery-rt.cmd`, `launch-texture-gallery-rt.cmd`
 
-**Cursor task:** Launch script + install README section.
+**Cursor task:** Single materials pk3 + install README polish.
 
 ---
 

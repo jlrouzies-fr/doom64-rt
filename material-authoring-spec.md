@@ -66,16 +66,26 @@ Important fields (from RTGL1 `TextureMeta`):
 
 Classic GL brightmaps do **not** become RT emission masks — `rt_mod_compat` only sets a whole-primitive emissive float when a brightmap exists.
 
-For **red glowing eyes** on monsters:
+For **red glowing eyes** on monsters (current policy):
 
-1. Prefer eye masks from `D64RTR_BRIGHTMAPS.PK3` (`brightmaps/bd64/<SPRITE>B.png`) even if unbound in GLDEFS.
-2. Write `rt/mat/<SPRITE>_e.png` with **only the eye pixels** tinted red.
-3. JSON `"emissiveMult": 5` + `"lightIntensity": 1600` / `"lightColorHEX": "ff241c"` + **`"lightEvenOnDynamic": true`** (required for sprite attached lights).
-4. Lost Soul (`SKUL*`): stock actor. `d64r-lostsoul-rt.pk3` replaces SKUL sprites (yellow/orange fire only). Yellow `_e` + `"emissiveMult": 0.18` + `"lightIntensity": 900` / `"ff9028"` + `lightEvenOnDynamic`.
-5. For dark maps, raise `rt_emis_mapboost` (gallery uses 4000) so `_e` feeds GI, not just on-sprite glow.
-6. Frames without brightmaps: auto-detect small red/hot spots in the upper half of the sprite.
+1. Use eye masks from `D64RTR_BRIGHTMAPS.PK3` (`brightmaps/bd64/<SPRITE>B.png`) only — even if unbound in GLDEFS.
+2. Write `rt/mat/<SPRITE>_e.png` with **only the eye pixels**, pure red `(255, 10, 0)`.
+3. JSON: `"emissiveMult": 2` only. **Do not** set `lightIntensity` on eyes (casts room light / lanterns). **Do not** set `noShadow` on monster sprites (kills enemy shadows).
+4. Validate masks: compact, head-band only; skip rear (`*5`) and death frames (`H+`).
+5. **Auto red-pixel detect is OFF** (`AUTO_EYES = False`). It false-positived soldiers (armor/blood) and pinky backs.
+6. Clones: Nightmare Imp `TRO2*` ← `TROO*`; Spectre `SAR2*` ← `SARG*` when donor `_e` exists.
+7. Lost Soul (`SKUL*`): **stock actor** (do not DECORATE-replace). `d64r-lostsoul-rt.pk3` = yellow/orange SKUL sprite replacements + optional `LSGL` offset-glow handler. Fire `_e` with low `emissiveMult` (~0.12); **no** `lightIntensity` on SKUL frames (bleaches fire white under BRIGHT). Offset-light still experimental.
+8. Dark gallery (MAP98): `tools/launch-enemy-gallery-rt.cmd` / `review_enemy_gallery_batch.ps1`. Rebuild map/tour: `python tools/build_enemy_gallery.py`.
 
-Generator: `python tools/gen_enemy_eye_emissives.py`
+Generators:
+
+```text
+python tools/gen_enemy_eye_emissives.py
+python tools/clear_enemy_eye_emissives.py   # wipe enemy _e + meta, then regen
+python tools/pack_lostsoul_rt.py            # SKUL sprites + LSGL pk3
+```
+
+Ship copies under `Doom64-Retribution/Retribution-RT-Materials/rt/`; runtime copies also land in the engine `build/.../rt/` tree (gitignored).
 
 ## Retribution authoring rules
 
