@@ -46,7 +46,7 @@ start "" gzdoom.exe ^
   -file "%MOD%" "%BM%" "%SKUL%" "%GAL%" "%INFO%" "%SKY%" "%TOUR%" ^
   -rtnolauncher -width 1280 -height 720 ^
   +vid_fullscreen 0 +queryiwad false +sv_cheats 1 +map map98 ^
-  +god +notarget +noclip ^
+  +god +notarget ^
   +rt_mod_compat 3 +r_drawvoxels 0 ^
   +rt_fluid false +rt_autoexport false +rt_upscale_dlss 0 ^
   +gl_noskyboxes true ^

@@ -6,6 +6,8 @@ Generate RT emissive + attached-light meta for Retribution FX sprites.
 - Rockets (MISL*): keep fire orange (shared MISL boom also used by 64BarrelExplosion)
 - Projectiles / enemy shots / weapon flashes / torches / pickups: color from sprite
   sample + category intensity defaults (stock RT patterns where known)
+- Monster gun fire frames (POSSF/SPOSF/CPOSF/…): brief attached muzzle light around the
+  shooter. Player weapons get RT_AddMuzzleFlash via A_Light1/2 extralight; monsters do not.
 
 Writes/merges into:
   build/RelWithDebInfo/rt/data/textures.json
@@ -26,6 +28,7 @@ from PIL import Image
 
 ROOT = Path(r"G:\AI\Doom64-RT")
 WAD = ROOT / r"Doom64-Retribution\D64RTR_v15.WAD"
+IWAD = Path(r"D:\Games\GZDoom\doom2.wad")
 BM_PK3 = ROOT / r"Doom64-Retribution\D64RTR_BRIGHTMAPS.PK3"
 RT_DATA = ROOT / r"sourcecode\gzdoom-rt\build\RelWithDebInfo\rt\data"
 GLOBAL_JSON = RT_DATA / "textures.json"
@@ -35,6 +38,7 @@ OVERLAY_SCENE = (
     ROOT / r"Doom64-Retribution\Retribution-RT-Materials\rt\data\scenes\d64rtr_v15_map01\textures.json"
 )
 MAT_DIR = ROOT / r"sourcecode\gzdoom-rt\build\RelWithDebInfo\rt\mat"
+MAT_DEV = ROOT / r"sourcecode\gzdoom-rt\build\RelWithDebInfo\rt\mat_dev"
 OVERLAY_MAT = ROOT / r"Doom64-Retribution\Retribution-RT-Materials\rt\mat"
 
 # Forced profiles (override sampling). HEX without '#'.
@@ -56,6 +60,7 @@ FORCE: dict[str, dict] = {
 
 # Prefix rules: (emissiveMult, lightIntensity, optional forced HEX or None=sample)
 # Intensity 0 => emissive only (no analytic light).
+# Do NOT add SKUL* here — owned by gen_enemy_eye / pack_lostsoul_rt.
 PREFIX_RULES: list[tuple[str, float, float, str | None]] = [
     # barrels / toxic boom
     ("BAR1", 1.5, 480, "3dff4a"),
@@ -76,7 +81,6 @@ PREFIX_RULES: list[tuple[str, float, float, str | None]] = [
     ("APLS", 0.4, 1000, "88fa84"),
     ("APBX", 0.4, 1200, "6eff69"),
     ("FATB", 0.35, 900, "ff7020"),
-    ("SKUL", 0.12, 500, "ff9028"),  # lost soul — dim yellow sprites + low emis; cast light
     # plasma / bfg
     ("PLSS", 0.45, 900, "55aaff"),
     ("PLSE", 0.45, 1100, "66bbff"),
@@ -136,6 +140,17 @@ PREFIX_RULES: list[tuple[str, float, float, str | None]] = [
     ("BSKU", 0.6, 160, "4488ff"),
     ("RSKU", 0.6, 160, "ff4444"),
     ("YSKU", 0.6, 160, "ffcc33"),
+]
+
+# Monster fire frames only (…F). Aim frames (…E) must stay dark.
+# Color matches player rt_mzlflsh_color (0xFF8C52). No noShadow — that kills enemy shadows.
+# Intensities below HUD weapon flashes so body-centered lights do not lantern.
+MONSTER_MUZZLE_RULES: list[tuple[str, float, float, str | None]] = [
+    ("POSSF", 0.35, 480, "ff8c52"),  # Zombieman
+    ("SPOSF", 0.4, 720, "ff8c52"),  # ShotgunGuy
+    ("CPOSF", 0.35, 520, "ff8c52"),  # ChaingunGuy (IWAD sprites)
+    ("PLAYF", 0.35, 480, "ff8c52"),  # 64MarineBot + player world fire frames
+    ("SSWVF", 0.35, 480, "ff8c52"),  # WolfensteinSS
 ]
 
 
@@ -233,12 +248,47 @@ def make_emissive_png(img: Image.Image, out: Path, boost: float = 1.4) -> None:
     e.save(out)
 
 
+# Doom II WORLD fire/lava textures — NOT archvile flame sprites. The FIRE
+# prefix rule must not swallow these: they got lightIntensity 700 + noShadow
+# on a world texture (wash + killed wall shadows). Owned by world emis if wanted.
+WORLD_TEX_RE = re.compile(r"^(FIRELAV|FIREWAL|FIREMAG|FIREBLU|FIREWALL)", re.I)
+
+
 def rule_for(name: str) -> tuple[float, float, str | None] | None:
     u = name.upper()
+    if WORLD_TEX_RE.match(u):
+        return None
     for pref, em, li, hx in PREFIX_RULES:
         if u.startswith(pref):
             return em, li, hx
     return None
+
+
+def monster_muzzle_rule(name: str) -> tuple[float, float, str | None] | None:
+    u = name.upper()
+    for pref, em, li, hx in MONSTER_MUZZLE_RULES:
+        if u.startswith(pref):
+            return em, li, hx
+    return None
+
+
+def fx_meta(
+    name: str,
+    em: float,
+    li: float,
+    color: str,
+    *,
+    no_shadow: bool,
+) -> dict:
+    meta: dict = {
+        "textureName": name,
+        "emissiveMult": em,
+        "lightIntensity": li,
+        "lightColorHEX": color,
+    }
+    if no_shadow:
+        meta["noShadow"] = True
+    return meta
 
 
 def parse_textures_json(path: Path) -> dict[str, dict]:
@@ -340,12 +390,15 @@ def brightmap_names() -> set[str]:
 
 def main() -> None:
     lumps = wad_images(WAD)
-    bm = brightmap_names()
-
+    if IWAD.exists():
+        # Chaingunner / Wolf SS fire frames live in the IWAD, not Retribution.
+        for name, data in wad_images(IWAD).items():
+            if monster_muzzle_rule(name) and name not in lumps:
+                lumps[name] = data
     # candidates = anything matching a prefix rule, present as a lump
     candidates: list[str] = []
     for name in lumps:
-        if rule_for(name) or name in FORCE:
+        if rule_for(name) or monster_muzzle_rule(name) or name in FORCE:
             # skip HUD-only
             if name.endswith("HUD"):
                 continue
@@ -362,6 +415,15 @@ def main() -> None:
             entries[name] = meta
             by_pref[name[:4]] += 1
             continue
+
+        mz = monster_muzzle_rule(name)
+        if mz:
+            em, li, hx = mz
+            color = hx or "ff8c52"
+            entries[name] = fx_meta(name, em, li, color, no_shadow=False)
+            by_pref[name[:5] if len(name) >= 5 else name[:4]] += 1
+            continue
+
         rule = rule_for(name)
         if not rule:
             continue
@@ -373,20 +435,14 @@ def main() -> None:
         if hx is None and sampled:
             color = sampled
 
-        meta = {
-            "textureName": name,
-            "emissiveMult": em,
-            "noShadow": True,
-            "lightIntensity": li,
-            "lightColorHEX": color,
-        }
-        entries[name] = meta
+        entries[name] = fx_meta(name, em, li, color, no_shadow=True)
         by_pref[name[:4]] += 1
 
         # Write _e.png for idle barrels + a few hero FX (devMode PNGs)
         if img and name.startswith(("BAR1", "BEXP", "BAL7", "BAL8", "GFLM", "APLS")):
-            make_emissive_png(img, MAT_DIR / f"{name}_e.png")
-            make_emissive_png(img, OVERLAY_MAT / f"{name}_e.png")
+            for d in (MAT_DIR, MAT_DEV, OVERLAY_MAT):
+                d.mkdir(parents=True, exist_ok=True)
+                make_emissive_png(img, d / f"{name}_e.png")
             e_png += 1
 
     # Also bump stock entries that are emis-only weapon flashes / MISL body if still weak
@@ -394,20 +450,26 @@ def main() -> None:
     for name, e in stock.items():
         if name in entries:
             continue
+        mz = monster_muzzle_rule(name)
+        if mz:
+            em, li, hx = mz
+            entries[name] = fx_meta(name, em, li, hx or "ff8c52", no_shadow=False)
+            by_pref[name[:5] if len(name) >= 5 else name[:4]] += 1
+            continue
         rule = rule_for(name)
         if not rule:
             continue
         em, li, hx = rule
         if e.get("lightIntensity"):
             continue
-        # fill missing lights on stock-known names
-        entries[name] = {
-            "textureName": name,
-            "emissiveMult": max(float(e.get("emissiveMult") or 0), em),
-            "noShadow": True,
-            "lightIntensity": li,
-            "lightColorHEX": hx or e.get("lightColorHEX") or "ffffff",
-        }
+        # overwrite stock with authored FX profile (do not keep old high emisMult)
+        entries[name] = fx_meta(
+            name,
+            em,
+            li,
+            hx or e.get("lightColorHEX") or "ffffff",
+            no_shadow=True,
+        )
         by_pref[name[:4]] += 1
 
     print(f"FX metas: {len(entries)}  _e.png: {e_png}")
@@ -418,6 +480,12 @@ def main() -> None:
     print("BAL7A1A5", entries.get("BAL7A1A5"))
     print("RBALA1", entries.get("RBALA1"))
     print("TRCRA1", entries.get("TRCRA1"))
+    print("POSSF1", entries.get("POSSF1"))
+    print("SPOSF1", entries.get("SPOSF1"))
+    print("CPOSF1", entries.get("CPOSF1"))
+    print("PLAYF1", entries.get("PLAYF1"))
+    print("PUFFA0", entries.get("PUFFA0"))
+    print("PISFA0", entries.get("PISFA0"))
 
     patch_global_inline(GLOBAL_JSON, entries)
     upsert_json(SCENE_JSON, entries, replace=False)

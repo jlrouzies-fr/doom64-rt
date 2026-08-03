@@ -1,0 +1,89 @@
+{
+  "batch_size": 100,
+  "cell": 280,
+  "pillar": 72,
+  "hall_h": 128,
+  "total_textures": 738,
+  "batches": [
+    {
+      "batch": 1,
+      "stem": "d64rtexg01",
+      "wad": "d64rtexg01.wad",
+      "global_start": 0,
+      "global_end": 99,
+      "count": 100,
+      "first": "SPACEBE",
+      "last": "SDFLTAD"
+    },
+    {
+      "batch": 2,
+      "stem": "d64rtexg02",
+      "wad": "d64rtexg02.wad",
+      "global_start": 100,
+      "global_end": 199,
+      "count": 100,
+      "first": "SFLATBC",
+      "last": "H26"
+    },
+    {
+      "batch": 3,
+      "stem": "d64rtexg03",
+      "wad": "d64rtexg03.wad",
+      "global_start": 200,
+      "global_end": 299,
+      "count": 100,
+      "first": "SPACEBT",
+      "last": "SPACEC9"
+    },
+    {
+      "batch": 4,
+      "stem": "d64rtexg04",
+      "wad": "d64rtexg04.wad",
+      "global_start": 300,
+      "global_end": 399,
+      "count": 100,
+      "first": "C42",
+      "last": "C76"
+    },
+    {
+      "batch": 5,
+      "stem": "d64rtexg05",
+      "wad": "d64rtexg05.wad",
+      "global_start": 400,
+      "global_end": 499,
+      "count": 100,
+      "first": "HFLATJ",
+      "last": "HFL16"
+    },
+    {
+      "batch": 6,
+      "stem": "d64rtexg06",
+      "wad": "d64rtexg06.wad",
+      "global_start": 500,
+      "global_end": 599,
+      "count": 100,
+      "first": "HFLATF",
+      "last": "SPACECCR"
+    },
+    {
+      "batch": 7,
+      "stem": "d64rtexg07",
+      "wad": "d64rtexg07.wad",
+      "global_start": 600,
+      "global_end": 699,
+      "count": 100,
+      "first": "TITLEINV",
+      "last": "CMPSW30A"
+    },
+    {
+      "batch": 8,
+      "stem": "d64rtexg08",
+      "wad": "d64rtexg08.wad",
+      "global_start": 700,
+      "global_end": 737,
+      "count": 38,
+      "first": "CMPSW38A",
+      "last": "SWXAZ2A"
+    }
+  ]
+}

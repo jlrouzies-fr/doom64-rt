@@ -1,0 +1,5 @@
+map MAP97 "MAP97 - Emis Iso Batches"
+{
+	levelnum = 97
+	sky1 = "RSKY1"
+}

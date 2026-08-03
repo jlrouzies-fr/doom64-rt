@@ -4,3369 +4,3226 @@
     {
       "textureName": "A030A0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "eac257"
+      "lightColorHEX": "eac257",
+      "noShadow": true
     },
     {
       "textureName": "A030B0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "eac457"
+      "lightColorHEX": "eac457",
+      "noShadow": true
     },
     {
       "textureName": "A030C0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "eac258"
+      "lightColorHEX": "eac258",
+      "noShadow": true
     },
     {
       "textureName": "A030D0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "eabf5a"
+      "lightColorHEX": "eabf5a",
+      "noShadow": true
     },
     {
       "textureName": "A030E0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "eac15b"
+      "lightColorHEX": "eac15b",
+      "noShadow": true
     },
     {
       "textureName": "A031A0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "6a93ea"
+      "lightColorHEX": "6a93ea",
+      "noShadow": true
     },
     {
       "textureName": "A031B0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "6993ea"
+      "lightColorHEX": "6993ea",
+      "noShadow": true
     },
     {
       "textureName": "A031C0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "6b93ea"
+      "lightColorHEX": "6b93ea",
+      "noShadow": true
     },
     {
       "textureName": "A031D0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "7599ea"
+      "lightColorHEX": "7599ea",
+      "noShadow": true
     },
     {
       "textureName": "A031E0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "769bea"
+      "lightColorHEX": "769bea",
+      "noShadow": true
     },
     {
       "textureName": "A032A0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "ea655b"
+      "lightColorHEX": "ea655b",
+      "noShadow": true
     },
     {
       "textureName": "A032B0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "ea645c"
+      "lightColorHEX": "ea645c",
+      "noShadow": true
     },
     {
       "textureName": "A032C0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "ea665d"
+      "lightColorHEX": "ea665d",
+      "noShadow": true
     },
     {
       "textureName": "A032D0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "ea6d61"
+      "lightColorHEX": "ea6d61",
+      "noShadow": true
     },
     {
       "textureName": "A032E0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "ea7264"
+      "lightColorHEX": "ea7264",
+      "noShadow": true
     },
     {
       "textureName": "APLSA0",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "88fa84"
+      "lightColorHEX": "88fa84",
+      "noShadow": true
     },
     {
       "textureName": "APLSB0",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "88fa84"
+      "lightColorHEX": "88fa84",
+      "noShadow": true
     },
     {
       "textureName": "APLSC0",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "88fa84"
+      "lightColorHEX": "88fa84",
+      "noShadow": true
     },
     {
       "textureName": "APLSD0",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "88fa84"
+      "lightColorHEX": "88fa84",
+      "noShadow": true
     },
     {
       "textureName": "APLSE0",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "88fa84"
+      "lightColorHEX": "88fa84",
+      "noShadow": true
     },
     {
       "textureName": "APLSF0",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "88fa84"
+      "lightColorHEX": "88fa84",
+      "noShadow": true
     },
     {
       "textureName": "APLSG0",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "88fa84"
+      "lightColorHEX": "88fa84",
+      "noShadow": true
     },
     {
       "textureName": "APLSH0",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "88fa84"
+      "lightColorHEX": "88fa84",
+      "noShadow": true
     },
     {
       "textureName": "ART1A0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 220,
-      "lightColorHEX": "66ffaa"
+      "lightColorHEX": "66ffaa",
+      "noShadow": true
     },
     {
       "textureName": "ART1B0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 220,
-      "lightColorHEX": "66ffaa"
+      "lightColorHEX": "66ffaa",
+      "noShadow": true
     },
     {
       "textureName": "ART1C0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 220,
-      "lightColorHEX": "66ffaa"
+      "lightColorHEX": "66ffaa",
+      "noShadow": true
     },
     {
       "textureName": "ART1D0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 220,
-      "lightColorHEX": "66ffaa"
+      "lightColorHEX": "66ffaa",
+      "noShadow": true
     },
     {
       "textureName": "ART1E0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 220,
-      "lightColorHEX": "66ffaa"
+      "lightColorHEX": "66ffaa",
+      "noShadow": true
     },
     {
       "textureName": "ART2A0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 220,
-      "lightColorHEX": "66aaff"
+      "lightColorHEX": "66aaff",
+      "noShadow": true
     },
     {
       "textureName": "ART2B0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 220,
-      "lightColorHEX": "66aaff"
+      "lightColorHEX": "66aaff",
+      "noShadow": true
     },
     {
       "textureName": "ART2C0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 220,
-      "lightColorHEX": "66aaff"
+      "lightColorHEX": "66aaff",
+      "noShadow": true
     },
     {
       "textureName": "ART2D0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 220,
-      "lightColorHEX": "66aaff"
+      "lightColorHEX": "66aaff",
+      "noShadow": true
     },
     {
       "textureName": "ART2E0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 220,
-      "lightColorHEX": "66aaff"
+      "lightColorHEX": "66aaff",
+      "noShadow": true
     },
     {
       "textureName": "ART3A0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 220,
-      "lightColorHEX": "ff66aa"
+      "lightColorHEX": "ff66aa",
+      "noShadow": true
     },
     {
       "textureName": "ART3B0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 220,
-      "lightColorHEX": "ff66aa"
+      "lightColorHEX": "ff66aa",
+      "noShadow": true
     },
     {
       "textureName": "ART3C0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 220,
-      "lightColorHEX": "ff66aa"
+      "lightColorHEX": "ff66aa",
+      "noShadow": true
     },
     {
       "textureName": "ART3D0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 220,
-      "lightColorHEX": "ff66aa"
+      "lightColorHEX": "ff66aa",
+      "noShadow": true
     },
     {
       "textureName": "ART3E0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 220,
-      "lightColorHEX": "ff66aa"
+      "lightColorHEX": "ff66aa",
+      "noShadow": true
     },
     {
       "textureName": "BAL1A0",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 700,
-      "lightColorHEX": "ff6f00"
+      "lightColorHEX": "ff6f00",
+      "noShadow": true
     },
     {
       "textureName": "BAL1B0",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 700,
-      "lightColorHEX": "ff6f00"
+      "lightColorHEX": "ff6f00",
+      "noShadow": true
     },
     {
       "textureName": "BAL1C0",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 700,
-      "lightColorHEX": "ff6f00"
+      "lightColorHEX": "ff6f00",
+      "noShadow": true
     },
     {
       "textureName": "BAL1D0",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 700,
-      "lightColorHEX": "ff6f00"
+      "lightColorHEX": "ff6f00",
+      "noShadow": true
     },
     {
       "textureName": "BAL1E0",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 700,
-      "lightColorHEX": "ff6f00"
+      "lightColorHEX": "ff6f00",
+      "noShadow": true
     },
     {
       "textureName": "BAL1F0",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 700,
-      "lightColorHEX": "ff6f00"
+      "lightColorHEX": "ff6f00",
+      "noShadow": true
     },
     {
       "textureName": "BAL1G0",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 700,
-      "lightColorHEX": "ff6f00"
+      "lightColorHEX": "ff6f00",
+      "noShadow": true
     },
     {
       "textureName": "BAL1H0",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 700,
-      "lightColorHEX": "ff6f00"
+      "lightColorHEX": "ff6f00",
+      "noShadow": true
     },
     {
       "textureName": "BAL1I0",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 700,
-      "lightColorHEX": "ff6f00"
+      "lightColorHEX": "ff6f00",
+      "noShadow": true
     },
     {
       "textureName": "BAL2A0",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 900,
-      "lightColorHEX": "b65cff"
+      "lightColorHEX": "b65cff",
+      "noShadow": true
     },
     {
       "textureName": "BAL2B0",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 900,
-      "lightColorHEX": "b65cff"
+      "lightColorHEX": "b65cff",
+      "noShadow": true
     },
     {
       "textureName": "BAL2C0",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 900,
-      "lightColorHEX": "b65cff"
+      "lightColorHEX": "b65cff",
+      "noShadow": true
     },
     {
       "textureName": "BAL2D0",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 900,
-      "lightColorHEX": "b65cff"
+      "lightColorHEX": "b65cff",
+      "noShadow": true
     },
     {
       "textureName": "BAL2E0",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 900,
-      "lightColorHEX": "b65cff"
+      "lightColorHEX": "b65cff",
+      "noShadow": true
     },
     {
       "textureName": "BAL2F0",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 900,
-      "lightColorHEX": "b65cff"
+      "lightColorHEX": "b65cff",
+      "noShadow": true
     },
     {
       "textureName": "BAL2G0",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 900,
-      "lightColorHEX": "b65cff"
+      "lightColorHEX": "b65cff",
+      "noShadow": true
     },
     {
       "textureName": "BAL2H0",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 900,
-      "lightColorHEX": "b65cff"
+      "lightColorHEX": "b65cff",
+      "noShadow": true
     },
     {
       "textureName": "BAL2I0",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 900,
-      "lightColorHEX": "b65cff"
+      "lightColorHEX": "b65cff",
+      "noShadow": true
     },
     {
       "textureName": "BAL2J0",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 900,
-      "lightColorHEX": "b65cff"
+      "lightColorHEX": "b65cff",
+      "noShadow": true
     },
     {
       "textureName": "BAL3A0",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 800,
-      "lightColorHEX": "ff5533"
+      "lightColorHEX": "ff5533",
+      "noShadow": true
     },
     {
       "textureName": "BAL3B0",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 800,
-      "lightColorHEX": "ff5533"
+      "lightColorHEX": "ff5533",
+      "noShadow": true
     },
     {
       "textureName": "BAL3C0",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 800,
-      "lightColorHEX": "ff5533"
+      "lightColorHEX": "ff5533",
+      "noShadow": true
     },
     {
       "textureName": "BAL3D0",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 800,
-      "lightColorHEX": "ff5533"
+      "lightColorHEX": "ff5533",
+      "noShadow": true
     },
     {
       "textureName": "BAL3E0",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 800,
-      "lightColorHEX": "ff5533"
+      "lightColorHEX": "ff5533",
+      "noShadow": true
     },
     {
       "textureName": "BAL3F0",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 800,
-      "lightColorHEX": "ff5533"
+      "lightColorHEX": "ff5533",
+      "noShadow": true
     },
     {
       "textureName": "BAL3G0",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 800,
-      "lightColorHEX": "ff5533"
+      "lightColorHEX": "ff5533",
+      "noShadow": true
     },
     {
       "textureName": "BAL3H0",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 800,
-      "lightColorHEX": "ff5533"
+      "lightColorHEX": "ff5533",
+      "noShadow": true
     },
     {
       "textureName": "BAL3I0",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 800,
-      "lightColorHEX": "ff5533"
+      "lightColorHEX": "ff5533",
+      "noShadow": true
     },
     {
       "textureName": "BAL7A1A5",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "66ff55"
+      "lightColorHEX": "66ff55",
+      "noShadow": true
     },
     {
       "textureName": "BAL7A2A8",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "66ff55"
+      "lightColorHEX": "66ff55",
+      "noShadow": true
     },
     {
       "textureName": "BAL7A3A7",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "66ff55"
+      "lightColorHEX": "66ff55",
+      "noShadow": true
     },
     {
       "textureName": "BAL7A4A6",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "66ff55"
+      "lightColorHEX": "66ff55",
+      "noShadow": true
     },
     {
       "textureName": "BAL7B1B5",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "66ff55"
+      "lightColorHEX": "66ff55",
+      "noShadow": true
     },
     {
       "textureName": "BAL7B2B8",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "66ff55"
+      "lightColorHEX": "66ff55",
+      "noShadow": true
     },
     {
       "textureName": "BAL7B3B7",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "66ff55"
+      "lightColorHEX": "66ff55",
+      "noShadow": true
     },
     {
       "textureName": "BAL7B4B6",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "66ff55"
+      "lightColorHEX": "66ff55",
+      "noShadow": true
     },
     {
       "textureName": "BAL7C0",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "66ff55"
+      "lightColorHEX": "66ff55",
+      "noShadow": true
     },
     {
       "textureName": "BAL7D0",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "66ff55"
+      "lightColorHEX": "66ff55",
+      "noShadow": true
     },
     {
       "textureName": "BAL7E0",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "66ff55"
+      "lightColorHEX": "66ff55",
+      "noShadow": true
     },
     {
       "textureName": "BAL7F0",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "66ff55"
+      "lightColorHEX": "66ff55",
+      "noShadow": true
     },
     {
       "textureName": "BAL7G0",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "66ff55"
+      "lightColorHEX": "66ff55",
+      "noShadow": true
     },
     {
       "textureName": "BAL7H0",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "66ff55"
+      "lightColorHEX": "66ff55",
+      "noShadow": true
     },
     {
       "textureName": "BAL8A1A5",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "88ff66"
+      "lightColorHEX": "88ff66",
+      "noShadow": true
     },
     {
       "textureName": "BAL8A2A8",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "88ff66"
+      "lightColorHEX": "88ff66",
+      "noShadow": true
     },
     {
       "textureName": "BAL8A3A7",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "88ff66"
+      "lightColorHEX": "88ff66",
+      "noShadow": true
     },
     {
       "textureName": "BAL8A4A6",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "88ff66"
+      "lightColorHEX": "88ff66",
+      "noShadow": true
     },
     {
       "textureName": "BAL8B1B5",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "88ff66"
+      "lightColorHEX": "88ff66",
+      "noShadow": true
     },
     {
       "textureName": "BAL8B2B8",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "88ff66"
+      "lightColorHEX": "88ff66",
+      "noShadow": true
     },
     {
       "textureName": "BAL8B3B7",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "88ff66"
+      "lightColorHEX": "88ff66",
+      "noShadow": true
     },
     {
       "textureName": "BAL8B4B6",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "88ff66"
+      "lightColorHEX": "88ff66",
+      "noShadow": true
     },
     {
       "textureName": "BAL8C0",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "88ff66"
+      "lightColorHEX": "88ff66",
+      "noShadow": true
     },
     {
       "textureName": "BAL8D0",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "88ff66"
+      "lightColorHEX": "88ff66",
+      "noShadow": true
     },
     {
       "textureName": "BAL8E0",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "88ff66"
+      "lightColorHEX": "88ff66",
+      "noShadow": true
     },
     {
       "textureName": "BAL8F0",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "88ff66"
+      "lightColorHEX": "88ff66",
+      "noShadow": true
     },
     {
       "textureName": "BAL8G0",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "88ff66"
+      "lightColorHEX": "88ff66",
+      "noShadow": true
     },
     {
       "textureName": "BAL8H0",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "88ff66"
+      "lightColorHEX": "88ff66",
+      "noShadow": true
     },
     {
       "textureName": "BAR1A0",
-      "emissiveMult": 1.2,
+      "emissiveMult": 1.6,
       "noShadow": true,
-      "lightIntensity": 180,
+      "lightIntensity": 520,
       "lightColorHEX": "3dff4a"
     },
     {
       "textureName": "BAR1B0",
-      "emissiveMult": 1.0,
+      "emissiveMult": 1.4,
       "noShadow": true,
-      "lightIntensity": 140,
+      "lightIntensity": 420,
       "lightColorHEX": "2ecc40"
     },
     {
       "textureName": "BEXPA0",
-      "emissiveMult": 0.55,
-      "noShadow": true,
-      "lightIntensity": 2000,
-      "lightColorHEX": "66ff44"
+      "emissiveMult": 0.65,
+      "lightIntensity": 2400,
+      "lightColorHEX": "66ff44",
+      "noShadow": true
     },
     {
       "textureName": "BEXPB0",
-      "emissiveMult": 0.55,
-      "noShadow": true,
-      "lightIntensity": 2000,
-      "lightColorHEX": "66ff44"
+      "emissiveMult": 0.65,
+      "lightIntensity": 2400,
+      "lightColorHEX": "66ff44",
+      "noShadow": true
     },
     {
       "textureName": "BEXPC0",
-      "emissiveMult": 0.55,
-      "noShadow": true,
-      "lightIntensity": 2000,
-      "lightColorHEX": "66ff44"
+      "emissiveMult": 0.65,
+      "lightIntensity": 2400,
+      "lightColorHEX": "66ff44",
+      "noShadow": true
     },
     {
       "textureName": "BEXPD0",
-      "emissiveMult": 0.55,
-      "noShadow": true,
-      "lightIntensity": 2000,
-      "lightColorHEX": "66ff44"
+      "emissiveMult": 0.65,
+      "lightIntensity": 2400,
+      "lightColorHEX": "66ff44",
+      "noShadow": true
     },
     {
       "textureName": "BEXPE0",
-      "emissiveMult": 0.55,
-      "noShadow": true,
-      "lightIntensity": 2000,
-      "lightColorHEX": "66ff44"
+      "emissiveMult": 0.65,
+      "lightIntensity": 2400,
+      "lightColorHEX": "66ff44",
+      "noShadow": true
     },
     {
       "textureName": "BEXPF0",
-      "emissiveMult": 0.55,
-      "noShadow": true,
-      "lightIntensity": 2000,
-      "lightColorHEX": "66ff44"
+      "emissiveMult": 0.65,
+      "lightIntensity": 2400,
+      "lightColorHEX": "66ff44",
+      "noShadow": true
     },
     {
       "textureName": "BEXPG0",
-      "emissiveMult": 0.55,
-      "noShadow": true,
-      "lightIntensity": 2000,
-      "lightColorHEX": "66ff44"
+      "emissiveMult": 0.65,
+      "lightIntensity": 2400,
+      "lightColorHEX": "66ff44",
+      "noShadow": true
     },
     {
       "textureName": "BEXPH0",
-      "emissiveMult": 0.55,
-      "noShadow": true,
-      "lightIntensity": 2000,
-      "lightColorHEX": "66ff44"
+      "emissiveMult": 0.65,
+      "lightIntensity": 2400,
+      "lightColorHEX": "66ff44",
+      "noShadow": true
     },
     {
       "textureName": "BEXPI0",
-      "emissiveMult": 0.55,
-      "noShadow": true,
-      "lightIntensity": 2000,
-      "lightColorHEX": "66ff44"
+      "emissiveMult": 0.65,
+      "lightIntensity": 2400,
+      "lightColorHEX": "66ff44",
+      "noShadow": true
     },
     {
       "textureName": "BFE1A0",
       "emissiveMult": 0.5,
-      "noShadow": true,
       "lightIntensity": 3000,
-      "lightColorHEX": "66ff33"
+      "lightColorHEX": "66ff33",
+      "noShadow": true
     },
     {
       "textureName": "BFE1B0",
       "emissiveMult": 0.5,
-      "noShadow": true,
       "lightIntensity": 3000,
-      "lightColorHEX": "66ff33"
+      "lightColorHEX": "66ff33",
+      "noShadow": true
     },
     {
       "textureName": "BFE1C0",
       "emissiveMult": 0.5,
-      "noShadow": true,
       "lightIntensity": 3000,
-      "lightColorHEX": "66ff33"
+      "lightColorHEX": "66ff33",
+      "noShadow": true
     },
     {
       "textureName": "BFE1D0",
       "emissiveMult": 0.5,
-      "noShadow": true,
       "lightIntensity": 3000,
-      "lightColorHEX": "66ff33"
+      "lightColorHEX": "66ff33",
+      "noShadow": true
     },
     {
       "textureName": "BFE1E0",
       "emissiveMult": 0.5,
-      "noShadow": true,
       "lightIntensity": 3000,
-      "lightColorHEX": "66ff33"
+      "lightColorHEX": "66ff33",
+      "noShadow": true
     },
     {
       "textureName": "BFE1F0",
       "emissiveMult": 0.5,
-      "noShadow": true,
       "lightIntensity": 3000,
-      "lightColorHEX": "66ff33"
+      "lightColorHEX": "66ff33",
+      "noShadow": true
     },
     {
       "textureName": "BFE2A0",
       "emissiveMult": 0.45,
-      "noShadow": true,
       "lightIntensity": 2500,
-      "lightColorHEX": "66ff33"
+      "lightColorHEX": "66ff33",
+      "noShadow": true
     },
     {
       "textureName": "BFE2B0",
       "emissiveMult": 0.45,
-      "noShadow": true,
       "lightIntensity": 2500,
-      "lightColorHEX": "66ff33"
+      "lightColorHEX": "66ff33",
+      "noShadow": true
     },
     {
       "textureName": "BFE2C0",
       "emissiveMult": 0.45,
-      "noShadow": true,
       "lightIntensity": 2500,
-      "lightColorHEX": "66ff33"
+      "lightColorHEX": "66ff33",
+      "noShadow": true
     },
     {
       "textureName": "BFE2D0",
       "emissiveMult": 0.45,
-      "noShadow": true,
       "lightIntensity": 2500,
-      "lightColorHEX": "66ff33"
+      "lightColorHEX": "66ff33",
+      "noShadow": true
     },
     {
       "textureName": "BFE2E0",
       "emissiveMult": 0.45,
-      "noShadow": true,
       "lightIntensity": 2500,
-      "lightColorHEX": "66ff33"
+      "lightColorHEX": "66ff33",
+      "noShadow": true
     },
     {
       "textureName": "BFE2F0",
       "emissiveMult": 0.45,
-      "noShadow": true,
       "lightIntensity": 2500,
-      "lightColorHEX": "66ff33"
+      "lightColorHEX": "66ff33",
+      "noShadow": true
     },
     {
       "textureName": "BFGFA0",
       "emissiveMult": 1.0,
-      "noShadow": true,
       "lightIntensity": 1800,
-      "lightColorHEX": "66ff33"
+      "lightColorHEX": "66ff33",
+      "noShadow": true
     },
     {
       "textureName": "BFGFB0",
       "emissiveMult": 1.0,
-      "noShadow": true,
       "lightIntensity": 1800,
-      "lightColorHEX": "66ff33"
+      "lightColorHEX": "66ff33",
+      "noShadow": true
     },
     {
       "textureName": "BFGFC0",
       "emissiveMult": 1.0,
-      "noShadow": true,
       "lightIntensity": 1800,
-      "lightColorHEX": "66ff33"
+      "lightColorHEX": "66ff33",
+      "noShadow": true
     },
     {
       "textureName": "BFGFD0",
       "emissiveMult": 1.0,
-      "noShadow": true,
       "lightIntensity": 1800,
-      "lightColorHEX": "66ff33"
+      "lightColorHEX": "66ff33",
+      "noShadow": true
     },
     {
       "textureName": "BFGFE0",
       "emissiveMult": 1.0,
-      "noShadow": true,
       "lightIntensity": 1800,
-      "lightColorHEX": "66ff33"
+      "lightColorHEX": "66ff33",
+      "noShadow": true
     },
     {
       "textureName": "BFGFF0",
       "emissiveMult": 1.0,
-      "noShadow": true,
       "lightIntensity": 1800,
-      "lightColorHEX": "66ff33"
+      "lightColorHEX": "66ff33",
+      "noShadow": true
     },
     {
       "textureName": "BFGFG0",
       "emissiveMult": 1.0,
-      "noShadow": true,
       "lightIntensity": 1800,
-      "lightColorHEX": "66ff33"
+      "lightColorHEX": "66ff33",
+      "noShadow": true
     },
     {
       "textureName": "BFGFH0",
       "emissiveMult": 1.0,
-      "noShadow": true,
       "lightIntensity": 1800,
-      "lightColorHEX": "66ff33"
+      "lightColorHEX": "66ff33",
+      "noShadow": true
     },
     {
       "textureName": "BFGGA0",
       "emissiveMult": 0.8,
-      "noShadow": true,
       "lightIntensity": 1400,
-      "lightColorHEX": "66ff33"
+      "lightColorHEX": "66ff33",
+      "noShadow": true
     },
     {
       "textureName": "BFGGB0",
       "emissiveMult": 0.8,
-      "noShadow": true,
       "lightIntensity": 1400,
-      "lightColorHEX": "66ff33"
+      "lightColorHEX": "66ff33",
+      "noShadow": true
     },
     {
       "textureName": "BFGGC0",
       "emissiveMult": 0.8,
-      "noShadow": true,
       "lightIntensity": 1400,
-      "lightColorHEX": "66ff33"
+      "lightColorHEX": "66ff33",
+      "noShadow": true
     },
     {
       "textureName": "BFGGD0",
       "emissiveMult": 0.8,
-      "noShadow": true,
       "lightIntensity": 1400,
-      "lightColorHEX": "66ff33"
+      "lightColorHEX": "66ff33",
+      "noShadow": true
     },
     {
       "textureName": "BFGGE0",
       "emissiveMult": 0.8,
-      "noShadow": true,
       "lightIntensity": 1400,
-      "lightColorHEX": "66ff33"
+      "lightColorHEX": "66ff33",
+      "noShadow": true
     },
     {
       "textureName": "BFLMA0",
       "emissiveMult": 0.8,
-      "noShadow": true,
       "lightIntensity": 650,
-      "lightColorHEX": "4488ff"
+      "lightColorHEX": "4488ff",
+      "noShadow": true
     },
     {
       "textureName": "BFLMB0",
       "emissiveMult": 0.8,
-      "noShadow": true,
       "lightIntensity": 650,
-      "lightColorHEX": "4488ff"
+      "lightColorHEX": "4488ff",
+      "noShadow": true
     },
     {
       "textureName": "BFLMC0",
       "emissiveMult": 0.8,
-      "noShadow": true,
       "lightIntensity": 650,
-      "lightColorHEX": "4488ff"
+      "lightColorHEX": "4488ff",
+      "noShadow": true
     },
     {
       "textureName": "BFLMD0",
       "emissiveMult": 0.8,
-      "noShadow": true,
       "lightIntensity": 650,
-      "lightColorHEX": "4488ff"
+      "lightColorHEX": "4488ff",
+      "noShadow": true
     },
     {
       "textureName": "BFLME0",
       "emissiveMult": 0.8,
-      "noShadow": true,
       "lightIntensity": 650,
-      "lightColorHEX": "4488ff"
+      "lightColorHEX": "4488ff",
+      "noShadow": true
     },
     {
       "textureName": "BFS1A0",
       "emissiveMult": 0.5,
-      "noShadow": true,
       "lightIntensity": 3000,
-      "lightColorHEX": "66ff33"
+      "lightColorHEX": "66ff33",
+      "noShadow": true
     },
     {
       "textureName": "BFS1B0",
       "emissiveMult": 0.5,
-      "noShadow": true,
       "lightIntensity": 3000,
-      "lightColorHEX": "66ff33"
+      "lightColorHEX": "66ff33",
+      "noShadow": true
     },
     {
       "textureName": "BKEYA0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 160,
-      "lightColorHEX": "4488ff"
+      "lightColorHEX": "4488ff",
+      "noShadow": true
     },
     {
       "textureName": "BKEYB0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 160,
-      "lightColorHEX": "4488ff"
+      "lightColorHEX": "4488ff",
+      "noShadow": true
     },
     {
       "textureName": "BSKUA0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 160,
-      "lightColorHEX": "4488ff"
+      "lightColorHEX": "4488ff",
+      "noShadow": true
     },
     {
       "textureName": "BSKUB0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 160,
-      "lightColorHEX": "4488ff"
+      "lightColorHEX": "4488ff",
+      "noShadow": true
     },
     {
       "textureName": "CANDA0",
       "emissiveMult": 0.5,
-      "noShadow": true,
       "lightIntensity": 280,
-      "lightColorHEX": "ffaa55"
+      "lightColorHEX": "ffaa55",
+      "noShadow": true
     },
     {
       "textureName": "CANDB0",
       "emissiveMult": 0.5,
-      "noShadow": true,
       "lightIntensity": 280,
-      "lightColorHEX": "ffaa55"
+      "lightColorHEX": "ffaa55",
+      "noShadow": true
     },
     {
       "textureName": "CANDC0",
       "emissiveMult": 0.5,
-      "noShadow": true,
       "lightIntensity": 280,
-      "lightColorHEX": "ffaa55"
+      "lightColorHEX": "ffaa55",
+      "noShadow": true
     },
     {
       "textureName": "CANDD0",
       "emissiveMult": 0.5,
-      "noShadow": true,
       "lightIntensity": 280,
-      "lightColorHEX": "ffaa55"
+      "lightColorHEX": "ffaa55",
+      "noShadow": true
     },
     {
       "textureName": "CBFGA0",
       "emissiveMult": 0.8,
-      "noShadow": true,
       "lightIntensity": 1600,
-      "lightColorHEX": "66ff33"
+      "lightColorHEX": "66ff33",
+      "noShadow": true
     },
     {
       "textureName": "CBFGB0",
       "emissiveMult": 0.8,
-      "noShadow": true,
       "lightIntensity": 1600,
-      "lightColorHEX": "66ff33"
+      "lightColorHEX": "66ff33",
+      "noShadow": true
     },
     {
       "textureName": "CBFGC0",
       "emissiveMult": 0.8,
-      "noShadow": true,
       "lightIntensity": 1600,
-      "lightColorHEX": "66ff33"
+      "lightColorHEX": "66ff33",
+      "noShadow": true
     },
     {
       "textureName": "CBFGD0",
       "emissiveMult": 0.8,
-      "noShadow": true,
       "lightIntensity": 1600,
-      "lightColorHEX": "66ff33"
+      "lightColorHEX": "66ff33",
+      "noShadow": true
     },
     {
       "textureName": "CBFGE0",
       "emissiveMult": 0.8,
-      "noShadow": true,
       "lightIntensity": 1600,
-      "lightColorHEX": "66ff33"
+      "lightColorHEX": "66ff33",
+      "noShadow": true
     },
     {
       "textureName": "CHGFA0",
       "emissiveMult": 1.0,
-      "noShadow": true,
       "lightIntensity": 900,
-      "lightColorHEX": "ffcc88"
+      "lightColorHEX": "ffcc88",
+      "noShadow": true
     },
     {
       "textureName": "CHGFB0",
       "emissiveMult": 1.0,
-      "noShadow": true,
       "lightIntensity": 900,
-      "lightColorHEX": "ffcc88"
+      "lightColorHEX": "ffcc88",
+      "noShadow": true
     },
     {
       "textureName": "CHGFC0",
       "emissiveMult": 1.0,
-      "noShadow": true,
       "lightIntensity": 900,
-      "lightColorHEX": "ffcc88"
+      "lightColorHEX": "ffcc88",
+      "noShadow": true
     },
     {
       "textureName": "CHGFD0",
       "emissiveMult": 1.0,
-      "noShadow": true,
       "lightIntensity": 900,
-      "lightColorHEX": "ffcc88"
+      "lightColorHEX": "ffcc88",
+      "noShadow": true
     },
     {
       "textureName": "CLCGA0",
       "emissiveMult": 1.0,
-      "noShadow": true,
       "lightIntensity": 900,
-      "lightColorHEX": "66bbff"
+      "lightColorHEX": "66bbff",
+      "noShadow": true
     },
     {
       "textureName": "CLCGB0",
       "emissiveMult": 1.0,
-      "noShadow": true,
       "lightIntensity": 900,
-      "lightColorHEX": "66bbff"
+      "lightColorHEX": "66bbff",
+      "noShadow": true
     },
     {
       "textureName": "CLCGC0",
       "emissiveMult": 1.0,
-      "noShadow": true,
       "lightIntensity": 900,
-      "lightColorHEX": "66bbff"
+      "lightColorHEX": "66bbff",
+      "noShadow": true
     },
     {
       "textureName": "CLCGD0",
       "emissiveMult": 1.0,
-      "noShadow": true,
       "lightIntensity": 900,
-      "lightColorHEX": "66bbff"
+      "lightColorHEX": "66bbff",
+      "noShadow": true
     },
     {
       "textureName": "CPISA0",
       "emissiveMult": 1.0,
-      "noShadow": true,
       "lightIntensity": 700,
-      "lightColorHEX": "ffcc88"
+      "lightColorHEX": "ffcc88",
+      "noShadow": true
     },
     {
       "textureName": "CPISB0",
       "emissiveMult": 1.0,
-      "noShadow": true,
       "lightIntensity": 700,
-      "lightColorHEX": "ffcc88"
+      "lightColorHEX": "ffcc88",
+      "noShadow": true
     },
     {
       "textureName": "CPISC0",
       "emissiveMult": 1.0,
-      "noShadow": true,
       "lightIntensity": 700,
-      "lightColorHEX": "ffcc88"
+      "lightColorHEX": "ffcc88",
+      "noShadow": true
     },
     {
       "textureName": "CPISD0",
       "emissiveMult": 1.0,
-      "noShadow": true,
       "lightIntensity": 700,
-      "lightColorHEX": "ffcc88"
+      "lightColorHEX": "ffcc88",
+      "noShadow": true
     },
     {
       "textureName": "CPLSA0",
       "emissiveMult": 0.5,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "66ccff"
+      "lightColorHEX": "66ccff",
+      "noShadow": true
     },
     {
       "textureName": "CPLSE0",
       "emissiveMult": 0.5,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "66ccff"
+      "lightColorHEX": "66ccff",
+      "noShadow": true
+    },
+    {
+      "textureName": "CPOSF1",
+      "emissiveMult": 0.35,
+      "lightIntensity": 520,
+      "lightColorHEX": "ff8c52"
+    },
+    {
+      "textureName": "CPOSF2",
+      "emissiveMult": 0.35,
+      "lightIntensity": 520,
+      "lightColorHEX": "ff8c52"
+    },
+    {
+      "textureName": "CPOSF3",
+      "emissiveMult": 0.35,
+      "lightIntensity": 520,
+      "lightColorHEX": "ff8c52"
+    },
+    {
+      "textureName": "CPOSF4",
+      "emissiveMult": 0.35,
+      "lightIntensity": 520,
+      "lightColorHEX": "ff8c52"
+    },
+    {
+      "textureName": "CPOSF5",
+      "emissiveMult": 0.35,
+      "lightIntensity": 520,
+      "lightColorHEX": "ff8c52"
+    },
+    {
+      "textureName": "CPOSF6",
+      "emissiveMult": 0.35,
+      "lightIntensity": 520,
+      "lightColorHEX": "ff8c52"
+    },
+    {
+      "textureName": "CPOSF7",
+      "emissiveMult": 0.35,
+      "lightIntensity": 520,
+      "lightColorHEX": "ff8c52"
+    },
+    {
+      "textureName": "CPOSF8",
+      "emissiveMult": 0.35,
+      "lightIntensity": 520,
+      "lightColorHEX": "ff8c52"
     },
     {
       "textureName": "CRCKA0",
       "emissiveMult": 0.5,
-      "noShadow": true,
       "lightIntensity": 1400,
-      "lightColorHEX": "ffaa33"
+      "lightColorHEX": "ffaa33",
+      "noShadow": true
     },
     {
       "textureName": "CRCKB0",
       "emissiveMult": 0.5,
-      "noShadow": true,
       "lightIntensity": 1400,
-      "lightColorHEX": "ffaa33"
+      "lightColorHEX": "ffaa33",
+      "noShadow": true
     },
     {
       "textureName": "CRCKC0",
       "emissiveMult": 0.5,
-      "noShadow": true,
       "lightIntensity": 1400,
-      "lightColorHEX": "ffaa33"
+      "lightColorHEX": "ffaa33",
+      "noShadow": true
     },
     {
       "textureName": "CRCKD0",
       "emissiveMult": 0.5,
-      "noShadow": true,
       "lightIntensity": 1400,
-      "lightColorHEX": "ffaa33"
+      "lightColorHEX": "ffaa33",
+      "noShadow": true
     },
     {
       "textureName": "CRCKE0",
       "emissiveMult": 0.5,
-      "noShadow": true,
       "lightIntensity": 1400,
-      "lightColorHEX": "ffaa33"
+      "lightColorHEX": "ffaa33",
+      "noShadow": true
     },
     {
       "textureName": "CRCKF0",
       "emissiveMult": 0.5,
-      "noShadow": true,
       "lightIntensity": 1400,
-      "lightColorHEX": "ffaa33"
+      "lightColorHEX": "ffaa33",
+      "noShadow": true
     },
     {
       "textureName": "CSHTA0",
       "emissiveMult": 1.0,
-      "noShadow": true,
       "lightIntensity": 1100,
-      "lightColorHEX": "ffcc88"
+      "lightColorHEX": "ffcc88",
+      "noShadow": true
     },
     {
       "textureName": "CSHTB0",
       "emissiveMult": 1.0,
-      "noShadow": true,
       "lightIntensity": 1100,
-      "lightColorHEX": "ffcc88"
+      "lightColorHEX": "ffcc88",
+      "noShadow": true
     },
     {
       "textureName": "CSHTC0",
       "emissiveMult": 1.0,
-      "noShadow": true,
       "lightIntensity": 1100,
-      "lightColorHEX": "ffcc88"
+      "lightColorHEX": "ffcc88",
+      "noShadow": true
     },
     {
       "textureName": "CSHTD0",
       "emissiveMult": 1.0,
-      "noShadow": true,
       "lightIntensity": 1100,
-      "lightColorHEX": "ffcc88"
+      "lightColorHEX": "ffcc88",
+      "noShadow": true
     },
     {
       "textureName": "CSSGA0",
       "emissiveMult": 1.0,
-      "noShadow": true,
       "lightIntensity": 1300,
-      "lightColorHEX": "ffcc88"
+      "lightColorHEX": "ffcc88",
+      "noShadow": true
     },
     {
       "textureName": "CSSGB0",
       "emissiveMult": 1.0,
-      "noShadow": true,
       "lightIntensity": 1300,
-      "lightColorHEX": "ffcc88"
+      "lightColorHEX": "ffcc88",
+      "noShadow": true
     },
     {
       "textureName": "CSSGC0",
       "emissiveMult": 1.0,
-      "noShadow": true,
       "lightIntensity": 1300,
-      "lightColorHEX": "ffcc88"
+      "lightColorHEX": "ffcc88",
+      "noShadow": true
     },
     {
       "textureName": "CSSGD0",
       "emissiveMult": 1.0,
-      "noShadow": true,
       "lightIntensity": 1300,
-      "lightColorHEX": "ffcc88"
+      "lightColorHEX": "ffcc88",
+      "noShadow": true
     },
     {
       "textureName": "FIREA0",
       "emissiveMult": 0.7,
-      "noShadow": true,
       "lightIntensity": 700,
-      "lightColorHEX": "ff8020"
+      "lightColorHEX": "ff8020",
+      "noShadow": true
     },
     {
       "textureName": "FIREB0",
       "emissiveMult": 0.7,
-      "noShadow": true,
       "lightIntensity": 700,
-      "lightColorHEX": "ff8020"
+      "lightColorHEX": "ff8020",
+      "noShadow": true
     },
     {
       "textureName": "FIREC0",
       "emissiveMult": 0.7,
-      "noShadow": true,
       "lightIntensity": 700,
-      "lightColorHEX": "ff8020"
+      "lightColorHEX": "ff8020",
+      "noShadow": true
     },
     {
       "textureName": "FIRED0",
       "emissiveMult": 0.7,
-      "noShadow": true,
       "lightIntensity": 700,
-      "lightColorHEX": "ff8020"
+      "lightColorHEX": "ff8020",
+      "noShadow": true
     },
     {
       "textureName": "FIREE0",
       "emissiveMult": 0.7,
-      "noShadow": true,
       "lightIntensity": 700,
-      "lightColorHEX": "ff8020"
+      "lightColorHEX": "ff8020",
+      "noShadow": true
     },
     {
       "textureName": "GFLMA0",
       "emissiveMult": 0.8,
-      "noShadow": true,
       "lightIntensity": 650,
-      "lightColorHEX": "44ff66"
+      "lightColorHEX": "44ff66",
+      "noShadow": true
     },
     {
       "textureName": "GFLMB0",
       "emissiveMult": 0.8,
-      "noShadow": true,
       "lightIntensity": 650,
-      "lightColorHEX": "44ff66"
+      "lightColorHEX": "44ff66",
+      "noShadow": true
     },
     {
       "textureName": "GFLMC0",
       "emissiveMult": 0.8,
-      "noShadow": true,
       "lightIntensity": 650,
-      "lightColorHEX": "44ff66"
+      "lightColorHEX": "44ff66",
+      "noShadow": true
     },
     {
       "textureName": "GFLMD0",
       "emissiveMult": 0.8,
-      "noShadow": true,
       "lightIntensity": 650,
-      "lightColorHEX": "44ff66"
+      "lightColorHEX": "44ff66",
+      "noShadow": true
     },
     {
       "textureName": "GFLME0",
       "emissiveMult": 0.8,
-      "noShadow": true,
       "lightIntensity": 650,
-      "lightColorHEX": "44ff66"
+      "lightColorHEX": "44ff66",
+      "noShadow": true
     },
     {
       "textureName": "GTCHA0",
       "emissiveMult": 0.7,
-      "noShadow": true,
       "lightIntensity": 500,
-      "lightColorHEX": "44ff66"
+      "lightColorHEX": "44ff66",
+      "noShadow": true
     },
     {
       "textureName": "GTCHB0",
       "emissiveMult": 0.7,
-      "noShadow": true,
       "lightIntensity": 500,
-      "lightColorHEX": "44ff66"
+      "lightColorHEX": "44ff66",
+      "noShadow": true
     },
     {
       "textureName": "GTCHC0",
       "emissiveMult": 0.7,
-      "noShadow": true,
       "lightIntensity": 500,
-      "lightColorHEX": "44ff66"
+      "lightColorHEX": "44ff66",
+      "noShadow": true
     },
     {
       "textureName": "GTCHD0",
       "emissiveMult": 0.7,
-      "noShadow": true,
       "lightIntensity": 500,
-      "lightColorHEX": "44ff66"
+      "lightColorHEX": "44ff66",
+      "noShadow": true
     },
     {
       "textureName": "GTCHE0",
       "emissiveMult": 0.7,
-      "noShadow": true,
       "lightIntensity": 500,
-      "lightColorHEX": "44ff66"
+      "lightColorHEX": "44ff66",
+      "noShadow": true
     },
     {
       "textureName": "IFOGA0",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 450,
-      "lightColorHEX": "66ffaa"
+      "lightColorHEX": "66ffaa",
+      "noShadow": true
     },
     {
       "textureName": "IFOGB0",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 450,
-      "lightColorHEX": "66ffaa"
+      "lightColorHEX": "66ffaa",
+      "noShadow": true
     },
     {
       "textureName": "IFOGC0",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 450,
-      "lightColorHEX": "66ffaa"
+      "lightColorHEX": "66ffaa",
+      "noShadow": true
     },
     {
       "textureName": "IFOGD0",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 450,
-      "lightColorHEX": "66ffaa"
+      "lightColorHEX": "66ffaa",
+      "noShadow": true
     },
     {
       "textureName": "IFOGE0",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 450,
-      "lightColorHEX": "66ffaa"
+      "lightColorHEX": "66ffaa",
+      "noShadow": true
     },
     {
       "textureName": "LPUFA0",
       "emissiveMult": 0.55,
-      "noShadow": true,
       "lightIntensity": 300,
-      "lightColorHEX": "aaccff"
+      "lightColorHEX": "aaccff",
+      "noShadow": true
     },
     {
       "textureName": "LPUFB0",
       "emissiveMult": 0.55,
-      "noShadow": true,
       "lightIntensity": 300,
-      "lightColorHEX": "aaccff"
+      "lightColorHEX": "aaccff",
+      "noShadow": true
     },
     {
       "textureName": "LPUFC0",
       "emissiveMult": 0.55,
-      "noShadow": true,
       "lightIntensity": 300,
-      "lightColorHEX": "aaccff"
+      "lightColorHEX": "aaccff",
+      "noShadow": true
     },
     {
       "textureName": "MANFA1",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 1200,
-      "lightColorHEX": "ff8c20"
+      "lightColorHEX": "ff8c20",
+      "noShadow": true
     },
     {
       "textureName": "MANFA2A8",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 1200,
-      "lightColorHEX": "ff8c20"
+      "lightColorHEX": "ff8c20",
+      "noShadow": true
     },
     {
       "textureName": "MANFA3A7",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 1200,
-      "lightColorHEX": "ff8c20"
+      "lightColorHEX": "ff8c20",
+      "noShadow": true
     },
     {
       "textureName": "MANFA4A6",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 1200,
-      "lightColorHEX": "ff8c20"
+      "lightColorHEX": "ff8c20",
+      "noShadow": true
     },
     {
       "textureName": "MANFA5",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 1200,
-      "lightColorHEX": "ff8c20"
+      "lightColorHEX": "ff8c20",
+      "noShadow": true
     },
     {
       "textureName": "MANFB1",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 1200,
-      "lightColorHEX": "ff8c20"
+      "lightColorHEX": "ff8c20",
+      "noShadow": true
     },
     {
       "textureName": "MANFB2B8",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 1200,
-      "lightColorHEX": "ff8c20"
+      "lightColorHEX": "ff8c20",
+      "noShadow": true
     },
     {
       "textureName": "MANFB3B7",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 1200,
-      "lightColorHEX": "ff8c20"
+      "lightColorHEX": "ff8c20",
+      "noShadow": true
     },
     {
       "textureName": "MANFB4B6",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 1200,
-      "lightColorHEX": "ff8c20"
+      "lightColorHEX": "ff8c20",
+      "noShadow": true
     },
     {
       "textureName": "MANFB5",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 1200,
-      "lightColorHEX": "ff8c20"
+      "lightColorHEX": "ff8c20",
+      "noShadow": true
     },
     {
       "textureName": "MANFC1",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 1200,
-      "lightColorHEX": "ff8c20"
+      "lightColorHEX": "ff8c20",
+      "noShadow": true
     },
     {
       "textureName": "MANFC2C8",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 1200,
-      "lightColorHEX": "ff8c20"
+      "lightColorHEX": "ff8c20",
+      "noShadow": true
     },
     {
       "textureName": "MANFC3C7",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 1200,
-      "lightColorHEX": "ff8c20"
+      "lightColorHEX": "ff8c20",
+      "noShadow": true
     },
     {
       "textureName": "MANFC4C6",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 1200,
-      "lightColorHEX": "ff8c20"
+      "lightColorHEX": "ff8c20",
+      "noShadow": true
     },
     {
       "textureName": "MANFC5",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 1200,
-      "lightColorHEX": "ff8c20"
+      "lightColorHEX": "ff8c20",
+      "noShadow": true
     },
     {
       "textureName": "MANFD0",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 1200,
-      "lightColorHEX": "ff8c20"
+      "lightColorHEX": "ff8c20",
+      "noShadow": true
     },
     {
       "textureName": "MANFE0",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 1200,
-      "lightColorHEX": "ff8c20"
+      "lightColorHEX": "ff8c20",
+      "noShadow": true
     },
     {
       "textureName": "MANFF0",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 1200,
-      "lightColorHEX": "ff8c20"
+      "lightColorHEX": "ff8c20",
+      "noShadow": true
     },
     {
       "textureName": "MANFG0",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 1200,
-      "lightColorHEX": "ff8c20"
+      "lightColorHEX": "ff8c20",
+      "noShadow": true
     },
     {
       "textureName": "MANFH0",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 1200,
-      "lightColorHEX": "ff8c20"
+      "lightColorHEX": "ff8c20",
+      "noShadow": true
     },
     {
       "textureName": "MANFI0",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 1200,
-      "lightColorHEX": "ff8c20"
+      "lightColorHEX": "ff8c20",
+      "noShadow": true
     },
     {
       "textureName": "MEGAA0",
       "emissiveMult": 0.7,
-      "noShadow": true,
       "lightIntensity": 300,
-      "lightColorHEX": "8866ff"
+      "lightColorHEX": "8866ff",
+      "noShadow": true
     },
     {
       "textureName": "MEGAB0",
       "emissiveMult": 0.7,
-      "noShadow": true,
       "lightIntensity": 300,
-      "lightColorHEX": "8866ff"
+      "lightColorHEX": "8866ff",
+      "noShadow": true
     },
     {
       "textureName": "MEGAC0",
       "emissiveMult": 0.7,
-      "noShadow": true,
       "lightIntensity": 300,
-      "lightColorHEX": "8866ff"
+      "lightColorHEX": "8866ff",
+      "noShadow": true
     },
     {
       "textureName": "MEGAD0",
       "emissiveMult": 0.7,
-      "noShadow": true,
       "lightIntensity": 300,
-      "lightColorHEX": "8866ff"
+      "lightColorHEX": "8866ff",
+      "noShadow": true
     },
     {
       "textureName": "MISFA0",
       "emissiveMult": 1.0,
-      "noShadow": true,
       "lightIntensity": 900,
-      "lightColorHEX": "ffb060"
+      "lightColorHEX": "ffb060",
+      "noShadow": true
     },
     {
       "textureName": "MISFB0",
       "emissiveMult": 1.0,
-      "noShadow": true,
       "lightIntensity": 900,
-      "lightColorHEX": "ffb060"
+      "lightColorHEX": "ffb060",
+      "noShadow": true
     },
     {
       "textureName": "MISFC0",
       "emissiveMult": 1.0,
-      "noShadow": true,
       "lightIntensity": 900,
-      "lightColorHEX": "ffb060"
+      "lightColorHEX": "ffb060",
+      "noShadow": true
     },
     {
       "textureName": "MISFD0",
       "emissiveMult": 1.0,
-      "noShadow": true,
       "lightIntensity": 900,
-      "lightColorHEX": "ffb060"
+      "lightColorHEX": "ffb060",
+      "noShadow": true
     },
     {
       "textureName": "MISLA1",
       "emissiveMult": 0.45,
-      "noShadow": true,
       "lightIntensity": 2200,
-      "lightColorHEX": "ff9a40"
+      "lightColorHEX": "ff9a40",
+      "noShadow": true
     },
     {
       "textureName": "MISLA2A8",
       "emissiveMult": 0.45,
-      "noShadow": true,
       "lightIntensity": 2200,
-      "lightColorHEX": "ff9a40"
+      "lightColorHEX": "ff9a40",
+      "noShadow": true
     },
     {
       "textureName": "MISLA3A7",
       "emissiveMult": 0.45,
-      "noShadow": true,
       "lightIntensity": 2200,
-      "lightColorHEX": "ff9a40"
+      "lightColorHEX": "ff9a40",
+      "noShadow": true
     },
     {
       "textureName": "MISLA4A6",
       "emissiveMult": 0.45,
-      "noShadow": true,
       "lightIntensity": 2200,
-      "lightColorHEX": "ff9a40"
+      "lightColorHEX": "ff9a40",
+      "noShadow": true
     },
     {
       "textureName": "MISLA5",
       "emissiveMult": 0.45,
-      "noShadow": true,
       "lightIntensity": 2200,
-      "lightColorHEX": "ff9a40"
+      "lightColorHEX": "ff9a40",
+      "noShadow": true
     },
     {
       "textureName": "MISLB0",
       "emissiveMult": 0.45,
-      "noShadow": true,
       "lightIntensity": 2200,
-      "lightColorHEX": "ff9a40"
+      "lightColorHEX": "ff9a40",
+      "noShadow": true
     },
     {
       "textureName": "MISLC0",
       "emissiveMult": 0.45,
-      "noShadow": true,
       "lightIntensity": 2200,
-      "lightColorHEX": "ff9a40"
+      "lightColorHEX": "ff9a40",
+      "noShadow": true
     },
     {
       "textureName": "MISLD0",
       "emissiveMult": 0.45,
-      "noShadow": true,
       "lightIntensity": 2200,
-      "lightColorHEX": "ff9a40"
+      "lightColorHEX": "ff9a40",
+      "noShadow": true
     },
     {
       "textureName": "MISLE0",
       "emissiveMult": 0.45,
-      "noShadow": true,
       "lightIntensity": 2200,
-      "lightColorHEX": "ff9a40"
+      "lightColorHEX": "ff9a40",
+      "noShadow": true
     },
     {
       "textureName": "MISLF0",
       "emissiveMult": 0.45,
-      "noShadow": true,
       "lightIntensity": 2200,
-      "lightColorHEX": "ff9a40"
+      "lightColorHEX": "ff9a40",
+      "noShadow": true
     },
     {
       "textureName": "PINSA0",
       "emissiveMult": 0.5,
-      "noShadow": true,
       "lightIntensity": 200,
-      "lightColorHEX": "66ff99"
+      "lightColorHEX": "66ff99",
+      "noShadow": true
     },
     {
       "textureName": "PINSB0",
       "emissiveMult": 0.5,
-      "noShadow": true,
       "lightIntensity": 200,
-      "lightColorHEX": "66ff99"
+      "lightColorHEX": "66ff99",
+      "noShadow": true
     },
     {
       "textureName": "PINSC0",
       "emissiveMult": 0.5,
-      "noShadow": true,
       "lightIntensity": 200,
-      "lightColorHEX": "66ff99"
+      "lightColorHEX": "66ff99",
+      "noShadow": true
     },
     {
       "textureName": "PINSD0",
       "emissiveMult": 0.5,
-      "noShadow": true,
       "lightIntensity": 200,
-      "lightColorHEX": "66ff99"
+      "lightColorHEX": "66ff99",
+      "noShadow": true
     },
     {
       "textureName": "PINVA0",
       "emissiveMult": 0.5,
-      "noShadow": true,
       "lightIntensity": 200,
-      "lightColorHEX": "aaaaff"
+      "lightColorHEX": "aaaaff",
+      "noShadow": true
     },
     {
       "textureName": "PINVB0",
       "emissiveMult": 0.5,
-      "noShadow": true,
       "lightIntensity": 200,
-      "lightColorHEX": "aaaaff"
+      "lightColorHEX": "aaaaff",
+      "noShadow": true
     },
     {
       "textureName": "PINVC0",
       "emissiveMult": 0.5,
-      "noShadow": true,
       "lightIntensity": 200,
-      "lightColorHEX": "aaaaff"
+      "lightColorHEX": "aaaaff",
+      "noShadow": true
     },
     {
       "textureName": "PINVD0",
       "emissiveMult": 0.5,
-      "noShadow": true,
       "lightIntensity": 200,
-      "lightColorHEX": "aaaaff"
+      "lightColorHEX": "aaaaff",
+      "noShadow": true
     },
     {
       "textureName": "PISFA0",
       "emissiveMult": 1.0,
-      "noShadow": true,
       "lightIntensity": 700,
-      "lightColorHEX": "ffcc88"
+      "lightColorHEX": "ffcc88",
+      "noShadow": true
     },
     {
       "textureName": "PISFB0",
       "emissiveMult": 1.0,
-      "noShadow": true,
       "lightIntensity": 700,
-      "lightColorHEX": "ffcc88"
+      "lightColorHEX": "ffcc88",
+      "noShadow": true
+    },
+    {
+      "textureName": "PLAYF1",
+      "emissiveMult": 0.35,
+      "lightIntensity": 480,
+      "lightColorHEX": "ff8c52"
+    },
+    {
+      "textureName": "PLAYF2F8",
+      "emissiveMult": 0.35,
+      "lightIntensity": 480,
+      "lightColorHEX": "ff8c52"
+    },
+    {
+      "textureName": "PLAYF3F7",
+      "emissiveMult": 0.35,
+      "lightIntensity": 480,
+      "lightColorHEX": "ff8c52"
+    },
+    {
+      "textureName": "PLAYF4F6",
+      "emissiveMult": 0.35,
+      "lightIntensity": 480,
+      "lightColorHEX": "ff8c52"
+    },
+    {
+      "textureName": "PLAYF5",
+      "emissiveMult": 0.35,
+      "lightIntensity": 480,
+      "lightColorHEX": "ff8c52"
     },
     {
       "textureName": "PLSEA0",
       "emissiveMult": 0.45,
-      "noShadow": true,
       "lightIntensity": 1100,
-      "lightColorHEX": "66bbff"
+      "lightColorHEX": "66bbff",
+      "noShadow": true
     },
     {
       "textureName": "PLSEB0",
       "emissiveMult": 0.45,
-      "noShadow": true,
       "lightIntensity": 1100,
-      "lightColorHEX": "66bbff"
+      "lightColorHEX": "66bbff",
+      "noShadow": true
     },
     {
       "textureName": "PLSEC0",
       "emissiveMult": 0.45,
-      "noShadow": true,
       "lightIntensity": 1100,
-      "lightColorHEX": "66bbff"
+      "lightColorHEX": "66bbff",
+      "noShadow": true
     },
     {
       "textureName": "PLSED0",
       "emissiveMult": 0.45,
-      "noShadow": true,
       "lightIntensity": 1100,
-      "lightColorHEX": "66bbff"
+      "lightColorHEX": "66bbff",
+      "noShadow": true
     },
     {
       "textureName": "PLSEE0",
       "emissiveMult": 0.45,
-      "noShadow": true,
       "lightIntensity": 1100,
-      "lightColorHEX": "66bbff"
+      "lightColorHEX": "66bbff",
+      "noShadow": true
     },
     {
       "textureName": "PLSEF0",
       "emissiveMult": 0.45,
-      "noShadow": true,
       "lightIntensity": 1100,
-      "lightColorHEX": "66bbff"
+      "lightColorHEX": "66bbff",
+      "noShadow": true
     },
     {
       "textureName": "PLSFA0",
       "emissiveMult": 1.0,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "66bbff"
+      "lightColorHEX": "66bbff",
+      "noShadow": true
     },
     {
       "textureName": "PLSFB0",
       "emissiveMult": 1.0,
-      "noShadow": true,
       "lightIntensity": 1000,
-      "lightColorHEX": "66bbff"
+      "lightColorHEX": "66bbff",
+      "noShadow": true
     },
     {
       "textureName": "PLSGA0",
       "emissiveMult": 0.5,
-      "noShadow": true,
       "lightIntensity": 900,
-      "lightColorHEX": "55aaff"
+      "lightColorHEX": "55aaff",
+      "noShadow": true
     },
     {
       "textureName": "PLSGB0",
       "emissiveMult": 0.5,
-      "noShadow": true,
       "lightIntensity": 900,
-      "lightColorHEX": "55aaff"
+      "lightColorHEX": "55aaff",
+      "noShadow": true
     },
     {
       "textureName": "PLSGC0",
       "emissiveMult": 0.5,
-      "noShadow": true,
       "lightIntensity": 900,
-      "lightColorHEX": "55aaff"
+      "lightColorHEX": "55aaff",
+      "noShadow": true
     },
     {
       "textureName": "PLSGD0",
       "emissiveMult": 0.5,
-      "noShadow": true,
       "lightIntensity": 900,
-      "lightColorHEX": "55aaff"
+      "lightColorHEX": "55aaff",
+      "noShadow": true
     },
     {
       "textureName": "PLSGE0",
       "emissiveMult": 0.5,
-      "noShadow": true,
       "lightIntensity": 900,
-      "lightColorHEX": "55aaff"
+      "lightColorHEX": "55aaff",
+      "noShadow": true
     },
     {
       "textureName": "PLSGF0",
       "emissiveMult": 0.5,
-      "noShadow": true,
       "lightIntensity": 900,
-      "lightColorHEX": "55aaff"
+      "lightColorHEX": "55aaff",
+      "noShadow": true
     },
     {
       "textureName": "PLSGG0",
       "emissiveMult": 0.5,
-      "noShadow": true,
       "lightIntensity": 900,
-      "lightColorHEX": "55aaff"
+      "lightColorHEX": "55aaff",
+      "noShadow": true
     },
     {
       "textureName": "PLSGH0",
       "emissiveMult": 0.5,
-      "noShadow": true,
       "lightIntensity": 900,
-      "lightColorHEX": "55aaff"
+      "lightColorHEX": "55aaff",
+      "noShadow": true
     },
     {
       "textureName": "PLSGR0",
       "emissiveMult": 0.5,
-      "noShadow": true,
       "lightIntensity": 900,
-      "lightColorHEX": "55aaff"
+      "lightColorHEX": "55aaff",
+      "noShadow": true
     },
     {
       "textureName": "PLSSA0",
       "emissiveMult": 0.45,
-      "noShadow": true,
       "lightIntensity": 900,
-      "lightColorHEX": "55aaff"
+      "lightColorHEX": "55aaff",
+      "noShadow": true
     },
     {
       "textureName": "PLSSB0",
       "emissiveMult": 0.45,
-      "noShadow": true,
       "lightIntensity": 900,
-      "lightColorHEX": "55aaff"
+      "lightColorHEX": "55aaff",
+      "noShadow": true
+    },
+    {
+      "textureName": "POSSF1",
+      "emissiveMult": 0.35,
+      "lightIntensity": 480,
+      "lightColorHEX": "ff8c52"
+    },
+    {
+      "textureName": "POSSF2F8",
+      "emissiveMult": 0.35,
+      "lightIntensity": 480,
+      "lightColorHEX": "ff8c52"
+    },
+    {
+      "textureName": "POSSF3F7",
+      "emissiveMult": 0.35,
+      "lightIntensity": 480,
+      "lightColorHEX": "ff8c52"
+    },
+    {
+      "textureName": "POSSF4F6",
+      "emissiveMult": 0.35,
+      "lightIntensity": 480,
+      "lightColorHEX": "ff8c52"
+    },
+    {
+      "textureName": "POSSF5",
+      "emissiveMult": 0.35,
+      "lightIntensity": 480,
+      "lightColorHEX": "ff8c52"
     },
     {
       "textureName": "PUF2A0",
       "emissiveMult": 0.5,
-      "noShadow": true,
       "lightIntensity": 220,
-      "lightColorHEX": "ffd0a0"
+      "lightColorHEX": "ffd0a0",
+      "noShadow": true
     },
     {
       "textureName": "PUF2B0",
       "emissiveMult": 0.5,
-      "noShadow": true,
       "lightIntensity": 220,
-      "lightColorHEX": "ffd0a0"
+      "lightColorHEX": "ffd0a0",
+      "noShadow": true
     },
     {
       "textureName": "PUF2C0",
       "emissiveMult": 0.5,
-      "noShadow": true,
       "lightIntensity": 220,
-      "lightColorHEX": "ffd0a0"
+      "lightColorHEX": "ffd0a0",
+      "noShadow": true
     },
     {
       "textureName": "PUF2D0",
       "emissiveMult": 0.5,
-      "noShadow": true,
       "lightIntensity": 220,
-      "lightColorHEX": "ffd0a0"
+      "lightColorHEX": "ffd0a0",
+      "noShadow": true
     },
     {
       "textureName": "PUF2E0",
       "emissiveMult": 0.5,
-      "noShadow": true,
       "lightIntensity": 220,
-      "lightColorHEX": "ffd0a0"
+      "lightColorHEX": "ffd0a0",
+      "noShadow": true
     },
     {
       "textureName": "PUF3A0",
       "emissiveMult": 0.5,
-      "noShadow": true,
       "lightIntensity": 220,
-      "lightColorHEX": "ffd0a0"
+      "lightColorHEX": "ffd0a0",
+      "noShadow": true
     },
     {
       "textureName": "PUF3B0",
       "emissiveMult": 0.5,
-      "noShadow": true,
       "lightIntensity": 220,
-      "lightColorHEX": "ffd0a0"
+      "lightColorHEX": "ffd0a0",
+      "noShadow": true
     },
     {
       "textureName": "PUF3C0",
       "emissiveMult": 0.5,
-      "noShadow": true,
       "lightIntensity": 220,
-      "lightColorHEX": "ffd0a0"
+      "lightColorHEX": "ffd0a0",
+      "noShadow": true
     },
     {
       "textureName": "PUF3D0",
       "emissiveMult": 0.5,
-      "noShadow": true,
       "lightIntensity": 220,
-      "lightColorHEX": "ffd0a0"
+      "lightColorHEX": "ffd0a0",
+      "noShadow": true
     },
     {
       "textureName": "PUF3E0",
       "emissiveMult": 0.5,
-      "noShadow": true,
       "lightIntensity": 220,
-      "lightColorHEX": "ffd0a0"
+      "lightColorHEX": "ffd0a0",
+      "noShadow": true
     },
     {
       "textureName": "PUFFA0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 250,
-      "lightColorHEX": "ffd0a0"
+      "lightColorHEX": "ffd0a0",
+      "noShadow": true
     },
     {
       "textureName": "PUFFB0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 250,
-      "lightColorHEX": "ffd0a0"
+      "lightColorHEX": "ffd0a0",
+      "noShadow": true
     },
     {
       "textureName": "PUFFC0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 250,
-      "lightColorHEX": "ffd0a0"
+      "lightColorHEX": "ffd0a0",
+      "noShadow": true
     },
     {
       "textureName": "PUFFD0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 250,
-      "lightColorHEX": "ffd0a0"
+      "lightColorHEX": "ffd0a0",
+      "noShadow": true
     },
     {
       "textureName": "PUFFE0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 250,
-      "lightColorHEX": "ffd0a0"
+      "lightColorHEX": "ffd0a0",
+      "noShadow": true
     },
     {
       "textureName": "PUFFF0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 250,
-      "lightColorHEX": "ffd0a0"
+      "lightColorHEX": "ffd0a0",
+      "noShadow": true
     },
     {
       "textureName": "RBALA1",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 1100,
-      "lightColorHEX": "ff4040"
+      "lightColorHEX": "ff4040",
+      "noShadow": true
     },
     {
       "textureName": "RBALA2A8",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 1100,
-      "lightColorHEX": "ff4040"
+      "lightColorHEX": "ff4040",
+      "noShadow": true
     },
     {
       "textureName": "RBALA3A7",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 1100,
-      "lightColorHEX": "ff4040"
+      "lightColorHEX": "ff4040",
+      "noShadow": true
     },
     {
       "textureName": "RBALA4A6",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 1100,
-      "lightColorHEX": "ff4040"
+      "lightColorHEX": "ff4040",
+      "noShadow": true
     },
     {
       "textureName": "RBALA5",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 1100,
-      "lightColorHEX": "ff4040"
+      "lightColorHEX": "ff4040",
+      "noShadow": true
     },
     {
       "textureName": "RBALB1",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 1100,
-      "lightColorHEX": "ff4040"
+      "lightColorHEX": "ff4040",
+      "noShadow": true
     },
     {
       "textureName": "RBALB2B8",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 1100,
-      "lightColorHEX": "ff4040"
+      "lightColorHEX": "ff4040",
+      "noShadow": true
     },
     {
       "textureName": "RBALB3B7",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 1100,
-      "lightColorHEX": "ff4040"
+      "lightColorHEX": "ff4040",
+      "noShadow": true
     },
     {
       "textureName": "RBALB4B6",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 1100,
-      "lightColorHEX": "ff4040"
+      "lightColorHEX": "ff4040",
+      "noShadow": true
     },
     {
       "textureName": "RBALB5",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 1100,
-      "lightColorHEX": "ff4040"
+      "lightColorHEX": "ff4040",
+      "noShadow": true
     },
     {
       "textureName": "RBALC0",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 1100,
-      "lightColorHEX": "ff4040"
+      "lightColorHEX": "ff4040",
+      "noShadow": true
     },
     {
       "textureName": "RBALD0",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 1100,
-      "lightColorHEX": "ff4040"
+      "lightColorHEX": "ff4040",
+      "noShadow": true
     },
     {
       "textureName": "RBALE0",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 1100,
-      "lightColorHEX": "ff4040"
+      "lightColorHEX": "ff4040",
+      "noShadow": true
     },
     {
       "textureName": "RBALF0",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 1100,
-      "lightColorHEX": "ff4040"
+      "lightColorHEX": "ff4040",
+      "noShadow": true
     },
     {
       "textureName": "RBALG0",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 1100,
-      "lightColorHEX": "ff4040"
+      "lightColorHEX": "ff4040",
+      "noShadow": true
     },
     {
       "textureName": "RBALH0",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 1100,
-      "lightColorHEX": "ff4040"
+      "lightColorHEX": "ff4040",
+      "noShadow": true
     },
     {
       "textureName": "RECTA1",
       "emissiveMult": 0.25,
-      "noShadow": true,
       "lightIntensity": 400,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RECTA2A8",
       "emissiveMult": 0.25,
-      "noShadow": true,
       "lightIntensity": 400,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RECTA3A7",
       "emissiveMult": 0.25,
-      "noShadow": true,
       "lightIntensity": 400,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RECTA4A6",
       "emissiveMult": 0.25,
-      "noShadow": true,
       "lightIntensity": 400,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RECTA5",
       "emissiveMult": 0.25,
-      "noShadow": true,
       "lightIntensity": 400,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RECTB1",
       "emissiveMult": 0.25,
-      "noShadow": true,
       "lightIntensity": 400,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RECTB2B8",
       "emissiveMult": 0.25,
-      "noShadow": true,
       "lightIntensity": 400,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RECTB3B7",
       "emissiveMult": 0.25,
-      "noShadow": true,
       "lightIntensity": 400,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RECTB4B6",
       "emissiveMult": 0.25,
-      "noShadow": true,
       "lightIntensity": 400,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RECTB5",
       "emissiveMult": 0.25,
-      "noShadow": true,
       "lightIntensity": 400,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RECTC1",
       "emissiveMult": 0.25,
-      "noShadow": true,
       "lightIntensity": 400,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RECTC2C8",
       "emissiveMult": 0.25,
-      "noShadow": true,
       "lightIntensity": 400,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RECTC3C7",
       "emissiveMult": 0.25,
-      "noShadow": true,
       "lightIntensity": 400,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RECTC4C6",
       "emissiveMult": 0.25,
-      "noShadow": true,
       "lightIntensity": 400,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RECTC5",
       "emissiveMult": 0.25,
-      "noShadow": true,
       "lightIntensity": 400,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RECTD1",
       "emissiveMult": 0.25,
-      "noShadow": true,
       "lightIntensity": 400,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RECTD2D8",
       "emissiveMult": 0.25,
-      "noShadow": true,
       "lightIntensity": 400,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RECTD3D7",
       "emissiveMult": 0.25,
-      "noShadow": true,
       "lightIntensity": 400,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RECTD4D6",
       "emissiveMult": 0.25,
-      "noShadow": true,
       "lightIntensity": 400,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RECTD5",
       "emissiveMult": 0.25,
-      "noShadow": true,
       "lightIntensity": 400,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RECTE1",
       "emissiveMult": 0.25,
-      "noShadow": true,
       "lightIntensity": 400,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RECTE2E8",
       "emissiveMult": 0.25,
-      "noShadow": true,
       "lightIntensity": 400,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RECTE3E7",
       "emissiveMult": 0.25,
-      "noShadow": true,
       "lightIntensity": 400,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RECTE4E6",
       "emissiveMult": 0.25,
-      "noShadow": true,
       "lightIntensity": 400,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RECTE5",
       "emissiveMult": 0.25,
-      "noShadow": true,
       "lightIntensity": 400,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RECTF1",
       "emissiveMult": 0.25,
-      "noShadow": true,
       "lightIntensity": 400,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RECTF2F8",
       "emissiveMult": 0.25,
-      "noShadow": true,
       "lightIntensity": 400,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RECTF3F7",
       "emissiveMult": 0.25,
-      "noShadow": true,
       "lightIntensity": 400,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RECTF4F6",
       "emissiveMult": 0.25,
-      "noShadow": true,
       "lightIntensity": 400,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RECTF5",
       "emissiveMult": 0.25,
-      "noShadow": true,
       "lightIntensity": 400,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RECTG1",
       "emissiveMult": 0.25,
-      "noShadow": true,
       "lightIntensity": 400,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RECTG2G8",
       "emissiveMult": 0.25,
-      "noShadow": true,
       "lightIntensity": 400,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RECTG3G7",
       "emissiveMult": 0.25,
-      "noShadow": true,
       "lightIntensity": 400,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RECTG4G6",
       "emissiveMult": 0.25,
-      "noShadow": true,
       "lightIntensity": 400,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RECTG5",
       "emissiveMult": 0.25,
-      "noShadow": true,
       "lightIntensity": 400,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RECTH1",
       "emissiveMult": 0.25,
-      "noShadow": true,
       "lightIntensity": 400,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RECTH2H8",
       "emissiveMult": 0.25,
-      "noShadow": true,
       "lightIntensity": 400,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RECTH3H7",
       "emissiveMult": 0.25,
-      "noShadow": true,
       "lightIntensity": 400,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RECTH4H6",
       "emissiveMult": 0.25,
-      "noShadow": true,
       "lightIntensity": 400,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RECTH5",
       "emissiveMult": 0.25,
-      "noShadow": true,
       "lightIntensity": 400,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RECTI0",
       "emissiveMult": 0.25,
-      "noShadow": true,
       "lightIntensity": 400,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RECTJ0",
       "emissiveMult": 0.25,
-      "noShadow": true,
       "lightIntensity": 400,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RECTK0",
       "emissiveMult": 0.25,
-      "noShadow": true,
       "lightIntensity": 400,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RECTL0",
       "emissiveMult": 0.25,
-      "noShadow": true,
       "lightIntensity": 400,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RECTM0",
       "emissiveMult": 0.25,
-      "noShadow": true,
       "lightIntensity": 400,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RECTN0",
       "emissiveMult": 0.25,
-      "noShadow": true,
       "lightIntensity": 400,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RECTO0",
       "emissiveMult": 0.25,
-      "noShadow": true,
       "lightIntensity": 400,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RFLMA0",
       "emissiveMult": 0.8,
-      "noShadow": true,
       "lightIntensity": 650,
-      "lightColorHEX": "ff4020"
+      "lightColorHEX": "ff4020",
+      "noShadow": true
     },
     {
       "textureName": "RFLMB0",
       "emissiveMult": 0.8,
-      "noShadow": true,
       "lightIntensity": 650,
-      "lightColorHEX": "ff4020"
+      "lightColorHEX": "ff4020",
+      "noShadow": true
     },
     {
       "textureName": "RFLMC0",
       "emissiveMult": 0.8,
-      "noShadow": true,
       "lightIntensity": 650,
-      "lightColorHEX": "ff4020"
+      "lightColorHEX": "ff4020",
+      "noShadow": true
     },
     {
       "textureName": "RFLMD0",
       "emissiveMult": 0.8,
-      "noShadow": true,
       "lightIntensity": 650,
-      "lightColorHEX": "ff4020"
+      "lightColorHEX": "ff4020",
+      "noShadow": true
     },
     {
       "textureName": "RFLME0",
       "emissiveMult": 0.8,
-      "noShadow": true,
       "lightIntensity": 650,
-      "lightColorHEX": "ff4020"
+      "lightColorHEX": "ff4020",
+      "noShadow": true
     },
     {
       "textureName": "RKEYA0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 160,
-      "lightColorHEX": "ff4444"
+      "lightColorHEX": "ff4444",
+      "noShadow": true
     },
     {
       "textureName": "RKEYB0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 160,
-      "lightColorHEX": "ff4444"
+      "lightColorHEX": "ff4444",
+      "noShadow": true
     },
     {
       "textureName": "RLFTA0",
       "emissiveMult": 0.7,
-      "noShadow": true,
       "lightIntensity": 600,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RLFTB0",
       "emissiveMult": 0.7,
-      "noShadow": true,
       "lightIntensity": 600,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RLFTC0",
       "emissiveMult": 0.7,
-      "noShadow": true,
       "lightIntensity": 600,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RLFTD0",
       "emissiveMult": 0.7,
-      "noShadow": true,
       "lightIntensity": 600,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RLFTE0",
       "emissiveMult": 0.7,
-      "noShadow": true,
       "lightIntensity": 600,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RLFTF0",
       "emissiveMult": 0.7,
-      "noShadow": true,
       "lightIntensity": 600,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RLFTG0",
       "emissiveMult": 0.7,
-      "noShadow": true,
       "lightIntensity": 600,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RLFTH0",
       "emissiveMult": 0.7,
-      "noShadow": true,
       "lightIntensity": 600,
-      "lightColorHEX": "ff8844"
+      "lightColorHEX": "ff8844",
+      "noShadow": true
     },
     {
       "textureName": "RSKUA0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 160,
-      "lightColorHEX": "ff4444"
+      "lightColorHEX": "ff4444",
+      "noShadow": true
     },
     {
       "textureName": "RSKUB0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 160,
-      "lightColorHEX": "ff4444"
+      "lightColorHEX": "ff4444",
+      "noShadow": true
     },
     {
       "textureName": "SHTFA0",
       "emissiveMult": 1.0,
-      "noShadow": true,
       "lightIntensity": 1100,
-      "lightColorHEX": "ffcc88"
+      "lightColorHEX": "ffcc88",
+      "noShadow": true
     },
     {
       "textureName": "SHTFB0",
       "emissiveMult": 1.0,
-      "noShadow": true,
       "lightIntensity": 1100,
-      "lightColorHEX": "ffcc88"
-    },
-    {
-      "textureName": "SKULA1",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
-    },
-    {
-      "textureName": "SKULA2A8",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
-    },
-    {
-      "textureName": "SKULA3A7",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
-    },
-    {
-      "textureName": "SKULA4A6",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
-    },
-    {
-      "textureName": "SKULA5",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
-    },
-    {
-      "textureName": "SKULB1",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
-    },
-    {
-      "textureName": "SKULB2B8",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
-    },
-    {
-      "textureName": "SKULB3B7",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
-    },
-    {
-      "textureName": "SKULB4B6",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
-    },
-    {
-      "textureName": "SKULB5",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
-    },
-    {
-      "textureName": "SKULC1",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
-    },
-    {
-      "textureName": "SKULC2C8",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
-    },
-    {
-      "textureName": "SKULC3C7",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
-    },
-    {
-      "textureName": "SKULC4C6",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
-    },
-    {
-      "textureName": "SKULC5",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
-    },
-    {
-      "textureName": "SKULD1",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
-    },
-    {
-      "textureName": "SKULD2D8",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
-    },
-    {
-      "textureName": "SKULD3D7",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
-    },
-    {
-      "textureName": "SKULD4D6",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
-    },
-    {
-      "textureName": "SKULD5",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
-    },
-    {
-      "textureName": "SKULE1",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
-    },
-    {
-      "textureName": "SKULE2E8",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
-    },
-    {
-      "textureName": "SKULE3E7",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
-    },
-    {
-      "textureName": "SKULE4E6",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
-    },
-    {
-      "textureName": "SKULE5",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
-    },
-    {
-      "textureName": "SKULF1",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
-    },
-    {
-      "textureName": "SKULF2F8",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
-    },
-    {
-      "textureName": "SKULF3F7",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
-    },
-    {
-      "textureName": "SKULF4F6",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
-    },
-    {
-      "textureName": "SKULF5",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
-    },
-    {
-      "textureName": "SKULG0",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
-    },
-    {
-      "textureName": "SKULH0",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
-    },
-    {
-      "textureName": "SKULI0",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
-    },
-    {
-      "textureName": "SKULJ0",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
-    },
-    {
-      "textureName": "SKULK0",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
-    },
-    {
-      "textureName": "SKULL0",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
-    },
-    {
-      "textureName": "SKULM0",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
-    },
-    {
-      "textureName": "SKULN0",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
-    },
-    {
-      "textureName": "SKULO0",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
-    },
-    {
-      "textureName": "SKULP0",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
+      "lightColorHEX": "ffcc88",
+      "noShadow": true
     },
     {
       "textureName": "SOULA0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 260,
-      "lightColorHEX": "4488ff"
+      "lightColorHEX": "4488ff",
+      "noShadow": true
     },
     {
       "textureName": "SOULB0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 260,
-      "lightColorHEX": "4488ff"
+      "lightColorHEX": "4488ff",
+      "noShadow": true
     },
     {
       "textureName": "SOULC0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 260,
-      "lightColorHEX": "4488ff"
+      "lightColorHEX": "4488ff",
+      "noShadow": true
     },
     {
       "textureName": "SOULD0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 260,
-      "lightColorHEX": "4488ff"
+      "lightColorHEX": "4488ff",
+      "noShadow": true
+    },
+    {
+      "textureName": "SPOSF1",
+      "emissiveMult": 0.4,
+      "lightIntensity": 720,
+      "lightColorHEX": "ff8c52"
+    },
+    {
+      "textureName": "SPOSF2F8",
+      "emissiveMult": 0.4,
+      "lightIntensity": 720,
+      "lightColorHEX": "ff8c52"
+    },
+    {
+      "textureName": "SPOSF3F7",
+      "emissiveMult": 0.4,
+      "lightIntensity": 720,
+      "lightColorHEX": "ff8c52"
+    },
+    {
+      "textureName": "SPOSF4F6",
+      "emissiveMult": 0.4,
+      "lightIntensity": 720,
+      "lightColorHEX": "ff8c52"
+    },
+    {
+      "textureName": "SPOSF5",
+      "emissiveMult": 0.4,
+      "lightIntensity": 720,
+      "lightColorHEX": "ff8c52"
     },
     {
       "textureName": "SSGFA0",
       "emissiveMult": 1.0,
-      "noShadow": true,
       "lightIntensity": 1300,
-      "lightColorHEX": "ffcc88"
+      "lightColorHEX": "ffcc88",
+      "noShadow": true
     },
     {
       "textureName": "SSGFB0",
       "emissiveMult": 1.0,
-      "noShadow": true,
       "lightIntensity": 1300,
-      "lightColorHEX": "ffcc88"
+      "lightColorHEX": "ffcc88",
+      "noShadow": true
+    },
+    {
+      "textureName": "SSWVF0",
+      "emissiveMult": 0.35,
+      "lightIntensity": 480,
+      "lightColorHEX": "ff8c52"
     },
     {
       "textureName": "SUITA0",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 120,
-      "lightColorHEX": "44ff66"
+      "lightColorHEX": "44ff66",
+      "noShadow": true
     },
     {
       "textureName": "SUITB0",
       "emissiveMult": 0.35,
-      "noShadow": true,
       "lightIntensity": 120,
-      "lightColorHEX": "44ff66"
+      "lightColorHEX": "44ff66",
+      "noShadow": true
     },
     {
       "textureName": "TFOGA0",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 500,
-      "lightColorHEX": "8866ff"
+      "lightColorHEX": "8866ff",
+      "noShadow": true
     },
     {
       "textureName": "TFOGB0",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 500,
-      "lightColorHEX": "8866ff"
+      "lightColorHEX": "8866ff",
+      "noShadow": true
     },
     {
       "textureName": "TFOGC0",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 500,
-      "lightColorHEX": "8866ff"
+      "lightColorHEX": "8866ff",
+      "noShadow": true
     },
     {
       "textureName": "TFOGD0",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 500,
-      "lightColorHEX": "8866ff"
+      "lightColorHEX": "8866ff",
+      "noShadow": true
     },
     {
       "textureName": "TFOGE0",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 500,
-      "lightColorHEX": "8866ff"
+      "lightColorHEX": "8866ff",
+      "noShadow": true
     },
     {
       "textureName": "TFOGF0",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 500,
-      "lightColorHEX": "8866ff"
+      "lightColorHEX": "8866ff",
+      "noShadow": true
     },
     {
       "textureName": "TFOGG0",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 500,
-      "lightColorHEX": "8866ff"
+      "lightColorHEX": "8866ff",
+      "noShadow": true
     },
     {
       "textureName": "TFOGH0",
       "emissiveMult": 0.4,
-      "noShadow": true,
       "lightIntensity": 500,
-      "lightColorHEX": "8866ff"
+      "lightColorHEX": "8866ff",
+      "noShadow": true
     },
     {
       "textureName": "TRCRA1",
       "emissiveMult": 0.45,
-      "noShadow": true,
       "lightIntensity": 1200,
-      "lightColorHEX": "ffaa55"
+      "lightColorHEX": "ffaa55",
+      "noShadow": true
     },
     {
       "textureName": "TRCRA2A8",
       "emissiveMult": 0.45,
-      "noShadow": true,
       "lightIntensity": 1200,
-      "lightColorHEX": "ffaa55"
+      "lightColorHEX": "ffaa55",
+      "noShadow": true
     },
     {
       "textureName": "TRCRA3A7",
       "emissiveMult": 0.45,
-      "noShadow": true,
       "lightIntensity": 1200,
-      "lightColorHEX": "ffaa55"
+      "lightColorHEX": "ffaa55",
+      "noShadow": true
     },
     {
       "textureName": "TRCRA4A6",
       "emissiveMult": 0.45,
-      "noShadow": true,
       "lightIntensity": 1200,
-      "lightColorHEX": "ffaa55"
+      "lightColorHEX": "ffaa55",
+      "noShadow": true
     },
     {
       "textureName": "TRCRA5",
       "emissiveMult": 0.45,
-      "noShadow": true,
       "lightIntensity": 1200,
-      "lightColorHEX": "ffaa55"
+      "lightColorHEX": "ffaa55",
+      "noShadow": true
     },
     {
       "textureName": "TRCRB1",
       "emissiveMult": 0.45,
-      "noShadow": true,
       "lightIntensity": 1200,
-      "lightColorHEX": "ffaa55"
+      "lightColorHEX": "ffaa55",
+      "noShadow": true
     },
     {
       "textureName": "TRCRB2B8",
       "emissiveMult": 0.45,
-      "noShadow": true,
       "lightIntensity": 1200,
-      "lightColorHEX": "ffaa55"
+      "lightColorHEX": "ffaa55",
+      "noShadow": true
     },
     {
       "textureName": "TRCRB3B7",
       "emissiveMult": 0.45,
-      "noShadow": true,
       "lightIntensity": 1200,
-      "lightColorHEX": "ffaa55"
+      "lightColorHEX": "ffaa55",
+      "noShadow": true
     },
     {
       "textureName": "TRCRB4B6",
       "emissiveMult": 0.45,
-      "noShadow": true,
       "lightIntensity": 1200,
-      "lightColorHEX": "ffaa55"
+      "lightColorHEX": "ffaa55",
+      "noShadow": true
     },
     {
       "textureName": "TRCRB5",
       "emissiveMult": 0.45,
-      "noShadow": true,
       "lightIntensity": 1200,
-      "lightColorHEX": "ffaa55"
+      "lightColorHEX": "ffaa55",
+      "noShadow": true
     },
     {
       "textureName": "TRCRC0",
       "emissiveMult": 0.45,
-      "noShadow": true,
       "lightIntensity": 1200,
-      "lightColorHEX": "ffaa55"
+      "lightColorHEX": "ffaa55",
+      "noShadow": true
     },
     {
       "textureName": "TRCRD0",
       "emissiveMult": 0.45,
-      "noShadow": true,
       "lightIntensity": 1200,
-      "lightColorHEX": "ffaa55"
+      "lightColorHEX": "ffaa55",
+      "noShadow": true
     },
     {
       "textureName": "TRCRE0",
       "emissiveMult": 0.45,
-      "noShadow": true,
       "lightIntensity": 1200,
-      "lightColorHEX": "ffaa55"
+      "lightColorHEX": "ffaa55",
+      "noShadow": true
     },
     {
       "textureName": "TRCRF0",
       "emissiveMult": 0.45,
-      "noShadow": true,
       "lightIntensity": 1200,
-      "lightColorHEX": "ffaa55"
+      "lightColorHEX": "ffaa55",
+      "noShadow": true
     },
     {
       "textureName": "TRCRG0",
       "emissiveMult": 0.45,
-      "noShadow": true,
       "lightIntensity": 1200,
-      "lightColorHEX": "ffaa55"
+      "lightColorHEX": "ffaa55",
+      "noShadow": true
     },
     {
       "textureName": "TRCRH0",
       "emissiveMult": 0.45,
-      "noShadow": true,
       "lightIntensity": 1200,
-      "lightColorHEX": "ffaa55"
+      "lightColorHEX": "ffaa55",
+      "noShadow": true
     },
     {
       "textureName": "TRCRI0",
       "emissiveMult": 0.45,
-      "noShadow": true,
       "lightIntensity": 1200,
-      "lightColorHEX": "ffaa55"
+      "lightColorHEX": "ffaa55",
+      "noShadow": true
     },
     {
       "textureName": "UNMFA0",
       "emissiveMult": 0.8,
-      "noShadow": true,
       "lightIntensity": 1600,
-      "lightColorHEX": "ff3366"
+      "lightColorHEX": "ff3366",
+      "noShadow": true
     },
     {
       "textureName": "UNMLA0",
       "emissiveMult": 0.7,
-      "noShadow": true,
       "lightIntensity": 1200,
-      "lightColorHEX": "ff2255"
+      "lightColorHEX": "ff2255",
+      "noShadow": true
     },
     {
       "textureName": "YFLMA0",
       "emissiveMult": 0.8,
-      "noShadow": true,
       "lightIntensity": 650,
-      "lightColorHEX": "ffcc33"
+      "lightColorHEX": "ffcc33",
+      "noShadow": true
     },
     {
       "textureName": "YFLMB0",
       "emissiveMult": 0.8,
-      "noShadow": true,
       "lightIntensity": 650,
-      "lightColorHEX": "ffcc33"
+      "lightColorHEX": "ffcc33",
+      "noShadow": true
     },
     {
       "textureName": "YFLMC0",
       "emissiveMult": 0.8,
-      "noShadow": true,
       "lightIntensity": 650,
-      "lightColorHEX": "ffcc33"
+      "lightColorHEX": "ffcc33",
+      "noShadow": true
     },
     {
       "textureName": "YFLMD0",
       "emissiveMult": 0.8,
-      "noShadow": true,
       "lightIntensity": 650,
-      "lightColorHEX": "ffcc33"
+      "lightColorHEX": "ffcc33",
+      "noShadow": true
     },
     {
       "textureName": "YFLME0",
       "emissiveMult": 0.8,
-      "noShadow": true,
       "lightIntensity": 650,
-      "lightColorHEX": "ffcc33"
+      "lightColorHEX": "ffcc33",
+      "noShadow": true
     },
     {
       "textureName": "YKEYA0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 160,
-      "lightColorHEX": "ffcc33"
+      "lightColorHEX": "ffcc33",
+      "noShadow": true
     },
     {
       "textureName": "YKEYB0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 160,
-      "lightColorHEX": "ffcc33"
+      "lightColorHEX": "ffcc33",
+      "noShadow": true
     },
     {
       "textureName": "YSKUA0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 160,
-      "lightColorHEX": "ffcc33"
+      "lightColorHEX": "ffcc33",
+      "noShadow": true
     },
     {
       "textureName": "YSKUB0",
       "emissiveMult": 0.6,
-      "noShadow": true,
       "lightIntensity": 160,
-      "lightColorHEX": "ffcc33"
+      "lightColorHEX": "ffcc33",
+      "noShadow": true
     },
     {
-      "textureName": "FIRELAVA",
-      "emissiveMult": 0.7,
-      "noShadow": true,
-      "lightIntensity": 700,
-      "lightColorHEX": "ff8020"
+      "textureName": "APBXA0",
+      "emissiveMult": 0.4,
+      "lightIntensity": 1200,
+      "lightColorHEX": "6eff69",
+      "noShadow": true
     },
     {
-      "textureName": "FIRELAV3",
-      "emissiveMult": 0.7,
-      "noShadow": true,
-      "lightIntensity": 700,
-      "lightColorHEX": "ff8020"
+      "textureName": "APBXB0",
+      "emissiveMult": 0.4,
+      "lightIntensity": 1200,
+      "lightColorHEX": "6eff69",
+      "noShadow": true
     },
     {
-      "textureName": "SKULA6A4",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
+      "textureName": "APBXC0",
+      "emissiveMult": 0.4,
+      "lightIntensity": 1200,
+      "lightColorHEX": "6eff69",
+      "noShadow": true
     },
     {
-      "textureName": "SKULA7A3",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
+      "textureName": "APBXD0",
+      "emissiveMult": 0.4,
+      "lightIntensity": 1200,
+      "lightColorHEX": "6eff69",
+      "noShadow": true
     },
     {
-      "textureName": "SKULA8A2",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
+      "textureName": "APBXE0",
+      "emissiveMult": 0.4,
+      "lightIntensity": 1200,
+      "lightColorHEX": "6eff69",
+      "noShadow": true
     },
     {
-      "textureName": "SKULB6B4",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
+      "textureName": "MANFB8B2",
+      "emissiveMult": 0.4,
+      "lightIntensity": 1200,
+      "lightColorHEX": "ff8c20",
+      "noShadow": true
     },
     {
-      "textureName": "SKULB7B3",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
+      "textureName": "MANFA6A4",
+      "emissiveMult": 0.4,
+      "lightIntensity": 1200,
+      "lightColorHEX": "ff8c20",
+      "noShadow": true
     },
     {
-      "textureName": "SKULB8B2",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
+      "textureName": "MANFA7A3",
+      "emissiveMult": 0.4,
+      "lightIntensity": 1200,
+      "lightColorHEX": "ff8c20",
+      "noShadow": true
     },
     {
-      "textureName": "SKULE6E4",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
+      "textureName": "MANFA8A2",
+      "emissiveMult": 0.4,
+      "lightIntensity": 1200,
+      "lightColorHEX": "ff8c20",
+      "noShadow": true
     },
     {
-      "textureName": "SKULE7E3",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
+      "textureName": "MANFB6B4",
+      "emissiveMult": 0.4,
+      "lightIntensity": 1200,
+      "lightColorHEX": "ff8c20",
+      "noShadow": true
     },
     {
-      "textureName": "SKULE8E2",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
-    },
-    {
-      "textureName": "SKULF0",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
-    },
-    {
-      "textureName": "FIREBLU1",
-      "emissiveMult": 0.7,
-      "noShadow": true,
-      "lightIntensity": 700,
-      "lightColorHEX": "ff8020"
-    },
-    {
-      "textureName": "FIREBLU2",
-      "emissiveMult": 0.7,
-      "noShadow": true,
-      "lightIntensity": 700,
-      "lightColorHEX": "ff8020"
-    },
-    {
-      "textureName": "FIRELAV2",
-      "emissiveMult": 0.7,
-      "noShadow": true,
-      "lightIntensity": 700,
-      "lightColorHEX": "ff8020"
-    },
-    {
-      "textureName": "FIREMAG1",
-      "emissiveMult": 0.7,
-      "noShadow": true,
-      "lightIntensity": 700,
-      "lightColorHEX": "ff8020"
-    },
-    {
-      "textureName": "FIREMAG2",
-      "emissiveMult": 0.7,
-      "noShadow": true,
-      "lightIntensity": 700,
-      "lightColorHEX": "ff8020"
-    },
-    {
-      "textureName": "FIREMAG3",
-      "emissiveMult": 0.7,
-      "noShadow": true,
-      "lightIntensity": 700,
-      "lightColorHEX": "ff8020"
-    },
-    {
-      "textureName": "FIREWALA",
-      "emissiveMult": 0.7,
-      "noShadow": true,
-      "lightIntensity": 700,
-      "lightColorHEX": "ff8020"
-    },
-    {
-      "textureName": "FIREWALB",
-      "emissiveMult": 0.7,
-      "noShadow": true,
-      "lightIntensity": 700,
-      "lightColorHEX": "ff8020"
-    },
-    {
-      "textureName": "FIREWALL",
-      "emissiveMult": 0.7,
-      "noShadow": true,
-      "lightIntensity": 700,
-      "lightColorHEX": "ff8020"
+      "textureName": "MANFB7B3",
+      "emissiveMult": 0.4,
+      "lightIntensity": 1200,
+      "lightColorHEX": "ff8c20",
+      "noShadow": true
     },
     {
       "textureName": "MISLA6A4",
       "emissiveMult": 0.45,
-      "noShadow": true,
       "lightIntensity": 2200,
-      "lightColorHEX": "ff9a40"
+      "lightColorHEX": "ff9a40",
+      "noShadow": true
     },
     {
       "textureName": "MISLA7A3",
       "emissiveMult": 0.45,
-      "noShadow": true,
       "lightIntensity": 2200,
-      "lightColorHEX": "ff9a40"
+      "lightColorHEX": "ff9a40",
+      "noShadow": true
     },
     {
       "textureName": "MISLA8A2",
       "emissiveMult": 0.45,
-      "noShadow": true,
       "lightIntensity": 2200,
-      "lightColorHEX": "ff9a40"
+      "lightColorHEX": "ff9a40",
+      "noShadow": true
     },
     {
-      "textureName": "SKULC6C4",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
+      "textureName": "TFOGI0",
+      "emissiveMult": 0.4,
+      "lightIntensity": 500,
+      "lightColorHEX": "8866ff",
+      "noShadow": true
     },
     {
-      "textureName": "SKULC7C3",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
+      "textureName": "TFOGJ0",
+      "emissiveMult": 0.4,
+      "lightIntensity": 500,
+      "lightColorHEX": "8866ff",
+      "noShadow": true
     },
     {
-      "textureName": "SKULC8C2",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
+      "textureName": "FIREH0",
+      "emissiveMult": 0.7,
+      "lightIntensity": 700,
+      "lightColorHEX": "ff8020",
+      "noShadow": true
     },
     {
-      "textureName": "SKULD6D4",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
+      "textureName": "FIREF0",
+      "emissiveMult": 0.7,
+      "lightIntensity": 700,
+      "lightColorHEX": "ff8020",
+      "noShadow": true
     },
     {
-      "textureName": "SKULD7D3",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
+      "textureName": "FIREG0",
+      "emissiveMult": 0.7,
+      "lightIntensity": 700,
+      "lightColorHEX": "ff8020",
+      "noShadow": true
     },
     {
-      "textureName": "SKULD8D2",
-      "emissiveMult": 0.5,
-      "noShadow": true,
-      "lightIntensity": 800,
-      "lightColorHEX": "ff7020"
+      "textureName": "FATBA1",
+      "emissiveMult": 0.35,
+      "lightIntensity": 900,
+      "lightColorHEX": "ff7020",
+      "noShadow": true
+    },
+    {
+      "textureName": "FATBA2A8",
+      "emissiveMult": 0.35,
+      "lightIntensity": 900,
+      "lightColorHEX": "ff7020",
+      "noShadow": true
+    },
+    {
+      "textureName": "FATBA3A7",
+      "emissiveMult": 0.35,
+      "lightIntensity": 900,
+      "lightColorHEX": "ff7020",
+      "noShadow": true
+    },
+    {
+      "textureName": "FATBA4A6",
+      "emissiveMult": 0.35,
+      "lightIntensity": 900,
+      "lightColorHEX": "ff7020",
+      "noShadow": true
+    },
+    {
+      "textureName": "FATBA5",
+      "emissiveMult": 0.35,
+      "lightIntensity": 900,
+      "lightColorHEX": "ff7020",
+      "noShadow": true
+    },
+    {
+      "textureName": "FATBB1",
+      "emissiveMult": 0.35,
+      "lightIntensity": 900,
+      "lightColorHEX": "ff7020",
+      "noShadow": true
+    },
+    {
+      "textureName": "FATBB2B8",
+      "emissiveMult": 0.35,
+      "lightIntensity": 900,
+      "lightColorHEX": "ff7020",
+      "noShadow": true
+    },
+    {
+      "textureName": "FATBB3B7",
+      "emissiveMult": 0.35,
+      "lightIntensity": 900,
+      "lightColorHEX": "ff7020",
+      "noShadow": true
+    },
+    {
+      "textureName": "FATBB4B6",
+      "emissiveMult": 0.35,
+      "lightIntensity": 900,
+      "lightColorHEX": "ff7020",
+      "noShadow": true
+    },
+    {
+      "textureName": "FATBB5",
+      "emissiveMult": 0.35,
+      "lightIntensity": 900,
+      "lightColorHEX": "ff7020",
+      "noShadow": true
     }
   ]
 }

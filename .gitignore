@@ -32,6 +32,7 @@ deps/
 *.obj
 
 # --- Game / mod content not authored here (redistribute separately) ---
+DoomCE/
 Doom64-Retribution/D64RTR_v15.WAD
 Doom64-Retribution/D64RTR\[v1.5\].WAD
 Doom64-Retribution/D64MUS.PK3
@@ -44,17 +45,40 @@ tools/_gallery/*.jpeg
 # Prefer shipping materials under Retribution-RT-Materials/; ignore engine-local copies
 sourcecode/**/rt/mat/
 sourcecode/**/rt/mat_dev/
+# DoomCE Substance→RT convert output (regenerate via tools/convert_ce_pbr_to_rt.py)
+Doom64-Retribution/Retribution-RT-Materials-CE/
+
+# --- Regenerable gallery / emis QA maps & diagnostic packs ---
+Doom64-Retribution/d64rtexg0[1-8].wad
+Doom64-Retribution/d64remis.wad
+Doom64-Retribution/d64remisiso.wad
+Doom64-Retribution/d64remptyg.wad
+Doom64-Retribution/d64r-emis-iso-*.pk3
+Doom64-Retribution/d64r-emptygallery-*.pk3
+Doom64-Retribution/d64r-gallery-orbit-sweep.pk3
+Doom64-Retribution/d64r-gallery-yaw-sweep.pk3
+Doom64-Retribution/d64r-gallery-spawn-*.pk3
+Doom64-Retribution/d64r-gallery-wall-ab.pk3
+Doom64-Retribution/d64r-texgallery-batches-mapinfo.pk3
 
 # --- Gallery capture bulk (keep JSON/manifests/scripts; drop PNG screenshots) ---
 tools/_gallery/**/*.png
 tools/_gallery/**/Screenshot_*.png
 tools/_gallery/**/stdout*.txt
+# ephemeral AI corner review dumps (PNGs already ignored; skip whole batch dirs)
+tools/_gallery/batch_ai_corner_*/
 # large generated UDMF dump (rebuild via build_texture_gallery.py)
 tools/_gallery/TEXTMAP.txt
 tools/_enemy_gallery/**/*.png
 tools/_enemy_gallery/**/Screenshot_*.png
 tools/_enemy_gallery/**/stdout*.txt
 tools/_decorate_extract.txt
+tools/_emis_iso/**/*.png
+tools/_emis_iso/**/Screenshot*
+tools/_emis_iso/**/stdout*
+tools/wash-qa/**/*.spv
+tools/wash-qa/**/Screenshot*
+tools/wash-qa/**/*.png
 
 # --- Ephemeral map isolation / compare dumps ---
 tools/_map_cmp/

@@ -1,0 +1,419 @@
+{
+  "version": 0,
+  "array": [
+    {
+      "textureName": "C22",
+      "roughnessDefault": 0.7,
+      "metallicDefault": 0.25,
+      "emissiveMult": 0.01
+    },
+    {
+      "textureName": "C23",
+      "roughnessDefault": 0.7,
+      "metallicDefault": 0.25,
+      "emissiveMult": 0.01
+    },
+    {
+      "textureName": "CFACEA",
+      "roughnessDefault": 0.7,
+      "metallicDefault": 0.25,
+      "emissiveMult": 0.012
+    },
+    {
+      "textureName": "CFACEB",
+      "emissiveMult": 0.012
+    },
+    {
+      "textureName": "CFACEC",
+      "emissiveMult": 0.012
+    },
+    {
+      "textureName": "CRTRAKA",
+      "roughnessDefault": 0.7,
+      "metallicDefault": 0.25,
+      "emissiveMult": 0.008
+    },
+    {
+      "textureName": "D64LAVA1",
+      "roughnessDefault": 0.35,
+      "metallicDefault": 0.0,
+      "isAcid": false,
+      "emissiveMult": 0.01,
+      "lightIntensity": 140,
+      "lightColor": [
+        255,
+        90,
+        20
+      ]
+    },
+    {
+      "textureName": "D64LAVA2",
+      "roughnessDefault": 0.35,
+      "metallicDefault": 0.0,
+      "isAcid": false,
+      "emissiveMult": 0.01,
+      "lightIntensity": 140,
+      "lightColor": [
+        255,
+        90,
+        20
+      ]
+    },
+    {
+      "textureName": "D64LOGO",
+      "roughnessDefault": 0.7,
+      "metallicDefault": 0.25,
+      "emissiveMult": 0.01
+    },
+    {
+      "textureName": "H36BGLOW",
+      "roughnessDefault": 0.4,
+      "metallicDefault": 0.55,
+      "emissiveMult": 0.01
+    },
+    {
+      "textureName": "H36YGLOW",
+      "roughnessDefault": 0.4,
+      "metallicDefault": 0.55,
+      "emissiveMult": 0.01
+    },
+    {
+      "textureName": "H49RGLOW",
+      "roughnessDefault": 0.4,
+      "metallicDefault": 0.55,
+      "emissiveMult": 0.01
+    },
+    {
+      "textureName": "HLAVA1",
+      "roughnessDefault": 0.35,
+      "metallicDefault": 0.0,
+      "isAcid": false,
+      "emissiveMult": 0.01,
+      "lightIntensity": 140,
+      "lightColor": [
+        255,
+        90,
+        20
+      ]
+    },
+    {
+      "textureName": "HLAVA2",
+      "emissiveMult": 0.01,
+      "lightIntensity": 140,
+      "lightColor": [
+        255,
+        90,
+        20
+      ]
+    },
+    {
+      "textureName": "HLAVA3",
+      "emissiveMult": 0.01,
+      "lightIntensity": 140,
+      "lightColor": [
+        255,
+        90,
+        20
+      ]
+    },
+    {
+      "textureName": "HLAVA4",
+      "emissiveMult": 0.01,
+      "lightIntensity": 140,
+      "lightColor": [
+        255,
+        90,
+        20
+      ]
+    },
+    {
+      "textureName": "HLAVA5",
+      "emissiveMult": 0.01,
+      "lightIntensity": 140,
+      "lightColor": [
+        255,
+        90,
+        20
+      ]
+    },
+    {
+      "textureName": "OUTTEX02",
+      "roughnessDefault": 0.7,
+      "metallicDefault": 0.25,
+      "emissiveMult": 0.008
+    },
+    {
+      "textureName": "OUTTEX07",
+      "roughnessDefault": 0.7,
+      "metallicDefault": 0.25,
+      "emissiveMult": 0.008
+    },
+    {
+      "textureName": "OUTTEX08",
+      "roughnessDefault": 0.7,
+      "metallicDefault": 0.25,
+      "emissiveMult": 0.008
+    },
+    {
+      "textureName": "OUTTEX09",
+      "roughnessDefault": 0.7,
+      "metallicDefault": 0.25,
+      "emissiveMult": 0.008
+    },
+    {
+      "textureName": "OUTTEX24",
+      "roughnessDefault": 0.7,
+      "metallicDefault": 0.25,
+      "emissiveMult": 0.008
+    },
+    {
+      "textureName": "OUTTEX50",
+      "roughnessDefault": 0.7,
+      "metallicDefault": 0.25,
+      "emissiveMult": 0.008
+    },
+    {
+      "textureName": "SEXIT",
+      "roughnessDefault": 0.7,
+      "metallicDefault": 0.25,
+      "emissiveMult": 0.01
+    },
+    {
+      "textureName": "SFLATA",
+      "roughnessDefault": 0.9,
+      "metallicDefault": 0.05
+    },
+    {
+      "textureName": "SFLATAB",
+      "roughnessDefault": 0.9,
+      "metallicDefault": 0.05
+    },
+    {
+      "textureName": "SFLATAC",
+      "roughnessDefault": 0.9,
+      "metallicDefault": 0.05
+    },
+    {
+      "textureName": "SFLATAD",
+      "roughnessDefault": 0.9,
+      "metallicDefault": 0.05
+    },
+    {
+      "textureName": "SFLATAE",
+      "roughnessDefault": 0.9,
+      "metallicDefault": 0.05
+    },
+    {
+      "textureName": "SFLATAF",
+      "roughnessDefault": 0.9,
+      "metallicDefault": 0.05
+    },
+    {
+      "textureName": "SFLATAI",
+      "roughnessDefault": 0.9,
+      "metallicDefault": 0.05
+    },
+    {
+      "textureName": "SFLATAJ",
+      "roughnessDefault": 0.9,
+      "metallicDefault": 0.05
+    },
+    {
+      "textureName": "SMONAA",
+      "roughnessDefault": 0.7,
+      "metallicDefault": 0.25,
+      "emissiveMult": 0.01
+    },
+    {
+      "textureName": "SMONAB",
+      "emissiveMult": 0.01
+    },
+    {
+      "textureName": "SMONAC",
+      "emissiveMult": 0.01
+    },
+    {
+      "textureName": "SMONAD",
+      "emissiveMult": 0.01
+    },
+    {
+      "textureName": "SMONBA",
+      "roughnessDefault": 0.7,
+      "metallicDefault": 0.25,
+      "emissiveMult": 0.01
+    },
+    {
+      "textureName": "SMONBB",
+      "emissiveMult": 0.01
+    },
+    {
+      "textureName": "SMONBC",
+      "emissiveMult": 0.01
+    },
+    {
+      "textureName": "SMONBD",
+      "emissiveMult": 0.01
+    },
+    {
+      "textureName": "SMONCA",
+      "roughnessDefault": 0.7,
+      "metallicDefault": 0.25,
+      "emissiveMult": 0.01
+    },
+    {
+      "textureName": "SMONCB",
+      "emissiveMult": 0.01
+    },
+    {
+      "textureName": "SMONCC",
+      "emissiveMult": 0.01
+    },
+    {
+      "textureName": "SMONCD",
+      "emissiveMult": 0.01
+    },
+    {
+      "textureName": "SMONDA",
+      "roughnessDefault": 0.7,
+      "metallicDefault": 0.25,
+      "emissiveMult": 0.01
+    },
+    {
+      "textureName": "SMONEA",
+      "roughnessDefault": 0.7,
+      "metallicDefault": 0.25,
+      "emissiveMult": 0.01
+    },
+    {
+      "textureName": "SMONF",
+      "roughnessDefault": 0.7,
+      "metallicDefault": 0.25,
+      "emissiveMult": 0.01
+    },
+    {
+      "textureName": "SMONLB1",
+      "roughnessDefault": 0.7,
+      "metallicDefault": 0.25,
+      "emissiveMult": 0.01
+    },
+    {
+      "textureName": "SPACEAA",
+      "roughnessDefault": 0.34,
+      "metallicDefault": 0.8,
+      "isMirrorIfSmooth": true
+    },
+    {
+      "textureName": "SPACEAD",
+      "roughnessDefault": 0.35,
+      "metallicDefault": 0.75,
+      "isMirrorIfSmooth": true
+    },
+    {
+      "textureName": "SPACEAGS",
+      "roughnessDefault": 0.35,
+      "metallicDefault": 0.75,
+      "isMirrorIfSmooth": true
+    },
+    {
+      "textureName": "SPACEAI",
+      "roughnessDefault": 0.35,
+      "metallicDefault": 0.75,
+      "isMirrorIfSmooth": true
+    },
+    {
+      "textureName": "SPACEAL",
+      "roughnessDefault": 0.35,
+      "metallicDefault": 0.75,
+      "isMirrorIfSmooth": true
+    },
+    {
+      "textureName": "SPACEART",
+      "roughnessDefault": 0.34,
+      "metallicDefault": 0.8,
+      "isMirrorIfSmooth": true
+    },
+    {
+      "textureName": "SPACEBC",
+      "roughnessDefault": 0.35,
+      "metallicDefault": 0.75,
+      "isMirrorIfSmooth": true
+    },
+    {
+      "textureName": "SPACEBD",
+      "roughnessDefault": 0.34,
+      "metallicDefault": 0.8,
+      "isMirrorIfSmooth": true
+    },
+    {
+      "textureName": "SPACEBE",
+      "roughnessDefault": 0.34,
+      "metallicDefault": 0.8,
+      "isMirrorIfSmooth": true
+    },
+    {
+      "textureName": "SPACEBO1",
+      "roughnessDefault": 0.34,
+      "metallicDefault": 0.8,
+      "isMirrorIfSmooth": true,
+      "isMirror": false
+    },
+    {
+      "textureName": "SPACECM",
+      "roughnessDefault": 0.35,
+      "metallicDefault": 0.75,
+      "isMirrorIfSmooth": true
+    },
+    {
+      "textureName": "SPACECN",
+      "roughnessDefault": 0.35,
+      "metallicDefault": 0.75,
+      "isMirrorIfSmooth": true
+    },
+    {
+      "textureName": "SWXCB",
+      "emissiveMult": 0.008
+    },
+    {
+      "textureName": "SWXCKB",
+      "emissiveMult": 0.008
+    },
+    {
+      "textureName": "SWXCKLA",
+      "emissiveMult": 0.008
+    },
+    {
+      "textureName": "SWXCLA",
+      "emissiveMult": 0.008
+    },
+    {
+      "textureName": "SWXS4B",
+      "roughnessDefault": 0.7,
+      "metallicDefault": 0.25,
+      "emissiveMult": 0.008
+    },
+    {
+      "textureName": "SWXSAB",
+      "emissiveMult": 0.008
+    },
+    {
+      "textureName": "SWXSCB",
+      "emissiveMult": 0.008
+    },
+    {
+      "textureName": "SWXSDB",
+      "emissiveMult": 0.008
+    },
+    {
+      "textureName": "SWXSEB",
+      "emissiveMult": 0.008
+    },
+    {
+      "textureName": "SWXSFB",
+      "emissiveMult": 0.008
+    },
+    {
+      "textureName": "SWXSGB",
+      "emissiveMult": 0.008
+    }
+  ]
+}

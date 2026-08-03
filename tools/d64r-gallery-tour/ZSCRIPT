@@ -1,9 +1,9 @@
 version "4.12"
 
-// Auto-generated sparse tour — indices [50, 51, 52, 53, 54, 55, 56, 57, 58, 59] view=corner
+// Auto-generated sparse tour — indices [350, 279, 229] view=front
 class D64RtGalleryTour : EventHandler
 {
-	const COUNT = 10;
+	const COUNT = 3;
 	const DWELL = 105;
 	const SHOT_AT = 45;
 	private int idx;
@@ -11,22 +11,15 @@ class D64RtGalleryTour : EventHandler
 	private bool done;
 	private bool shot;
 
-	static const double PosX[] = { 6242.8, 6522.8, 6802.8, 7082.8, 7362.8, 7642.8, 82.8, 362.8, 642.8, 922.8 };
-	static const double PosY[] = { 264.0, 264.0, 264.0, 264.0, 264.0, 264.0, 544.0, 544.0, 544.0, 544.0 };
-	static const double Ang[] = { 65.0, 65.0, 65.0, 65.0, 65.0, 65.0, 65.0, 65.0, 65.0, 65.0 };
-	static const double Pitch[] = { -3.0, -3.0, -3.0, -3.0, -3.0, -3.0, -3.0, -3.0, -3.0, -3.0 };
-	static const int AbsIndex[] = { 50, 51, 52, 53, 54, 55, 56, 57, 58, 59 };
+	static const double PosX[] = { 4060.0, 7700.0, 1540.0 };
+	static const double PosY[] = { 3304.0, 2464.0, 2184.0 };
+	static const double Ang[] = { 90.0, 90.0, 90.0 };
+	static const double Pitch[] = { 0.0, 0.0, 0.0 };
+	static const int AbsIndex[] = { 350, 279, 229 };
 	static const String TexName[] = {
-		"SFLATBB",
-		"CASFL21",
-		"C44B",
-		"H52",
-		"SPACECG",
-		"SPACECI",
-		"SPACAMM",
-		"CASFL94",
-		"SPACEC",
-		"C23"
+		"BFALL01",
+		"SFALL01",
+		"WFALL01"
 	};
 
 	override void WorldLoaded(WorldEvent e)

@@ -103,7 +103,7 @@ def classify(name: str) -> dict:
 
     if any(x in u for x in ("WATER", "NUKE", "SLIME", "BLOOD", "LAVA")):
         if "LAVA" in u or "NUKE" in u or "FIRE" in u:
-            meta["emissiveMult"] = 1.5
+            # Emissive authored by gen_world_emissives — meta-only stub here
             meta["roughnessDefault"] = 0.35
             meta["isAcid"] = "NUKE" in u or "SLIME" in u
         else:
@@ -122,9 +122,6 @@ def classify(name: str) -> dict:
     if any(x in u for x in ("COMP", "MONIT", "TECH", "PANEL", "LIGHT", "LITE", "GLOW", "SWITCH")):
         meta["metallicDefault"] = 0.55
         meta["roughnessDefault"] = 0.4
-        meta["emissiveMult"] = 0.6
-        meta["lightIntensity"] = 20.0
-        meta["lightColor"] = [180, 220, 255]
         return meta
 
     if u.startswith("SFLAT") or u.startswith("FLAT") or u.startswith("FLOOR"):
@@ -140,8 +137,6 @@ def classify(name: str) -> dict:
     if "DOOR" in u or "GATE" in u:
         meta["metallicDefault"] = 0.65
         meta["roughnessDefault"] = 0.45
-        if "GATE" in u:
-            meta["emissiveMult"] = 0.15
         return meta
 
     meta["metallicDefault"] = 0.25
@@ -233,10 +228,12 @@ def inventory_textures() -> tuple[list[str], dict[str, list[str]], Counter]:
     return names, by_map_lists, tex_count
 
 
-def build_gallery_textmap(textures: list[str]) -> str:
+def build_gallery_textmap(textures: list[str], *, close_spawn: bool = False) -> str:
     """
     Grid of solid pillars in a lit hall. Each pillar's faces show one texture.
     Camera stands south of the pillar and looks north (flashlight + sun).
+
+    close_spawn: place player in front of the first-row center pillar (batch review).
     """
     cols = max(8, int(math.ceil(math.sqrt(len(textures)))))
     rows = int(math.ceil(len(textures) / cols))
@@ -265,24 +262,43 @@ def build_gallery_textmap(textures: list[str]) -> str:
         return sid
 
     margin = CELL * 2
+    shell = CELL  # solid rock pad outside the hall (kills void/sky adjacency)
     width = cols * CELL + margin * 2
     height = rows * CELL + margin * 2
+    # Hall rectangle (inner)
     v0 = add_vert(-margin, -margin)
     v1 = add_vert(width - margin, -margin)
     v2 = add_vert(width - margin, height - margin)
     v3 = add_vert(-margin, height - margin)
+    # Outer shell rectangle
+    o0 = add_vert(-margin - shell, -margin - shell)
+    o1 = add_vert(width - margin + shell, -margin - shell)
+    o2 = add_vert(width - margin + shell, height - margin + shell)
+    o3 = add_vert(-margin - shell, height - margin + shell)
 
+    hall = len(sectors)
     sectors.append(
         {
             "heightfloor": 0,
             "heightceiling": HALL_H,
             "texturefloor": FLOOR,
             "textureceiling": CEIL,
-            "lightlevel": 255,
+            "lightlevel": 160,
+        }
+    )
+    # Solid exterior — floor==ceil so nothing outside is void/sky for RT.
+    solid = len(sectors)
+    sectors.append(
+        {
+            "heightfloor": HALL_H,
+            "heightceiling": HALL_H,
+            "texturefloor": FLOOR,
+            "textureceiling": CEIL,
+            "lightlevel": 0,
         }
     )
 
-    def add_onesided(v_a: int, v_b: int, mid: str, sector: int = 0) -> None:
+    def add_onesided(v_a: int, v_b: int, mid: str, sector: int) -> None:
         lines.append(
             {
                 "v1": v_a,
@@ -292,10 +308,36 @@ def build_gallery_textmap(textures: list[str]) -> str:
             }
         )
 
-    add_onesided(v0, v1, "BIGDOOR2")
-    add_onesided(v1, v2, "BIGDOOR2")
-    add_onesided(v2, v3, "BIGDOOR2")
-    add_onesided(v3, v0, "BIGDOOR2")
+    def add_shell_wall(va: int, vb: int, mid: str = "STONE2") -> None:
+        """Two-sided wall: hall on front (right), solid exterior on back.
+        Avoid BIGDOOR2 — its baked red lamps read as free-floating glow in dark RT.
+        """
+        sf = add_side(hall, mid, top=mid, bottom=mid)
+        sb = add_side(solid, "-", top="-", bottom="-")
+        lines.append(
+            {
+                "v1": va,
+                "v2": vb,
+                "sidefront": sf,
+                "sideback": sb,
+                "blocking": True,
+                "twosided": True,
+                "dontpegtop": True,
+            }
+        )
+
+    # Doom fronts face RIGHT of directed linedef — wind clockwise so hall is inside.
+    add_shell_wall(v1, v0)  # south
+    add_shell_wall(v2, v1)  # east
+    add_shell_wall(v3, v2)  # north
+    add_shell_wall(v0, v3)  # west
+
+    # Seal the outer perimeter of the solid pad (onesided, front into solid).
+    # Clockwise so solid ring stays on the right of each linedef.
+    add_onesided(o1, o0, "STONE2", solid)  # south
+    add_onesided(o2, o1, "STONE2", solid)  # east
+    add_onesided(o3, o2, "STONE2", solid)  # north
+    add_onesided(o0, o3, "STONE2", solid)  # west
 
     for idx, tex in enumerate(textures):
         c = idx % cols
@@ -315,12 +357,12 @@ def build_gallery_textmap(textures: list[str]) -> str:
                 "heightceiling": HALL_H,
                 "texturefloor": FLOOR,
                 "textureceiling": CEIL,
-                "lightlevel": 255,
+                "lightlevel": 0,
             }
         )
 
         def add_pillar_edge(va: int, vb: int) -> None:
-            sf = add_side(0, tex, top=tex, bottom=tex)
+            sf = add_side(hall, tex, top=tex, bottom=tex)
             sb = add_side(psec, "-", top="-", bottom="-")
             lines.append(
                 {
@@ -339,10 +381,20 @@ def build_gallery_textmap(textures: list[str]) -> str:
         add_pillar_edge(ne, nw)
         add_pillar_edge(nw, sw)
 
+    if close_spawn:
+        # First-row center pillar face — panels fill the FOV on load.
+        cx = (cols // 2) * CELL + CELL * 0.5
+        cy = CELL * 0.5
+        spawn_x = cx
+        spawn_y = cy - (pillar * 0.5 + CAM_STANDOFF)
+    else:
+        spawn_x = cols * CELL * 0.5
+        spawn_y = -margin * 0.4
+
     things.append(
         {
-            "x": cols * CELL * 0.5,
-            "y": -margin * 0.4,
+            "x": spawn_x,
+            "y": spawn_y,
             "angle": 90,
             "type": 1,
             "skill1": True,
@@ -538,8 +590,7 @@ def emit_pbr(textures: list[str], bright: set[str]) -> dict[str, dict]:
     meta_by = {}
     for name in textures:
         meta = classify(name)
-        if name.upper() in bright:
-            meta["emissiveMult"] = max(float(meta.get("emissiveMult", 0) or 0), 0.8)
+        # Brightmaps are hints only — do not stamp emissiveMult here (causes wash).
         array.append(meta)
         meta_by[name] = meta
 
@@ -568,18 +619,8 @@ def emit_pbr(textures: list[str], bright: set[str]) -> dict[str, dict]:
             write_png_rgba(mat_dir / f"{name}_orm.png", 64, 64, orm)
         orm_n += 1
         if emis > 0.05:
-            u = name.upper()
-            if "LAVA" in u or "FIRE" in u:
-                rgb = (255, 90, 20)
-            elif "NUKE" in u or "SLIME" in u:
-                rgb = (40, 255, 40)
-            else:
-                rgb = (120, 180, 255)
-            scale = min(1.0, emis)
-            rgb_s = tuple(max(0, min(255, int(c * scale))) for c in rgb)
-            e = solid_emissive(rgb_s)  # type: ignore
-            for mat_dir in mat_dirs:
-                write_png_rgba(mat_dir / f"{name}_e.png", 64, 64, e)
+            # Do not write solid full-frame _e.png — stubs × mapboost wash the hall.
+            # Author real masks with tools/gen_world_emissives.py (+ sanitize).
             emis_n += 1
 
     cfg = RT / "RTGL1.json"

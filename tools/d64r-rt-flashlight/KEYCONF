@@ -1,0 +1,4 @@
+addkeysection "Doom 64 RT" D64RtKeys
+addmenukey "Toggle Flashlight" d64rt_flashlight
+alias d64rt_flashlight "toggle rt_flsh"
+defaultbind f d64rt_flashlight

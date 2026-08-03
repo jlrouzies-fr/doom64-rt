@@ -112,6 +112,8 @@ Not ACS (script 12 terminate still froze). Real MAP01 `TEXTMAP` without `BEHAVIO
 
 **Fix pack:** `Doom64-Retribution/d64r-map01-rtfix.wad` — same MAP01 geometry with the 3D floor linedef special removed. Loaded last via `tools/launch-retribution-rt.cmd`. Side effect: the teleporter-hallway 3D floor event on MAP01 won’t appear until an engine-side RT 3D-floor fix exists.
 
+**Must include `BEHAVIOR` (+ `ZNODES`):** a TEXTMAP-only replacement stripped ACS → every switch that calls script 19 printed `P_StartScript: Unknown script 19`. Fix wad carries original MAP01 `BEHAVIOR`/`ZNODES` with the patched `TEXTMAP` (3D-floor special cleared). Do **not** ship a mis-offset PWAD (lump directory offsets must be absolute from file start — a bad rewrite once made TEXTMAP = nested `PWAD` header → `Unexpected character ASCII 5` / invalid ACS).
+
 ---
 
 ## Automatic RT opacity / emissive (2026-08-02)
@@ -141,6 +143,18 @@ Rebuild: VS18 MSBuild `build\src\zdoom.vcxproj` RelWithDebInfo.
 - `rt_main.cpp`: non-black `skyColorDefault` fallback
 - `d64r-rt-sky.pk3`: `ChangeSky` → Doom II `RSKY1` (no GLDEFS cube)
 
+## Retribution night sky (2026-08-03)
+
+**Symptom:** Outdoor sky was bright Doom II clouds / white-black skyboxes; indoor seams got shadow-casting sky wash (`rt_sky` confirmed). MAP01 is meant to be night stars.
+
+**Fix:**
+- `d64r-rt-sky.pk3`: `ChangeSky` → Retribution **`SPACE`** (near-black starfield), never `RSKY1`
+- Play launcher: `+rt_sky 25` (was 200), `+gl_noskyboxes false`, keep `rt_sky_always`
+- `hw_walls.cpp` / `hw_flats.cpp`: while `portalState.inskybox`, push `RtPrim::Ignored` so sector skybox rooms do not upload as white/black RT geometry; raster `SPACE` sky fills outdoor `F_SKY1` instead
+- True SPACE* skybox mural projection under RT still deferred
+
+Rebuild: `tools/build-gzdoom-rt.cmd`. User confirmed sky looks good.
+
 ---
 
 ## Native DLSS Ray Reconstruction (2026-08-02)
@@ -161,3 +175,76 @@ vngx_dlssd.dll)
 **Playtest (2026-08-02):** Native RR much less noisy than A-SVGF on Retribution MAP01.
 
 **MVP out of scope:** Frame Gen + RR, specular motion vectors, Remix path fix.
+
+---
+
+## Intermittent noisy PT + blocky HUD (2026-08-03)
+
+**Symptom:** Sometimes clean with DLSS-RR; sometimes salt-and-pepper noise while moving and HUD/text as solid blocks. Texture gallery captures showed RTGL1 Dev **Upscaler = Linear/Nearest** and often **Downscale to pixelized** checked, despite `+rt_upscale_dlss 2 +rt_rayreconstr 1`.
+
+**Cause:** `Devmode::drawInfoOvrd` fields (`enable`, `pixelizedEnable`, `upscaleTechnique`, …) had **no default initializers**. After `make_unique<Devmode>()`, `Override` randomly came up true with garbage Linear/Nearest + pixelized, overriding the game’s DLSS-RR request.
+
+**Fix:** `deps/RTGL/Source/VulkanDevice_Dev.h` — value-init all `drawInfoOvrd` / `cameraOvrd` members (`enable=false`, `pixelizedEnable=false`, DLSS balanced defaults). Rebuild: `tools/build-rtgl.cmd` (staged 2026-08-03).
+
+**Workaround if it returns:** In RTGL1 Dev, uncheck **Override**; Upscaler should follow NVIDIA DLSS from cvars.
+
+---
+
+## Directional white wash mistaken for sky leak (2026-08-03)
+
+**Symptom:** MAP99 gallery — walls stay solid but looking some yaws washes surfaces white / noisy. Felt like sky leak. Also: subtle glow **toward the gallery center from every approach** when walking around the hall.
+
+**A/B (yaw sweep):** `tools/run_gallery_yaw_sweep.ps1` — 8 shots at 45°. Sky on/off and `rt_autoexport_light 0` **did not** remove west-facing outliers. `rt_emis_mapboost 0` **did** — delta ~88 → ~2. Lowering mapboost only masked the bug.
+
+**Root cause:** In `HitInfo.inl`, when an `_e` map is present, path-traced emission used **raw `_e` RGB and ignored `emissiveMult`**. Indirect then multiplied by global `emissionMapBoost` (default 200). Dense / large world emitters (lava, CRT, glow panels) flooded GI whenever many faced the camera — including every inward view toward the gallery center. Raster already applied `emissiveMult`; PT did not.
+
+**Fix (RTGL):** `deps/RTGL/Source/Shaders/HitInfo.inl` — on **INDIR** only, `emission = _e * emissiveMult`. Primary/reflections keep raw `_e` for on-screen glow (`rt_emis_maxscrcolor`). World mats author **low** `emissiveMult` (≈0.005–0.02) via `gen_world_emissives.py`. Launchers restore stock `+rt_emis_mapboost 200`.
+
+**QA:** `tools/test_gallery_emis_qa.cmd` (orbit-inward + center yaw at boost 200). Rebuild: `tools/build-rtgl.cmd`.
+
+**Follow-up (same day, still open):** Playable wall blotches returned after restoring `_e` even with mults cut to ~0.0005 and `lightIntensity` removed. Emis-off nuclear A/B still clears them. Full evidence, stale-SPV/DLL notes, and next experiments: **`gallery-emis-wall-wash-diagnostics.md`**.
+
+---
+
+## `emissiveMult` > 1 was a no-op (2026-08-03)
+
+**Symptom:** Emis gallery monitors/keys cast almost no PT light even with `emissiveMult` 2–4 and tight `_e`. Doubling mult changed nothing.
+
+**Root cause:** `TextureMetaManager::Modify` did `prim.emissive = Utils::Saturate(meta->emissiveMult)`, clamping to **[0, 1]**. So 1.25, 2.1, and 4.2 all became **1.0** in the BLAS instance. INDIR (`_e * mult * mapboost`) could not get stronger than mult=1. Low wash-QA mults (0.004) still worked because they are < 1.
+
+**Fix:** `deps/RTGL/Source/TextureMeta.cpp` — use `std::max(0.f, meta->emissiveMult)` (no upper Saturate). Rebuild: `tools/build-rtgl.cmd`.
+
+**Follow-up:** `ASManager.cpp` still did `emissiveMult = Utils::Saturate(primitive.emissive)` when writing the BLAS instance — so TextureMeta’s >1 values were clamped again to 1.0. Same fix there. Yellow key GI looked red because `_e` used brownish albedo RGB `(87,61,0)`; keys now tint via authored `lightColor` through a luma mask.
+
+**Side effect (MAP01 wash):** once >1 worked, authored SMON/EXIT mults (~4.2 / 2.5) over-drove GI. Dialed walls back to ~1.0 in `gen_world_emissives.py`.
+
+## GZDoom dynamic lights missing in RT (2026-08-03)
+
+**Symptom:** MAP01 spawn blinking lights over the starting zombies were gone in path tracing.
+
+**Clarification (2026-08-03):** The desired blink is the **ceiling head lights** (`SFLATAS` over the first enemies), **not** the wall SMON terminals. MAP01 9802 `PointLightFlicker` things sit in SMON alcoves (wall-side greens).
+
+**Wrong first try:** Restoring `rt_sector_flicker` + amplifying 9802 made wall terminals pulse — rejected.
+
+**Ceiling lamp fix:** `RT_UploadCeilingInsetLamps()` uploads warm-white shadow-casting spheres under `SFLATAS` / `SFLATAQ` / `SFLATAP` / `SPORT*` ceilings with irregular flicker. Cvars: `rt_ceiling_lamps`, `rt_ceiling_lamp_intensity` (**900**), `rt_ceiling_lamp_radius` (0.08), `rt_ceiling_lamp_zofs` (8), `rt_ceiling_lamp_debug`. Play launcher: `+rt_ceiling_lamps 1`, `+rt_sector_flicker 0`, `+rt_dynlight_flicker 0` (skips 9802 wall flashers). Surface `_e` from `gen_world_emissives.py` still provides the bright blob albedo; analytic lights blink/cast.
+
+**Why `rt_sector_lights 1` did not blink the ceilings:** MAP01 booth `SFLATAS` sectors have special **0** and steady lightlevel 200. Sector lights only *blink* where lightlevel animates — the SMON alcoves (`dLight_Flicker` **65**). So enabling all-sector lights adds steady fill; wall blink still came from 9802/alcove specials.
+
+**Dynlights (9802) still uploaded** via `RT_UploadGzDoomDynamicLights()` for map lights elsewhere. Cvars: `rt_dynlight`, `rt_dynlight_intensity`, `rt_dynlight_radius`. Stable `uniqueID` from light pointer. Rebuild: `tools/build-gzdoom-rt.cmd`.
+
+**Do not** restore blink by painting teal/cyan panel `_e` on SMON — that only dirties the screens. SMON `_e` = tight BM + albedo RGB LEDs only.
+
+**Lingering fake wash:** stock also called `RT_UploadExportableSectorLights()` every frame (even with `rt_autoexport 0`), planting a white sphere (intensity 200) at **every sector center**. Gated behind `rt_sector_lights` (**default false**); play launcher sets `+rt_sector_lights 0`. Optional `rt_sector_flicker` remains for flicker/strobe sector centers when wanted — **off** on play launcher so it doesn’t fake wall-terminal blink.
+
+**Debug lights as blobs:** `rt_dynlight_debug 1` uploads magenta marker spheres at each GZDoom dynlight; `rt_dump_dynlights` lists positions. No stock RTGL “all lights as sprites” overlay — closest Dev UI is Light grid / Direct vs Indirect diffuse.
+
+## Horror RT flashlight + battery (2026-08-03)
+
+**Where:** `RT_AddFlashlight()` in `sourcecode/gzdoom-rt/src/common/rendering/rt/rt_main.cpp`.
+
+**Look:** dimmer default intensity **90**, warm color `rt_flsh_color` **0xFFBE82**, wider cone `rt_flsh_angle` **42**, tip toward ground via `rt_flsh_pitch` **22**.
+
+**Battery** (`rt_flsh_battery` default true): ~30s on (`rt_flsh_on_secs`) → last ~4s dying flicker (`rt_flsh_die_secs`, hard blackouts) → ~5s recharge off (`rt_flsh_off_secs`) → repeat. Jitter via `rt_flsh_jitter`. Engine writes HUD readouts `rt_flsh_charge` (0..1) and `rt_flsh_battstate` (0=off 1=on 2=dying 3=recharge).
+
+**HUD:** `d64r-rt-flashlight.pk3` (`tools/d64r-rt-flashlight/`, pack with `python tools/pack_rt_flashlight.py`) — bottom-left battery bar. Loaded by `tools/launch-retribution-rt.cmd`. Toggle beam with `rt_flsh 1`.
+

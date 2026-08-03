@@ -65,7 +65,8 @@
     {
       "textureName": "SFLATAQ",
       "roughnessDefault": 0.9,
-      "metallicDefault": 0.05
+      "metallicDefault": 0.05,
+      "emissiveMult": 0.0
     },
     {
       "textureName": "C50",
@@ -327,7 +328,7 @@
       "textureName": "C23",
       "roughnessDefault": 0.7,
       "metallicDefault": 0.25,
-      "emissiveMult": 0.8
+      "emissiveMult": 1.0
     },
     {
       "textureName": "C201",
@@ -470,7 +471,8 @@
     {
       "textureName": "SFLATAS",
       "roughnessDefault": 0.9,
-      "metallicDefault": 0.05
+      "metallicDefault": 0.05,
+      "emissiveMult": 0.0
     },
     {
       "textureName": "SPACECIH",
@@ -535,7 +537,7 @@
       "textureName": "SMONAA",
       "roughnessDefault": 0.7,
       "metallicDefault": 0.25,
-      "emissiveMult": 0.8
+      "emissiveMult": 1.0
     },
     {
       "textureName": "SDFLTAD",
@@ -811,7 +813,7 @@
       "textureName": "SMONBA",
       "roughnessDefault": 0.7,
       "metallicDefault": 0.25,
-      "emissiveMult": 0.8
+      "emissiveMult": 1.0
     },
     {
       "textureName": "CASF12",
@@ -996,7 +998,8 @@
     {
       "textureName": "SPORT1",
       "roughnessDefault": 0.7,
-      "metallicDefault": 0.25
+      "metallicDefault": 0.25,
+      "emissiveMult": 0.0
     },
     {
       "textureName": "SFLATAF",
@@ -1023,7 +1026,7 @@
       "textureName": "SEXIT",
       "roughnessDefault": 0.7,
       "metallicDefault": 0.25,
-      "emissiveMult": 0.8
+      "emissiveMult": 0.9
     },
     {
       "textureName": "CASF104",
@@ -1226,11 +1229,6 @@
       "isMirrorIfSmooth": true
     },
     {
-      "textureName": "WFALL01",
-      "roughnessDefault": 0.7,
-      "metallicDefault": 0.25
-    },
-    {
       "textureName": "CASFL26",
       "roughnessDefault": 0.7,
       "metallicDefault": 0.25
@@ -1331,13 +1329,14 @@
     {
       "textureName": "CRTRAKA",
       "roughnessDefault": 0.7,
-      "metallicDefault": 0.25
+      "metallicDefault": 0.25,
+      "emissiveMult": 1.0
     },
     {
       "textureName": "C22",
       "roughnessDefault": 0.7,
       "metallicDefault": 0.25,
-      "emissiveMult": 0.8
+      "emissiveMult": 1.0
     },
     {
       "textureName": "CYTRAKA",
@@ -1431,7 +1430,7 @@
       "textureName": "SMONLC1",
       "roughnessDefault": 0.7,
       "metallicDefault": 0.25,
-      "emissiveMult": 0.8
+      "emissiveMult": 1.0
     },
     {
       "textureName": "CASFL23",
@@ -1446,7 +1445,8 @@
     {
       "textureName": "SMONF1",
       "roughnessDefault": 0.7,
-      "metallicDefault": 0.25
+      "metallicDefault": 0.25,
+      "emissiveMult": 1.0
     },
     {
       "textureName": "C21",
@@ -1484,11 +1484,6 @@
       "metallicDefault": 0.25
     },
     {
-      "textureName": "SFALL01",
-      "roughnessDefault": 0.7,
-      "metallicDefault": 0.25
-    },
-    {
       "textureName": "H24",
       "roughnessDefault": 0.7,
       "metallicDefault": 0.25
@@ -1512,7 +1507,7 @@
       "textureName": "SMONDA",
       "roughnessDefault": 0.7,
       "metallicDefault": 0.25,
-      "emissiveMult": 0.8
+      "emissiveMult": 1.0
     },
     {
       "textureName": "SPACEE2",
@@ -1853,11 +1848,6 @@
       "isMirrorIfSmooth": true
     },
     {
-      "textureName": "BFALL01",
-      "roughnessDefault": 0.7,
-      "metallicDefault": 0.25
-    },
-    {
       "textureName": "CASF102",
       "roughnessDefault": 0.7,
       "metallicDefault": 0.25
@@ -1896,8 +1886,7 @@
     {
       "textureName": "OUTTEX50",
       "roughnessDefault": 0.7,
-      "metallicDefault": 0.25,
-      "emissiveMult": 0.8
+      "metallicDefault": 0.25
     },
     {
       "textureName": "SPACECE",
@@ -2066,7 +2055,8 @@
     {
       "textureName": "SFLATAP",
       "roughnessDefault": 0.9,
-      "metallicDefault": 0.05
+      "metallicDefault": 0.05,
+      "emissiveMult": 0.0
     },
     {
       "textureName": "C79",
@@ -2196,18 +2186,6 @@
       "metallicDefault": 0.25
     },
     {
-      "textureName": "H36BGLOW",
-      "roughnessDefault": 0.4,
-      "metallicDefault": 0.55,
-      "emissiveMult": 0.6,
-      "lightIntensity": 20.0,
-      "lightColor": [
-        180,
-        220,
-        255
-      ]
-    },
-    {
       "textureName": "HTRAC4",
       "roughnessDefault": 0.7,
       "metallicDefault": 0.25
@@ -2308,7 +2286,7 @@
       "textureName": "SMONEA",
       "roughnessDefault": 0.7,
       "metallicDefault": 0.25,
-      "emissiveMult": 0.8
+      "emissiveMult": 1.0
     },
     {
       "textureName": "SPACEAK2",
@@ -2423,7 +2401,7 @@
       "textureName": "SMONCA",
       "roughnessDefault": 0.7,
       "metallicDefault": 0.25,
-      "emissiveMult": 0.8
+      "emissiveMult": 1.0
     },
     {
       "textureName": "SPACEAE1",
@@ -2763,7 +2741,8 @@
     {
       "textureName": "SPORTB",
       "roughnessDefault": 0.7,
-      "metallicDefault": 0.25
+      "metallicDefault": 0.25,
+      "emissiveMult": 0.0
     },
     {
       "textureName": "C307",
@@ -2809,7 +2788,8 @@
     {
       "textureName": "CFACEA",
       "roughnessDefault": 0.7,
-      "metallicDefault": 0.25
+      "metallicDefault": 0.25,
+      "emissiveMult": 1.0
     },
     {
       "textureName": "STRAKFL",
@@ -2834,13 +2814,13 @@
     {
       "textureName": "OUTTEX09",
       "roughnessDefault": 0.7,
-      "metallicDefault": 0.25,
-      "emissiveMult": 0.8
+      "metallicDefault": 0.25
     },
     {
       "textureName": "SMONF",
       "roughnessDefault": 0.7,
-      "metallicDefault": 0.25
+      "metallicDefault": 0.25,
+      "emissiveMult": 1.0
     },
     {
       "textureName": "AZTEC01",
@@ -2946,12 +2926,14 @@
     {
       "textureName": "SKEYFLBL",
       "roughnessDefault": 0.7,
-      "metallicDefault": 0.25
+      "metallicDefault": 0.25,
+      "emissiveMult": 1.3
     },
     {
       "textureName": "SPORTA",
       "roughnessDefault": 0.7,
-      "metallicDefault": 0.25
+      "metallicDefault": 0.25,
+      "emissiveMult": 0.0
     },
     {
       "textureName": "CASFL70",
@@ -3006,8 +2988,7 @@
     {
       "textureName": "OUTTEX08",
       "roughnessDefault": 0.7,
-      "metallicDefault": 0.25,
-      "emissiveMult": 0.8
+      "metallicDefault": 0.25
     },
     {
       "textureName": "C10F",
@@ -3068,8 +3049,14 @@
       "textureName": "HLAVA1",
       "roughnessDefault": 0.35,
       "metallicDefault": 0.0,
+      "isAcid": false,
       "emissiveMult": 1.5,
-      "isAcid": false
+      "lightIntensity": 140,
+      "lightColor": [
+        255,
+        90,
+        20
+      ]
     },
     {
       "textureName": "OUTTEX25",
@@ -3215,7 +3202,8 @@
     {
       "textureName": "SKEYFLYL",
       "roughnessDefault": 0.7,
-      "metallicDefault": 0.25
+      "metallicDefault": 0.25,
+      "emissiveMult": 1.2
     },
     {
       "textureName": "SPACEAT",
@@ -3266,8 +3254,7 @@
     {
       "textureName": "OUTTEX02",
       "roughnessDefault": 0.7,
-      "metallicDefault": 0.25,
-      "emissiveMult": 0.8
+      "metallicDefault": 0.25
     },
     {
       "textureName": "OUTTEX26",
@@ -3277,7 +3264,8 @@
     {
       "textureName": "SKEYFLRD",
       "roughnessDefault": 0.7,
-      "metallicDefault": 0.25
+      "metallicDefault": 0.25,
+      "emissiveMult": 1.2
     },
     {
       "textureName": "SWXSHA",
@@ -3367,8 +3355,7 @@
     {
       "textureName": "OUTTEX07",
       "roughnessDefault": 0.7,
-      "metallicDefault": 0.25,
-      "emissiveMult": 0.8
+      "metallicDefault": 0.25
     },
     {
       "textureName": "OUTTEX35",
@@ -3388,7 +3375,8 @@
     {
       "textureName": "SMONLB1",
       "roughnessDefault": 0.7,
-      "metallicDefault": 0.25
+      "metallicDefault": 0.25,
+      "emissiveMult": 1.0
     },
     {
       "textureName": "SPACEBK1",
@@ -3562,7 +3550,8 @@
     {
       "textureName": "D64LOGO",
       "roughnessDefault": 0.7,
-      "metallicDefault": 0.25
+      "metallicDefault": 0.25,
+      "emissiveMult": 1.0
     },
     {
       "textureName": "HDOR4",
@@ -3718,15 +3707,27 @@
       "textureName": "D64LAVA1",
       "roughnessDefault": 0.35,
       "metallicDefault": 0.0,
+      "isAcid": false,
       "emissiveMult": 1.5,
-      "isAcid": false
+      "lightIntensity": 140,
+      "lightColor": [
+        255,
+        90,
+        20
+      ]
     },
     {
       "textureName": "D64LAVA2",
       "roughnessDefault": 0.35,
       "metallicDefault": 0.0,
+      "isAcid": false,
       "emissiveMult": 1.5,
-      "isAcid": false
+      "lightIntensity": 140,
+      "lightColor": [
+        255,
+        90,
+        20
+      ]
     },
     {
       "textureName": "D64NUKG1",
@@ -3777,30 +3778,6 @@
       "textureName": "GTEL1",
       "roughnessDefault": 0.7,
       "metallicDefault": 0.25
-    },
-    {
-      "textureName": "H36YGLOW",
-      "roughnessDefault": 0.4,
-      "metallicDefault": 0.55,
-      "emissiveMult": 0.6,
-      "lightIntensity": 20.0,
-      "lightColor": [
-        180,
-        220,
-        255
-      ]
-    },
-    {
-      "textureName": "H49RGLOW",
-      "roughnessDefault": 0.4,
-      "metallicDefault": 0.55,
-      "emissiveMult": 0.6,
-      "lightIntensity": 20.0,
-      "lightColor": [
-        180,
-        220,
-        255
-      ]
     },
     {
       "textureName": "HDOR11B",
@@ -3858,6 +3835,200 @@
       "textureName": "SWXAZ2A",
       "roughnessDefault": 0.7,
       "metallicDefault": 0.25
+    },
+    {
+      "textureName": "CFACEB",
+      "emissiveMult": 1.0
+    },
+    {
+      "textureName": "CFACEC",
+      "emissiveMult": 1.0
+    },
+    {
+      "textureName": "HLAVA2",
+      "emissiveMult": 1.5,
+      "lightIntensity": 140,
+      "lightColor": [
+        255,
+        90,
+        20
+      ]
+    },
+    {
+      "textureName": "HLAVA3",
+      "emissiveMult": 1.5,
+      "lightIntensity": 140,
+      "lightColor": [
+        255,
+        90,
+        20
+      ]
+    },
+    {
+      "textureName": "HLAVA4",
+      "emissiveMult": 1.5,
+      "lightIntensity": 140,
+      "lightColor": [
+        255,
+        90,
+        20
+      ]
+    },
+    {
+      "textureName": "HLAVA5",
+      "emissiveMult": 1.5,
+      "lightIntensity": 140,
+      "lightColor": [
+        255,
+        90,
+        20
+      ]
+    },
+    {
+      "textureName": "SMONAB",
+      "emissiveMult": 1.0
+    },
+    {
+      "textureName": "SMONAC",
+      "emissiveMult": 1.0
+    },
+    {
+      "textureName": "SMONAD",
+      "emissiveMult": 1.0
+    },
+    {
+      "textureName": "SMONBB",
+      "emissiveMult": 1.0
+    },
+    {
+      "textureName": "SMONBC",
+      "emissiveMult": 1.0
+    },
+    {
+      "textureName": "SMONBD",
+      "emissiveMult": 1.0
+    },
+    {
+      "textureName": "SMONCB",
+      "emissiveMult": 1.0
+    },
+    {
+      "textureName": "SMONCC",
+      "emissiveMult": 1.0
+    },
+    {
+      "textureName": "SMONCD",
+      "emissiveMult": 1.0
+    },
+    {
+      "textureName": "SMONDB",
+      "emissiveMult": 1.0
+    },
+    {
+      "textureName": "SMONDC",
+      "emissiveMult": 1.0
+    },
+    {
+      "textureName": "SMONDD",
+      "emissiveMult": 1.0
+    },
+    {
+      "textureName": "SMONEB",
+      "emissiveMult": 1.0
+    },
+    {
+      "textureName": "SMONEC",
+      "emissiveMult": 1.0
+    },
+    {
+      "textureName": "SMONED",
+      "emissiveMult": 1.0
+    },
+    {
+      "textureName": "SMONF2",
+      "emissiveMult": 1.0
+    },
+    {
+      "textureName": "SMONF3",
+      "emissiveMult": 1.0
+    },
+    {
+      "textureName": "SMONF4",
+      "emissiveMult": 1.0
+    },
+    {
+      "textureName": "SMONLB2",
+      "emissiveMult": 1.0
+    },
+    {
+      "textureName": "SMONLB3",
+      "emissiveMult": 1.0
+    },
+    {
+      "textureName": "SMONLB4",
+      "emissiveMult": 1.0
+    },
+    {
+      "textureName": "SMONLC2",
+      "emissiveMult": 1.0
+    },
+    {
+      "textureName": "SMONLC3",
+      "emissiveMult": 1.0
+    },
+    {
+      "textureName": "SMONLC4",
+      "emissiveMult": 1.0
+    },
+    {
+      "textureName": "SWXCB"
+    },
+    {
+      "textureName": "SWXCKB"
+    },
+    {
+      "textureName": "SWXCKLA"
+    },
+    {
+      "textureName": "SWXCLA"
+    },
+    {
+      "textureName": "SWXSAB"
+    },
+    {
+      "textureName": "SWXSCB"
+    },
+    {
+      "textureName": "SWXSDB"
+    },
+    {
+      "textureName": "SWXSEB"
+    },
+    {
+      "textureName": "SWXSFB"
+    },
+    {
+      "textureName": "SWXSGB"
+    },
+    {
+      "textureName": "SMONF5",
+      "emissiveMult": 1.0
+    },
+    {
+      "textureName": "SPORT2",
+      "emissiveMult": 0.0
+    },
+    {
+      "textureName": "SPORT3",
+      "emissiveMult": 0.0
+    },
+    {
+      "textureName": "SPORT4",
+      "emissiveMult": 0.0
+    },
+    {
+      "textureName": "SPORT5",
+      "emissiveMult": 0.0
     }
   ]
 }

@@ -1,0 +1,255 @@
+{
+  "version": 0,
+  "array": [
+    {
+      "textureName": "C22",
+      "emissiveMult": 4.0
+    },
+    {
+      "textureName": "C23",
+      "emissiveMult": 4.0
+    },
+    {
+      "textureName": "CFACEA",
+      "emissiveMult": 3.9
+    },
+    {
+      "textureName": "CFACEB",
+      "emissiveMult": 3.9
+    },
+    {
+      "textureName": "CFACEC",
+      "emissiveMult": 3.9
+    },
+    {
+      "textureName": "CRTRAKA",
+      "emissiveMult": 4.0
+    },
+    {
+      "textureName": "D64LAVA1",
+      "emissiveMult": 3.6,
+      "lightIntensity": 280,
+      "lightColor": [
+        255,
+        90,
+        20
+      ]
+    },
+    {
+      "textureName": "D64LAVA2",
+      "emissiveMult": 3.6,
+      "lightIntensity": 280,
+      "lightColor": [
+        255,
+        90,
+        20
+      ]
+    },
+    {
+      "textureName": "D64LOGO",
+      "emissiveMult": 3.9
+    },
+    {
+      "textureName": "HLAVA1",
+      "emissiveMult": 3.6,
+      "lightIntensity": 280,
+      "lightColor": [
+        255,
+        90,
+        20
+      ]
+    },
+    {
+      "textureName": "HLAVA2",
+      "emissiveMult": 3.6,
+      "lightIntensity": 280,
+      "lightColor": [
+        255,
+        90,
+        20
+      ]
+    },
+    {
+      "textureName": "HLAVA3",
+      "emissiveMult": 3.6,
+      "lightIntensity": 280,
+      "lightColor": [
+        255,
+        90,
+        20
+      ]
+    },
+    {
+      "textureName": "HLAVA4",
+      "emissiveMult": 3.6,
+      "lightIntensity": 280,
+      "lightColor": [
+        255,
+        90,
+        20
+      ]
+    },
+    {
+      "textureName": "HLAVA5",
+      "emissiveMult": 3.6,
+      "lightIntensity": 280,
+      "lightColor": [
+        255,
+        90,
+        20
+      ]
+    },
+    {
+      "textureName": "SEXIT",
+      "emissiveMult": 2.5
+    },
+    {
+      "textureName": "SKEYFLBL",
+      "emissiveMult": 2.4
+    },
+    {
+      "textureName": "SKEYFLRD",
+      "emissiveMult": 2.3
+    },
+    {
+      "textureName": "SKEYFLYL",
+      "emissiveMult": 2.3
+    },
+    {
+      "textureName": "SMONAA",
+      "emissiveMult": 4.2
+    },
+    {
+      "textureName": "SMONAB",
+      "emissiveMult": 4.2
+    },
+    {
+      "textureName": "SMONAC",
+      "emissiveMult": 4.2
+    },
+    {
+      "textureName": "SMONAD",
+      "emissiveMult": 4.2
+    },
+    {
+      "textureName": "SMONBA",
+      "emissiveMult": 4.2
+    },
+    {
+      "textureName": "SMONBB",
+      "emissiveMult": 4.2
+    },
+    {
+      "textureName": "SMONBC",
+      "emissiveMult": 4.2
+    },
+    {
+      "textureName": "SMONBD",
+      "emissiveMult": 4.2
+    },
+    {
+      "textureName": "SMONCA",
+      "emissiveMult": 4.2
+    },
+    {
+      "textureName": "SMONCB",
+      "emissiveMult": 4.2
+    },
+    {
+      "textureName": "SMONCC",
+      "emissiveMult": 4.2
+    },
+    {
+      "textureName": "SMONCD",
+      "emissiveMult": 4.2
+    },
+    {
+      "textureName": "SMONDA",
+      "emissiveMult": 4.2
+    },
+    {
+      "textureName": "SMONDB",
+      "emissiveMult": 4.2
+    },
+    {
+      "textureName": "SMONDC",
+      "emissiveMult": 4.2
+    },
+    {
+      "textureName": "SMONDD",
+      "emissiveMult": 4.2
+    },
+    {
+      "textureName": "SMONEA",
+      "emissiveMult": 4.2
+    },
+    {
+      "textureName": "SMONEB",
+      "emissiveMult": 4.2
+    },
+    {
+      "textureName": "SMONEC",
+      "emissiveMult": 4.2
+    },
+    {
+      "textureName": "SMONED",
+      "emissiveMult": 4.2
+    },
+    {
+      "textureName": "SMONF",
+      "emissiveMult": 4.2
+    },
+    {
+      "textureName": "SMONF1",
+      "emissiveMult": 4.2
+    },
+    {
+      "textureName": "SMONF2",
+      "emissiveMult": 4.2
+    },
+    {
+      "textureName": "SMONF3",
+      "emissiveMult": 4.2
+    },
+    {
+      "textureName": "SMONF4",
+      "emissiveMult": 4.2
+    },
+    {
+      "textureName": "SMONLB1",
+      "emissiveMult": 4.2
+    },
+    {
+      "textureName": "SMONLB2",
+      "emissiveMult": 4.2
+    },
+    {
+      "textureName": "SMONLB3",
+      "emissiveMult": 4.2
+    },
+    {
+      "textureName": "SMONLB4",
+      "emissiveMult": 4.2
+    },
+    {
+      "textureName": "SMONLC1",
+      "emissiveMult": 4.2
+    },
+    {
+      "textureName": "SMONLC2",
+      "emissiveMult": 4.2
+    },
+    {
+      "textureName": "SMONLC3",
+      "emissiveMult": 4.2
+    },
+    {
+      "textureName": "SMONLC4",
+      "emissiveMult": 4.2
+    },
+    {
+      "textureName": "SMONF5",
+      "emissiveMult": 4.2
+    }
+  ]
+}

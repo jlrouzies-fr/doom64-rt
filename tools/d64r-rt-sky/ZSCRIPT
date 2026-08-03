@@ -4,9 +4,12 @@ class D64RtSkyFix : EventHandler
 {
 	override void WorldLoaded(WorldEvent e)
 	{
-		// Prefer Doom II RSKY1 (working RT sky path). Avoid GLDEFS cubic skyboxes —
-		// their faces often show as pink checker / white under RTGL1.
-		TextureID sky = TexMan.CheckForTexture("RSKY1", TexMan.Type_Any);
+		// Retribution night/star sky flat for the raster sky path.
+		// Prefer SPACE (near-black starfield in the WAD). Never RSKY1 — that
+		// bright Doom II fallback washed indoor sky seams like daylight.
+		// Sector skybox rooms (SPACE* mural boxes) are Ignored under RT
+		// (white/black bug); rt_sky_always fills outdoor F_SKY1 with this flat.
+		TextureID sky = TexMan.CheckForTexture("SPACE", TexMan.Type_Any);
 		if (!sky.IsValid())
 			sky = TexMan.CheckForTexture("SPACEAA", TexMan.Type_Any);
 		if (!sky.IsValid())

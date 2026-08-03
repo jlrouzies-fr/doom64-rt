@@ -1,0 +1,55 @@
+version "4.12"
+
+// Battery readout styled like Doom 64 Retribution's translucent red HUD numbers
+// (see screen/hut.png health "100"): big pixel digits, ~50% opacity, soft shadow.
+class D64RtFlashlightHud : EventHandler
+{
+	override void RenderOverlay(RenderEvent e)
+	{
+		CVar flsh = CVar.FindCVar("rt_flsh");
+		CVar batt = CVar.FindCVar("rt_flsh_battery");
+		if (flsh == null || !flsh.GetBool())
+			return;
+		if (batt != null && !batt.GetBool())
+			return;
+
+		CVar chargeC = CVar.FindCVar("rt_flsh_charge");
+		CVar stateC  = CVar.FindCVar("rt_flsh_battstate");
+		double charge = 0.0;
+		if (chargeC != null)
+		{
+			charge = chargeC.GetFloat();
+			if (charge < 0.0) charge = 0.0;
+			if (charge > 1.0) charge = 1.0;
+		}
+		int state = stateC != null ? stateC.GetInt() : 0;
+		// 0=off 1=on 2=dying 3=recharge
+		if (state <= 0)
+			return;
+
+		int pct = int(charge * 100.0 + 0.5);
+		if (charge > 0.0 && pct < 1) pct = 1;
+		String text = String.Format("%d", pct);
+
+		// Virtual 320x200 — sit right of health cluster, a bit above the bottom strip.
+		int vx = 78;
+		int vy = 158;
+		double opacity = 0.50;
+		if (state == 2)
+			opacity = 0.45;
+		else if (state == 3)
+			opacity = 0.40;
+
+		Font fnt = BigFont;
+		// Dark drop-shadow (matches the health number depth in hut.png)
+		Screen.DrawText(fnt, Font.CR_BLACK, vx + 2, vy + 2, text,
+			DTA_VirtualWidth, 320,
+			DTA_VirtualHeight, 200,
+			DTA_Alpha, opacity * 0.55);
+		// Primary translucent red digits
+		Screen.DrawText(fnt, Font.CR_RED, vx, vy, text,
+			DTA_VirtualWidth, 320,
+			DTA_VirtualHeight, 200,
+			DTA_Alpha, opacity);
+	}
+}

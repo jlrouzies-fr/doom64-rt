@@ -116,12 +116,15 @@ $arg = @(
   '+screenshot_dir', $OutDir,
   '+screenshot_quiet', 'false',
   '+god', '+gl_noskyboxes', 'true',
-  '+rt_mod_compat', '3', '+r_drawvoxels', '0',
+  '+rt_mod_compat', '1', '+r_drawvoxels', '0',
   '+rt_dxgi', '1',
   '+rt_classic', "$Classic", '+rt_autoexport', 'false', '+rt_fluid', 'false',
   '+rt_sky', '80', '+rt_sky_always', 'true', '+rt_upscale_dlss', '0',
   '+rt_sun', '1', '+rt_sun_intensity', '35', '+rt_sun_a', '50', '+rt_sun_b', '20',
   '+rt_flsh', '1', '+rt_flsh_intensity', '450',
+  '+rt_emis_mapboost', '200',
+  '+rt_emis_additive_dflt', '0.15',
+  '+rt_emis_maxscrcolor', '3',
   '+rt_normalmap_stren', "$NormalMapStren",
   '+rt_heightmap_stren', "$NormalMapStren"
 )

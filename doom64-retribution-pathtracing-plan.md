@@ -18,10 +18,10 @@
 
 | Field | Value |
 |---|---|
-| **Last updated** | 2026-08-02 (evening) |
+| **Last updated** | 2026-08-03 |
 | **Current phase** | **Phase 4** materials + emissives; Phase 5 launchers usable; Phase 6 RR default |
 | **Blocked on** | — |
-| **Next action** | Continue world/texture PBR (MAP99 gallery / `gen_ai_pbr.py`); optional HEAD/BOSS eye masks; finish or drop Lost Soul LSGL offset-light |
+| **Next action** | Close MAP01 ceiling blink/cast (`open-issues-rt-lighting.md` §1.1–1.3); wash still open; prefer play launcher over WashScratch for light A/B |
 
 ### Progress
 
@@ -43,6 +43,7 @@
 - Eyes: brightmap-only `_e`, `emissiveMult≈2`, pure red; **no** eye `lightIntensity`; **no** `noShadow` on monster sprites.
 - Auto eye detect disabled (soldiers/pinky-back false positives).
 - Lost Soul: sprite tint pk3 only (no actor replace); same-sprite attached light abandoned (white bloom); LSGL offset glow experimental/unfinished.
+- **Monster muzzle:** `POSSF`/`SPOSF`/`CPOSF`/`PLAYF` fire frames get attached `lightIntensity` (`ff8c52`) via `gen_fx_emissives.py` — player uses `rt_mzlflsh`/extralight, monsters do not.
 - Debug: MAP98 enemy gallery + `review_enemy_gallery_batch.ps1`. Details in `AGENTS.md` + `material-authoring-spec.md`.
 
 ### Workspace (this machine)
@@ -204,7 +205,8 @@ Bulk creative/technical work â€” Doom 64 look into RTGL1 materials. Use inv
 
 - [ ] Playtest episodes vs rasterized baseline
 - [ ] Fix light leaks, bad emissive bleed, wrong brightness
-- [ ] Particles, decals, muzzle flashes vs RT pipeline
+- [x] Monster gun fire-frame muzzle light (`POSSF`/`SPOSF`/`CPOSF` via `gen_fx_emissives`) — player still uses `rt_mzlflsh`
+- [ ] Particles, decals, remaining muzzle/FX polish vs RT pipeline
 - [ ] Save/load, menus, multiplayer if relevant
 
 ---

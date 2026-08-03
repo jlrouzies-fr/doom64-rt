@@ -1,0 +1,6508 @@
+{
+  "candidates": [
+    {
+      "texture": "SMONAA",
+      "score": 215,
+      "tag": "monitor",
+      "covered": true,
+      "map_used": true,
+      "bright_frac": 0.006,
+      "sat_frac": 0.012,
+      "mean_bright_rgb": [
+        168,
+        160,
+        144
+      ],
+      "reasons": [
+        "brightmap",
+        "name:monitor",
+        "map-used",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SMONBA",
+      "score": 215,
+      "tag": "monitor",
+      "covered": true,
+      "map_used": true,
+      "bright_frac": 0.004,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        168,
+        168,
+        168
+      ],
+      "reasons": [
+        "brightmap",
+        "name:monitor",
+        "map-used",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SMONCA",
+      "score": 215,
+      "tag": "monitor",
+      "covered": true,
+      "map_used": true,
+      "bright_frac": 0.044,
+      "sat_frac": 0.005,
+      "mean_bright_rgb": [
+        144,
+        153,
+        131
+      ],
+      "reasons": [
+        "brightmap",
+        "name:monitor",
+        "map-used",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SMONDA",
+      "score": 215,
+      "tag": "monitor",
+      "covered": true,
+      "map_used": true,
+      "bright_frac": 0.006,
+      "sat_frac": 0.004,
+      "mean_bright_rgb": [
+        168,
+        160,
+        144
+      ],
+      "reasons": [
+        "brightmap",
+        "name:monitor",
+        "map-used",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SMONEA",
+      "score": 215,
+      "tag": "monitor",
+      "covered": true,
+      "map_used": true,
+      "bright_frac": 0.004,
+      "sat_frac": 0.007,
+      "mean_bright_rgb": [
+        28,
+        164,
+        248
+      ],
+      "reasons": [
+        "brightmap",
+        "name:monitor",
+        "map-used",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SMONLC1",
+      "score": 215,
+      "tag": "monitor",
+      "covered": true,
+      "map_used": true,
+      "bright_frac": 0.044,
+      "sat_frac": 0.005,
+      "mean_bright_rgb": [
+        144,
+        153,
+        131
+      ],
+      "reasons": [
+        "brightmap",
+        "name:monitor",
+        "map-used",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SWXS4B",
+      "score": 213,
+      "tag": "switch",
+      "covered": true,
+      "map_used": true,
+      "bright_frac": 0.104,
+      "sat_frac": 0.271,
+      "mean_bright_rgb": [
+        51,
+        255,
+        204
+      ],
+      "reasons": [
+        "brightmap",
+        "name:switch",
+        "map-used",
+        "bright=0.10",
+        "sat=0.27"
+      ]
+    },
+    {
+      "texture": "SEXIT",
+      "score": 205,
+      "tag": "exit",
+      "covered": true,
+      "map_used": true,
+      "bright_frac": 0.033,
+      "sat_frac": 0.268,
+      "mean_bright_rgb": [
+        214,
+        0,
+        0
+      ],
+      "reasons": [
+        "brightmap",
+        "name:exit",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "SMONAB",
+      "score": 200,
+      "tag": "monitor",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.006,
+      "sat_frac": 0.011,
+      "mean_bright_rgb": [
+        168,
+        160,
+        144
+      ],
+      "reasons": [
+        "brightmap",
+        "name:monitor",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SMONAC",
+      "score": 200,
+      "tag": "monitor",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.006,
+      "sat_frac": 0.012,
+      "mean_bright_rgb": [
+        168,
+        160,
+        144
+      ],
+      "reasons": [
+        "brightmap",
+        "name:monitor",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SMONAD",
+      "score": 200,
+      "tag": "monitor",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.006,
+      "sat_frac": 0.013,
+      "mean_bright_rgb": [
+        168,
+        160,
+        144
+      ],
+      "reasons": [
+        "brightmap",
+        "name:monitor",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SMONBB",
+      "score": 200,
+      "tag": "monitor",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.007,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        168,
+        168,
+        168
+      ],
+      "reasons": [
+        "brightmap",
+        "name:monitor",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SMONBC",
+      "score": 200,
+      "tag": "monitor",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.004,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        168,
+        168,
+        168
+      ],
+      "reasons": [
+        "brightmap",
+        "name:monitor",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SMONBD",
+      "score": 200,
+      "tag": "monitor",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.01,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        168,
+        168,
+        168
+      ],
+      "reasons": [
+        "brightmap",
+        "name:monitor",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SMONCB",
+      "score": 200,
+      "tag": "monitor",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.044,
+      "sat_frac": 0.005,
+      "mean_bright_rgb": [
+        144,
+        153,
+        131
+      ],
+      "reasons": [
+        "brightmap",
+        "name:monitor",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SMONCC",
+      "score": 200,
+      "tag": "monitor",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.042,
+      "sat_frac": 0.004,
+      "mean_bright_rgb": [
+        143,
+        152,
+        132
+      ],
+      "reasons": [
+        "brightmap",
+        "name:monitor",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SMONCD",
+      "score": 200,
+      "tag": "monitor",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.043,
+      "sat_frac": 0.004,
+      "mean_bright_rgb": [
+        145,
+        152,
+        129
+      ],
+      "reasons": [
+        "brightmap",
+        "name:monitor",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SMONDB",
+      "score": 200,
+      "tag": "monitor",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.006,
+      "sat_frac": 0.007,
+      "mean_bright_rgb": [
+        168,
+        160,
+        144
+      ],
+      "reasons": [
+        "brightmap",
+        "name:monitor",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SMONDC",
+      "score": 200,
+      "tag": "monitor",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.006,
+      "sat_frac": 0.01,
+      "mean_bright_rgb": [
+        168,
+        160,
+        144
+      ],
+      "reasons": [
+        "brightmap",
+        "name:monitor",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SMONDD",
+      "score": 200,
+      "tag": "monitor",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.006,
+      "sat_frac": 0.006,
+      "mean_bright_rgb": [
+        168,
+        160,
+        144
+      ],
+      "reasons": [
+        "brightmap",
+        "name:monitor",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SMONEB",
+      "score": 200,
+      "tag": "monitor",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.005,
+      "sat_frac": 0.007,
+      "mean_bright_rgb": [
+        28,
+        164,
+        248
+      ],
+      "reasons": [
+        "brightmap",
+        "name:monitor",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SMONEC",
+      "score": 200,
+      "tag": "monitor",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.007,
+      "sat_frac": 0.009,
+      "mean_bright_rgb": [
+        27,
+        162,
+        248
+      ],
+      "reasons": [
+        "brightmap",
+        "name:monitor",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SMONED",
+      "score": 200,
+      "tag": "monitor",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.004,
+      "sat_frac": 0.005,
+      "mean_bright_rgb": [
+        18,
+        123,
+        248
+      ],
+      "reasons": [
+        "brightmap",
+        "name:monitor",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SMONLC2",
+      "score": 200,
+      "tag": "monitor",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.044,
+      "sat_frac": 0.005,
+      "mean_bright_rgb": [
+        144,
+        153,
+        131
+      ],
+      "reasons": [
+        "brightmap",
+        "name:monitor",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SMONLC3",
+      "score": 200,
+      "tag": "monitor",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.042,
+      "sat_frac": 0.004,
+      "mean_bright_rgb": [
+        143,
+        152,
+        132
+      ],
+      "reasons": [
+        "brightmap",
+        "name:monitor",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SMONLC4",
+      "score": 200,
+      "tag": "monitor",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.043,
+      "sat_frac": 0.004,
+      "mean_bright_rgb": [
+        145,
+        152,
+        129
+      ],
+      "reasons": [
+        "brightmap",
+        "name:monitor",
+        "anim"
+      ]
+    },
+    {
+      "texture": "OUTTEX08",
+      "score": 197,
+      "tag": "outdoor_lit",
+      "covered": true,
+      "map_used": true,
+      "bright_frac": 0.051,
+      "sat_frac": 0.279,
+      "mean_bright_rgb": [
+        102,
+        202,
+        100
+      ],
+      "reasons": [
+        "brightmap",
+        "name:outdoor_lit",
+        "map-used",
+        "sat=0.28"
+      ]
+    },
+    {
+      "texture": "OUTTEX24",
+      "score": 197,
+      "tag": "outdoor_lit",
+      "covered": true,
+      "map_used": true,
+      "bright_frac": 0.188,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        220,
+        220,
+        220
+      ],
+      "reasons": [
+        "brightmap",
+        "name:outdoor_lit",
+        "map-used",
+        "bright=0.19"
+      ]
+    },
+    {
+      "texture": "CFACEC",
+      "score": 185,
+      "tag": "face_light",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.001,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "brightmap",
+        "name:face_light",
+        "anim"
+      ]
+    },
+    {
+      "texture": "OUTTEX02",
+      "score": 175,
+      "tag": "outdoor_lit",
+      "covered": true,
+      "map_used": true,
+      "bright_frac": 0.024,
+      "sat_frac": 0.02,
+      "mean_bright_rgb": [
+        60,
+        126,
+        202
+      ],
+      "reasons": [
+        "brightmap",
+        "name:outdoor_lit",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "OUTTEX07",
+      "score": 175,
+      "tag": "outdoor_lit",
+      "covered": true,
+      "map_used": true,
+      "bright_frac": 0.051,
+      "sat_frac": 0.007,
+      "mean_bright_rgb": [
+        164,
+        166,
+        199
+      ],
+      "reasons": [
+        "brightmap",
+        "name:outdoor_lit",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "OUTTEX09",
+      "score": 175,
+      "tag": "outdoor_lit",
+      "covered": true,
+      "map_used": true,
+      "bright_frac": 0.064,
+      "sat_frac": 0.107,
+      "mean_bright_rgb": [
+        124,
+        206,
+        115
+      ],
+      "reasons": [
+        "brightmap",
+        "name:outdoor_lit",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "OUTTEX50",
+      "score": 175,
+      "tag": "outdoor_lit",
+      "covered": true,
+      "map_used": true,
+      "bright_frac": 0.027,
+      "sat_frac": 0.029,
+      "mean_bright_rgb": [
+        129,
+        244,
+        125
+      ],
+      "reasons": [
+        "brightmap",
+        "name:outdoor_lit",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "SWXCB",
+      "score": 165,
+      "tag": "switch",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.023,
+      "sat_frac": 0.007,
+      "mean_bright_rgb": [
+        170,
+        152,
+        128
+      ],
+      "reasons": [
+        "brightmap",
+        "name:switch"
+      ]
+    },
+    {
+      "texture": "SWXCKB",
+      "score": 165,
+      "tag": "switch",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.03,
+      "sat_frac": 0.018,
+      "mean_bright_rgb": [
+        165,
+        139,
+        122
+      ],
+      "reasons": [
+        "brightmap",
+        "name:switch"
+      ]
+    },
+    {
+      "texture": "SWXCKLA",
+      "score": 165,
+      "tag": "switch",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.008,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "brightmap",
+        "name:switch"
+      ]
+    },
+    {
+      "texture": "SWXCLA",
+      "score": 165,
+      "tag": "switch",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.002,
+      "sat_frac": 0.008,
+      "mean_bright_rgb": [
+        248,
+        56,
+        8
+      ],
+      "reasons": [
+        "brightmap",
+        "name:switch"
+      ]
+    },
+    {
+      "texture": "SWXSAB",
+      "score": 165,
+      "tag": "switch",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.032,
+      "sat_frac": 0.031,
+      "mean_bright_rgb": [
+        118,
+        207,
+        113
+      ],
+      "reasons": [
+        "brightmap",
+        "name:switch"
+      ]
+    },
+    {
+      "texture": "SWXSCB",
+      "score": 165,
+      "tag": "switch",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.024,
+      "sat_frac": 0.045,
+      "mean_bright_rgb": [
+        117,
+        232,
+        117
+      ],
+      "reasons": [
+        "brightmap",
+        "name:switch"
+      ]
+    },
+    {
+      "texture": "SWXSDB",
+      "score": 165,
+      "tag": "switch",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.024,
+      "sat_frac": 0.046,
+      "mean_bright_rgb": [
+        117,
+        232,
+        117
+      ],
+      "reasons": [
+        "brightmap",
+        "name:switch"
+      ]
+    },
+    {
+      "texture": "SWXSEB",
+      "score": 165,
+      "tag": "switch",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.017,
+      "sat_frac": 0.082,
+      "mean_bright_rgb": [
+        136,
+        248,
+        136
+      ],
+      "reasons": [
+        "brightmap",
+        "name:switch"
+      ]
+    },
+    {
+      "texture": "SWXSFB",
+      "score": 165,
+      "tag": "switch",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.044,
+      "sat_frac": 0.116,
+      "mean_bright_rgb": [
+        126,
+        244,
+        126
+      ],
+      "reasons": [
+        "brightmap",
+        "name:switch"
+      ]
+    },
+    {
+      "texture": "SWXSGB",
+      "score": 165,
+      "tag": "switch",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.027,
+      "sat_frac": 0.045,
+      "mean_bright_rgb": [
+        246,
+        37,
+        68
+      ],
+      "reasons": [
+        "brightmap",
+        "name:switch"
+      ]
+    },
+    {
+      "texture": "D64LAVA1",
+      "score": 125,
+      "tag": "lava",
+      "covered": true,
+      "map_used": true,
+      "bright_frac": 0.084,
+      "sat_frac": 0.222,
+      "mean_bright_rgb": [
+        216,
+        59,
+        0
+      ],
+      "reasons": [
+        "name:lava",
+        "map-used",
+        "bright=0.08"
+      ]
+    },
+    {
+      "texture": "HLAVA1",
+      "score": 125,
+      "tag": "lava",
+      "covered": true,
+      "map_used": true,
+      "bright_frac": 0.0,
+      "sat_frac": 0.004,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:lava",
+        "map-used",
+        "anim"
+      ]
+    },
+    {
+      "texture": "C22",
+      "score": 115,
+      "tag": "brightmap",
+      "covered": true,
+      "map_used": true,
+      "bright_frac": 0.002,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        168,
+        144,
+        152
+      ],
+      "reasons": [
+        "brightmap",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "C23",
+      "score": 115,
+      "tag": "brightmap",
+      "covered": true,
+      "map_used": true,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "brightmap",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "D64LAVA2",
+      "score": 115,
+      "tag": "lava",
+      "covered": true,
+      "map_used": true,
+      "bright_frac": 0.0,
+      "sat_frac": 0.039,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:lava",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "SMONF1",
+      "score": 115,
+      "tag": "monitor",
+      "covered": true,
+      "map_used": true,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:monitor",
+        "map-used",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SMONLB1",
+      "score": 115,
+      "tag": "monitor",
+      "covered": true,
+      "map_used": true,
+      "bright_frac": 0.004,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        168,
+        168,
+        168
+      ],
+      "reasons": [
+        "name:monitor",
+        "map-used",
+        "anim"
+      ]
+    },
+    {
+      "texture": "HLAVA2",
+      "score": 110,
+      "tag": "lava",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.01,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:lava",
+        "anim"
+      ]
+    },
+    {
+      "texture": "HLAVA3",
+      "score": 110,
+      "tag": "lava",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.01,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:lava",
+        "anim"
+      ]
+    },
+    {
+      "texture": "HLAVA4",
+      "score": 110,
+      "tag": "lava",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.039,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:lava",
+        "anim"
+      ]
+    },
+    {
+      "texture": "HLAVA5",
+      "score": 110,
+      "tag": "lava",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.09,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:lava",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SMONF",
+      "score": 105,
+      "tag": "monitor",
+      "covered": true,
+      "map_used": true,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:monitor",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "CFACEA",
+      "score": 100,
+      "tag": "face_light",
+      "covered": true,
+      "map_used": true,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:face_light",
+        "map-used",
+        "anim"
+      ]
+    },
+    {
+      "texture": "H36BGLOW",
+      "score": 100,
+      "tag": "glow",
+      "covered": true,
+      "map_used": true,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:glow",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "H36YGLOW",
+      "score": 100,
+      "tag": "glow",
+      "covered": true,
+      "map_used": true,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:glow",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "H49RGLOW",
+      "score": 100,
+      "tag": "glow",
+      "covered": true,
+      "map_used": true,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:glow",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "SMONF2",
+      "score": 100,
+      "tag": "monitor",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.011,
+      "mean_bright_rgb": [
+        128,
+        144,
+        144
+      ],
+      "reasons": [
+        "name:monitor",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SMONF3",
+      "score": 100,
+      "tag": "monitor",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.019,
+      "mean_bright_rgb": [
+        168,
+        160,
+        144
+      ],
+      "reasons": [
+        "name:monitor",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SMONF4",
+      "score": 100,
+      "tag": "monitor",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.011,
+      "sat_frac": 0.027,
+      "mean_bright_rgb": [
+        50,
+        152,
+        207
+      ],
+      "reasons": [
+        "name:monitor",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SMONLB2",
+      "score": 100,
+      "tag": "monitor",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.007,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        168,
+        168,
+        168
+      ],
+      "reasons": [
+        "name:monitor",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SMONLB3",
+      "score": 100,
+      "tag": "monitor",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.004,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        168,
+        168,
+        168
+      ],
+      "reasons": [
+        "name:monitor",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SMONLB4",
+      "score": 100,
+      "tag": "monitor",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.01,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        168,
+        168,
+        168
+      ],
+      "reasons": [
+        "name:monitor",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL01",
+      "score": 95,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": true,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "map-used",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL01",
+      "score": 95,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": true,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "map-used",
+        "anim"
+      ]
+    },
+    {
+      "texture": "OUTTEX69",
+      "score": 94,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.183,
+      "sat_frac": 0.163,
+      "mean_bright_rgb": [
+        186,
+        170,
+        154
+      ],
+      "reasons": [
+        "name:outdoor_lit",
+        "bright=0.18",
+        "sat=0.16"
+      ]
+    },
+    {
+      "texture": "SWXAZ2A",
+      "score": 94,
+      "tag": "switch",
+      "covered": true,
+      "map_used": true,
+      "bright_frac": 0.031,
+      "sat_frac": 0.179,
+      "mean_bright_rgb": [
+        221,
+        162,
+        16
+      ],
+      "reasons": [
+        "name:switch",
+        "map-used",
+        "sat=0.18"
+      ]
+    },
+    {
+      "texture": "SMONF5",
+      "score": 90,
+      "tag": "monitor",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.019,
+      "sat_frac": 0.038,
+      "mean_bright_rgb": [
+        39,
+        191,
+        230
+      ],
+      "reasons": [
+        "name:monitor"
+      ]
+    },
+    {
+      "texture": "CFACEB",
+      "score": 85,
+      "tag": "face_light",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:face_light",
+        "anim"
+      ]
+    },
+    {
+      "texture": "OUTTEX70",
+      "score": 82,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.185,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        182,
+        179,
+        154
+      ],
+      "reasons": [
+        "name:outdoor_lit",
+        "bright=0.18"
+      ]
+    },
+    {
+      "texture": "BFALL02",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL03",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL04",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL05",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL06",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL07",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL08",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL09",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL10",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL11",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL12",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL13",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL14",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL15",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL16",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL17",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL18",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL19",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL20",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL21",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL22",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL23",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL24",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL25",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL26",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL27",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL28",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL29",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL30",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL31",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL32",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL33",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL34",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL35",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL36",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL37",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL38",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL39",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL40",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL41",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL42",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL43",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL44",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL45",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL46",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL47",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL48",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL49",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL50",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL51",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL52",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL53",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL54",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL55",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL56",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL57",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL58",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL59",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL60",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL61",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL62",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL63",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "BFALL64",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.009,
+      "sat_frac": 0.005,
+      "mean_bright_rgb": [
+        153,
+        164,
+        165
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "D64LOGO",
+      "score": 80,
+      "tag": "",
+      "covered": true,
+      "map_used": true,
+      "bright_frac": 0.34,
+      "sat_frac": 0.508,
+      "mean_bright_rgb": [
+        219,
+        173,
+        69
+      ],
+      "reasons": [
+        "map-used",
+        "bright=0.34",
+        "sat=0.51"
+      ]
+    },
+    {
+      "texture": "SFALL02",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL03",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL04",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL05",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL06",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL07",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL08",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL09",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL10",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL11",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL12",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL13",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL14",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL15",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL16",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL17",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL18",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL19",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL20",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL21",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL22",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL23",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL24",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL25",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL26",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL27",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL28",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL29",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL30",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL31",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL32",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL33",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL34",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL35",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL36",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL37",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL38",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL39",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL40",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL41",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL42",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL43",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL44",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL45",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL46",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL47",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL48",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL49",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL50",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL51",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL52",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL53",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL54",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL55",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL56",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL57",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL58",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL59",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL60",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL61",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL62",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL63",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SFALL64",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "SWXAZ1A",
+      "score": 80,
+      "tag": "switch",
+      "covered": true,
+      "map_used": true,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:switch",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "SWXCA",
+      "score": 80,
+      "tag": "switch",
+      "covered": true,
+      "map_used": true,
+      "bright_frac": 0.021,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        162,
+        160,
+        138
+      ],
+      "reasons": [
+        "name:switch",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "SWXCKA",
+      "score": 80,
+      "tag": "switch",
+      "covered": true,
+      "map_used": true,
+      "bright_frac": 0.04,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        162,
+        154,
+        117
+      ],
+      "reasons": [
+        "name:switch",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "SWXCKLB",
+      "score": 80,
+      "tag": "switch",
+      "covered": true,
+      "map_used": true,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:switch",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "SWXCLB",
+      "score": 80,
+      "tag": "switch",
+      "covered": true,
+      "map_used": true,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:switch",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "SWXHCA",
+      "score": 80,
+      "tag": "switch",
+      "covered": true,
+      "map_used": true,
+      "bright_frac": 0.01,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        168,
+        160,
+        144
+      ],
+      "reasons": [
+        "name:switch",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "SWXNS01",
+      "score": 80,
+      "tag": "switch",
+      "covered": true,
+      "map_used": true,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:switch",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "SWXS4A",
+      "score": 80,
+      "tag": "switch",
+      "covered": true,
+      "map_used": true,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:switch",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "SWXSAA",
+      "score": 80,
+      "tag": "switch",
+      "covered": true,
+      "map_used": true,
+      "bright_frac": 0.007,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        144,
+        144,
+        120
+      ],
+      "reasons": [
+        "name:switch",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "SWXSCA",
+      "score": 80,
+      "tag": "switch",
+      "covered": true,
+      "map_used": true,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:switch",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "SWXSDA",
+      "score": 80,
+      "tag": "switch",
+      "covered": true,
+      "map_used": true,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:switch",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "SWXSEA",
+      "score": 80,
+      "tag": "switch",
+      "covered": true,
+      "map_used": true,
+      "bright_frac": 0.002,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        144,
+        144,
+        120
+      ],
+      "reasons": [
+        "name:switch",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "SWXSFA",
+      "score": 80,
+      "tag": "switch",
+      "covered": true,
+      "map_used": true,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:switch",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "SWXSGA",
+      "score": 80,
+      "tag": "switch",
+      "covered": true,
+      "map_used": true,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:switch",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "SWXSHA",
+      "score": 80,
+      "tag": "switch",
+      "covered": true,
+      "map_used": true,
+      "bright_frac": 0.002,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        162,
+        162,
+        162
+      ],
+      "reasons": [
+        "name:switch",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "WFALL01",
+      "score": 80,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": true,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "map-used",
+        "anim"
+      ]
+    },
+    {
+      "texture": "CRTRAKA",
+      "score": 78,
+      "tag": "screen",
+      "covered": true,
+      "map_used": true,
+      "bright_frac": 0.009,
+      "sat_frac": 0.293,
+      "mean_bright_rgb": [
+        189,
+        120,
+        125
+      ],
+      "reasons": [
+        "name:screen",
+        "map-used",
+        "sat=0.29"
+      ]
+    },
+    {
+      "texture": "OUTTEX01",
+      "score": 75,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": true,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:outdoor_lit",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "OUTTEX04",
+      "score": 75,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": true,
+      "bright_frac": 0.0,
+      "sat_frac": 0.003,
+      "mean_bright_rgb": [
+        165,
+        149,
+        133
+      ],
+      "reasons": [
+        "name:outdoor_lit",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "OUTTEX05",
+      "score": 75,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": true,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:outdoor_lit",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "OUTTEX06",
+      "score": 75,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": true,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:outdoor_lit",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "OUTTEX10",
+      "score": 75,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": true,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:outdoor_lit",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "OUTTEX11",
+      "score": 75,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": true,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        165,
+        149,
+        133
+      ],
+      "reasons": [
+        "name:outdoor_lit",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "OUTTEX12",
+      "score": 75,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": true,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        182,
+        166,
+        150
+      ],
+      "reasons": [
+        "name:outdoor_lit",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "OUTTEX14",
+      "score": 75,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": true,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:outdoor_lit",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "OUTTEX20",
+      "score": 75,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": true,
+      "bright_frac": 0.001,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        165,
+        149,
+        133
+      ],
+      "reasons": [
+        "name:outdoor_lit",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "OUTTEX21",
+      "score": 75,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": true,
+      "bright_frac": 0.0,
+      "sat_frac": 0.002,
+      "mean_bright_rgb": [
+        199,
+        183,
+        167
+      ],
+      "reasons": [
+        "name:outdoor_lit",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "OUTTEX22",
+      "score": 75,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": true,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:outdoor_lit",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "OUTTEX23",
+      "score": 75,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": true,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:outdoor_lit",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "OUTTEX25",
+      "score": 75,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": true,
+      "bright_frac": 0.001,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        170,
+        154,
+        138
+      ],
+      "reasons": [
+        "name:outdoor_lit",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "OUTTEX26",
+      "score": 75,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": true,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:outdoor_lit",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "OUTTEX35",
+      "score": 75,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": true,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:outdoor_lit",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "OUTTEX36",
+      "score": 75,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": true,
+      "bright_frac": 0.001,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        145,
+        149,
+        120
+      ],
+      "reasons": [
+        "name:outdoor_lit",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "OUTTEX37",
+      "score": 75,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": true,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:outdoor_lit",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "OUTTEX38",
+      "score": 75,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": true,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:outdoor_lit",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "OUTTEX39",
+      "score": 75,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": true,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:outdoor_lit",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "OUTTEX46",
+      "score": 75,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": true,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:outdoor_lit",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "OUTTEX47",
+      "score": 75,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": true,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:outdoor_lit",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "OUTTEX49",
+      "score": 75,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": true,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:outdoor_lit",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "OUTTEX51",
+      "score": 75,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": true,
+      "bright_frac": 0.04,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        177,
+        177,
+        177
+      ],
+      "reasons": [
+        "name:outdoor_lit",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "OUTTEX53",
+      "score": 75,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": true,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:outdoor_lit",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "OUTTEX54",
+      "score": 75,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": true,
+      "bright_frac": 0.005,
+      "sat_frac": 0.006,
+      "mean_bright_rgb": [
+        184,
+        158,
+        139
+      ],
+      "reasons": [
+        "name:outdoor_lit",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "OUTTEX56",
+      "score": 75,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": true,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:outdoor_lit",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "OUTTEX58",
+      "score": 75,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": true,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:outdoor_lit",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "OUTTEX67",
+      "score": 75,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": true,
+      "bright_frac": 0.017,
+      "sat_frac": 0.001,
+      "mean_bright_rgb": [
+        161,
+        157,
+        131
+      ],
+      "reasons": [
+        "name:outdoor_lit",
+        "map-used"
+      ]
+    },
+    {
+      "texture": "SWXAZ2B",
+      "score": 75,
+      "tag": "switch",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.031,
+      "sat_frac": 0.131,
+      "mean_bright_rgb": [
+        221,
+        162,
+        16
+      ],
+      "reasons": [
+        "name:switch",
+        "sat=0.13"
+      ]
+    },
+    {
+      "texture": "SWXS5B",
+      "score": 75,
+      "tag": "switch",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.03,
+      "sat_frac": 0.13,
+      "mean_bright_rgb": [
+        125,
+        251,
+        125
+      ],
+      "reasons": [
+        "name:switch",
+        "sat=0.13"
+      ]
+    },
+    {
+      "texture": "OUTTEX80",
+      "score": 72,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.034,
+      "sat_frac": 0.162,
+      "mean_bright_rgb": [
+        224,
+        78,
+        64
+      ],
+      "reasons": [
+        "name:outdoor_lit",
+        "sat=0.16"
+      ]
+    },
+    {
+      "texture": "SWXAZ1B",
+      "score": 65,
+      "tag": "switch",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:switch"
+      ]
+    },
+    {
+      "texture": "SWXHCB",
+      "score": 65,
+      "tag": "switch",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:switch"
+      ]
+    },
+    {
+      "texture": "SWXS5A",
+      "score": 65,
+      "tag": "switch",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.003,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        144,
+        144,
+        120
+      ],
+      "reasons": [
+        "name:switch"
+      ]
+    },
+    {
+      "texture": "SWXSHB",
+      "score": 65,
+      "tag": "switch",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:switch"
+      ]
+    },
+    {
+      "texture": "WFALL02",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL03",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL04",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL05",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL06",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL07",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL08",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL09",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL10",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL11",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL12",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL13",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL14",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL15",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL16",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL17",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL18",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL19",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL20",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL21",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL22",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL23",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL24",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL25",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL26",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL27",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL28",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL29",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL30",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL31",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL32",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL33",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL34",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL35",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL36",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL37",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL38",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL39",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL40",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL41",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL42",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL43",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL44",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL45",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL46",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL47",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL48",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL49",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL50",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL51",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL52",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL53",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL54",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL55",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL56",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL57",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL58",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL59",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL60",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL61",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL62",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL63",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "WFALL64",
+      "score": 65,
+      "tag": "liquid_fall",
+      "covered": true,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:liquid_fall",
+        "anim"
+      ]
+    },
+    {
+      "texture": "CLOUDPRP",
+      "score": 61,
+      "tag": "",
+      "covered": false,
+      "map_used": true,
+      "bright_frac": 0.177,
+      "sat_frac": 0.412,
+      "mean_bright_rgb": [
+        180,
+        106,
+        219
+      ],
+      "reasons": [
+        "map-used",
+        "bright=0.18",
+        "sat=0.41"
+      ]
+    },
+    {
+      "texture": "OUTTEX03",
+      "score": 60,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.001,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        157,
+        149,
+        128
+      ],
+      "reasons": [
+        "name:outdoor_lit"
+      ]
+    },
+    {
+      "texture": "OUTTEX13",
+      "score": 60,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.005,
+      "mean_bright_rgb": [
+        182,
+        166,
+        150
+      ],
+      "reasons": [
+        "name:outdoor_lit"
+      ]
+    },
+    {
+      "texture": "OUTTEX15",
+      "score": 60,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.001,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        162,
+        154,
+        133
+      ],
+      "reasons": [
+        "name:outdoor_lit"
+      ]
+    },
+    {
+      "texture": "OUTTEX16",
+      "score": 60,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:outdoor_lit"
+      ]
+    },
+    {
+      "texture": "OUTTEX17",
+      "score": 60,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:outdoor_lit"
+      ]
+    },
+    {
+      "texture": "OUTTEX18",
+      "score": 60,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:outdoor_lit"
+      ]
+    },
+    {
+      "texture": "OUTTEX19",
+      "score": 60,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:outdoor_lit"
+      ]
+    },
+    {
+      "texture": "OUTTEX27",
+      "score": 60,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:outdoor_lit"
+      ]
+    },
+    {
+      "texture": "OUTTEX28",
+      "score": 60,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:outdoor_lit"
+      ]
+    },
+    {
+      "texture": "OUTTEX29",
+      "score": 60,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:outdoor_lit"
+      ]
+    },
+    {
+      "texture": "OUTTEX30",
+      "score": 60,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:outdoor_lit"
+      ]
+    },
+    {
+      "texture": "OUTTEX31",
+      "score": 60,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.003,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:outdoor_lit"
+      ]
+    },
+    {
+      "texture": "OUTTEX32",
+      "score": 60,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.003,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:outdoor_lit"
+      ]
+    },
+    {
+      "texture": "OUTTEX33",
+      "score": 60,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        143,
+        143,
+        143
+      ],
+      "reasons": [
+        "name:outdoor_lit"
+      ]
+    },
+    {
+      "texture": "OUTTEX34",
+      "score": 60,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.005,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        156,
+        153,
+        149
+      ],
+      "reasons": [
+        "name:outdoor_lit"
+      ]
+    },
+    {
+      "texture": "OUTTEX40",
+      "score": 60,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.006,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        167,
+        152,
+        136
+      ],
+      "reasons": [
+        "name:outdoor_lit"
+      ]
+    },
+    {
+      "texture": "OUTTEX41",
+      "score": 60,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        165,
+        149,
+        133
+      ],
+      "reasons": [
+        "name:outdoor_lit"
+      ]
+    },
+    {
+      "texture": "OUTTEX42",
+      "score": 60,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:outdoor_lit"
+      ]
+    },
+    {
+      "texture": "OUTTEX43",
+      "score": 60,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:outdoor_lit"
+      ]
+    },
+    {
+      "texture": "OUTTEX44",
+      "score": 60,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:outdoor_lit"
+      ]
+    },
+    {
+      "texture": "OUTTEX45",
+      "score": 60,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.011,
+      "sat_frac": 0.002,
+      "mean_bright_rgb": [
+        166,
+        157,
+        149
+      ],
+      "reasons": [
+        "name:outdoor_lit"
+      ]
+    },
+    {
+      "texture": "OUTTEX48",
+      "score": 60,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:outdoor_lit"
+      ]
+    },
+    {
+      "texture": "OUTTEX55",
+      "score": 60,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.001,
+      "sat_frac": 0.013,
+      "mean_bright_rgb": [
+        162,
+        142,
+        118
+      ],
+      "reasons": [
+        "name:outdoor_lit"
+      ]
+    },
+    {
+      "texture": "OUTTEX57",
+      "score": 60,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.046,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:outdoor_lit"
+      ]
+    },
+    {
+      "texture": "OUTTEX59",
+      "score": 60,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:outdoor_lit"
+      ]
+    },
+    {
+      "texture": "OUTTEX60",
+      "score": 60,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.007,
+      "mean_bright_rgb": [
+        154,
+        146,
+        138
+      ],
+      "reasons": [
+        "name:outdoor_lit"
+      ]
+    },
+    {
+      "texture": "OUTTEX61",
+      "score": 60,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.001,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        146,
+        144,
+        141
+      ],
+      "reasons": [
+        "name:outdoor_lit"
+      ]
+    },
+    {
+      "texture": "OUTTEX62",
+      "score": 60,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.001,
+      "sat_frac": 0.002,
+      "mean_bright_rgb": [
+        165,
+        149,
+        133
+      ],
+      "reasons": [
+        "name:outdoor_lit"
+      ]
+    },
+    {
+      "texture": "OUTTEX63",
+      "score": 60,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:outdoor_lit"
+      ]
+    },
+    {
+      "texture": "OUTTEX64",
+      "score": 60,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.002,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:outdoor_lit"
+      ]
+    },
+    {
+      "texture": "OUTTEX65",
+      "score": 60,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:outdoor_lit"
+      ]
+    },
+    {
+      "texture": "OUTTEX66",
+      "score": 60,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:outdoor_lit"
+      ]
+    },
+    {
+      "texture": "OUTTEX68",
+      "score": 60,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.092,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:outdoor_lit"
+      ]
+    },
+    {
+      "texture": "OUTTEX71",
+      "score": 60,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.019,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:outdoor_lit"
+      ]
+    },
+    {
+      "texture": "OUTTEX72",
+      "score": 60,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.019,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:outdoor_lit"
+      ]
+    },
+    {
+      "texture": "OUTTEX73",
+      "score": 60,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.05,
+      "mean_bright_rgb": [
+        209,
+        113,
+        107
+      ],
+      "reasons": [
+        "name:outdoor_lit"
+      ]
+    },
+    {
+      "texture": "OUTTEX74",
+      "score": 60,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.034,
+      "sat_frac": 0.091,
+      "mean_bright_rgb": [
+        203,
+        147,
+        136
+      ],
+      "reasons": [
+        "name:outdoor_lit"
+      ]
+    },
+    {
+      "texture": "OUTTEX75",
+      "score": 60,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.051,
+      "mean_bright_rgb": [
+        0,
+        0,
+        0
+      ],
+      "reasons": [
+        "name:outdoor_lit"
+      ]
+    },
+    {
+      "texture": "OUTTEX76",
+      "score": 60,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.04,
+      "sat_frac": 0.026,
+      "mean_bright_rgb": [
+        193,
+        169,
+        155
+      ],
+      "reasons": [
+        "name:outdoor_lit"
+      ]
+    },
+    {
+      "texture": "OUTTEX77",
+      "score": 60,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.01,
+      "sat_frac": 0.017,
+      "mean_bright_rgb": [
+        182,
+        161,
+        148
+      ],
+      "reasons": [
+        "name:outdoor_lit"
+      ]
+    },
+    {
+      "texture": "OUTTEX78",
+      "score": 60,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.017,
+      "sat_frac": 0.105,
+      "mean_bright_rgb": [
+        225,
+        90,
+        78
+      ],
+      "reasons": [
+        "name:outdoor_lit"
+      ]
+    },
+    {
+      "texture": "OUTTEX79",
+      "score": 60,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.021,
+      "sat_frac": 0.113,
+      "mean_bright_rgb": [
+        223,
+        79,
+        66
+      ],
+      "reasons": [
+        "name:outdoor_lit"
+      ]
+    },
+    {
+      "texture": "OUTTEX81",
+      "score": 60,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.0,
+      "sat_frac": 0.018,
+      "mean_bright_rgb": [
+        229,
+        89,
+        80
+      ],
+      "reasons": [
+        "name:outdoor_lit"
+      ]
+    },
+    {
+      "texture": "OUTTEX82",
+      "score": 60,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.027,
+      "sat_frac": 0.001,
+      "mean_bright_rgb": [
+        165,
+        157,
+        149
+      ],
+      "reasons": [
+        "name:outdoor_lit"
+      ]
+    },
+    {
+      "texture": "OUTTEX83",
+      "score": 60,
+      "tag": "outdoor_lit",
+      "covered": false,
+      "map_used": false,
+      "bright_frac": 0.002,
+      "sat_frac": 0.0,
+      "mean_bright_rgb": [
+        157,
+        149,
+        141
+      ],
+      "reasons": [
+        "name:outdoor_lit"
+      ]
+    },
+    {
+      "texture": "ISUCK",
+      "score": 55,
+      "tag": "",
+      "covered": false,
+      "map_used": true,
+      "bright_frac": 1.0,
+      "sat_frac": 1.0,
+      "mean_bright_rgb": [
+        26,
+        221,
+        0
+      ],
+      "reasons": [
+        "map-used",
+        "bright=1.00"
+      ]
+    }
+  ]
+}
