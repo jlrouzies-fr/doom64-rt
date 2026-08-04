@@ -1,5 +1,5 @@
 @echo off
-setlocal
+setlocal EnableExtensions
 set "ENGINE=G:\AI\Doom64-RT\sourcecode\gzdoom-rt\build\RelWithDebInfo"
 set "IWAD=D:\Games\GZDoom\doom2.wad"
 set "MOD=G:\AI\Doom64-RT\Doom64-Retribution\D64RTR_v15.WAD"
@@ -10,15 +10,25 @@ set "FIX=G:\AI\Doom64-RT\Doom64-Retribution\d64r-map01-rtfix.wad"
 set "SKY=G:\AI\Doom64-RT\Doom64-Retribution\d64r-rt-sky.pk3"
 set "MUS=G:\AI\Doom64-RT\Doom64-Retribution\D64MUS.PK3"
 
+rem Usage: launch-retribution-rt.cmd [1-32]
+rem   Optional map number (default 1) → +map map01 … map32
+set "MAPNUM=%~1"
+if "%MAPNUM%"=="" set "MAPNUM=1"
+set /a "N=MAPNUM" 2>nul
+if errorlevel 1 goto :badmap
+if %N% LSS 1 goto :badmap
+if %N% GTR 32 goto :badmap
+if %N% LSS 10 (set "MAPLUMP=map0%N%") else (set "MAPLUMP=map%N%")
+
 cd /d "%ENGINE%" || exit /b 1
 
 rem Native RTGL1 path tracing + DLSS Ray Reconstruction (NOT RTX Remix).
 rem No -rtxremix. Uses +rt_rayreconstr 1 (native), not +rt_remix_rayreconstr.
 rem Requires tools\build-rtgl.cmd (RTGL1.dll + nvngx_dlssd.dll in rt\bin\).
-rem MAP01: d64r-map01-rtfix.wad disables hangy 3D floor.
+rem MAP01 only: d64r-map01-rtfix.wad disables hangy 3D floor.
 rem Sky: sector skyboxes ignored under RT (white/black fix); d64r-rt-sky forces SPACE night flat + rt_sky_always.
 rem d64r-lostsoul-rt.pk3: yellow SKUL sprites + LSGL offset-glow EventHandler.
-rem d64r-rt-flashlight.pk3: battery HUD bar (reads rt_flsh_charge / rt_flsh_battstate).
+rem d64r-rt-flashlight.pk3: stylized 5-cell battery HUD (rt_flsh_charge / battstate; F toggles).
 rem Eye/fire mats: engine rt\mat\ + rt\data\textures.json (no extra -file).
 
 if not exist "gzdoom.exe" (
@@ -46,14 +56,17 @@ if not exist "%MOD%" (
   exit /b 1
 )
 
+set "EXTRAFILES="
+if %N% EQU 1 set "EXTRAFILES=%FIX%"
+
 echo Native RT + DLSS Ray Reconstruction (no Remix^)
-echo   +rt_upscale_dlss 2 +rt_rayreconstr 1 +rt_framegen 0
+echo   map=%MAPLUMP%  +rt_upscale_dlss 2 +rt_rayreconstr 1 +rt_framegen 0
 
 start "" gzdoom.exe ^
   -iwad "%IWAD%" ^
-  -file "%MOD%" "%BM%" "%SKUL%" "%FLSH%" "%MUS%" "%FIX%" "%SKY%" ^
+  -file "%MOD%" "%BM%" "%SKUL%" "%FLSH%" "%MUS%" %EXTRAFILES% "%SKY%" ^
   -rtnolauncher -width 1280 -height 720 ^
-  +vid_fullscreen 0 +queryiwad false +sv_cheats 1 +map map01 ^
+  +vid_fullscreen 0 +queryiwad false +sv_cheats 1 +map %MAPLUMP% ^
   +god +fly ^
   +rt_mod_compat 1 +r_drawvoxels 0 ^
   +d64_enterfade 0 +d64_exitfade 0 ^
@@ -70,3 +83,9 @@ start "" gzdoom.exe ^
   +rt_dynlight 1 +rt_dynlight_flicker 0 +rt_dynlight_intensity 40 +rt_dynlight_radius 0.08 ^
   +rt_ceiling_lamps 1 +rt_ceiling_lamp_intensity 900 +rt_ceiling_lamp_radius 0.08 ^
   +rt_normalmap_stren 1 +rt_heightmap_stren 1
+exit /b 0
+
+:badmap
+echo Usage: %~nx0 [1-32]
+echo   Optional map number (default 1^). Example: %~nx0 5  -^> +map map05
+exit /b 1

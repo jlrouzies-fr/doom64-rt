@@ -23,7 +23,7 @@ if not exist "%RTGL%\Include\RTGL1\RTGL1.h" (
 echo DLSS_SDK_PATH=%DLSS_SDK_PATH%
 echo === Generating shaders ===
 pushd "%RTGL%\Source\Shaders"
-python GenerateShaders.py
+python GenerateShaders.py -g
 if errorlevel 1 (
   echo Shader generation failed
   popd

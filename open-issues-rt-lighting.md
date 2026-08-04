@@ -37,7 +37,16 @@ Do not treat this as a progress cheer sheet — only unresolved / partially reso
 
 Yellow SKUL sprites via `d64r-lostsoul-rt.pk3` ship; same-sprite attached light abandoned (white bloom). LSGL EventHandler experimental — not dialed. Accept yellow fire under BRIGHT or finish/drop LSGL.
 
-### 1.5 Enemy eyes incomplete coverage — **PARTIAL**
+### 1.6 MAP02 yellow door + dark absorb room — **ENGINE FIX 2026-08-04** (needs confirm)
+
+| | |
+|---|---|
+| **Yellow door** | `SDOOR6` on sectors with `lightcolor` yellow + high `lightlevel` — not RT `_e`. Sector tint baked into vertex color → neon wash. |
+| **Dark room** | Secs **35/40**: `SFLATAQ` ceil + `SPACECN` walls, `lightlevel` 0/10. Lamp blobs `_e` with `emissiveMult=0` (primary only); walls got **black** vertex color → flashlight/ceiling lamps absorbed. |
+| **Fix** | `rt_main.cpp`: under `rt_mod_compat`, world prims upload **white RGB**. First pass only hit `ExportMap`; **doors are movable → not ExportMap** — extended to all non-sprite world (2026-08-04 eve). Rebuild gzdoom. |
+| **Confirm** | `launch-retribution-rt.cmd 2`: yellow/red **key doors** not neon. |
+| **Crash** | No local `gzdoom*.dmp` / WER AppCrash found for this session. If it repeats: note exact action + whether Windows Error Reporting shows `gzdoom.exe`; keep `gzdoom.pdb` beside exe for a minidump. |
+---
 
 Working for brightmap-validated frames (TROO/TRO2, SARG/SAR2, FATT, CYBR, BSPI, …). **No** eyes for humans (POSS/SPOS/…) or clean HEAD/BOSS/PAIN masks. Auto detect stays **off**.
 
@@ -48,6 +57,18 @@ Isolated `build/WashScratch` starts from stock `rt/` and must **re-stage** eyes/
 ### 1.7 Phase packaging — **NOT STARTED**
 
 Single overlay pk3 + clean install docs (Phase 5) still pending.
+
+### 1.8 DLSS-RR residual sparkle after lights die — **MITIGATED 2026-08-03**
+
+| | |
+|---|---|
+| **Symptom** | Salt/sparkle often **after** muzzle/dynlight stops (not only on appear). |
+| **Root cause** | With DLSS-RR, RTGL runs `ComposeNoisy` and **skips** A-SVGF `Denoise()` — so stock `CmAntiFirefly` never ran on RR input. ReSTIR outliers + hard light cuts leave RR history sparkling. |
+| **Fix landed** | (1) Screen-space neighborhood firefly clamp **inside** `CmNoisyCompose.comp` — **default OFF** (`rt_rr_noisy_antifirefly 0`) because always-on hurt walk-around temporal stability. A/B via Dev window **DLSS-RR A/B** or cvar. (2) `rt_illum_sens_*` cvars (indirect default **0.75**). (3) Soft muzzle fade `rt_mzlflsh_fade` (peak unchanged). |
+| **A/B** | RTGL Dev → General → **RR / Denoise live**: RR on/off, ASVGF anti-firefly, RR noisy clamp A/B, sensitivity sliders + presets (no Override needed). Upscaler quality still under Override → Present. |
+| **Out of scope** | Rock albedo / PBR reauthoring for “grabs too much light.” |
+| **Confirm** | Shoot in dark MAP01: residual sparkle shorter/weaker; A/B `rt_mzlflsh_fade 0` and Dev antiFirefly off. |
+| **Walk noise vs mats (2026-08-04)** | **Resolved (roughness + metal demotion).** Full tree: metallic AI `--all --force` (stricter; 545 dielectric / 218 mixed / 0 metal) + roughness `--all` floor 0.82. Leave Dev **Roughness toward matte at 0**; 0.5 was only a temporary A/B crutch. |
 
 ---
 
@@ -76,10 +97,11 @@ Single overlay pk3 + clean install docs (Phase 5) still pending.
 - Retribution loads on patched `gzdoom-rt` (`RT_MapName`, Steam soft gates).
 - Native RT + DLSS-RR launchers; keep normal/height strength ≈ **1**.
 - Enemy eyes: brightmap `_e`, `emissiveMult≈2`, red, **no** eye `lightIntensity`, **no** `noShadow` — regen: `gen_enemy_eye_emissives.py`.
-- World allowlist emis: SMON/EXIT/CRT/keys/lava/logo (+ ceiling blob `_e` now) — `gen_world_emissives.py`.
+- World allowlist emis: SMON/EXIT/CRT/keys/lava/logo + switch ON frames (`SWX*B` / GLDEFS) muted green — `gen_world_emissives.py`.
 - Monster muzzle frames: `lightIntensity` via `gen_fx_emissives.py` (not Lost Soul).
 - MAP01 hangy 3D floor fix wad (TEXTMAP + **BEHAVIOR**); night `SPACE` sky pk3 + `rt_sky 25`.
 - Gallery halls: texture / emis / enemy / empty + wash-qa / WashScratch tooling.
+- RR path firefly clamp in `CmNoisyCompose` + muzzle soft fade (`rt_mzlflsh_fade`).
 
 ---
 
@@ -110,6 +132,11 @@ Single overlay pk3 + clean install docs (Phase 5) still pending.
 | `rt_flsh_on_secs` / `die` / `off` | 30 / 4 / 5 | Battery phase lengths |
 | `rt_flsh_charge` | (readout) | 0..1 for HUD bar |
 | `rt_flsh_battstate` | (readout) | 0 off / 1 on / 2 dying / 3 recharge |
+| `rt_illum_sens_direct` | **1** | Lighting-change sensitivity (direct) |
+| `rt_illum_sens_indirect` | **0.75** | Lighting-change sensitivity (indirect) |
+| `rt_illum_sens_spec` | **1** | Lighting-change sensitivity (specular) |
+| `rt_mzlflsh_fade` | **5** | Soft fade-out tics after extralight ends (0 = hard cut) |
+| `rt_rr_noisy_antifirefly` | **0** | RR ComposeNoisy firefly clamp (default off; A/B in Dev **DLSS-RR A/B**) |
 
 **Console:** `rt_dump_dynlights` — list active FDynamicLight positions / RGB / radius.
 

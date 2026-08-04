@@ -288,6 +288,50 @@
       "emissiveMult": 0.0
     },
     {
+      "textureName": "SWXCB",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "SWXCKB",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "SWXCKLA",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "SWXCLA",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "SWXS4B",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "SWXSAB",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "SWXSCB",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "SWXSDB",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "SWXSEB",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "SWXSFB",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "SWXSGB",
+      "emissiveMult": 0.4
+    },
+    {
       "textureName": "SMONF5",
       "emissiveMult": 1.0
     }

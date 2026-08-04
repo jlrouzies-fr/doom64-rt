@@ -1,7 +1,7 @@
 version "4.12"
 
-// Battery readout styled like Doom 64 Retribution's translucent red HUD numbers
-// (see screen/hut.png health "100"): big pixel digits, ~50% opacity, soft shadow.
+// Horror flashlight battery: stylized cell bar (no numeric %), translucent red
+// like Retribution HUD accents. Charge from rt_flsh_charge / rt_flsh_battstate.
 class D64RtFlashlightHud : EventHandler
 {
 	override void RenderOverlay(RenderEvent e)
@@ -27,29 +27,78 @@ class D64RtFlashlightHud : EventHandler
 		if (state <= 0)
 			return;
 
-		int pct = int(charge * 100.0 + 0.5);
-		if (charge > 0.0 && pct < 1) pct = 1;
-		String text = String.Format("%d", pct);
+		int segs = 5;
+		int lit = int(Floor(charge * segs + 0.000001));
+		if (charge > 0.02 && lit < 1) lit = 1;
+		if (charge >= 0.995) lit = segs;
 
-		// Virtual 320x200 — sit right of health cluster, a bit above the bottom strip.
-		int vx = 78;
-		int vy = 158;
-		double opacity = 0.50;
+		double opacity = 0.55;
 		if (state == 2)
-			opacity = 0.45;
+		{
+			// Dying: blink the bar
+			opacity = ((Level.Time / 4) % 2 == 0) ? 0.55 : 0.28;
+		}
 		else if (state == 3)
+		{
 			opacity = 0.40;
+		}
 
-		Font fnt = BigFont;
-		// Dark drop-shadow (matches the health number depth in hut.png)
-		Screen.DrawText(fnt, Font.CR_BLACK, vx + 2, vy + 2, text,
-			DTA_VirtualWidth, 320,
-			DTA_VirtualHeight, 200,
-			DTA_Alpha, opacity * 0.55);
-		// Primary translucent red digits
-		Screen.DrawText(fnt, Font.CR_RED, vx, vy, text,
-			DTA_VirtualWidth, 320,
-			DTA_VirtualHeight, 200,
-			DTA_Alpha, opacity);
+		// Virtual 320x200 — right of health cluster, above bottom strip.
+		int vx = 72;
+		int vy = 168;
+		int vBodyW = 36;
+		int vBodyH = 9;
+		int vTipW = 3;
+		int vTipH = 5;
+		int vPad = 1;
+		int vGap = 1;
+
+		int sw = Screen.GetWidth();
+		int sh = Screen.GetHeight();
+		int bx = sw * vx / 320;
+		int by = sh * vy / 200;
+		int bodyW = Max(1, sw * vBodyW / 320);
+		int bodyH = Max(1, sh * vBodyH / 200);
+		int tipW = Max(1, sw * vTipW / 320);
+		int tipH = Max(1, sh * vTipH / 200);
+		int pad = Max(1, sw * vPad / 320);
+		int gap = Max(1, sw * vGap / 320);
+
+		Color rim = Color(0x40, 0x00, 0x00);
+		Color fill = Color(0xC0, 0x18, 0x18);
+		Color empty = Color(0x28, 0x08, 0x08);
+		Color shadow = Color(0x00, 0x00, 0x00);
+		if (state == 2)
+			fill = Color(0xA0, 0x10, 0x10);
+		else if (state == 3)
+			fill = Color(0x70, 0x14, 0x14);
+
+		// Soft shadow behind body + tip
+		Screen.Dim(shadow, opacity * 0.45, bx + 2, by + 2, bodyW + tipW + 1, bodyH);
+
+		// Battery body outline
+		Screen.DrawLineFrame(rim, bx, by, bodyW, bodyH, Max(1, sh / 400));
+
+		// Tip / nipple on the right
+		int tipX = bx + bodyW;
+		int tipY = by + (bodyH - tipH) / 2;
+		Screen.Dim(rim, opacity * 0.9, tipX, tipY, tipW, tipH);
+
+		// Inner cells
+		int innerX = bx + pad;
+		int innerY = by + pad;
+		int innerW = bodyW - pad * 2;
+		int innerH = bodyH - pad * 2;
+		int cellW = (innerW - gap * (segs - 1)) / segs;
+		if (cellW < 1) cellW = 1;
+
+		for (int i = 0; i < segs; i++)
+		{
+			int cx = innerX + i * (cellW + gap);
+			bool on = i < lit;
+			Color c = on ? fill : empty;
+			double a = on ? opacity : opacity * 0.35;
+			Screen.Dim(c, a, cx, innerY, cellW, innerH);
+		}
 	}
 }

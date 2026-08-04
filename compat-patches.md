@@ -124,6 +124,7 @@ See-through walls under full RT (`rt_classic 0`) were largely soft/garbage PNG a
 - Force opaque alpha on world texture uploads (RGBA PNGs are always `Masked` in GZDoom — that check was a no-op)
 - World geometry (`ExportMap`): **never** alpha-test under mod_compat (sprites still do)
 - Force vertex color alpha=1 for all world draws
+- **Force world vertex RGB=white** under `rt_mod_compat` (2026-08-04): sector `lightlevel`/`lightcolor` must not bake into PT albedo — MAP02 yellow key-door sectors looked neon-emissive; lightlevel-0 rooms absorbed flashlight / ceiling lamps. Classic raster still uses `classicLight`. **Follow-up:** doors/lifts are **not** `ExportMap` (movable) so the first pass missed them — white RGB now applies to all non-sprite world prims.
 - Brightmaps/glowmaps on **walls and sprites** → RT emissive (not sprites-only)
 
 ### Sky-through-walls (real bug, not fence alpha)
@@ -246,5 +247,25 @@ vngx_dlssd.dll)
 
 **Battery** (`rt_flsh_battery` default true): ~30s on (`rt_flsh_on_secs`) → last ~4s dying flicker (`rt_flsh_die_secs`, hard blackouts) → ~5s recharge off (`rt_flsh_off_secs`) → repeat. Jitter via `rt_flsh_jitter`. Engine writes HUD readouts `rt_flsh_charge` (0..1) and `rt_flsh_battstate` (0=off 1=on 2=dying 3=recharge).
 
-**HUD:** `d64r-rt-flashlight.pk3` (`tools/d64r-rt-flashlight/`, pack with `python tools/pack_rt_flashlight.py`) — bottom-left battery bar. Loaded by `tools/launch-retribution-rt.cmd`. Toggle beam with `rt_flsh 1`.
+**HUD:** `d64r-rt-flashlight.pk3` — stylized 5-cell battery bar (no numeric %), translucent red; blinks while dying. Pack: `python tools/pack_rt_flashlight.py`. Loaded by play launcher. Toggle with `rt_flsh 1` / **F**.
+
+## DLSS-RR residual sparkle + switch ON emis (2026-08-03)
+
+**RR sparkle:** With native DLSS-RR, RTGL calls `Denoiser::ComposeNoisy` and skips A-SVGF `Denoise()`, so stock `CmAntiFirefly` never ran. Residual sparkle after muzzle/dynlights die came from unclamped ReSTIR outliers feeding RR history.
+
+**Fix:** Screen-space neighborhood firefly clamp inside `deps/RTGL/Source/Shaders/CmNoisyCompose.comp` (gated by `rrNoisyAntiFireflyEnabled`). **Default OFF** — always-on clamp hurt temporal stability while moving. A/B: Dev window **DLSS-RR A/B** (sticky override) or `rt_rr_noisy_antifirefly`. Rebuild RTGL via `tools/build-rtgl.cmd`.
+
+**Engine (gzdoom-rt):** `rt_illum_sens_direct/indirect/spec` (indirect default **0.75**). `rt_mzlflsh_fade` (default 5 tics). `rt_rr_noisy_antifirefly` (default false).
+
+**Switches:** `gen_world_emissives.py` allowlists GLDEFS ON frames (`SWXSAB`, `SWXSFB`, …). GLDEFS `BMTX*` brightmaps are **missing** from the pk3 — masks use albedo chroma (green/red/magenta LED only) + upper connected-component filter, albedo RGB kept, `emissiveMult` 0.4, no `lightIntensity`. Idle A frames stay dark.
+
+## RTGL Dev: font scale, settings persist, Materials A/B (2026-08-04)
+
+**Font:** General → **UI font scale** (`FontGlobalScale`, base TTF 15px).
+
+**Persist:** All Dev knobs (Override Present, RR / Denoise live sticky, Materials A/B, camera overrides, etc.) → `rt/devmode_settings.json`. Window layout → `rt/imgui.ini`. Debounced save (~2s after edit) + save on destroy. **Reset Dev settings to defaults** clears Override/sticky/kills (or delete the JSON). Stuck Linear/Nearest after a bad Override persist → use Reset.
+
+**Materials A/B** (live, no Override): strip toggles + **Roughness toward matte** (`mix` authored→1; replaces useless min-floor post ORM clamp). Flags: bit0=N, bit1=emis, bit2=metallic, bit3=H, bit4=roughness. Rebuild: `tools/build-rtgl.cmd` (now always `-gencomm`).
+
+**RR walk noise (2026-08-04):** User A/B confirmed **ORM roughness (G)** (not metallic). Fixed by `tools/fix_orm_roughness.py` (dielectric G≥0.82, metal≥0.55, blur-always) — now **`--all`** (763 maps). Metallic: `tools/fix_orm_metallic_ai.py --all --force` with stricter demotion (painted SPACE → dielectric; **0 kept as metal**, 545 dielectric / 218 mixed). Dev **Roughness toward matte** stay at **0** for play (0.5 only temporary A/B — do not ship as default).
 

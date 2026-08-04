@@ -83,6 +83,8 @@ tools/wash-qa/**/*.png
 # --- Ephemeral map isolation / compare dumps ---
 tools/_map_cmp/
 tools/_map_isol/
+tools/_orm_metal_fix/
+tools/_orm_rough_fix/
 tools/**/map01_*.wad
 tools/map01_*.wad
 

@@ -49,7 +49,7 @@ Update those when phases complete or facts change. Do not invent parallel tracke
 
 | Script | Purpose |
 |---|---|
-| `tools/launch-retribution-rt.cmd` | MAP01 play — native RT + DLSS-RR. Loads `d64r-lostsoul-rt.pk3`. |
+| `tools/launch-retribution-rt.cmd` | Play — native RT + DLSS-RR. Optional arg `1`–`32` → `map01`…`map32` (default 1). Loads `d64r-lostsoul-rt.pk3`. |
 | `tools/launch-enemy-gallery-rt.cmd` | MAP98 dark no-aggro enemy eye review hall. |
 | `tools/launch-texture-gallery-rt.cmd` | MAP99 texture PBR gallery (baseline mats). |
 | `tools/launch-emis-gallery.cmd` | MAP99 **world-emissives only** (`d64remis.wad` — monitors/EXIT/keys/CRT/lava). |
@@ -61,7 +61,10 @@ Important cvars on Retribution launch (do not crank blindly):
 
 - `+rt_upscale_dlss 2 +rt_rayreconstr 1` — preferred denoising path
 - `+rt_normalmap_stren 1 +rt_heightmap_stren 1` — **keep near 1**; 10+ makes RR struggle
-- Flashlight: `rt_flsh 0` / `1` in console (default **F** via `d64r-rt-flashlight.pk3` KEYCONF). Horror defaults: dim warm beam tipped to ground (`rt_flsh_pitch`), battery cycle (`rt_flsh_battery`) with HUD bar from `d64r-rt-flashlight.pk3`.
+- Flashlight: `rt_flsh 0` / `1` in console (default **F** via `d64r-rt-flashlight.pk3` KEYCONF). Horror defaults: dim warm beam tipped to ground (`rt_flsh_pitch`), battery cycle (`rt_flsh_battery`) with stylized **5-cell** HUD bar (no numeric %) from `d64r-rt-flashlight.pk3`.
+- RR / denoise live A/B: RTGL Dev window → **RR / Denoise live** (RR on/off, anti-firefly, RR noisy clamp, sensitivity presets). Switch ON emis: LED chroma masks via `gen_world_emissives.py` (missing BMTX brightmaps).
+- Dev UI: **UI font scale** + full settings persist (`rt/devmode_settings.json`, `rt/imgui.ini`). **Materials A/B**: strip normals / ORM / height / emissives separately (RR walk-noise diagnosis). Reset button if Override sticks bad.
+- ORM metal fog (RR walk noise): `deps\orm-vlm\venv\Scripts\python.exe tools\fix_orm_metallic_ai.py` (MAP01 default; `--all` for full set; `--model` for a larger VLM on 32GB).
 - RTGL1 Dev window cursor: open Esc/`~` first so GZDoom releases mouse grab
 
 ## Enemy eyes / Lost Soul (Phase 4 — current state)

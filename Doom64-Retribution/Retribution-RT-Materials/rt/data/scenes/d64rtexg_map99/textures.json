@@ -3596,7 +3596,8 @@
     {
       "textureName": "SWXS4B",
       "roughnessDefault": 0.7,
-      "metallicDefault": 0.25
+      "metallicDefault": 0.25,
+      "emissiveMult": 0.4
     },
     {
       "textureName": "TSFCMONS",
@@ -3981,34 +3982,44 @@
       "emissiveMult": 1.0
     },
     {
-      "textureName": "SWXCB"
+      "textureName": "SWXCB",
+      "emissiveMult": 0.4
     },
     {
-      "textureName": "SWXCKB"
+      "textureName": "SWXCKB",
+      "emissiveMult": 0.4
     },
     {
-      "textureName": "SWXCKLA"
+      "textureName": "SWXCKLA",
+      "emissiveMult": 0.4
     },
     {
-      "textureName": "SWXCLA"
+      "textureName": "SWXCLA",
+      "emissiveMult": 0.4
     },
     {
-      "textureName": "SWXSAB"
+      "textureName": "SWXSAB",
+      "emissiveMult": 0.4
     },
     {
-      "textureName": "SWXSCB"
+      "textureName": "SWXSCB",
+      "emissiveMult": 0.4
     },
     {
-      "textureName": "SWXSDB"
+      "textureName": "SWXSDB",
+      "emissiveMult": 0.4
     },
     {
-      "textureName": "SWXSEB"
+      "textureName": "SWXSEB",
+      "emissiveMult": 0.4
     },
     {
-      "textureName": "SWXSFB"
+      "textureName": "SWXSFB",
+      "emissiveMult": 0.4
     },
     {
-      "textureName": "SWXSGB"
+      "textureName": "SWXSGB",
+      "emissiveMult": 0.4
     },
     {
       "textureName": "SMONF5",

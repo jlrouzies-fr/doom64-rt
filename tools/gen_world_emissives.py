@@ -119,12 +119,30 @@ FORCE: dict[str, tuple[float, float, tuple[int, int, int] | None]] = {
     "SPORT5": (0.0, 0.0, None),
 }
 
-# Skip non-emitters. OUTTEX/SWX classic brightmaps are NOT RT emitters.
+# Skip non-emitters. OUTTEX classic brightmaps are NOT RT emitters.
+# SWX* idle frames stay dark; ON frames (GLDEFS brightmaps) are allowlisted below.
 SKIP_RE = re.compile(
     r"^(SPACE|METAL|STEEL|DOOR|GATE|FRSKY|FIRE[A-Z]|PLAY|POSS|TROO|CLOUD|"
     r"OUTTEX|SWX)",
     re.I,
 )
+
+# Script-19 / ANIMDEFS ON frames (and two GLDEFS A-frame brightmaps).
+# GLDEFS BMTX* lumps are missing — LED chroma is taken from albedo RGB.
+# emissiveMult only; no lightIntensity (no floating switch lamps).
+SWITCH_ON_EMIS: dict[str, tuple[float, float, tuple[int, int, int] | None]] = {
+    "SWXCB": (0.4, 0.0, None),
+    "SWXCKB": (0.4, 0.0, None),
+    "SWXCKLA": (0.4, 0.0, None),
+    "SWXCLA": (0.4, 0.0, None),
+    "SWXS4B": (0.4, 0.0, None),
+    "SWXSAB": (0.4, 0.0, None),
+    "SWXSCB": (0.4, 0.0, None),
+    "SWXSDB": (0.4, 0.0, None),
+    "SWXSEB": (0.4, 0.0, None),
+    "SWXSFB": (0.4, 0.0, None),
+    "SWXSGB": (0.4, 0.0, None),
+}
 
 # Stock / leftover false emitters — strip unless authored allowlist keeps them.
 # Liquid falls are never lights; always scrub.
@@ -278,8 +296,17 @@ def brightmap_texture_bindings() -> tuple[dict[str, bytes], set[str]]:
     return out, names
 
 
+def is_skipped(name: str) -> bool:
+    u = name.upper()
+    if u in SWITCH_ON_EMIS:
+        return False
+    return bool(SKIP_RE.match(u))
+
+
 def rule_for(name: str) -> tuple[float, float, tuple[int, int, int] | None] | None:
     u = name.upper()
+    if u in SWITCH_ON_EMIS:
+        return SWITCH_ON_EMIS[u]
     if SKIP_RE.match(u):
         return None
     for pref, em, li, rgb in NAME_RULES:
@@ -590,6 +617,96 @@ def clone_anim_pbr_maps(
     return cloned
 
 
+def _e_switch_led_from_albedo(
+    img: Image.Image,
+    tint: tuple[int, int, int] | None = None,
+) -> Image.Image:
+    """ON-frame switch indicator only — saturated LED pixels, not metal.
+
+    GLDEFS points at missing BMTX* lumps. Do not use luma / loose albedo masks
+    (those paint brown metal with green tint). Keep albedo RGB so red/magenta/
+    green indicators stay correct; ``tint`` is unused for color.
+
+    After chroma filter, keep connected components that touch the upper ~45%
+    so lower-corner metal false greens (e.g. SWXSFB) are dropped while full
+    mid-panel LCDs that start in the upper half (SWXS4B) remain.
+    """
+    del tint
+    w, h = img.size
+    ip = img.load()
+    mask = [[False] * w for _ in range(h)]
+
+    def is_led(r: int, g: int, b: int) -> bool:
+        mx = max(r, g, b)
+        mn = min(r, g, b)
+        sat = mx - mn
+        if mx < 80 or sat < 55:
+            return False
+        if sat < 70 and mx < 170:
+            return False
+        # Green strip / LCD (reject teal bevels where g≈b).
+        if g >= r + 20 and g >= b + 30:
+            return True
+        # Red / orange eyes and bars.
+        if r >= g + 20 and r >= b + 20:
+            return True
+        # Magenta / purple key lights.
+        if r >= 100 and b >= 100 and g <= 40:
+            return True
+        # Deep red with a little blue (SWXSGB).
+        if r >= 180 and b >= 32 and g <= 64 and r >= b + 80:
+            return True
+        return False
+
+    for y in range(h):
+        for x in range(w):
+            r, g, b, a = ip[x, y]
+            if a >= 40 and is_led(r, g, b):
+                mask[y][x] = True
+
+    # Connected components; keep those that touch the upper ~55% (covers mid
+    # skull eyes ~y=15 on 32px faces; still drops SWXSFB lower-corner greens).
+    y_touch = max(1, int(h * 0.55))
+    keep = [[False] * w for _ in range(h)]
+    seen = [[False] * w for _ in range(h)]
+    for y0 in range(h):
+        for x0 in range(w):
+            if not mask[y0][x0] or seen[y0][x0]:
+                continue
+            stack = [(x0, y0)]
+            seen[y0][x0] = True
+            comp: list[tuple[int, int]] = []
+            touches_top = False
+            while stack:
+                x, y = stack.pop()
+                comp.append((x, y))
+                if y < y_touch:
+                    touches_top = True
+                for nx, ny in ((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)):
+                    if 0 <= nx < w and 0 <= ny < h and mask[ny][nx] and not seen[ny][nx]:
+                        seen[ny][nx] = True
+                        stack.append((nx, ny))
+            if touches_top:
+                for x, y in comp:
+                    keep[y][x] = True
+
+    out = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    op = out.load()
+    for y in range(h):
+        for x in range(w):
+            if not keep[y][x]:
+                continue
+            r, g, b, _a = ip[x, y]
+            s = 1.05
+            op[x, y] = (
+                min(255, int(r * s)),
+                min(255, int(g * s)),
+                min(255, int(b * s)),
+                255,
+            )
+    return out
+
+
 def make_e_from_albedo(
     img: Image.Image,
     tint: tuple[int, int, int] | None,
@@ -598,8 +715,8 @@ def make_e_from_albedo(
 ) -> Image.Image:
     """Keep bright / saturated pixels as emissive.
 
-    loose=True (switches): take the brightest ~25% of opaque pixels when
-    absolute thresholds find nothing (GLDEFS BMTX lumps are often missing).
+    loose=True: take the brightest ~25% of opaque pixels when absolute
+    thresholds find nothing. Do not use for SWX* — use _e_switch_led_from_albedo.
     """
     out = Image.new("RGBA", img.size, (0, 0, 0, 0))
     ip = img.load()
@@ -888,20 +1005,21 @@ def main() -> None:
 
     candidates: dict[str, tuple[float, float, tuple[int, int, int] | None]] = {}
 
-    # 0) Forced known emitters
+    # 0) Forced known emitters + switch ON-frame allowlist
     candidates.update(FORCE)
+    candidates.update(SWITCH_ON_EMIS)
 
-    # 1) GLDEFS texture brightmaps — SMON/SEXIT/C22/… (OUTTEX/SWX skipped via SKIP_RE)
+    # 1) GLDEFS texture brightmaps — SMON/SEXIT/C22/… (OUTTEX skipped; SWX ON allowlisted)
     for tex in bm_names:
-        if SKIP_RE.match(tex):
+        if is_skipped(tex):
             continue
         candidates[tex] = rule_for(tex) or (1.35, 0.0, None)
     for tex in bm_png:
-        if tex in candidates or SKIP_RE.match(tex):
+        if tex in candidates or is_skipped(tex):
             continue
         candidates[tex] = rule_for(tex) or (1.35, 0.0, None)
 
-    # 2) Name heuristics on map-used textures (no OUTTEX/SWX/FALL by name)
+    # 2) Name heuristics on map-used textures (no OUTTEX/idle-SWX/FALL by name)
     for name in used:
         rule = rule_for(name)
         if rule:
@@ -910,7 +1028,7 @@ def main() -> None:
     # 3) Expand ANIMDEFS frames for selected bases / matching names
     extra: dict[str, tuple[float, float, tuple[int, int, int] | None]] = {}
     for base, frames in anims.items():
-        if SKIP_RE.match(base) or base.startswith("CLOUD"):
+        if is_skipped(base) or base.startswith("CLOUD"):
             continue
         donor = candidates.get(base) or rule_for(base)
         if donor is None:
@@ -926,17 +1044,18 @@ def main() -> None:
         if base.startswith("FRSKY"):
             continue
         for fr in frames:
-            if not SKIP_RE.match(fr):
+            if not is_skipped(fr):
                 extra[fr] = donor
         extra[base] = donor
     candidates.update(extra)
 
     for name in list(candidates):
-        if SKIP_RE.match(name) or FALL_RE.match(name) or GLOW_RE.search(name):
+        if is_skipped(name) or FALL_RE.match(name) or GLOW_RE.search(name):
             del candidates[name]
 
-    # FORCE wins over brightmap defaults
+    # FORCE + switch ON allowlist win over brightmap defaults
     candidates.update(FORCE)
+    candidates.update(SWITCH_ON_EMIS)
 
     entries: dict[str, dict] = {}
     by_src: dict[str, int] = defaultdict(int)
@@ -980,7 +1099,11 @@ def main() -> None:
                     src = "brightmap+albedo"
         elif albedo is not None:
             u = name.upper()
-            if u.startswith(("SFLATAS", "SFLATAQ", "SFLATAP")) or u.startswith("SPORT"):
+            if u in SWITCH_ON_EMIS:
+                # Missing BMTX* brightmaps — green LED strip only, never metal luma.
+                eimg = _e_switch_led_from_albedo(albedo, tint)
+                src = "switch-led"
+            elif u.startswith(("SFLATAS", "SFLATAQ", "SFLATAP")) or u.startswith("SPORT"):
                 # Ceiling inset lamps — eye-style: bright blobs only, albedo RGB, no cast light.
                 eimg = _e_ceiling_blobs_from_albedo(albedo)
                 src = "ceiling-blobs"
@@ -1061,10 +1184,12 @@ def main() -> None:
         "SMONF5",
         "OUTTEX08",
         "SWXS4B",
+        "SWXSAB",
     ):
         print(sample, entries.get(sample))
 
-    # Drop stale non-emitters (falls / glow / OUTTEX / SWX).
+    # Drop stale non-emitters (falls / glow / OUTTEX / idle SWX).
+    keep_e = {k.upper() for k in entries}
     removed_e = 0
     for d in (MAT, MAT_DEV, OMAT):
         if not d.exists():
@@ -1077,7 +1202,7 @@ def main() -> None:
                 or GLOW_RE.search(u)
                 or re.match(r"^(OUTTEX|SWX)", u)
             )
-            if stale and u not in {k.upper() for k in entries}:
+            if stale and u not in keep_e:
                 p.unlink()
                 removed_e += 1
     if removed_e:
