@@ -21,6 +21,17 @@ Not a cheer sheet: record symptoms, failed fixes, working knobs, and next experi
 | **When noticed** | 2026-08-05: RR felt **much noisier** than recent memory; A-SVGF (RR off) looked **stabler** — expected given the pipeline (§2). |
 | **Working hypothesis (user)** | Got worse after **full-tree PBR / ORM treatment** (esp. MAP02), but **stripping PBR is not the solution** — keep authored `_n`/`_orm`/`_h` and fix RR/lighting interaction. |
 
+### 1.2 Transient-light ghosting (2026-08-05 ~16:30)
+
+| | |
+|---|---|
+| **Symptom** | Barrel explosions, muzzle flashes, and other transient bright lights **linger** in the image for ~10 seconds after the source is gone. |
+| **Mechanism** | DLSS-RR accumulates temporal history. When a bright event ends, RR's history still contains the lit pixels and slowly fades them out — no mechanism to signal "discard history here." |
+| **Why A-SVGF doesn't do this** | A-SVGF's temporal accumulation has anti-firefly + variance-driven history reset. RR's history is ML-driven with no explicit firefly/transient handling. |
+| **Guide fixes alone cannot fix this** | Corrected diffuse/specular guides help RR separate lighting from materials, but do not tell RR when to discard stale history. |
+| **Required inputs** | NGX supports `pInDisocclusionMask` (write `10000.0` to force history discard) and `pInBiasCurrentColorMask` — see `rr-noise-fix-proposals.md` §5. |
+| **Fix path** | Per-frame disocclusion mask: any pixel whose Rec.709 luminance changed by more than a threshold vs the previous frame gets `10000.0`. Simplest first pass: write it from `CmNoisyCompose` comparing current vs `DiffColorHistory` (previous frame's guide). |
+
 ---
 
 ## 2. Why “non-RR looks stabler” is not a paradox
@@ -173,7 +184,7 @@ Dev: Materials A/B → strip N/ORM/H; keep **Override** off; leave **RR temporal
 
 ---
 
-## 9. Status (2026-08-05 ~14:30)
+## 9. Status (2026-08-05 ~16:30)
 
 | Item | State |
 |---|---|
@@ -185,7 +196,21 @@ Dev: Materials A/B → strip N/ORM/H; keep **Override** off; leave **RR temporal
 | Black world / muzzle-only | **Fixed** — empty DiffTemporary after writer removal (§4.1) |
 | Dev Override sticky | Forced **off** in `devmode_settings.json` (again after blackout) |
 | Full-tree PBR as regression driver | **Suspected**; do not strip overlays |
-| Ship-quality RR with lamps + PBR | **Open** |
-| Window spawn Y | Launcher `win_y` ≈ center−300 (clamped ≥0; here → top) |
+| DLL version | **310.7.0 (latest)** |
+| **pInSpecularHitDistance = nullptr** | **Landed** — was FB_DEPTH_WORLD |
+| **Corrected RR guides (diffuse + specular)** | **Landed** — diffuse to DiffColorHistory, spec = envBRDFApprox2×mod; sky=(0.5,0.5,0.5) |
+| **Transient-light ghosting (barrel/muzzle linger)** | **P0 blocker — zero improvement from guide fixes.** RR history retains bright flashes for ~10s after source is gone. Guide corrections do not address this at all. Needs `pInDisocclusionMask`. See §1.2. |
+| **Guide fixes + null hitDistance: net effect** | **No visible improvement.** Salt still present; ghosting from transients dominates any guide-correction benefit. Guide fixes are necessary but not sufficient — RR needs explicit history-management signals (disocclusion, biasCurrentColor, responsivity) to be usable. |
+| Muzzle flash weakness | Reported; likely from guide modulation or specularHitDistance removal; investigate after ghosting fix |
+| Exposure/emission baked into RR input | **Open** — pipeline reorder deferred |
+| ReSTIR decorrelation | **Open** |
+| Transparency layer | **Open** |
 
-Update this file when A/B results land. `open-issues-rt-lighting.md` §1.1 / §1.8 point here for RR-noise detail.
+**Changes this session (`deps/RTGL`):**
+- `Source/DLSSRR.cpp:397`: `pInSpecularHitDistance = nullptr` (was FB_DEPTH_WORLD)
+- `Source/DLSSRR.cpp:330-336,358`: diffuse-albedo binding moved to `FB_DIFF_COLOR_HISTORY`
+- `Source/Shaders/BRDF.h`: added `envBRDFApprox2()` (GGX preintegrated; coefficients from RR guide §3.4.2)
+- `Source/Shaders/CmNoisyCompose.comp`: rewrote guide staging — diffuse=ro_d×mod→DiffColorHistory, spec=envBRDF×mod→DiffPong, sky=(0.5,0.5,0.5); reads ViewDirection for NoV
+- `Source/Denoiser.cpp`: added `FB_DIFF_COLOR_HISTORY` + `FB_VIEW_DIRECTION` to ComposeNoisy barriers
+
+**Next priority:** disocclusion mask (`pInDisocclusionMask`) to fix barrel/muzzle linger (§1.2). Without this, RR is unusable for gameplay — any transient light sticks for seconds. Guide fixes alone are insufficient; RR needs explicit signals to discard stale history.

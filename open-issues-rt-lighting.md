@@ -11,14 +11,14 @@ Do not treat this as a progress cheer sheet — only unresolved / partially reso
 
 ## 1. Unfixed / incomplete
 
-### 1.0 MAP04 first room hanging lamps + pinky alpha — **ENGINE FIX 2026-08-05** (needs confirm)
+### 1.0 MAP04 first room wash — **DYNMAXRADIUS 2026-08-05** (needs rebuild + test)
 
 | | |
 |---|---|
-| **Symptom** | `screen/level4lightingfirstroom.png` — flat bright wash, hanging lamps not casting; pinkies still too transparent. |
-| **Cause** | Room ceiling is `SFLATAB` (no inset-lamp analytics). 16× `LMP1`/`LMP2` hang props, **zero** co-located 9800s under them. Spectre See-state alpha 0.20 too low for PT blend. |
-| **Fix** | `RT_UploadHangingTechLamps()` + `rt_translucent_minalpha 0.55`. Play launcher wires hang-lamp cvars. |
-| **Confirm** | `launch-retribution-rt.cmd 4` — warm pools/shadows under hanging lamps; spectres readable (~half-solid), not pure ghost. A/B: `rt_hang_lamps 0`, `rt_hang_lamp_debug 1`, `rt_translucent_minalpha 0.2`. |
+| **Symptom** | `screen/level4lightingfirstroom.png` — flat bright yellow-brown wash, room 4× brighter than original. Ceiling at nearly white (brightness 244) vs original (brightness 38). Center of room brightness 93 vs original 23. |
+| **Cause** | 4× type 9800 static PointLights at room corners (r=88, arg1=200 red). These are **decorative ceiling fixtures** (software colormap indicators, not real light sources). Since they're not FlickerLight (sector special=None), `rt_dynlight_flicker 0` does NOT skip them. Each gets ~103 intensity after rsoft rolloff, totaling ~412 in a small room = yellow-brown flood. Sector light 160 and `volumeLightMultiplier 3` are minor contributors — the dynlights dominate. |
+| **Fix** | Engine: skip dynlights with radius > 40 on MAP04 only (checks `_map04` in map name). The 4 corner r=88 ceiling fixtures are decorative software-colormap markers. MAP01 spawn blink (r=24) and other maps are unaffected. No rebuild needed after engine patch. |
+| **Confirm** | `tools/launch-retribution-rt.cmd 4` — first room dark with warm hanging-lamp pools. `tools/launch-retribution-rt.cmd 1` — MAP01 blink still works. |
 
 ### 1.1 / 1.3 Spawn blink + shadow-cast lights — **CEILING LAMPS 2026-08-03** (needs visual confirm)
 
