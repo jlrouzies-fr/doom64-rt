@@ -656,6 +656,26 @@
     {
       "textureName": "SAR2G5",
       "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SAR2H1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SAR2H2H8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SAR2H3H7",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SAR2H4H6",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SAR2H5",
+      "emissiveMult": 2.0
     }
   ]
 }
