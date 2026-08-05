@@ -73,8 +73,7 @@ start "" gzdoom.exe ^
   -iwad "%IWAD%" ^
   -file "%MOD%" "%BM%" "%SKUL%" "%FLSH%" "%MUS%" "%FIX3D%" "%SKY%" ^
   -rtnolauncher -width 1280 -height 720 ^
-  +vid_fullscreen 0 +win_x -1 +win_y %WINY% +queryiwad false +sv_cheats 1 +map %MAPLUMP% ^
-  +god +fly ^
+  +vid_fullscreen 0 +win_x -1 +win_y %WINY% +queryiwad false +sv_cheats 1 +god +notarget +map %MAPLUMP% ^
   +rt_mod_compat 1 +r_drawvoxels 0 ^
   +d64_enterfade 0 +d64_exitfade 0 ^
   +rt_fluid false +rt_autoexport false ^

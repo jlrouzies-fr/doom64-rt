@@ -291,7 +291,8 @@ vngx_dlssd.dll)
 - Split `IsSpectre()` from additiveBlend
 - Spectres use `RG_MESH_PRIMITIVE_TRANSLUCENT` (rasterized overlay) — sprite texture RGB + alpha blending gives the see-through look
 - `l_makeSpectreFlags()` stripped of FORCE_WATER/GLASS/MIRROR; only `RG_MESH_FORCE_IGNORE_REFRACT_AFTER` remains
-- `rt_translucent_minalpha` (0.72) finally wired into `l_spriteAlpha()` — floors the vertex alpha so `A_SetTranslucent(0.20)` doesn't render ghostly-clear
+- `rt_translucent_minalpha` (0.72) wired into `l_spriteAlpha()` — spectres use **cap** (`min(a, minalpha)`) so states that don't call `A_SetTranslucent` (pain/hit) also render semi-transparent; other soft-blend sprites use **floor** (`max(a, minalpha)`) so they don't render ghostly-clear
+- `IsSpectre()` name check extended to both `SAR2*` and `SARG*` prefixes (attack frames inherited from base pinky)
 - `rt_spectre` / `rt_spectre_invis1` cvars marked **deprecated**
 - `IsSpectre()` removed from `forcealpha1` (vertex alpha should be real, not forced 1.0, for raster blending)
 
