@@ -3,13 +3,22 @@
 Living punch list of **what still fails**, what we **tested**, and what **works**.  
 Do not treat this as a progress cheer sheet — only unresolved / partially resolved items belong in §1.
 
-**Related:** `AGENTS.md`, `compat-patches.md`, `material-authoring-spec.md`, `gallery-emis-wall-wash-fix-plan.md`, `gallery-emis-wall-wash-diagnostics.md`
+**Related:** `AGENTS.md`, `compat-patches.md`, `material-authoring-spec.md`, `gallery-emis-wall-wash-fix-plan.md`, `gallery-emis-wall-wash-diagnostics.md`, **`rr-noise-investigation.md`** (DLSS-RR salt / PBR)
 
 **Play path (canonical):** `tools/launch-retribution-rt.cmd` → `sourcecode/gzdoom-rt/build/RelWithDebInfo/`
 
 ---
 
 ## 1. Unfixed / incomplete
+
+### 1.0 MAP04 first room hanging lamps + pinky alpha — **ENGINE FIX 2026-08-05** (needs confirm)
+
+| | |
+|---|---|
+| **Symptom** | `screen/level4lightingfirstroom.png` — flat bright wash, hanging lamps not casting; pinkies still too transparent. |
+| **Cause** | Room ceiling is `SFLATAB` (no inset-lamp analytics). 16× `LMP1`/`LMP2` hang props, **zero** co-located 9800s under them. Spectre See-state alpha 0.20 too low for PT blend. |
+| **Fix** | `RT_UploadHangingTechLamps()` + `rt_translucent_minalpha 0.55`. Play launcher wires hang-lamp cvars. |
+| **Confirm** | `launch-retribution-rt.cmd 4` — warm pools/shadows under hanging lamps; spectres readable (~half-solid), not pure ghost. A/B: `rt_hang_lamps 0`, `rt_hang_lamp_debug 1`, `rt_translucent_minalpha 0.2`. |
 
 ### 1.1 / 1.3 Spawn blink + shadow-cast lights — **CEILING LAMPS 2026-08-03** (needs visual confirm)
 
@@ -18,8 +27,8 @@ Do not treat this as a progress cheer sheet — only unresolved / partially reso
 | **Target** | Ceiling **head lights** over MAP01’s first zombies (`SFLATAS` secs 31/33) — **not** wall SMON terminals. |
 | **Why wall terminals blinked** | Alcove secs **32/34** are `dLight_Flicker` (65) + green **9802** at the SMON. Dynlight upload (and any sector_flicker/lights) lightstyles those alcoves. |
 | **Why `rt_sector_lights 1` looked dead for ceilings** | Booth ceilings have **special 0 / steady lightlevel 200** — sector lights never blink them. Enabling all-sector lights mostly adds steady fill; the only blink still comes from alcove 65 / 9802. |
-| **Fix landed** | `RT_UploadCeilingInsetLamps()` under `SFLATAS*`/`SPORT*` (intensity **900**). `rt_dynlight_flicker 0` skips 9802 wall flashers. `rt_sector_flicker 0`. Debug: `rt_ceiling_lamp_debug 1` → cyan markers + console. |
-| **Confirm** | Spawn booths: ceiling blobs pulse + cast on zombies; SMON panels quiet. A/B `rt_ceiling_lamps 0` / `rt_dynlight_flicker 1`. |
+| **Fix landed** | `RT_UploadCeilingInsetLamps()` under `SFLATAS*`/`SPORT*`. `rt_dynlight_flicker 0` skips 9802 wall flashers. `rt_sector_flicker 0`. Debug: `rt_ceiling_lamp_debug 1` → cyan markers + console. |
+| **RR noise (2026-08-05)** | See **`rr-noise-investigation.md`**. Soft lamp fade landed; boiling + `rt_rr_temporal` both **failed** (worse / ghost). Follow-on: black world when Compose still read empty temporal buffers — **fixed** (ComposeNoisy raw-only). PBR suspected amp — do not strip. |
 
 ### 1.2 MAP01 directional wash / sky leak — **MITIGATED** (night sky 2026-08-03)
 
@@ -44,8 +53,42 @@ Yellow SKUL sprites via `d64r-lostsoul-rt.pk3` ship; same-sprite attached light 
 | **Yellow door** | `SDOOR6` on sectors with `lightcolor` yellow + high `lightlevel` — not RT `_e`. Sector tint baked into vertex color → neon wash. |
 | **Dark room** | Secs **35/40**: `SFLATAQ` ceil + `SPACECN` walls, `lightlevel` 0/10. Lamp blobs `_e` with `emissiveMult=0` (primary only); walls got **black** vertex color → flashlight/ceiling lamps absorbed. |
 | **Fix** | `rt_main.cpp`: under `rt_mod_compat`, world prims upload **white RGB**. First pass only hit `ExportMap`; **doors are movable → not ExportMap** — extended to all non-sprite world (2026-08-04 eve). Rebuild gzdoom. |
-| **Confirm** | `launch-retribution-rt.cmd 2`: yellow/red **key doors** not neon. |
-| **Crash** | No local `gzdoom*.dmp` / WER AppCrash found for this session. If it repeats: note exact action + whether Windows Error Reporting shows `gzdoom.exe`; keep `gzdoom.pdb` beside exe for a minidump. |
+| **Confirm** | `launch-retribution-rt.cmd 2`: yellow/red **key doors** not neon. Dark room: walls lit by flashlight/ceiling lamps. |
+| **Sprites** | World fix left enemies + weapon black (`level2blackroomsprites.png`) — sprite path still multiplied sector lightlevel into albedo. **2026-08-05:** `ExportInstance` / FirstPerson keep `uObjectColor`, drop `uVertexColor` RGB. Rebuild gzdoom. |
+
+### 1.6b MAP02 freeze at red-key approach — **FIX WAD 2026-08-05** (needs confirm)
+
+| | |
+|---|---|
+| **Symptom** | Window freezes (audio still plays) when entering the red-key door approach on MAP02. |
+| **Cause** | Same as MAP01: `Sector_Set3dFloor` (special **160**) — two linedefs, control sectors tag 1/2 with `F_SKY1`. RT live-upload hang when that geometry is in play. |
+| **Fix** | Combined `d64r-3dfloor-rtfix.wad` strips special 160 on **all 28 maps** that had it (161 linedefs). Keeps `BEHAVIOR`/`ZNODES`. Regen: `python tools/make_map_3dfloor_rtfix.py`. |
+| **Confirm** | `tools\launch-retribution-rt.cmd 2`, walk to red-key door room — should stay responsive. Outdoor 3D-floor prop may be missing until engine fix. |
+
+### 1.6e MAP02 fake mid-ceiling blink blobs — **ENGINE FIX 2026-08-05** (needs confirm)
+
+| | |
+|---|---|
+| **Symptom** | `screen/level2fakeceilinglights.png` — blinking white patches in empty mid-ceiling (circled); real fixtures are only edge inset blobs. |
+| **Cause** | `RT_UploadCeilingInsetLamps` placed one analytic sphere at every `SFLATAQ`/`SFLATAS` **sector center**. Fine for MAP01 ~96×96 booths; large halls get a fake center lamp. |
+| **Fix** | `rt_ceiling_lamp_maxspan` **128** — skip analytics if sector AABB width or height exceeds span. Texture `_e` still lights the real edge blobs. |
+| **Confirm** | Mid-ceiling white blinks gone; edge inset lamps remain. A/B: `rt_ceiling_lamp_maxspan 0` restores old behavior. |
+
+| | |
+|---|---|
+| **Symptom** | `screen/level2floorelementnocastlight.png` — raised `SFLATAQ` floor panels glow but cast nothing. |
+| **Cause** | `_e` with `emissiveMult=0` (was ceiling-analytic-only). Floor analytic spheres looked bad — removed. |
+| **Fix** | `gen_world_emissives.py`: `SFLATAS`/`SFLATAQ`/`SFLATAP`/`SPORT*` `emissiveMult` **1.0** so INDIR GI casts from blob `_e`. No floor analytic lights. |
+| **Confirm** | Dark room panels light nearby walls via texture GI only. |
+
+### 1.6c MAP02 yellow door jamb lamps nuclear — **ENGINE FIX 2026-08-05** (needs confirm)
+
+| | |
+|---|---|
+| **Symptom** | `screen/yellowdoor.png` — doorframe side strips bloom pure white / wash the hall. |
+| **Cause** | Retribution stacks **3× PointLight (9800)** per jamb corner (heights 24/64/104), RGB yellow, radius 32. PT uploaded each at `radius × rt_dynlight_intensity` (~1280) and **added** them → ~3840/strip. |
+| **Fix** | `rt_dynlight_stack_atten 1` divides by co-located XY count; `rt_dynlight_max 500` hard-caps. Rebuild gzdoom. |
+| **Confirm** | `launch-retribution-rt.cmd 2` at yellow key door — soft yellow jamb glow, not white blowout. A/B: `rt_dynlight_stack_atten 0`. |
 ---
 
 Working for brightmap-validated frames (TROO/TRO2, SARG/SAR2, FATT, CYBR, BSPI, …). **No** eyes for humans (POSS/SPOS/…) or clean HEAD/BOSS/PAIN masks. Auto detect stays **off**.
@@ -58,17 +101,9 @@ Isolated `build/WashScratch` starts from stock `rt/` and must **re-stage** eyes/
 
 Single overlay pk3 + clean install docs (Phase 5) still pending.
 
-### 1.8 DLSS-RR residual sparkle after lights die — **MITIGATED 2026-08-03**
+### 1.8 DLSS-RR residual sparkle / salt — **OPEN detail in `rr-noise-investigation.md`**
 
-| | |
-|---|---|
-| **Symptom** | Salt/sparkle often **after** muzzle/dynlight stops (not only on appear). |
-| **Root cause** | With DLSS-RR, RTGL runs `ComposeNoisy` and **skips** A-SVGF `Denoise()` — so stock `CmAntiFirefly` never ran on RR input. ReSTIR outliers + hard light cuts leave RR history sparkling. |
-| **Fix landed** | (1) Screen-space neighborhood firefly clamp **inside** `CmNoisyCompose.comp` — **default OFF** (`rt_rr_noisy_antifirefly 0`) because always-on hurt walk-around temporal stability. A/B via Dev window **DLSS-RR A/B** or cvar. (2) `rt_illum_sens_*` cvars (indirect default **0.75**). (3) Soft muzzle fade `rt_mzlflsh_fade` (peak unchanged). |
-| **A/B** | RTGL Dev → General → **RR / Denoise live**: RR on/off, ASVGF anti-firefly, RR noisy clamp A/B, sensitivity sliders + presets (no Override needed). Upscaler quality still under Override → Present. |
-| **Out of scope** | Rock albedo / PBR reauthoring for “grabs too much light.” |
-| **Confirm** | Shoot in dark MAP01: residual sparkle shorter/weaker; A/B `rt_mzlflsh_fade 0` and Dev antiFirefly off. |
-| **Walk noise vs mats (2026-08-04)** | **Resolved (roughness + metal demotion).** Full tree: metallic AI `--all --force` (stricter; 545 dielectric / 218 mixed / 0 metal) + roughness `--all` floor 0.82. Leave Dev **Roughness toward matte at 0**; 0.5 was only a temporary A/B crutch. |
+Short status: debug match = unfiltered diffuse direct; ceiling lamps confirmed amplifier; soft fades landed; boiling **reverted**; `rt_rr_temporal` **failed** (ghost) then left a **black world** when Compose still sampled empty DiffTemporary after `AccumulateForRR` was removed — ComposeNoisy is now **raw unfiltered only**. Full-tree PBR suspected — **do not strip**. Detail → **`rr-noise-investigation.md`**.
 
 ---
 
@@ -115,9 +150,17 @@ Single overlay pk3 + clean install docs (Phase 5) still pending.
 | `rt_sector_lights` | **0** | All-sector fake fill — keep off |
 | `rt_sector_flicker` | **0** | Off on play — was lighting wall SMON alcoves, not ceiling lamps |
 | `rt_ceiling_lamps` | **1** | Blink+cast under `SFLATAS`/`SPORT*` ceilings (spawn head lights) |
-| `rt_ceiling_lamp_intensity` | **900** | Peak intensity (~dynlight hi×40) |
-| `rt_ceiling_lamp_radius` | **0.08** | Source radius (meters) |
+| `rt_ceiling_lamp_intensity` | **700** | Peak intensity (soft fade + temporal prefilter) |
+| `rt_ceiling_lamp_radius` | **0.10** | Source radius (meters) |
+| `rt_ceiling_lamp_off` | **0.12** | Dim floor while “off” — keep light in ReSTIR/RR list |
+| `rt_ceiling_lamp_fade` | **8** | Tics to ease on↔off (0 = instant) |
 | `rt_ceiling_lamp_debug` | 0 | Cyan markers + console dump of ceiling lamp uploads |
+| `rt_hang_lamps` | **1** | Warm cast lights at `LMP1`/`LMP2` hanging tech lamps (MAP04…) |
+| `rt_hang_lamp_intensity` | **320** | Per-lamp intensity (dense halls — below ceiling 700) |
+| `rt_hang_lamp_radius` | **0.09** | Source radius (meters) |
+| `rt_hang_lamp_zofs` | **10** | Drop below SPAWNCEILING origin (map units) |
+| `rt_hang_lamp_debug` | 0 | Yellow markers + console dump |
+| `rt_translucent_minalpha` | **0.55** | Floor PT alpha for translucent sprites (64Spectre) |
 | `rt_dynlight` | 1 | Upload GZDoom FDynamicLight (non-flicker by default) |
 | `rt_dynlight_flicker` | **0** | Skip 9802 Flicker lights (wall SMON alcoves) |
 | `rt_dynlight_intensity` | **40** | Peak scale for remaining dynlights |
@@ -136,7 +179,7 @@ Single overlay pk3 + clean install docs (Phase 5) still pending.
 | `rt_illum_sens_indirect` | **0.75** | Lighting-change sensitivity (indirect) |
 | `rt_illum_sens_spec` | **1** | Lighting-change sensitivity (specular) |
 | `rt_mzlflsh_fade` | **5** | Soft fade-out tics after extralight ends (0 = hard cut) |
-| `rt_rr_noisy_antifirefly` | **0** | RR ComposeNoisy firefly clamp (default off; A/B in Dev **DLSS-RR A/B**) |
+| `rt_rr_temporal` | **0** | Ghost + black-world hazard — keep off; Compose ignores temporal |
 
 **Console:** `rt_dump_dynlights` — list active FDynamicLight positions / RGB / radius.
 

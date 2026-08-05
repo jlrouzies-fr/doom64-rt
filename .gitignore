@@ -115,6 +115,13 @@ Desktop.ini
 *.tmp
 *.bak
 
+# --- Generated 3D-floor patches (regenerate via make_map_3dfloor_rtfix.py) ---
+Doom64-Retribution/d64r-*-rtfix.wad
+
+# --- Scratch / temp scripts ---
+tools/_tmp_*.py
+tools/_switch_qa/
+
 # --- Hugging Face / model caches (if ever dropped in-tree) ---
 .cache/
 **/huggingface/

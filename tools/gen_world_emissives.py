@@ -78,6 +78,8 @@ NAME_RULES: list[tuple[str, float, float, tuple[int, int, int] | None]] = [
     ("NUKAGE", 1.2, 90, (60, 220, 40)),
     ("NUKE", 1.2, 90, (60, 220, 40)),
     ("SEXIT", 0.9, 0, (255, 40, 40)),
+    # Dense SMON panels (B/F/LB/LC) stay ~1.0. Sparse green-text LEDs (A/C/D/E)
+    # need higher INDIR mult — ~50px masks cast nothing at 1.0 (see screengreentextnolight).
     ("SMON", 1.0, 0, (120, 220, 255)),
     ("CFACE", 1.0, 0, (255, 200, 80)),
     ("CRTR", 1.0, 0, (80, 220, 120)),
@@ -90,13 +92,14 @@ NAME_RULES: list[tuple[str, float, float, tuple[int, int, int] | None]] = [
     ("C22", 1.0, 0, (255, 180, 60)),
     ("C23", 1.0, 0, (255, 180, 60)),
     ("D64LOGO", 1.0, 0, None),
-    # Ceiling inset lamps — analytic blink/cast via rt_ceiling_lamps.
-    # Keep surface _e mult at 0 so fixtures fully extinguish when the light is off
-    # (non-zero _e stayed lit through blackouts and looked nothing like base Doom 64).
-    ("SFLATAS", 0.0, 0, None),
-    ("SFLATAQ", 0.0, 0, None),
-    ("SFLATAP", 0.0, 0, None),
-    ("SPORT", 0.0, 0, None),
+    # Inset lamp flats (ceiling head lights + floor panels). emissiveMult drives
+    # INDIR GI cast from _e blobs — needed for floor panels (no analytic floor lights).
+    # Ceiling analytics still blink/cast on top; mult kept moderate to limit wash.
+    ("SFLATAS", 1.0, 0, None),
+    ("SFLATAQ", 1.0, 0, None),
+    ("SFLATAP", 1.0, 0, None),
+    # Teleporter pads (MAP03 SPORT*) — cyan cast; mild floor lightIntensity OK.
+    ("SPORT", 2.2, 110, (70, 190, 255)),
 ]
 
 # Always include these even if heuristics miss them
@@ -109,14 +112,14 @@ FORCE: dict[str, tuple[float, float, tuple[int, int, int] | None]] = {
     "SKEYFLRD": (1.2, 0.0, (255, 50, 40)),
     "SKEYFLBL": (1.3, 0.0, (60, 160, 255)),
     "SEXIT": (0.9, 0.0, (255, 40, 40)),
-    "SFLATAS": (0.0, 0.0, None),
-    "SFLATAQ": (0.0, 0.0, None),
-    "SFLATAP": (0.0, 0.0, None),
-    "SPORT1": (0.0, 0.0, None),
-    "SPORT2": (0.0, 0.0, None),
-    "SPORT3": (0.0, 0.0, None),
-    "SPORT4": (0.0, 0.0, None),
-    "SPORT5": (0.0, 0.0, None),
+    "SFLATAS": (1.0, 0.0, None),
+    "SFLATAQ": (1.0, 0.0, None),
+    "SFLATAP": (1.0, 0.0, None),
+    "SPORT1": (2.2, 110.0, (70, 190, 255)),
+    "SPORT2": (2.2, 110.0, (70, 190, 255)),
+    "SPORT3": (2.2, 110.0, (70, 190, 255)),
+    "SPORT4": (2.2, 110.0, (70, 190, 255)),
+    "SPORT5": (2.2, 110.0, (70, 190, 255)),
 }
 
 # Skip non-emitters. OUTTEX classic brightmaps are NOT RT emitters.
@@ -474,6 +477,41 @@ def _e_ceiling_blobs_from_albedo(
     return out
 
 
+def _e_teleporter_from_albedo(
+    img: Image.Image, tint: tuple[int, int, int]
+) -> Image.Image:
+    """SPORT* teleporter pads — bright ring/dots + blue core, cyan GI tint.
+
+    Ceiling-blob luma kept greyish whites that barely cast in dark rooms
+    (map03groundelementnotemissive). Tint like keys so INDIR reads cyan.
+    """
+    out = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    ip = img.load()
+    op = out.load()
+    tr, tg, tb = tint
+    for y in range(img.size[1]):
+        for x in range(img.size[0]):
+            r, g, b, a = ip[x, y]
+            if a < 40:
+                continue
+            mx = max(r, g, b)
+            is_blue = b >= r + 20 and b >= g + 10 and b >= 55
+            is_bright = mx >= 155 and (mx - min(r, g, b)) < 40  # white ring dots
+            if not (is_blue or is_bright):
+                continue
+            # Weight by luma so the core reads hotter than the ring speckles.
+            w = 0.55 + 0.55 * min(1.0, mx / 220.0)
+            if is_blue:
+                w = max(w, 0.90)
+            op[x, y] = (
+                min(255, int(tr * w)),
+                min(255, int(tg * w)),
+                min(255, int(tb * w)),
+                255,
+            )
+    return out
+
+
 def _flat_panel_frac(img: Image.Image) -> float:
     """Fraction of opaque texels that look like flat screen glass."""
     ip = img.load()
@@ -570,6 +608,77 @@ def _boost_e(img: Image.Image, factor: float) -> Image.Image:
                 255,
             )
     return out
+
+
+def _soft_halo_e(
+    img: Image.Image, radius: int = 2, strength: float = 0.22
+) -> Image.Image:
+    """Dim fringe around LED cores for GI sampling — cores stay sharp.
+
+    Hard dilate turned SMON green text into solid blocks on primary (raw _e).
+    Halo only writes into empty texels at a fraction of the nearest core so
+    glyphs remain readable while INDIR still gets a little area to sample.
+    """
+    if radius <= 0 or strength <= 0:
+        return img
+    src = img.convert("RGBA")
+    w, h = src.size
+    sp = src.load()
+    out = src.copy()
+    op = out.load()
+    # Collect core pixels first
+    cores: list[tuple[int, int, int, int, int]] = []
+    for y in range(h):
+        for x in range(w):
+            r, g, b, a = sp[x, y]
+            if a > 8 and max(r, g, b) > 8:
+                cores.append((x, y, r, g, b))
+    if not cores:
+        return out
+    for y in range(h):
+        for x in range(w):
+            r0, g0, b0, a0 = sp[x, y]
+            if a0 > 8 and max(r0, g0, b0) > 8:
+                continue  # never overwrite glyph cores
+            best = 0.0
+            br = bg = bb = 0
+            for cx, cy, cr, cg, cb in cores:
+                dx = abs(cx - x)
+                dy = abs(cy - y)
+                if dx > radius or dy > radius:
+                    continue
+                dist = max(dx, dy)  # chebyshev — square-ish CRT glow
+                if dist < 1:
+                    continue
+                fall = strength * (1.0 - (dist - 1) / radius)
+                if fall <= 0:
+                    continue
+                v = max(cr, cg, cb) * fall
+                if v > best:
+                    best = v
+                    br = int(cr * fall)
+                    bg = int(cg * fall)
+                    bb = int(cb * fall)
+            if best >= 6:
+                op[x, y] = (min(255, br), min(255, bg), min(255, bb), 255)
+    return out
+
+
+def _e_lit_frac(img: Image.Image) -> float:
+    px = img.convert("RGBA").load()
+    w, h = img.size
+    lit = 0
+    for y in range(h):
+        for x in range(w):
+            r, g, b, a = px[x, y]
+            if a > 8 and max(r, g, b) > 8:
+                lit += 1
+    return lit / max(1, w * h)
+
+
+def _is_sparse_smon_text(name: str) -> bool:
+    """SMON A/C/D/E families = green LED text (not dense B/F/L panels)."""
+    return bool(re.match(r"^SMON[ACDE]", name.upper()))
 
 
 def clone_anim_pbr_maps(
@@ -824,8 +933,60 @@ def patch_global_inline(path: Path, entries: dict[str, dict]) -> None:
         if pat.search(text):
             text = pat.sub(repl, text, count=1)
         else:
-            line = f"    ,   {{ {body} }}"
-            text = re.sub(r"\n(\s*\]\s*\}\s*)$", "\n" + line + r"\n\1", text, count=1)
+            # Pretty-printed multiline object — replace whole first block
+            # (emisMult-only edits miss new lightIntensity / lightColor).
+            pat_multi = re.compile(
+                rf'(\{{\s*\n\s*"textureName"\s*:\s*"{re.escape(name)}"\s*,)(.*?)(\n\s*\}})',
+                re.S,
+            )
+            mm = pat_multi.search(text)
+            if mm:
+                indent = "      "
+                lines = [f'{{\n{indent}"textureName": "{name}",']
+                keys = [k for k in meta if k != "textureName"]
+                # Keep metallicDefault/roughnessDefault from the old block if authored
+                # meta doesn't set them (stock PBR companions).
+                old = mm.group(0)
+                for keep_k in ("metallicDefault", "roughnessDefault", "isMirror", "isWater"):
+                    if keep_k in meta:
+                        continue
+                    km = re.search(rf'"{keep_k}"\s*:\s*([^,}}\s]+)', old)
+                    if km and keep_k not in keys:
+                        keys.append(keep_k)
+                        meta = dict(meta)
+                        raw = km.group(1)
+                        if raw in ("true", "false"):
+                            meta[keep_k] = raw == "true"
+                        else:
+                            try:
+                                meta[keep_k] = float(raw) if "." in raw else int(raw)
+                            except ValueError:
+                                meta[keep_k] = raw
+                for i, k in enumerate(keys):
+                    v = meta[k]
+                    comma = "," if i < len(keys) - 1 else ""
+                    if isinstance(v, bool):
+                        lines.append(f'{indent}"{k}": {"true" if v else "false"}{comma}')
+                    elif isinstance(v, float) and v == int(v):
+                        lines.append(f'{indent}"{k}": {int(v)}{comma}')
+                    elif isinstance(v, (int, float)):
+                        lines.append(f'{indent}"{k}": {v}{comma}')
+                    elif isinstance(v, list):
+                        lines.append(f'{indent}"{k}": {json.dumps(v)}{comma}')
+                    else:
+                        lines.append(f'{indent}"{k}": "{v}"{comma}')
+                lines.append("    }")
+                text = text[: mm.start()] + "\n".join(lines) + text[mm.end() :]
+            else:
+                line = f"    ,   {{ {body} }}"
+                text = re.sub(r"\n(\s*\]\s*\}\s*)$", "\n" + line + r"\n\1", text, count=1)
+        # Drop any later single-line duplicates for this name
+        text = re.sub(
+            rf'^\s*,\s*\{{[ \t]*"textureName"[ \t]*:[ \t]*"{re.escape(name)}"[^}}\n]*\}}\s*$\n?',
+            "",
+            text,
+            flags=re.M,
+        )
     path.write_text(text, encoding="utf-8")
 
 
@@ -1086,8 +1247,17 @@ def main() -> None:
                     eimg = make_e_from_brightmap(
                         bm_img, tint, albedo, use_albedo_color=True
                     )
-                    eimg = _boost_e(eimg, 1.2)
-                    src = "brightmap+albedoRGB"
+                    eimg = _boost_e(eimg, 1.15)
+                    # Sparse green-text SMON: keep glyph-shaped _e only (primary = raw _e).
+                    # Dilate/halo → solid blocks on the screen (terminalgreenbug.png).
+                    # Cast light = emissiveMult × mapboost on the tight LEDs.
+                    if u.startswith("SMON") and (
+                        _is_sparse_smon_text(u) or _e_lit_frac(eimg) < 0.05
+                    ):
+                        em = max(em, 2.8)
+                        src = "brightmap+albedoRGB+sparse"
+                    else:
+                        src = "brightmap+albedoRGB"
                 elif (
                     albedo is not None
                     and u.startswith(("C22", "C23"))
@@ -1103,10 +1273,15 @@ def main() -> None:
                 # Missing BMTX* brightmaps — green LED strip only, never metal luma.
                 eimg = _e_switch_led_from_albedo(albedo, tint)
                 src = "switch-led"
-            elif u.startswith(("SFLATAS", "SFLATAQ", "SFLATAP")) or u.startswith("SPORT"):
-                # Ceiling inset lamps — eye-style: bright blobs only, albedo RGB, no cast light.
+            elif u.startswith(("SFLATAS", "SFLATAQ", "SFLATAP")):
+                # Inset lamp flats — tight bright blobs; cast via emissiveMult INDIR.
                 eimg = _e_ceiling_blobs_from_albedo(albedo)
                 src = "ceiling-blobs"
+            elif u.startswith("SPORT"):
+                # Teleporter pads — cyan-tinted mask (not grey ceiling-blob luma).
+                eimg = _e_teleporter_from_albedo(albedo, tint)
+                eimg = _boost_e(eimg, 1.25)
+                src = "teleporter"
             elif u.startswith("SKEYFL"):
                 # Luma mask + key tint (albedo yellow is brown → GI looked red).
                 eimg = _e_albedo_brightmap(albedo, tint, boost=1.35)

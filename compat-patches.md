@@ -110,9 +110,9 @@ Not ACS (script 12 terminate still froze). Real MAP01 `TEXTMAP` without `BEHAVIO
 | Disable only `Sector_Set3dFloor` (special 160) | OK |
 | Keep 3D floor, replace control sector 18 `F_SKY1` → `FLAT1` | Still freezes |
 
-**Fix pack:** `Doom64-Retribution/d64r-map01-rtfix.wad` — same MAP01 geometry with the 3D floor linedef special removed. Loaded last via `tools/launch-retribution-rt.cmd`. Side effect: the teleporter-hallway 3D floor event on MAP01 won’t appear until an engine-side RT 3D-floor fix exists.
+**Fix pack:** `d64r-3dfloor-rtfix.wad` — every Retribution map that had `Sector_Set3dFloor` (special 160) stripped (**28 maps / 161 linedefs**, 2026-08-05). Keeps `BEHAVIOR`/`ZNODES`. Loaded via `tools/launch-retribution-rt.cmd`. Regen: `python tools/make_map_3dfloor_rtfix.py`. Side effect: 3D-floor visuals won’t appear until an engine-side RT 3D-floor fix exists. Per-map copies `d64r-mapNN-rtfix.wad` also written for debugging.
 
-**Must include `BEHAVIOR` (+ `ZNODES`):** a TEXTMAP-only replacement stripped ACS → every switch that calls script 19 printed `P_StartScript: Unknown script 19`. Fix wad carries original MAP01 `BEHAVIOR`/`ZNODES` with the patched `TEXTMAP` (3D-floor special cleared). Do **not** ship a mis-offset PWAD (lump directory offsets must be absolute from file start — a bad rewrite once made TEXTMAP = nested `PWAD` header → `Unexpected character ASCII 5` / invalid ACS).
+**Must include `BEHAVIOR` (+ `ZNODES`):** a TEXTMAP-only replacement stripped ACS → every switch that calls script 19 printed `P_StartScript: Unknown script 19`. Fix wad carries original `BEHAVIOR`/`ZNODES` with the patched `TEXTMAP` (3D-floor special cleared). Do **not** ship a mis-offset PWAD (lump directory offsets must be absolute from file start — a bad rewrite once made TEXTMAP = nested `PWAD` header → `Unexpected character ASCII 5` / invalid ACS).
 
 ---
 
@@ -125,6 +125,10 @@ See-through walls under full RT (`rt_classic 0`) were largely soft/garbage PNG a
 - World geometry (`ExportMap`): **never** alpha-test under mod_compat (sprites still do)
 - Force vertex color alpha=1 for all world draws
 - **Force world vertex RGB=white** under `rt_mod_compat` (2026-08-04): sector `lightlevel`/`lightcolor` must not bake into PT albedo — MAP02 yellow key-door sectors looked neon-emissive; lightlevel-0 rooms absorbed flashlight / ceiling lamps. Classic raster still uses `classicLight`. **Follow-up:** doors/lifts are **not** `ExportMap` (movable) so the first pass missed them — white RGB now applies to all non-sprite world prims.
+- **Force sprite/weapon unlit albedo** under `rt_mod_compat` (2026-08-05): same lightlevel-0 bake left enemies + HUD weapon as black silhouettes (`screen/level2blackroomsprites.png`) after world was fixed. Keep `uObjectColor` (ThingColor / weapon ObjectColor); ignore `uVertexColor` RGB (sector shading). Alpha unchanged.
+- **Invisible pinkies pure-invisible** under `rt_mod_compat` (2026-08-05): Retribution `64Spectre` is `STYLE_Translucent` + `A_SetTranslucent` (not Fuzz/Shadow). Sprite path always forced `ALPHA_TESTED`, so low vertex alpha cut the whole mesh. Soft blends (`Translucent` / additive / classic spectre) now upload as `TRANSLUCENT` instead. Rebuild gzdoom.
+- **Pinkies still too ghostly** (2026-08-05): after translucent upload, See-state `A_SetTranslucent(0.20)` is legible in classic HW but nearly clear under PT alpha blend. Floor soft-blend (`STYLEOP_Add` + `InvSrc`) sprite alpha via `rt_translucent_minalpha` (**0.55**). Additive (muzzle/LS) not floored.
+- **MAP04 hanging tech lamps dark** (2026-08-05): first room uses `LMP1`/`LMP2` SPAWNCEILING props (ed 1015/1016) with **no** co-located PointLights; ceiling is `SFLATAB` (not `SFLATAS` inset path). `RT_UploadHangingTechLamps()` places warm amber spheres at each LMP actor. Cvars: `rt_hang_lamps`, `rt_hang_lamp_intensity` (**320**), `rt_hang_lamp_radius` (0.09), `rt_hang_lamp_zofs` (10), `rt_hang_lamp_debug`.
 - Brightmaps/glowmaps on **walls and sprites** → RT emissive (not sprites-only)
 
 ### Sky-through-walls (real bug, not fence alpha)
@@ -227,11 +231,19 @@ vngx_dlssd.dll)
 
 **Wrong first try:** Restoring `rt_sector_flicker` + amplifying 9802 made wall terminals pulse — rejected.
 
-**Ceiling lamp fix:** `RT_UploadCeilingInsetLamps()` uploads warm-white shadow-casting spheres under `SFLATAS` / `SFLATAQ` / `SFLATAP` / `SPORT*` ceilings with irregular flicker. Cvars: `rt_ceiling_lamps`, `rt_ceiling_lamp_intensity` (**900**), `rt_ceiling_lamp_radius` (0.08), `rt_ceiling_lamp_zofs` (8), `rt_ceiling_lamp_debug`. Play launcher: `+rt_ceiling_lamps 1`, `+rt_sector_flicker 0`, `+rt_dynlight_flicker 0` (skips 9802 wall flashers). Surface `_e` from `gen_world_emissives.py` still provides the bright blob albedo; analytic lights blink/cast.
+**Ceiling lamp fix:** `RT_UploadCeilingInsetLamps()` uploads warm-white shadow-casting spheres under `SFLATAS` / `SFLATAQ` / `SFLATAP` / `SPORT*` **ceilings** with irregular flicker. Floor lamp panels cast via texture `_e` × `emissiveMult` (no floor analytic lights — looked bad). Cvars: `rt_ceiling_lamps`, `rt_ceiling_lamp_intensity` (**450**), `rt_ceiling_lamp_radius` (0.10), `rt_ceiling_lamp_zofs` (8), `rt_ceiling_lamp_off` (**0.12**), `rt_ceiling_lamp_fade` (**8**), `rt_ceiling_lamp_debug`. Play launcher: `+rt_ceiling_lamps 1`, `+rt_sector_flicker 0`, `+rt_dynlight_flicker 0`.
+
+**RR / hard blink (2026-08-05):** Under DLSS-RR, A-SVGF is skipped — hard extinguish + removing the light from the upload list each blackout frame destroyed ReSTIR temporal matching and showed as unfiltered-direct sparkle in the final image (ASVGF looked stabler — expected). Fix: always upload a stable `uniqueID`, ease intensity over `rt_ceiling_lamp_fade`, keep a dim floor via `rt_ceiling_lamp_off`. Same lesson as `rt_mzlflsh_fade`. Peak restored to **700** once RR boiling landed.
+
+**RR boiling filter (2026-08-05) — REVERTED:** Screen-space boiling / sample clamps corrupted the noise distribution RR expects and made IQ worse. Do not re-enable.
+
+**RR temporal prefilter (2026-08-05) — FAILED:** Feeding A-SVGF temporal into ComposeNoisy/`DLSS-RR` produced a **faded duplicate / ghost depth-like view** (`screen/rrasvgghost.png`). Likely double reprojection and/or checkerboard vs regular sampling mismatch. **`AccumulateForRR` removed** from RR frame path; cvar **`rt_rr_temporal 0`**. Soft analytic-light fades remain the safe lever. See `rr-noise-investigation.md`.
+
+**Black world / muzzle-only (2026-08-05) — FIXED:** After removing the writer, `CmNoisyCompose` could still read DiffTemporary when `rrTemporalPrefilterEnabled` was set → empty lighting → black PT world; raster fire sprites still drew. Fix: delete temporal branch from `CmNoisyCompose` (always unfiltered); force Dev Override off; rebuild `tools/build-rtgl.cmd`. Do not re-add a Compose temporal reader without a matching every-frame writer.
 
 **Why `rt_sector_lights 1` did not blink the ceilings:** MAP01 booth `SFLATAS` sectors have special **0** and steady lightlevel 200. Sector lights only *blink* where lightlevel animates — the SMON alcoves (`dLight_Flicker` **65**). So enabling all-sector lights adds steady fill; wall blink still came from 9802/alcove specials.
 
-**Dynlights (9802) still uploaded** via `RT_UploadGzDoomDynamicLights()` for map lights elsewhere. Cvars: `rt_dynlight`, `rt_dynlight_intensity`, `rt_dynlight_radius`. Stable `uniqueID` from light pointer. Rebuild: `tools/build-gzdoom-rt.cmd`.
+**Dynlights (9800) still uploaded** via `RT_UploadGzDoomDynamicLights()` for map lights elsewhere. Cvars: `rt_dynlight`, `rt_dynlight_intensity`, `rt_dynlight_radius`, **`rt_dynlight_max`** (default **500**), **`rt_dynlight_stack_atten`** (default on — divide by co-located XY count). Retribution key-door jambs stack 3× yellow PointLights; without stack atten + cap they bloom nuclear-white under PT. Rebuild: `tools/build-gzdoom-rt.cmd`.
 
 **Do not** restore blink by painting teal/cyan panel `_e` on SMON — that only dirties the screens. SMON `_e` = tight BM + albedo RGB LEDs only.
 
@@ -247,7 +259,7 @@ vngx_dlssd.dll)
 
 **Battery** (`rt_flsh_battery` default true): ~30s on (`rt_flsh_on_secs`) → last ~4s dying flicker (`rt_flsh_die_secs`, hard blackouts) → ~5s recharge off (`rt_flsh_off_secs`) → repeat. Jitter via `rt_flsh_jitter`. Engine writes HUD readouts `rt_flsh_charge` (0..1) and `rt_flsh_battstate` (0=off 1=on 2=dying 3=recharge).
 
-**HUD:** `d64r-rt-flashlight.pk3` — stylized 5-cell battery bar (no numeric %), translucent red; blinks while dying. Pack: `python tools/pack_rt_flashlight.py`. Loaded by play launcher. Toggle with `rt_flsh 1` / **F**.
+**HUD:** `d64r-rt-flashlight.pk3` — ForceScaled **320×240 KeepRatio** (same as SBARINFO): `BATTERY` + muted cased 5-cell bar in a column **left of HEALTH**, same baselines (y=208/217). No full-bleed stretch (that clipped `ATTER`). Pack: `python tools/pack_rt_flashlight.py`. Toggle `rt_flsh 1` / **F**.
 
 ## DLSS-RR residual sparkle + switch ON emis (2026-08-03)
 
@@ -268,4 +280,20 @@ vngx_dlssd.dll)
 **Materials A/B** (live, no Override): strip toggles + **Roughness toward matte** (`mix` authored→1; replaces useless min-floor post ORM clamp). Flags: bit0=N, bit1=emis, bit2=metallic, bit3=H, bit4=roughness. Rebuild: `tools/build-rtgl.cmd` (now always `-gencomm`).
 
 **RR walk noise (2026-08-04):** User A/B confirmed **ORM roughness (G)** (not metallic). Fixed by `tools/fix_orm_roughness.py` (dielectric G≥0.82, metal≥0.55, blur-always) — now **`--all`** (763 maps). Metallic: `tools/fix_orm_metallic_ai.py --all --force` with stricter demotion (painted SPACE → dielectric; **0 kept as metal**, 545 dielectric / 218 mixed). Dev **Roughness toward matte** stay at **0** for play (0.5 only temporary A/B — do not ship as default).
+
+## Spectre rendering: water/glass → TRANSLUCENT raster + minalpha floor (2026-08-05)
+
+**Symptom:** SAR2 / 64Spectre sprites were squares of refractive water/glass, then opaque PT sprites — neither was the desired see-through purple-dark alpha look.
+
+**Root cause (water squares):** `IsSpectre()` grouped with additiveBlend — both used `RG_MESH_PRIMITIVE_TRANSLUCENT` + `alphaTest=false`. FORCE_WATER/GLASS/MIRROR kept the mesh in PT but without alpha test the full quad showed refractive material.
+
+**Fix (`rt_main.cpp`, final):**
+- Split `IsSpectre()` from additiveBlend
+- Spectres use `RG_MESH_PRIMITIVE_TRANSLUCENT` (rasterized overlay) — sprite texture RGB + alpha blending gives the see-through look
+- `l_makeSpectreFlags()` stripped of FORCE_WATER/GLASS/MIRROR; only `RG_MESH_FORCE_IGNORE_REFRACT_AFTER` remains
+- `rt_translucent_minalpha` (0.72) finally wired into `l_spriteAlpha()` — floors the vertex alpha so `A_SetTranslucent(0.20)` doesn't render ghostly-clear
+- `rt_spectre` / `rt_spectre_invis1` cvars marked **deprecated**
+- `IsSpectre()` removed from `forcealpha1` (vertex alpha should be real, not forced 1.0, for raster blending)
+
+**Result:** Sprite-shaped, see-through purple-dark spectres (pinkies semi-transparent, nightmare imps purple-dark). No water/glass. Rebuild: `tools/build-gzdoom-rt.cmd`.
 

@@ -18,7 +18,7 @@ set "BM=%ROOT%\Doom64-Retribution\D64RTR_BRIGHTMAPS.PK3"
 set "SKY=%ROOT%\Doom64-Retribution\d64r-rt-sky.pk3"
 set "SPAWN=%ROOT%\Doom64-Retribution\d64r-gallery-spawn-wallturned.pk3"
 set "PY=C:\Users\Winter\AppData\Local\Programs\Python\Python313\python.exe"
-set "FIX=%ROOT%\Doom64-Retribution\d64r-map01-rtfix.wad"
+set "FIX=%ROOT%\Doom64-Retribution\d64r-3dfloor-rtfix.wad"
 set "SKUL=%ROOT%\Doom64-Retribution\d64r-lostsoul-rt.pk3"
 set "MUS=%ROOT%\Doom64-Retribution\D64MUS.PK3"
 

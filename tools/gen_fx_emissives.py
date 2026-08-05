@@ -67,7 +67,8 @@ PREFIX_RULES: list[tuple[str, float, float, str | None]] = [
     ("BEXP", 0.65, 2400, "66ff44"),  # toxic green boom
     # rockets / barrel secondary boom (fire) — keep orange
     ("MISL", 0.45, 2200, "ff9a40"),
-    ("MISF", 1.0, 900, "ffb060"),  # rocket launcher flash
+    ("MISL", 0.4, 1400, "ffaa44"),  # rocket in flight
+    ("MISF", 0.25, 0, "ffb060"),  # rocket launcher HUD flash — no same-sprite light
     # imp / hell projectiles
     ("BAL1", 0.35, 700, "ff6f00"),
     ("BAL2", 0.35, 900, "b65cff"),
@@ -84,13 +85,13 @@ PREFIX_RULES: list[tuple[str, float, float, str | None]] = [
     # plasma / bfg
     ("PLSS", 0.45, 900, "55aaff"),
     ("PLSE", 0.45, 1100, "66bbff"),
-    ("PLSF", 1.0, 1000, "66bbff"),
+    ("PLSF", 0.25, 0, "66bbff"),  # HUD plasma flash — no same-sprite light
     ("PLSG", 0.5, 900, "55aaff"),
     ("CPLS", 0.5, 1000, "66ccff"),
     ("BFS1", 0.5, 3000, "66ff33"),
     ("BFE1", 0.5, 3000, "66ff33"),
     ("BFE2", 0.45, 2500, "66ff33"),
-    ("BFGF", 1.0, 1800, "66ff33"),
+    ("BFGF", 0.3, 0, "66ff33"),  # HUD BFG flash
     ("BFGG", 0.8, 1400, "66ff33"),
     ("CBFG", 0.8, 1600, "66ff33"),
     ("CRCK", 0.5, 1400, "ffaa33"),  # custom rocket-ish
@@ -99,24 +100,28 @@ PREFIX_RULES: list[tuple[str, float, float, str | None]] = [
     ("PUF2", 0.5, 220, "ffd0a0"),
     ("PUF3", 0.5, 220, "ffd0a0"),
     ("LPUF", 0.55, 300, "aaccff"),
-    ("TFOG", 0.4, 500, "8866ff"),
-    ("IFOG", 0.4, 450, "66ffaa"),
-    # weapon flashes
-    ("PISF", 1.0, 700, "ffcc88"),
-    ("SHTF", 1.0, 1100, "ffcc88"),
-    ("SSGF", 1.0, 1300, "ffcc88"),
-    ("CHGF", 1.0, 900, "ffcc88"),
-    ("CLCG", 1.0, 900, "66bbff"),
-    ("CPIS", 1.0, 700, "ffcc88"),
-    ("CSHT", 1.0, 1100, "ffcc88"),
-    ("CSSG", 1.0, 1300, "ffcc88"),
-    ("RLFT", 0.7, 600, "ff8844"),
-    # unmaker / custom beams
-    ("UNMF", 0.8, 1600, "ff3366"),
-    ("UNML", 0.7, 1200, "ff2255"),
-    ("A030", 0.6, 1000, None),
-    ("A031", 0.6, 1000, None),
-    ("A032", 0.6, 1000, None),
+    ("TFOG", 0.75, 1200, "40ff40"),  # Retribution 64TeleportFog — GLDEFS DTFOG is green
+    ("IFOG", 0.65, 1000, "66ffaa"),
+    # weapon HUD flashes — low emissiveMult (1.0 bleached PISF pure white under PT).
+    # Scene cast comes from engine RT_AddMuzzleFlash (rt_mzlflsh*); same-sprite
+    # lightIntensity bleaches the HUD flash (Lost Soul lesson) — keep 0 here.
+    ("PISF", 0.22, 0, "ffcc88"),
+    ("SHTF", 0.22, 0, "ffcc88"),
+    ("SSGF", 0.25, 0, "ffcc88"),
+    ("CHGF", 0.22, 0, "ffcc88"),
+    ("CLCG", 0.22, 0, "66bbff"),
+    ("CPIS", 0.22, 0, "ffcc88"),
+    ("CSHT", 0.22, 0, "ffcc88"),
+    ("CSSG", 0.25, 0, "ffcc88"),
+    ("RLFT", 0.2, 0, "ff8844"),
+    ("PUNF", 0.2, 0, "ffcc88"),
+    ("SAWG", 0.15, 0, "ffcc88"),
+    # unmaker / custom beams (world/projectile — keep some attached light)
+    ("UNMF", 0.35, 900, "ff3366"),
+    ("UNML", 0.3, 800, "ff2255"),
+    ("A030", 0.35, 700, None),
+    ("A031", 0.35, 700, None),
+    ("A032", 0.35, 700, None),
     # torches / flames
     ("FIRE", 0.7, 700, "ff8020"),
     ("BFLM", 0.8, 650, "4488ff"),
@@ -283,9 +288,11 @@ def fx_meta(
     meta: dict = {
         "textureName": name,
         "emissiveMult": em,
-        "lightIntensity": li,
         "lightColorHEX": color,
     }
+    # Omit lightIntensity when 0 — HUD flashes use rt_mzlflsh; same-sprite light bleaches white.
+    if li > 0:
+        meta["lightIntensity"] = li
     if no_shadow:
         meta["noShadow"] = True
     return meta
@@ -336,6 +343,9 @@ def upsert_json(path: Path, entries: dict[str, dict], replace: bool = False) -> 
         cur = by.get(name, {"textureName": name})
         cur.update(meta)
         cur["textureName"] = name
+        # Authored meta without lightIntensity must clear stale attached lights.
+        if "lightIntensity" not in meta:
+            cur.pop("lightIntensity", None)
         by[name] = cur
     data["version"] = data.get("version", 0)
     data["array"] = list(by.values())
@@ -344,7 +354,13 @@ def upsert_json(path: Path, entries: dict[str, dict], replace: bool = False) -> 
 
 
 def patch_global_inline(path: Path, entries: dict[str, dict]) -> None:
-    """Upsert one-liners into stock-style textures.json (keeps comments)."""
+    """Overwrite first textureName hit in stock textures.json (keeps comments).
+
+    RTGL keeps the *first* textureName hit — appending trailing one-liners while
+    an earlier pretty-printed stock block still has lightIntensity does nothing.
+    """
+    if not path.exists():
+        return
     text = path.read_text(encoding="utf-8")
     for name, meta in entries.items():
         parts = [f'"textureName":"{name}"']
@@ -359,15 +375,52 @@ def patch_global_inline(path: Path, entries: dict[str, dict]) -> None:
                 parts.append(f'"{k}":{v}')
             else:
                 parts.append(f'"{k}":"{v}"')
-        line = "    ,   { " + "  ,".join(parts) + " }"
+        body = "  ,".join(parts)
+
+        def repl_line(m: re.Match[str]) -> str:
+            lead = m.group(1) or "    ,   "
+            return f"{lead}{{ {body} }}"
+
         pat = re.compile(
-            rf'^[ \t]*,?[ \t]*\{{[ \t]*"textureName"[ \t]*:[ \t]*"{re.escape(name)}".*$',
+            rf'^([ \t]*,?[ \t]*)\{{[ \t]*"textureName"[ \t]*:[ \t]*"{re.escape(name)}"[^}}\n]*\}}[ \t]*$',
             re.M,
         )
         if pat.search(text):
-            text = pat.sub(line, text, count=1)
+            text = pat.sub(repl_line, text, count=1)
         else:
-            text = re.sub(r"\n(\s*\]\s*\}\s*)$", "\n" + line + r"\n\1", text, count=1)
+            # Pretty-printed multiline object — replace whole first block.
+            pat_multi = re.compile(
+                rf'(\{{\s*\n\s*"textureName"\s*:\s*"{re.escape(name)}"\s*,)(.*?)(\n\s*\}})',
+                re.S,
+            )
+            mm = pat_multi.search(text)
+            if mm:
+                indent = "      "
+                lines = [f'{{\n{indent}"textureName": "{name}",']
+                keys = [k for k in meta if k != "textureName"]
+                for i, k in enumerate(keys):
+                    v = meta[k]
+                    comma = "," if i < len(keys) - 1 else ""
+                    if isinstance(v, bool):
+                        lines.append(f'{indent}"{k}": {"true" if v else "false"}{comma}')
+                    elif isinstance(v, float) and v == int(v):
+                        lines.append(f'{indent}"{k}": {int(v)}{comma}')
+                    elif isinstance(v, (int, float)):
+                        lines.append(f'{indent}"{k}": {v}{comma}')
+                    else:
+                        lines.append(f'{indent}"{k}": "{v}"{comma}')
+                lines.append("    }")
+                text = text[: mm.start()] + "\n".join(lines) + text[mm.end() :]
+            else:
+                line = f"    ,   {{ {body} }}"
+                text = re.sub(r"\n(\s*\]\s*\}\s*)$", "\n" + line + r"\n\1", text, count=1)
+        # Drop any later single-line duplicates for this name
+        text = re.sub(
+            rf'^\s*,\s*\{{[ \t]*"textureName"[ \t]*:[ \t]*"{re.escape(name)}"[^}}\n]*\}}\s*$\n?',
+            "",
+            text,
+            flags=re.M,
+        )
     path.write_text(text, encoding="utf-8")
 
 

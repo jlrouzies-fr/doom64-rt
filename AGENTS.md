@@ -18,6 +18,10 @@ Open lighting bugs / test log (wash, blink, ceiling lamps):
 
 → **`open-issues-rt-lighting.md`**
 
+DLSS-RR salt / unfiltered-direct bleed (PBR interaction, failed clamps, temporal prefilter, black-world regression):
+
+→ **`rr-noise-investigation.md`**
+
 Update those when phases complete or facts change. Do not invent parallel trackers.
 
 ## Workspace layout
@@ -49,7 +53,7 @@ Update those when phases complete or facts change. Do not invent parallel tracke
 
 | Script | Purpose |
 |---|---|
-| `tools/launch-retribution-rt.cmd` | Play — native RT + DLSS-RR. Optional arg `1`–`32` → `map01`…`map32` (default 1). Loads `d64r-lostsoul-rt.pk3`. |
+| `tools/launch-retribution-rt.cmd` | Play — native RT + DLSS-RR. Optional arg `1`–`32` → `map01`…`map32` (default 1). Loads `d64r-lostsoul-rt.pk3` + `d64r-3dfloor-rtfix.wad` (all-map 3D-floor hang strip). |
 | `tools/launch-enemy-gallery-rt.cmd` | MAP98 dark no-aggro enemy eye review hall. |
 | `tools/launch-texture-gallery-rt.cmd` | MAP99 texture PBR gallery (baseline mats). |
 | `tools/launch-emis-gallery.cmd` | MAP99 **world-emissives only** (`d64remis.wad` — monitors/EXIT/keys/CRT/lava). |
@@ -61,8 +65,8 @@ Important cvars on Retribution launch (do not crank blindly):
 
 - `+rt_upscale_dlss 2 +rt_rayreconstr 1` — preferred denoising path
 - `+rt_normalmap_stren 1 +rt_heightmap_stren 1` — **keep near 1**; 10+ makes RR struggle
-- Flashlight: `rt_flsh 0` / `1` in console (default **F** via `d64r-rt-flashlight.pk3` KEYCONF). Horror defaults: dim warm beam tipped to ground (`rt_flsh_pitch`), battery cycle (`rt_flsh_battery`) with stylized **5-cell** HUD bar (no numeric %) from `d64r-rt-flashlight.pk3`.
-- RR / denoise live A/B: RTGL Dev window → **RR / Denoise live** (RR on/off, anti-firefly, RR noisy clamp, sensitivity presets). Switch ON emis: LED chroma masks via `gen_world_emissives.py` (missing BMTX brightmaps).
+- Flashlight: `rt_flsh 0` / `1` in console (default **F** via `d64r-rt-flashlight.pk3` KEYCONF). Horror defaults: dim warm beam tipped to ground (`rt_flsh_pitch`), battery cycle (`rt_flsh_battery`) with HUD **left of HEALTH** on ForceScaled 320×240 (`BATTERY` + muted cased 5-cell bar) from `d64r-rt-flashlight.pk3`.
+- RR / denoise live A/B: RTGL Dev window → **RR / Denoise live** (RR on/off, temporal prefilter, sensitivity presets). Switch ON emis: LED chroma masks via `gen_world_emissives.py` (missing BMTX brightmaps).
 - Dev UI: **UI font scale** + full settings persist (`rt/devmode_settings.json`, `rt/imgui.ini`). **Materials A/B**: strip normals / ORM / height / emissives separately (RR walk-noise diagnosis). Reset button if Override sticks bad.
 - ORM metal fog (RR walk noise): `deps\orm-vlm\venv\Scripts\python.exe tools\fix_orm_metallic_ai.py` (MAP01 default; `--all` for full set; `--model` for a larger VLM on 32GB).
 - RTGL1 Dev window cursor: open Esc/`~` first so GZDoom releases mouse grab
@@ -94,7 +98,7 @@ Clear all enemy `_e` + strip meta: `python tools/clear_enemy_eye_emissives.py` t
 
 - Player muzzle = engine `RT_AddMuzzleFlash` from weapon `A_Light1`/`A_Light2` (`rt_mzlflsh*`). Monsters never get that.
 - Fire frames: `POSSF*` / `SPOSF*` / `CPOSF*` / `PLAYF*` / `SSWVF*` get attached `lightIntensity` + `ff8c52`.
-- Weapon HUD flashes (`PISF`/`SHTF`/…) keep stock-like `lightIntensity` (do not zero — Retribution still uses `A_Light*`, but sprite lights are part of the visible flash).
+- Weapon HUD flashes (`PISF`/`SHTF`/…): low `emissiveMult` (~0.22) so PT doesn’t bleach white; **no** same-sprite `lightIntensity` (cast = engine `rt_mzlflsh*` / `RT_AddMuzzleFlash`).
 - **No `noShadow`** on monster body fire frames. Aim frames (`…E`) stay dark.
 - After regen, also re-run `gen_enemy_eye_emissives.py` if FX was run (keeps SKUL/eyes clean).
 - Empty-hall A/B: `tools/launch-empty-gallery-rt.cmd` / `wash-qa/09-empty-hall.cmd`.
@@ -103,10 +107,11 @@ Clear all enemy `_e` + strip meta: `python tools/clear_enemy_eye_emissives.py` t
 
 - Classic brightmaps = **masks only** (not PT lights). Pipeline: BM/luma mask → `*_e.png` → INDIR GI.
 - **INDIR** = `_e × emissiveMult × mapboost`; primary = raw `_e` × `rt_emis_maxscrcolor`.
-- Authored mults (play + gallery): SMON ≈1.0 (+ soft panel `_e`), EXIT ≈0.9, keys ≈1.2, lava ≈1.5 (+ `lightIntensity` 140 floors only). Pre-clamp “4.2” was effectively GI≈1.
+- Authored mults (play + gallery): SMON dense panels ≈1.0; sparse green-text `SMON[ACDE]*` ≈2.8; EXIT ≈0.9, keys ≈1.2, lava ≈1.5 (+ `lightIntensity` 140 floors only), teleporter `SPORT*` ≈2.2 cyan (+ floor `lightIntensity` 110). Pre-clamp “4.2” was effectively GI≈1.
 - **No `lightIntensity` on wall screens/EXIT** (floating point lamps). No liquid falls / `*GLOW` / OUTTEX / SWX auto-emis.
 - Keys: luma mask + **tint** (raw yellow albedo is brown → looked red in GI). No green keycard in Retribution.
-- SMON: BM mask + albedo RGB LEDs only (no teal panel fill); clone `_n`/`_orm`/`_h` across ANIMDEFS frames.
+- SMON: BM mask + albedo RGB LEDs only (no teal panel fill); clone `_n`/`_orm`/`_h` across ANIMDEFS frames. Sparse green-text `SMON[ACDE]*`: **tight glyph `_e` only** + `emissiveMult` ≈2.8 (no dilate/halo — that turned text into blocks; `terminalgreenbug.png`).
+
 - MAP01 spawn blink: GZDoom `PointLightFlicker` (9802) beside SMONAA — engine uploads `FDynamicLight` (`rt_dynlight`; play launcher uses intensity **35**).
 - Writes **engine** `rt/mat` + `rt/mat_dev` + global/`d64rtr_v15_map01` JSON **and** `Retribution-RT-Materials/`. Play uses the engine tree (`launch-retribution-rt.cmd`); other maps use **global** meta.
 - Emis-only QA hall: `tools/launch-emis-gallery.cmd` (`d64remis.wad`).
@@ -138,7 +143,7 @@ Clear all enemy `_e` + strip meta: `python tools/clear_enemy_eye_emissives.py` t
 1. **`noShadow: true` on monster sprite metas** → enemies stop casting shadows. Never put it on whole SKUL/SARG/TROO frames.
 2. **`lightIntensity` on eyes** → zombies/imps become lanterns. Surface `_e` + `emissiveMult` only.
 3. **Auto eye detect** → false positives on soldiers and pinky backs.
-4. **Lost Soul same-sprite attached light** → fire bleaches white; keep cast light separate or off. Do not re-add `SKUL*` to `gen_fx_emissives` PREFIX_RULES.
+4. **Lost Soul / HUD flash same-sprite attached light** → fire/muzzle bleaches white; keep cast light separate (`rt_mzlflsh*` / LSGL) or off. Do not re-add `SKUL*` to `gen_fx_emissives` PREFIX_RULES; weapon `PISF`/`SHTF`/… use low `emissiveMult` and **no** `lightIntensity`.
 5. **Normal/height strength 10+** → RR/denoiser falls apart; launcher uses `1`.
 6. Gallery/tour pk3s locked while gzdoom is running (WinError 32) — kill `gzdoom` before rebuild.
 7. Engine `rt/mat/textures.json` is **not** the meta source of truth — use `rt/data/textures.json` (+ scene overlays).
@@ -159,9 +164,13 @@ Clear all enemy `_e` + strip meta: `python tools/clear_enemy_eye_emissives.py` t
 22. **Missing spawn blink lamps** → need `RT_UploadGzDoomDynamicLights` for 9802; also disable stock per-sector lights (`rt_sector_lights 0`).
 23. **Lingering fake fill / wash** → `RT_UploadExportableSectorLights` ran every frame at intensity 200 per sector even with autoexport off. Default **off** now.
 24. **`FIRE` fx prefix swallowing world textures** → `gen_fx_emissives.py` gave `FIRELAVA`/`FIRELAV3` `lightIntensity` 700 + `noShadow`. Fixed via `WORLD_TEX_RE` guard; world fire/lava textures belong to the world allowlist only.
+25. **`rt_rr_temporal` / ComposeNoisy DiffTemporary** → ghost duplicate if writer+reader both live; **black world / muzzle-only** if reader lives after `AccumulateForRR` removed. ComposeNoisy is raw-unfiltered only; do not re-wire temporal-into-RR without a matching every-frame writer.
+26. **Spectres now rasterized TRANSLUCENT + minalpha floor** — `IsSpectre()` no longer sets FORCE_WATER/GLASS/MIRROR. Instead uses `RG_MESH_PRIMITIVE_TRANSLUCENT` (rasterized overlay) with `rt_translucent_minalpha 0.72` floor. Gives sprite-shaped see-through look. `rt_spectre` cvar deprecated. Rebuild gzdoom after changes.
 
 ## Suggested next work
 
-1. **`open-issues-rt-lighting.md`** — ceiling lamps glow but no blink/cast; wash still open; dynlight A/B on `launch-retribution-rt.cmd`.
-2. Continue Phase 4 PBR; optional HEAD/BOSS eye masks.
-3. Lost Soul: finish or drop LSGL; Phase 5 overlay pk3.
+1. **`rr-noise-investigation.md`** — RR salt with lamps + PBR; soft fades only (boiling / temporal-into-RR / Compose clamps all failed). Materials A/B on MAP02.
+2. **`open-issues-rt-lighting.md`** — ceiling lamp visual confirm; wash residuals.
+3. Continue Phase 4 PBR; optional HEAD/BOSS eye masks.
+4. Lost Soul: finish or drop LSGL; Phase 5 overlay pk3.
+5. **Spectre wall wash** — check if TRANSLUCENT raster overlay causes any emissive/weapon ordering issues (the "punch-through" that originally motivated FORCE_WATER).

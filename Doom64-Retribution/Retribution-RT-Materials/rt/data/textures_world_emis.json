@@ -105,15 +105,15 @@
     },
     {
       "textureName": "SFLATAP",
-      "emissiveMult": 0.0
+      "emissiveMult": 1.0
     },
     {
       "textureName": "SFLATAQ",
-      "emissiveMult": 0.0
+      "emissiveMult": 1.0
     },
     {
       "textureName": "SFLATAS",
-      "emissiveMult": 0.0
+      "emissiveMult": 1.0
     },
     {
       "textureName": "SKEYFLBL",
@@ -129,19 +129,19 @@
     },
     {
       "textureName": "SMONAA",
-      "emissiveMult": 1.0
+      "emissiveMult": 2.8
     },
     {
       "textureName": "SMONAB",
-      "emissiveMult": 1.0
+      "emissiveMult": 2.8
     },
     {
       "textureName": "SMONAC",
-      "emissiveMult": 1.0
+      "emissiveMult": 2.8
     },
     {
       "textureName": "SMONAD",
-      "emissiveMult": 1.0
+      "emissiveMult": 2.8
     },
     {
       "textureName": "SMONBA",
@@ -161,51 +161,51 @@
     },
     {
       "textureName": "SMONCA",
-      "emissiveMult": 1.0
+      "emissiveMult": 2.8
     },
     {
       "textureName": "SMONCB",
-      "emissiveMult": 1.0
+      "emissiveMult": 2.8
     },
     {
       "textureName": "SMONCC",
-      "emissiveMult": 1.0
+      "emissiveMult": 2.8
     },
     {
       "textureName": "SMONCD",
-      "emissiveMult": 1.0
+      "emissiveMult": 2.8
     },
     {
       "textureName": "SMONDA",
-      "emissiveMult": 1.0
+      "emissiveMult": 2.8
     },
     {
       "textureName": "SMONDB",
-      "emissiveMult": 1.0
+      "emissiveMult": 2.8
     },
     {
       "textureName": "SMONDC",
-      "emissiveMult": 1.0
+      "emissiveMult": 2.8
     },
     {
       "textureName": "SMONDD",
-      "emissiveMult": 1.0
+      "emissiveMult": 2.8
     },
     {
       "textureName": "SMONEA",
-      "emissiveMult": 1.0
+      "emissiveMult": 2.8
     },
     {
       "textureName": "SMONEB",
-      "emissiveMult": 1.0
+      "emissiveMult": 2.8
     },
     {
       "textureName": "SMONEC",
-      "emissiveMult": 1.0
+      "emissiveMult": 2.8
     },
     {
       "textureName": "SMONED",
-      "emissiveMult": 1.0
+      "emissiveMult": 2.8
     },
     {
       "textureName": "SMONF",
@@ -245,47 +245,89 @@
     },
     {
       "textureName": "SMONLC1",
-      "emissiveMult": 1.0
+      "emissiveMult": 2.8
     },
     {
       "textureName": "SMONLC2",
-      "emissiveMult": 1.0
+      "emissiveMult": 2.8
     },
     {
       "textureName": "SMONLC3",
-      "emissiveMult": 1.0
+      "emissiveMult": 2.8
     },
     {
       "textureName": "SMONLC4",
-      "emissiveMult": 1.0
+      "emissiveMult": 2.8
     },
     {
       "textureName": "SPORT1",
-      "emissiveMult": 0.0
+      "emissiveMult": 2.2,
+      "lightIntensity": 110.0,
+      "lightColor": [
+        70,
+        190,
+        255
+      ]
     },
     {
       "textureName": "SPORT2",
-      "emissiveMult": 0.0
+      "emissiveMult": 2.2,
+      "lightIntensity": 110.0,
+      "lightColor": [
+        70,
+        190,
+        255
+      ]
     },
     {
       "textureName": "SPORT3",
-      "emissiveMult": 0.0
+      "emissiveMult": 2.2,
+      "lightIntensity": 110.0,
+      "lightColor": [
+        70,
+        190,
+        255
+      ]
     },
     {
       "textureName": "SPORT4",
-      "emissiveMult": 0.0
+      "emissiveMult": 2.2,
+      "lightIntensity": 110.0,
+      "lightColor": [
+        70,
+        190,
+        255
+      ]
     },
     {
       "textureName": "SPORT5",
-      "emissiveMult": 0.0
+      "emissiveMult": 2.2,
+      "lightIntensity": 110.0,
+      "lightColor": [
+        70,
+        190,
+        255
+      ]
     },
     {
       "textureName": "SPORTA",
-      "emissiveMult": 0.0
+      "emissiveMult": 2.2,
+      "lightIntensity": 110,
+      "lightColor": [
+        70,
+        190,
+        255
+      ]
     },
     {
       "textureName": "SPORTB",
-      "emissiveMult": 0.0
+      "emissiveMult": 2.2,
+      "lightIntensity": 110,
+      "lightColor": [
+        70,
+        190,
+        255
+      ]
     },
     {
       "textureName": "SWXCB",

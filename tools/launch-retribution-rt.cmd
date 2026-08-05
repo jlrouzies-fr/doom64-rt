@@ -6,7 +6,7 @@ set "MOD=G:\AI\Doom64-RT\Doom64-Retribution\D64RTR_v15.WAD"
 set "BM=G:\AI\Doom64-RT\Doom64-Retribution\D64RTR_BRIGHTMAPS.PK3"
 set "SKUL=G:\AI\Doom64-RT\Doom64-Retribution\d64r-lostsoul-rt.pk3"
 set "FLSH=G:\AI\Doom64-RT\Doom64-Retribution\d64r-rt-flashlight.pk3"
-set "FIX=G:\AI\Doom64-RT\Doom64-Retribution\d64r-map01-rtfix.wad"
+set "FIX3D=G:\AI\Doom64-RT\Doom64-Retribution\d64r-3dfloor-rtfix.wad"
 set "SKY=G:\AI\Doom64-RT\Doom64-Retribution\d64r-rt-sky.pk3"
 set "MUS=G:\AI\Doom64-RT\Doom64-Retribution\D64MUS.PK3"
 
@@ -25,7 +25,7 @@ cd /d "%ENGINE%" || exit /b 1
 rem Native RTGL1 path tracing + DLSS Ray Reconstruction (NOT RTX Remix).
 rem No -rtxremix. Uses +rt_rayreconstr 1 (native), not +rt_remix_rayreconstr.
 rem Requires tools\build-rtgl.cmd (RTGL1.dll + nvngx_dlssd.dll in rt\bin\).
-rem MAP01 only: d64r-map01-rtfix.wad disables hangy 3D floor.
+rem All maps: d64r-3dfloor-rtfix.wad strips hangy Sector_Set3dFloor (special 160).
 rem Sky: sector skyboxes ignored under RT (white/black fix); d64r-rt-sky forces SPACE night flat + rt_sky_always.
 rem d64r-lostsoul-rt.pk3: yellow SKUL sprites + LSGL offset-glow EventHandler.
 rem d64r-rt-flashlight.pk3: stylized 5-cell battery HUD (rt_flsh_charge / battstate; F toggles).
@@ -55,18 +55,25 @@ if not exist "%MOD%" (
   echo ERROR: missing %MOD%
   exit /b 1
 )
-
-set "EXTRAFILES="
-if %N% EQU 1 set "EXTRAFILES=%FIX%"
+if not exist "%FIX3D%" (
+  echo ERROR: missing %FIX3D% — run: python tools\make_map_3dfloor_rtfix.py
+  exit /b 1
+)
 
 echo Native RT + DLSS Ray Reconstruction (no Remix^)
 echo   map=%MAPLUMP%  +rt_upscale_dlss 2 +rt_rayreconstr 1 +rt_framegen 0
 
+rem Place window ~300px above vertical center (Y grows down). Falls back to 0 (top).
+set "WINY=0"
+for /f %%i in ('powershell -NoProfile -Command "Add-Type -AssemblyName System.Windows.Forms; [Math]::Max(0, [int](([Windows.Forms.Screen]::PrimaryScreen.WorkingArea.Height-720)/2-300))"') do set "WINY=%%i"
+echo win_y=%WINY%
+
+rem Combined 3D-floor strip for every Retribution map that had special 160.
 start "" gzdoom.exe ^
   -iwad "%IWAD%" ^
-  -file "%MOD%" "%BM%" "%SKUL%" "%FLSH%" "%MUS%" %EXTRAFILES% "%SKY%" ^
+  -file "%MOD%" "%BM%" "%SKUL%" "%FLSH%" "%MUS%" "%FIX3D%" "%SKY%" ^
   -rtnolauncher -width 1280 -height 720 ^
-  +vid_fullscreen 0 +queryiwad false +sv_cheats 1 +map %MAPLUMP% ^
+  +vid_fullscreen 0 +win_x -1 +win_y %WINY% +queryiwad false +sv_cheats 1 +map %MAPLUMP% ^
   +god +fly ^
   +rt_mod_compat 1 +r_drawvoxels 0 ^
   +d64_enterfade 0 +d64_exitfade 0 ^
@@ -80,8 +87,12 @@ start "" gzdoom.exe ^
   +rt_flsh_color ffbe82 ^
   +rt_emis_mapboost 200 +rt_emis_additive_dflt 0.15 +rt_emis_maxscrcolor 3 ^
   +rt_sector_lights 0 +rt_sector_flicker 0 ^
-  +rt_dynlight 1 +rt_dynlight_flicker 0 +rt_dynlight_intensity 40 +rt_dynlight_radius 0.08 ^
-  +rt_ceiling_lamps 1 +rt_ceiling_lamp_intensity 900 +rt_ceiling_lamp_radius 0.08 ^
+  +rt_dynlight 1 +rt_dynlight_flicker 0 +rt_dynlight_intensity 40 +rt_dynlight_max 500 +rt_dynlight_rsoft 40 +rt_dynlight_stack_atten 1 +rt_dynlight_radius 0.08 ^
+  +rt_ceiling_lamps 1 +rt_ceiling_lamp_intensity 700 +rt_ceiling_lamp_radius 0.10 ^
+  +rt_ceiling_lamp_off 0.12 +rt_ceiling_lamp_fade 8 +rt_ceiling_lamp_maxspan 128 ^
+  +rt_hang_lamps 1 +rt_hang_lamp_intensity 220 +rt_hang_lamp_radius 0.09 +rt_hang_lamp_zofs 4 ^
+  +rt_translucent_minalpha 0.72 ^
+  +rt_rr_temporal 0 ^
   +rt_normalmap_stren 1 +rt_heightmap_stren 1
 exit /b 0
 

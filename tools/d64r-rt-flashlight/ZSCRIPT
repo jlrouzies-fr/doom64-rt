@@ -1,7 +1,9 @@
 version "4.12"
 
-// Horror flashlight battery: stylized cell bar (no numeric %), translucent red
-// like Retribution HUD accents. Charge from rt_flsh_charge / rt_flsh_battstate.
+// Horror flashlight battery HUD — match Retribution SBARINFO ForceScaled HUD.
+// SBARINFO: Resolution 320x240, HEALTH/value centered on x=24 at y=208/217.
+// Battery sits in a column LEFT of HEALTH (same baselines), KeepRatio like ForceScaled
+// so ultrawide pillarbox alignment matches the stock HUD (not full-bleed stretch).
 class D64RtFlashlightHud : EventHandler
 {
 	override void RenderOverlay(RenderEvent e)
@@ -23,7 +25,6 @@ class D64RtFlashlightHud : EventHandler
 			if (charge > 1.0) charge = 1.0;
 		}
 		int state = stateC != null ? stateC.GetInt() : 0;
-		// 0=off 1=on 2=dying 3=recharge
 		if (state <= 0)
 			return;
 
@@ -32,73 +33,132 @@ class D64RtFlashlightHud : EventHandler
 		if (charge > 0.02 && lit < 1) lit = 1;
 		if (charge >= 0.995) lit = segs;
 
+		// Match SBARINFO ForceScaled alpha 0.55
 		double opacity = 0.55;
 		if (state == 2)
-		{
-			// Dying: blink the bar
-			opacity = ((Level.Time / 4) % 2 == 0) ? 0.55 : 0.28;
-		}
+			opacity = ((Level.Time / 4) % 2 == 0) ? 0.55 : 0.22;
 		else if (state == 3)
-		{
 			opacity = 0.40;
-		}
 
-		// Virtual 320x200 — right of health cluster, above bottom strip.
-		int vx = 72;
-		int vy = 168;
+		int VW = 320;
+		int VH = 240;
+
+		Font fnt = Font.GetFont("D64HUDFONT");
+		if (fnt == null)
+			fnt = SmallFont;
+
+		// Same baselines as HEALTH (208) / health value (217)
+		int vLabelY = 208;
+		int vBarY = 217;
 		int vBodyW = 36;
-		int vBodyH = 9;
-		int vTipW = 3;
-		int vTipH = 5;
+		int vBodyH = 7;
+		int vTipW = 2;
+		int vTipH = 3;
 		int vPad = 1;
 		int vGap = 1;
+		int vRim = 1;
 
+		// HEALTH is center-aligned on x=24 — find its left edge, place BATTERY
+		// in a column just to the left (Copy mockup: side-by-side, not stacked).
+		int healthW = fnt.StringWidth("HEALTH");
+		int battW = fnt.StringWidth("BATTERY");
+		int healthLeft = 24 - healthW / 2;
+		int gap = 8;
+		// Column immediately left of HEALTH (Copy mockup). Negative is OK —
+		// KeepRatio maps it into the ultrawide left margin beside the HUD.
+		int battLeft = healthLeft - gap - battW;
+		if (battLeft < -72)
+			battLeft = -72;
+
+		// ForceScaled / KeepRatio mapping (must match DrawText DTA_KeepRatio)
 		int sw = Screen.GetWidth();
 		int sh = Screen.GetHeight();
-		int bx = sw * vx / 320;
-		int by = sh * vy / 200;
-		int bodyW = Max(1, sw * vBodyW / 320);
-		int bodyH = Max(1, sh * vBodyH / 200);
-		int tipW = Max(1, sw * vTipW / 320);
-		int tipH = Max(1, sh * vTipH / 200);
-		int pad = Max(1, sw * vPad / 320);
-		int gap = Max(1, sw * vGap / 320);
+		double scale = Min(sw / double(VW), sh / double(VH));
+		double ox = (sw - VW * scale) * 0.5;
+		double oy = (sh - VH * scale) * 0.5;
 
-		Color rim = Color(0x40, 0x00, 0x00);
-		Color fill = Color(0xC0, 0x18, 0x18);
-		Color empty = Color(0x28, 0x08, 0x08);
-		Color shadow = Color(0x00, 0x00, 0x00);
+		int bodyW = Max(1, int(vBodyW * scale + 0.5));
+		int bodyH = Max(1, int(vBodyH * scale + 0.5));
+		int tipW = Max(1, int(vTipW * scale + 0.5));
+		int tipH = Max(1, int(vTipH * scale + 0.5));
+		int pad = Max(1, int(vPad * scale + 0.5));
+		int gapPx = Max(1, int(vGap * scale + 0.5));
+		int rim = Max(1, int(vRim * scale + 0.5));
+		int shad = Max(1, int(scale + 0.5));
+
+		// Center the cell bar under the BATTERY label
+		int labelMidX = battLeft + battW / 2;
+		int bx = int(ox + labelMidX * scale) - bodyW / 2;
+		int by = int(oy + vBarY * scale);
+
+		Color shell   = Color(0x2A, 0x22, 0x22);
+		Color shellHi = Color(0x7A, 0x74, 0x74);
+		Color shellLo = Color(0x14, 0x10, 0x10);
+		Color well    = Color(0x10, 0x0C, 0x0C);
+		Color fillTop = Color(0x9A, 0x22, 0x22);
+		Color fillBot = Color(0x58, 0x10, 0x10);
+		Color emptyTop = Color(0x28, 0x14, 0x14);
+		Color emptyBot = Color(0x14, 0x0A, 0x0A);
+		Color shadow  = Color(0x00, 0x00, 0x00);
 		if (state == 2)
-			fill = Color(0xA0, 0x10, 0x10);
+		{
+			fillTop = Color(0x7A, 0x18, 0x18);
+			fillBot = Color(0x40, 0x0A, 0x0A);
+		}
 		else if (state == 3)
-			fill = Color(0x70, 0x14, 0x14);
+		{
+			fillTop = Color(0x5A, 0x16, 0x16);
+			fillBot = Color(0x30, 0x0C, 0x0C);
+		}
 
-		// Soft shadow behind body + tip
-		Screen.Dim(shadow, opacity * 0.45, bx + 2, by + 2, bodyW + tipW + 1, bodyH);
+		// --- Label: same font/alpha/baseline as HEALTH, no background box ---
+		Screen.DrawText(fnt, Font.CR_BLACK, battLeft + 1, vLabelY + 1, "BATTERY",
+			DTA_VirtualWidth, VW, DTA_VirtualHeight, VH,
+			DTA_KeepRatio, true,
+			DTA_Alpha, opacity * 0.45);
+		Screen.DrawText(fnt, Font.CR_UNTRANSLATED, battLeft, vLabelY, "BATTERY",
+			DTA_VirtualWidth, VW, DTA_VirtualHeight, VH,
+			DTA_KeepRatio, true,
+			DTA_Alpha, opacity);
 
-		// Battery body outline
-		Screen.DrawLineFrame(rim, bx, by, bodyW, bodyH, Max(1, sh / 400));
+		// --- Cased meter (Dim uses real pixels via KeepRatio ox/oy/scale) ---
+		Screen.Dim(shadow, opacity * 0.30, bx + shad, by + shad, bodyW + tipW + rim, bodyH + rim);
+		Screen.Dim(shell, opacity * 0.80, bx, by, bodyW, bodyH);
+		Screen.Dim(shellHi, opacity * 0.85, bx, by, bodyW, rim);
+		Screen.Dim(shellHi, opacity * 0.70, bx, by, rim, bodyH);
+		Screen.Dim(shellLo, opacity * 0.85, bx, by + bodyH - rim, bodyW, rim);
+		Screen.Dim(shellLo, opacity * 0.70, bx + bodyW - rim, by, rim, bodyH);
 
-		// Tip / nipple on the right
+		int wellX = bx + rim;
+		int wellY = by + rim;
+		int wellW = bodyW - rim * 2;
+		int wellH = bodyH - rim * 2;
+		Screen.Dim(well, opacity * 0.65, wellX, wellY, wellW, wellH);
+
 		int tipX = bx + bodyW;
 		int tipY = by + (bodyH - tipH) / 2;
-		Screen.Dim(rim, opacity * 0.9, tipX, tipY, tipW, tipH);
+		Screen.Dim(shellHi, opacity * 0.75, tipX, tipY, tipW, tipH);
+		Screen.Dim(shellLo, opacity * 0.65, tipX, tipY + tipH / 2, tipW, Max(1, tipH - tipH / 2));
 
-		// Inner cells
-		int innerX = bx + pad;
-		int innerY = by + pad;
-		int innerW = bodyW - pad * 2;
-		int innerH = bodyH - pad * 2;
-		int cellW = (innerW - gap * (segs - 1)) / segs;
+		int innerX = wellX + pad;
+		int innerY = wellY + Max(1, pad / 2);
+		int innerW = wellW - pad * 2;
+		int innerH = Max(1, wellH - pad);
+		int cellW = (innerW - gapPx * (segs - 1)) / segs;
 		if (cellW < 1) cellW = 1;
+		int half = Max(1, innerH / 2);
+		int botH = Max(1, innerH - half);
+		double cellA = opacity * 0.80;
 
 		for (int i = 0; i < segs; i++)
 		{
-			int cx = innerX + i * (cellW + gap);
+			int cellX = innerX + i * (cellW + gapPx);
 			bool on = i < lit;
-			Color c = on ? fill : empty;
-			double a = on ? opacity : opacity * 0.35;
-			Screen.Dim(c, a, cx, innerY, cellW, innerH);
+			Color topC = on ? fillTop : emptyTop;
+			Color botC = on ? fillBot : emptyBot;
+			double a = on ? cellA : cellA * 0.35;
+			Screen.Dim(topC, a, cellX, innerY, cellW, half);
+			Screen.Dim(botC, a, cellX, innerY + half, cellW, botH);
 		}
 	}
 }
