@@ -291,10 +291,24 @@ vngx_dlssd.dll)
 - Split `IsSpectre()` from additiveBlend
 - Spectres use `RG_MESH_PRIMITIVE_TRANSLUCENT` (rasterized overlay) — sprite texture RGB + alpha blending gives the see-through look
 - `l_makeSpectreFlags()` stripped of FORCE_WATER/GLASS/MIRROR; only `RG_MESH_FORCE_IGNORE_REFRACT_AFTER` remains
-- `rt_translucent_minalpha` (0.72) wired into `l_spriteAlpha()` — spectres use **cap** (`min(a, minalpha)`) so states that don't call `A_SetTranslucent` (pain/hit) also render semi-transparent; other soft-blend sprites use **floor** (`max(a, minalpha)`) so they don't render ghostly-clear
-- `IsSpectre()` name check extended to both `SAR2*` and `SARG*` prefixes (attack frames inherited from base pinky)
+- `rt_translucent_minalpha` (0.80) wired into `l_spriteAlpha()` — spectres use **cap** (`min(a, minalpha)`) so states that don't call `A_SetTranslucent` (pain/hit) also render semi-transparent; other soft-blend sprites use **floor** (`max(a, minalpha)`) so they don't render ghostly-clear
+- `IsSpectre()` name check: **`SAR2*` only** (2026-08-05 fix). SARG = regular pinky demon, not spectre — the original `n[3]=='G'` guard was incorrect (attack frames are already covered by SAR2's own G frames)
 - `rt_spectre` / `rt_spectre_invis1` cvars marked **deprecated**
 - `IsSpectre()` removed from `forcealpha1` (vertex alpha should be real, not forced 1.0, for raster blending)
 
 **Result:** Sprite-shaped, see-through purple-dark spectres (pinkies semi-transparent, nightmare imps purple-dark). No water/glass. Rebuild: `tools/build-gzdoom-rt.cmd`.
+
+## Spectre emissive: uniform ADDITIVE ghost via textures.json (2026-08-05)
+
+**Symptom:** After TRANSLUCENT fix, SAR2 front view was ghostly-wash (ADDITIVE pipeline from eye `_e` PNGs) but side/rear were solid translucent purple (no `_e` PNGs → emissive=0 → no ADDITIVE promotion). Pain state (SAR2 H frames) also broke — no `_e` PNGs, no textures.json entries.
+
+**Root cause:** `RasterizedDataCollector` promotes TRANSLUCENT→ADDITIVE when `prim.emissive > 0`. The emissive value comes from `TextureMeta::Modify()` which sets `prim.emissive = max(0, emissiveMult)`. Without textures.json entries for side/rear + pain frames, emissive stayed at GZDoom's 0.0. The ADDITIVE gate checks the emissive VALUE, not `_e` PNG content.
+
+**Fix (runtime data, no rebuild):**
+- ALL 40 SAR2 sprites (A–G × 5 rotations + H × 5 rotations) have `emissiveMult: 2.0` in every textures.json layer (global + MAP01 overlay + enemy gallery + source files)
+- Side/rear `_e` PNGs: **fully transparent** — ADDITIVE pipeline triggers via emissiveMult, visible emission is zero (no red dot)
+- Pain H-frame `_e` PNGs: front (H1, H2H8) cloned from G-frame eye masks; side/rear transparent
+- Launcher: removed `+fly`, added `+notarget`
+
+See `spectre-issue-log.md` for full architecture and regeneration instructions.
 
