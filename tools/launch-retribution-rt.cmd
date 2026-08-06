@@ -9,9 +9,18 @@ set "FLSH=G:\AI\Doom64-RT\Doom64-Retribution\d64r-rt-flashlight.pk3"
 set "FIX3D=G:\AI\Doom64-RT\Doom64-Retribution\d64r-3dfloor-rtfix.wad"
 set "SKY=G:\AI\Doom64-RT\Doom64-Retribution\d64r-rt-sky.pk3"
 set "MUS=G:\AI\Doom64-RT\Doom64-Retribution\D64MUS.PK3"
+rem Full console transcript (incl. startup) -> shareable log. `logfile` is
+rem whitelisted to run at GS_STARTUP (c_dispatch.cpp), so it captures
+rem everything from boot, including RTGL -rtdebug output.
+set "LOGF=G:\AI\Doom64-RT\rt-console.log"
 
-rem Usage: launch-retribution-rt.cmd [1-32]
+rem Usage: launch-retribution-rt.cmd [1-32] [debug]
 rem   Optional map number (default 1) → +map map01 … map32
+rem   Second arg "debug" → -rtdebug (RTGL messages to console: DLSS-RR init
+rem     success/failure, shader load errors. Muted by default; rt_main.cpp
+rem     sets allowedMessages=0 without it, so RR failing is otherwise silent.)
+set "RTDEBUG="
+if /i "%~2"=="debug" set "RTDEBUG=-rtdebug"
 set "MAPNUM=%~1"
 if "%MAPNUM%"=="" set "MAPNUM=1"
 set /a "N=MAPNUM" 2>nul
@@ -77,7 +86,8 @@ rem Combined 3D-floor strip for every Retribution map that had special 160.
 start "" gzdoom.exe ^
   -iwad "%IWAD%" ^
   -file "%MOD%" "%BM%" "%SKUL%" "%FLSH%" "%MUS%" "%FIX3D%" "%SKY%" ^
-  -rtnolauncher -width 1280 -height 720 ^
+  -rtnolauncher -width 1280 -height 720 %RTDEBUG% ^
+  +logfile "%LOGF%" ^
   +vid_fullscreen 0 +win_x -1 +win_y %WINY% +queryiwad false +sv_cheats 1 +god +notarget +map %MAPLUMP% ^
   +rt_mod_compat 1 +r_drawvoxels 0 ^
   +d64_enterfade 0 +d64_exitfade 0 ^
