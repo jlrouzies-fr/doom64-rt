@@ -1,5 +1,17 @@
 # Fix flashlight / transient-light lingering under DLSS-RR
 
+## Status (2026-08-06)
+
+**Part 1 implemented and built clean** (`tools/build-gzdoom-rt.cmd`, `rt_main.cpp`
+recompiled without warnings, `gzdoom.exe` linked). Scope was broadened during
+implementation, per explicit feedback: the flashlight is only one instance of
+a transient light — the fix now also covers any GZDoom dynamic light newly
+appearing or disappearing (barrel/rocket explosion flashes, pickup glow, etc.),
+via the same list `RT_UploadGzDoomDynamicLights` already uploads every frame.
+Muzzle flash is deliberately excluded from this global-reset mechanism (see
+1b) — it stays a Part 2/3 problem. Not yet in-game verified (see Verification).
+Part 2/3 (RTGL disocclusion-mask observability + retarget) not yet started.
+
 ## Context
 
 After the 2026-08-06 RR guide fixes, DLSS-RR's temporal history became much more
@@ -66,77 +78,103 @@ debug UI (no RenderDoc, no validation layers).
 
 ---
 
-## Part 1 — Flashlight history flush (gzdoom-rt only)
+## Part 1 — Transient-light history flush (gzdoom-rt only) — IMPLEMENTED
 
 All changes in `sourcecode/gzdoom-rt/src/common/rendering/rt/rt_main.cpp`.
 No RTGL changes, no shader regeneration, no `build-rtgl.cmd`.
 
+Broadened during implementation beyond flashlight-only: a single shared
+`g_rt_lightcut` flag is now set by three independent trigger sources and
+consumed once per frame.
+
 ### 1a. Cvars
 
-Add next to the existing RR cvars (`rt_main.cpp:268-279`, `RT_CVAR` macro):
+Added next to the existing RR cvars (`rt_main.cpp` cvar block):
 
 | cvar | default | purpose |
 |---|---|---|
-| `rt_rr_reset_on_lightcut` | `true` | master enable for the flush |
+| `rt_rr_reset_on_lightcut` | `true` | master enable for the flashlight edge trigger |
 | `rt_rr_reset_delta` | `0.5` | min abrupt change in emitted flashlight scale that counts as a cut |
+| `rt_rr_reset_on_dynlight` | `true` | also trigger on any dynlight appear/disappear (explosions, pickups) |
 | `rt_rr_reset_min_ms` | `250` | rate limit; suppresses back-to-back flushes |
 | `rt_rr_reset_hold` | `false` | **diagnostic**: set `InReset` every frame |
 | `rt_rr_reset_now` | `false` | **diagnostic**: fire one flush, then self-clear |
 
-### 1b. Edge detection in `RT_AddFlashlight`
+### 1b. Three trigger sources, one shared flag
 
-`RT_AddFlashlight` (`rt_main.cpp:2033`) is called unconditionally every frame
-(`rt_main.cpp:2029`) and already computes everything needed:
+`g_rt_lightcut` (with its rate-limit clock `g_rt_lastresetat`) is declared in
+the anonymous namespace near `FlashlightLightId`/`DynLightId_Base` — not
+beside the similar `g_resetposteffects` further down the file — because
+`RT_AddFlashlight` is an inline method of a class nested in that same
+namespace and needs ordinary forward-visible lookup (a namespace-scope
+static declared *after* the class closes is invisible to an inline method
+defined *inside* it; `g_resetposteffects` avoids this only because its own
+use sites are themselves outside that class).
 
-- `wantLight` (`:2053`) — the `rt_flsh` cvar / lightamp powerup state
-- `battScale` (`:2142`, final value by `:2239`) — emitted intensity 0..1
-- the light is skipped entirely when `!wantLight || battScale <= 0.01f` (`:2244`)
+**Flashlight edge** (`RT_AddFlashlight`, gated by `rt_rr_reset_on_lightcut`):
+reuses `wantLight`/`battScale`, which the battery state machine already
+computes every frame. Sets the flag on `rt_flsh` toggle or an abrupt
+`battScale` jump `> rt_rr_reset_delta`. Deliberately *not* triggered by the
+dying-phase `fadeValley()` flicker or mid-cycle blinks (they ramp smoothly
+over 12–32 tics; RR tracks those fine, and flushing on every one would make
+the ~4 s dying phase permanently noisy). Edge-tracking statics reset on
+`maptoken` change alongside the battery state machine's own statics.
 
-Add a file-scope flag beside the existing `g_resetposteffects` pattern, and set
-it just before the `:2244` early-return:
+**Dynlight appear/disappear** (`RT_UploadGzDoomDynamicLights`, gated by
+`rt_rr_reset_on_dynlight`): this function already walks `primaryLevel->lights`
+every frame (the same GZDoom `FDynamicLight` chain that carries GLDEFS-attached
+explosion flashes, not just wall lamps) and computes a `stableId` per light. A
+`std::unordered_set<uint64_t>` of this frame's uploaded IDs is diffed against
+the previous frame's set; any difference (a light entered or left the set)
+flushes history. Steady flicker/pulse lights never trigger this — they stay
+present in the list the whole time, only their intensity varies via the
+existing `blink` remap. Muzzle flash is *not* wired into this mechanism: it
+fires far too often (every shot) for a full-screen reset to be tolerable, and
+it already has its own mitigation (`rt_mzlflsh_fade`, soft fade-out). Fixing
+muzzle-flash ghosting properly is Part 2/3's job (the localized per-pixel
+mask), not this global reset.
+
+**Level load** (`RT_OnLevelLoad`): sets the flag unconditionally, alongside
+the existing `g_resetposteffects`/`g_resetfluid` — a new scene should always
+flush RR history regardless of the other cvars.
+
+### 1c. Consumption (`RTFrameBuffer::RT_DrawFrame`)
+
+Right before building `RgDrawFrameInfo`:
 
 ```cpp
-// abrupt cut only: rt_flsh toggle, or recharge->on / on->recharge.
-// fadeValley() dying-flicker and mid-cycle blinks ramp over 12-32 tics,
-// which RR tracks fine -- flushing on those would make the 4 s dying
-// phase permanently noisy.
-static bool  s_prevWant  = false;
-static float s_prevScale = 0.f;
-const float  emitted     = wantLight ? battScale : 0.f;
+bool wantResetHistory = bool{ cvar::rt_rr_reset_hold };
 
-if( wantLight != s_prevWant || std::abs( emitted - s_prevScale ) > float{ cvar::rt_rr_reset_delta } )
+if( g_rt_lightcut )
 {
-    g_rt_lightcut = true;
+    g_rt_lightcut = false;
+    if( curtime - g_rt_lastresetat >= double( cvar::rt_rr_reset_min_ms ) / 1000.0 )
+    {
+        wantResetHistory = true;
+        g_rt_lastresetat = curtime;
+    }
 }
-s_prevWant  = wantLight;
-s_prevScale = emitted;
+
+if( bool{ cvar::rt_rr_reset_now } )
+{
+    cvar::rt_rr_reset_now = false;
+    wantResetHistory      = true;
+    g_rt_lastresetat      = curtime;
+}
 ```
 
-Reset `s_prevWant` / `s_prevScale` in the existing `maptoken != s_maptoken`
-block (`:2132-2140`) alongside the other statics.
-
-### 1c. Consume it
-
-At `rt_main.cpp:4726`, add to the `RgDrawFrameInfo` designated initialiser:
-
-```cpp
-.resetHistory = static_cast< RgBool32 >(
-    bool( cvar::rt_rr_reset_hold ) ||
-    ( bool( cvar::rt_rr_reset_on_lightcut ) && std::exchange( g_rt_lightcut, false ) ) ||
-    std::exchange( g_rt_reset_now, false ) ),
-```
-
-with `rt_rr_reset_now` latched into `g_rt_reset_now` and the cvar written back to
-`false` (same pattern as `rt_flsh_charge`/`rt_flsh_battstate` HUD write-back at
-`:2241-2242`). Clear `g_rt_lightcut` unconditionally each frame even when the
-master cvar is off, so it cannot go stale.
+then `.resetHistory = static_cast<RgBool32>(wantResetHistory)` in the
+designated initialiser. The flag is always cleared when read, and the
+per-source cvars already gated *whether* it got set — so consumption doesn't
+re-check `rt_rr_reset_on_lightcut`/`rt_rr_reset_on_dynlight`, only the shared
+rate limit and the two diagnostic cvars.
 
 ### 1d. Launcher
 
-`tools/launch-retribution-rt.cmd` currently sets **none** of the `rt_rr_disocc*`
-cvars, contrary to what `flashlight-linger-issue.md` states. Add the new reset
-cvars plus the existing disocc ones so both are A/B-able from one launch. Note
-`+rt_rr_temporal 0` in the launcher is **dead** — see Part 3.
+`tools/launch-retribution-rt.cmd` set **none** of the `rt_rr_disocc*` cvars,
+contrary to what `flashlight-linger-issue.md` stated. Added those plus the new
+reset cvars so both are A/B-able from one launch. Note `+rt_rr_temporal 0` in
+the launcher is **dead** — see Part 3.
 
 ---
 
@@ -235,6 +273,17 @@ call site, in a separate change.
    **not** (no repeated noise bursts across the 4 s dying phase). Tune
    `rt_rr_reset_min_ms` if bursts cluster.
 6. A/B against `rt_rr_reset_on_lightcut 0` to confirm the change is what fixed it.
+7. **Dynlight path.** Blow up a barrel (or trigger a rocket explosion) near the
+   camera and confirm the flash's glow decays promptly instead of lingering.
+   `rt_dynlight_debug 1` prints the active-light count each second — watch it
+   tick up then back down as the explosion light appears/disappears, and
+   confirm a reset accompanies both edges. A/B against
+   `rt_rr_reset_on_dynlight 0` to confirm this specific trigger is doing the
+   work (not just the flashlight one still being active from step 4).
+8. **Muzzle flash sanity check.** Rapid-fire a hitscan weapon and confirm the
+   screen does *not* go into a constant noise storm — muzzle flash must not be
+   triggering resets. If it is, something is wrong (it should never touch
+   `g_rt_lightcut`).
 
 **Part 2:**
 

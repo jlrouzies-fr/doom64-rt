@@ -1,5 +1,13 @@
 # Flashlight / transient-light lingering under DLSS-RR
 
+> **Superseded 2026-08-06.** The "suspected root cause" below (unallocated
+> framebuffer) and every negative debug result in "What was tried" turned out
+> to be an artifact of the debug tint sitting *upstream* of DLSS-RR in the
+> frame — not a broken buffer. See `flashlight-linger-fix-plan.md` for the
+> corrected diagnosis and the implemented fix (RgDrawFrameInfo.resetHistory
+> pulsed on flashlight on/off + dynlight appear/disappear). This log is kept
+> as-is for the investigation history.
+
 ## Symptom (2026-08-06)
 
 After the 2026-08-06 RR guide fixes (corrected diffuse/specular guides in `CmNoisyCompose` + `envBRDFApprox2` in `BRDF.h`), DLSS-RR denoising quality improved significantly. However, transient lighting changes now **linger** for seconds because RR's temporal history is much more stable:

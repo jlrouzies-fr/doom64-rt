@@ -328,3 +328,22 @@ See `spectre-issue-log.md` for full architecture and regeneration instructions.
 **gzdoom-rt (`sourcecode/gzdoom-rt`):**
 - `rt_main.cpp` — cvars: `rt_rr_disocc` (on), `rt_rr_disocc_ratio` (3.0), `rt_rr_disocc_mindelta` (0.01), `rt_rr_disocc_show` (debug).
 - Rebuild: `tools/build-gzdoom-rt.cmd` (2026-08-06).
+
+**Follow-up (2026-08-06, same day):** the mask above produced zero visible
+effect — see `flashlight-linger-issue.md` for the (superseded) investigation
+and `flashlight-linger-fix-plan.md` for the corrected diagnosis. Landed
+instead: pulse `RgDrawFrameInfo.resetHistory` (already-wired, previously
+unused → `DLSSRR.cpp` `evalParams.InReset`) on an abrupt transient-light edge,
+gzdoom-rt only, no RTGL rebuild.
+
+- `rt_main.cpp` — new cvars `rt_rr_reset_on_lightcut` (on, flashlight edge),
+  `rt_rr_reset_delta` (0.5), `rt_rr_reset_on_dynlight` (on, any GZDoom dynlight
+  appearing/disappearing — barrel/rocket explosions, pickups; muzzle flash
+  intentionally excluded, too frequent, has its own `rt_mzlflsh_fade`),
+  `rt_rr_reset_min_ms` (250, rate limit), `rt_rr_reset_hold` / `rt_rr_reset_now`
+  (diagnostics). `RT_AddFlashlight` and `RT_UploadGzDoomDynamicLights` both set
+  a shared `g_rt_lightcut` flag (declared near `FlashlightLightId`, not beside
+  `g_resetposteffects`, for inline-method lookup reasons); `RT_OnLevelLoad`
+  sets it unconditionally. Consumed once per frame in
+  `RTFrameBuffer::RT_DrawFrame`.
+- Rebuild: `tools/build-gzdoom-rt.cmd` (2026-08-06). No `deps/RTGL` changes.

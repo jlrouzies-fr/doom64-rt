@@ -30,6 +30,11 @@ rem Sky: sector skyboxes ignored under RT (white/black fix); d64r-rt-sky forces 
 rem d64r-lostsoul-rt.pk3: yellow SKUL sprites + LSGL offset-glow EventHandler.
 rem d64r-rt-flashlight.pk3: stylized 5-cell battery HUD (rt_flsh_charge / battstate; F toggles).
 rem Eye/fire mats: engine rt\mat\ + rt\data\textures.json (no extra -file).
+rem DLSS-RR transient-light ghosting: rt_rr_reset_on_lightcut/on_dynlight flush RR's
+rem  temporal history (InReset) on flashlight on/off and dynlight appear/disappear
+rem  (barrel/rocket explosions etc; muzzle flash intentionally excluded, too frequent).
+rem  rt_rr_disocc* is the separate per-pixel tile mask, still under investigation —
+rem  see flashlight-linger-fix-plan.md.
 
 if not exist "gzdoom.exe" (
   echo ERROR: missing gzdoom.exe under %ENGINE%
@@ -92,6 +97,8 @@ start "" gzdoom.exe ^
   +rt_hang_lamps 1 +rt_hang_lamp_intensity 220 +rt_hang_lamp_radius 0.09 +rt_hang_lamp_zofs 4 ^
   +rt_translucent_minalpha 0.72 ^
   +rt_rr_temporal 0 ^
+  +rt_rr_disocc 1 +rt_rr_disocc_ratio 3.0 +rt_rr_disocc_mindelta 0.01 +rt_rr_disocc_show 0 ^
+  +rt_rr_reset_on_lightcut 1 +rt_rr_reset_on_dynlight 1 +rt_rr_reset_delta 0.5 +rt_rr_reset_min_ms 250 ^
   +rt_normalmap_stren 1 +rt_heightmap_stren 1
 exit /b 0
 
