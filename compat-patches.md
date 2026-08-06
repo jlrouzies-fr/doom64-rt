@@ -312,3 +312,19 @@ vngx_dlssd.dll)
 
 See `spectre-issue-log.md` for full architecture and regeneration instructions.
 
+## DLSS-RR disocclusion mask — transient-light ghosting fix (2026-08-06)
+
+**Symptom:** Barrel explosions, muzzle flashes, and occluded glows lingered for seconds under DLSS-RR — RR's temporal history had no way to know the light was transient.
+
+**Fix (GaetanRouzies/Claude Fable, merged upstream):**
+
+**RTGL (`deps/RTGL`):**
+- `CmNoisyCompose.comp` — tile-based (16×16) luminance comparison: motion-reproject per-tile mean of lighting-only luminance vs previous frame. On sharp change, writes sentinel 10000.0 to fbRrDisocclusion → RR drops history.
+- `DLSSRR.cpp` — wires `pInDisocclusionMask`; `pInSpecularHitDistance=nullptr` (FB_DEPTH_WORLD was primary-hit distance, not reflection ray length — wrong guide corrupts specular reprojection).
+- `Denoiser.cpp` — barriers for `FB_IMAGE_INDEX_RR_DISOCCLUSION` + `FB_IMAGE_INDEX_RR_LUM_HISTORY`.
+- `BRDF.h` — `envBRDFApprox2()` column-major GLSL port (Ray Tracing Gems ch.32). Corrected RR guides: diffuseAlbedo = ro_d × mod; specularAlbedo = envBRDF × mod.
+- Rebuild: `tools/build-rtgl.cmd` (2026-08-06).
+
+**gzdoom-rt (`sourcecode/gzdoom-rt`):**
+- `rt_main.cpp` — cvars: `rt_rr_disocc` (on), `rt_rr_disocc_ratio` (3.0), `rt_rr_disocc_mindelta` (0.01), `rt_rr_disocc_show` (debug).
+- Rebuild: `tools/build-gzdoom-rt.cmd` (2026-08-06).
