@@ -2,13 +2,32 @@
 
 ## TL;DR
 
-**Root cause of everything: `RTGL1.dll` was built with DLSS Ray Reconstruction
+**Root cause #1 (fixed): `RTGL1.dll` was built with DLSS Ray Reconstruction
 compiled out.** Not a shader bug, not a framebuffer bug, not a denoiser-tuning
-problem. Fixed and rebuilt, but **not yet tested in-game** — that is the next
-action.
+problem. Fixed, rebuilt, confirmed via `rt_rr_status`: `DLSS2 available = YES`,
+`RR REQUESTED = YES`. RR is now genuinely running.
 
-Every earlier symptom follows from this one fact, including all six failed
-experiments recorded in `flashlight-linger-issue.md`.
+**Root cause #2 (found, explains all "zero difference" results this
+session): `rt_rr_reset_hold` is `CVAR_ARCHIVE`.** It got set to `1` during an
+early diagnostic *before* the DLL fix, saved to the ini, and silently
+persisted across every relaunch since — including the "everything is very
+noisy" report right after the DLL fix landed. That single stuck cvar explains
+why `rt_rayreconstr 0` vs `1` looked identical too (both were forced into
+per-frame full history discard). **Any test run before this was found is
+unreliable and needs redoing** — see "Now confirmed" below for what has
+actually been validated with a clean cvar state.
+
+**Current unresolved question (post-fix): RR is stable (no more lingering)
+but noisier than expected — reported as "more stable but noisier than
+A-SVGF", resembling the noise level from *before* the 2026-08-05 guide-fix
+commit (`0683fbb`) that was supposed to have reduced it (at the cost of the
+lingering bug this whole session chased). Not yet diagnosed — see "Next
+action" below.
+
+Every earlier "no effect" symptom in this doc follows from causes #1 and #2,
+including all six failed experiments recorded in `flashlight-linger-issue.md`
+(which predate the DLL fix) and this session's own `rt_rayreconstr` A/B
+(which was contaminated by the stuck `reset_hold`).
 
 ---
 
@@ -90,29 +109,65 @@ Deployed artifacts (`sourcecode/gzdoom-rt/build/RelWithDebInfo/`):
 
 ---
 
-## NEXT ACTION — test in-game (nothing has been validated yet)
+## Now confirmed (this session, post-DLL-fix)
 
-```
-tools\launch-retribution-rt.cmd 1 debug
-```
+- `rt_rr_status`: `DLSS2 available = YES`, `RR REQUESTED = YES`. RR is real.
+- `rt_rr_reset_hold` is `CVAR_ARCHIVE` (persists in the ini across launches —
+  every `RT_CVAR` does, see `rt_main.cpp:84`: `CVAR_GLOBALCONFIG | CVAR_ARCHIVE`
+  unless the name starts with `_`). It was left at `1` from an earlier
+  diagnostic and caused the "very noisy" report even though RR was working.
+  **Before any further A/B testing, explicitly check/set every `rt_rr_*`
+  cvar** (`rt_rr_status`, plus `rt_rr_reset_hold`, `rt_rr_reset_now`,
+  `rt_rr_disocc_show`) rather than assuming defaults — a past console session
+  can leave any of them stuck.
+- RR toggling now works correctly via the **Dev GUI** (confirmed by user);
+  console `rt_rayreconstr` may or may not sync live the same way — not
+  independently confirmed, use the Dev GUI as the trusted control.
+- With RR genuinely active and (per user) a clean `reset_hold`: **lingering
+  is fixed** — RR now reads as "more stable" than before. But the image is
+  **noisier than A-SVGF**, at a level resembling pre-`0683fbb` (before the
+  2026-08-05 guide fixes that reduced noise but caused the lingering this
+  whole session set out to fix).
 
-Console transcript auto-writes to `G:\ai\Doom64-RT\rt-console.log`
-(gitignored; `logfile` is whitelisted at `GS_STARTUP`, so it captures boot).
+## NEXT ACTION — diagnose the residual RR noise level
 
-1. **Confirm RR is real now.** In the log, expect
-   `DLSSRR: Ray Reconstruction available`. Then `rt_rr_status` should show
-   `DLSS2 available = YES` and `RR REQUESTED = YES`.
-2. **Confirm the image is denoised** — the raw 1-spp noise should be gone.
-3. **Then, and only then**, re-test the original ghosting question:
-   - `rt_rr_reset_hold 1` → image should now visibly degrade (proves `InReset`
-     lands). Set back to `0`.
-   - Toggle `rt_flsh` → linger should be gone (was ~3–4 s on / ~6–7 s off).
-   - Barrel/rocket explosion → flash should decay promptly.
-   - Rapid-fire → must **not** be a constant noise storm (muzzle flash is
-     deliberately excluded from resets).
-   - A/B: `rt_rr_reset_on_lightcut 0` / `rt_rr_reset_on_dynlight 0`.
-   - A/B: `rt_rr_disocc 0` vs `1` — **the disocclusion mask has never actually
-     run**, so its real behaviour is still completely unknown.
+Working theory: the Part 1 dynlight-diff reset trigger
+(`rt_rr_reset_on_dynlight`, `RT_UploadGzDoomDynamicLights`) may be firing far
+more often than the earlier `rt_dynlight_debug` check suggested. That check
+only confirmed the **printed count** stayed flat at 67 — it does **not**
+rule out churn: if one light's ID leaves the set the same frame another
+light's ID enters, the count is unchanged but `curDynIds != s_prevDynIds` is
+still true and a reset still fires. That earlier check was also run *before*
+the DLL fix, when RR wasn't consuming `resetHistory` at all, so it never
+actually exercised this path under real conditions. Directly plausible if the
+map has multiple Pulse-type lights whose `m_currentRadius` independently
+oscillates across the `0.01f` cutoff (`rt_main.cpp` upload loop) — net count
+stable, membership constantly different, reset firing almost every frame.
+
+1. **Isolate the trigger.** With RR active and `reset_hold` confirmed `0`:
+   ```
+   rt_rr_reset_on_dynlight 0
+   rt_rr_reset_on_lightcut 0
+   ```
+   Stand still, watch the image. If noise drops to a clean/expected level,
+   the dynlight (or lightcut) trigger is over-firing — re-enable one at a
+   time to find which, then either rate-limit harder
+   (`rt_rr_reset_min_ms`) or fix the membership-diff false-positive above.
+2. **If noise persists with both triggers off**, it isn't the reset work —
+   compare against the pre-`0683fbb` guide fixes directly (`rr-noise-fix-
+   proposals.md`, `rr-noise-investigation.md`) to see if this is a known,
+   separate regression in the diffuse/specular guide computation.
+3. **Only after 1–2**, revisit the disocclusion mask (`rt_rr_disocc 0` vs
+   `1`) — it has still never been tested with a working RR + clean cvars.
+4. Re-verify lingering is actually fixed under a *clean* cvar state (not
+   just "seemed better" while other things were still stuck): toggle
+   `rt_flsh`, trigger a barrel/rocket explosion, confirm no ~3–7 s delay.
+5. Rapid-fire check: confirm muzzle flash does **not** trigger resets (it's
+   deliberately excluded — see Part 1 below).
+
+`tools\launch-retribution-rt.cmd 1 debug` still writes the full console
+transcript to `G:\ai\Doom64-RT\rt-console.log` (gitignored) for anything that
+needs sharing back.
 
 ---
 
@@ -142,11 +197,15 @@ New cvars: `rt_rr_reset_on_lightcut` (on), `rt_rr_reset_delta` (0.5),
 `rt_rr_reset_on_dynlight` (on), `rt_rr_reset_min_ms` (250),
 `rt_rr_reset_hold` / `rt_rr_reset_now` (diagnostics).
 
-**Caveat:** a commit-message claim that flicker/pulse lights "never touch" the
-dynlight diff is wrong — lights crossing the `intensity <= 0.01f` /
-`m_currentRadius <= 0.01f` cutoffs can enter/leave the set. In practice
-`rt_dynlight_debug` showed a rock-steady 67, so it wasn't firing spuriously,
-but it hasn't been tested with RR actually running.
+**Caveat, now the leading suspect for the residual noise (see NEXT ACTION):**
+a commit-message claim that flicker/pulse lights "never touch" the dynlight
+diff is wrong — lights crossing the `intensity <= 0.01f` /
+`m_currentRadius <= 0.01f` cutoffs can enter/leave the set. `rt_dynlight_debug`
+showed a rock-steady count of 67, but that only proves the *count* didn't
+change — one ID leaving and a different ID entering the same frame nets to an
+unchanged count while still tripping `curDynIds != s_prevDynIds`. That check
+was also run before the DLL fix, when RR wasn't consuming `resetHistory` at
+all, so it never exercised this path for real.
 
 ---
 
@@ -195,9 +254,10 @@ but it hasn't been tested with RR actually running.
 `flashlight-linger-fix-plan.md` Parts 2/3 (move the disocclusion debug overlay
 downstream of RR; possibly retarget to `pInResponsivityMask`) were written on
 the assumption that RR was running and the mask was firing. **That premise was
-false.** Re-evaluate only after step 3 above: with RR genuinely active, the
-mask may work fine, or may over-fire on noisy 1-spp tile means, or may be inert
-because `pInDisocclusionMask` is unsupported. All three are still open.
+false at the time.** Re-evaluate only after the NEXT ACTION steps above: with
+RR genuinely active, the mask may work fine, may over-fire on noisy 1-spp tile
+means (plausible now, given the residual noise level), or may be inert because
+`pInDisocclusionMask` is unsupported. All three are still open.
 
 ## Docs to reconcile once testing confirms behaviour
 
