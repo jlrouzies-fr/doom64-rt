@@ -31,6 +31,7 @@ Not a cheer sheet: record symptoms, failed fixes, working knobs, and next experi
 | **Guide fixes alone cannot fix this** | Corrected diffuse/specular guides help RR separate lighting from materials, but do not tell RR when to discard stale history. |
 | **Required inputs** | NGX supports `pInDisocclusionMask` (write `10000.0` to force history discard) and `pInBiasCurrentColorMask` — see `rr-noise-fix-proposals.md` §5. |
 | **Fix path** | Per-frame disocclusion mask: any pixel whose Rec.709 luminance changed by more than a threshold vs the previous frame gets `10000.0`. Simplest first pass: write it from `CmNoisyCompose` comparing current vs `DiffColorHistory` (previous frame's guide). |
+| **Implemented (2026-08-06)** | Landed in `deps/RTGL` + `gzdoom-rt`, **pending in-game A/B**. Refinement over the first-pass idea: the signal is the **lighting-only luminance** `lum(UnfilteredDirect + UnfilteredIndir)` (albedo- and view-independent — the albedo guide would never see a transient), compared per **16×16 tile mean** (per-pixel compares are useless at 1 spp; 256-tap tile means cut relative noise ~16×), **motion-reprojected** via `MotionDlss` so walking doesn't fire it. Fires symmetric (on/off) when tile ratio > `rt_rr_disocc_ratio` (default 3.0) AND absolute delta > `rt_rr_disocc_mindelta` (0.01). Mask written by `CmNoisyCompose` → `pInDisocclusionMask`. Debug view: `rt_rr_disocc_show 1` tints fired tiles red. Kill switch: `rt_rr_disocc 0`. |
 
 ---
 
@@ -119,12 +120,14 @@ Regression after hard-removing `AccumulateForRR` from the RR frame path (ghost f
 | Dev Materials A/B | Live strip N/ORM/H/E without Override |
 | `rt_rr_temporal` **0** + ComposeNoisy raw-only | Ghost path disabled; black-world regression fixed |
 | Dev Override forced off | After sticky Override caused confusion / blackouts |
+| **RR disocclusion mask** (`rt_rr_disocc`) | Transient-light linger / occluded-glow ghosting: tile-luminance change → history discard sentinel 10000.0 |
 
 **Code touchpoints**
 
 - `deps/RTGL/Source/VulkanDevice.cpp` — RR → `ComposeNoisy` only (no `AccumulateForRR`)
 - `deps/RTGL/Source/Denoiser.cpp` — `ComposeNoisy`; `AccumulateForRR` still exists but **unused** on RR path
-- `deps/RTGL/Source/Shaders/CmNoisyCompose.comp` — **raw unfiltered only** (no DiffTemporary)
+- `deps/RTGL/Source/Shaders/CmNoisyCompose.comp` — **raw unfiltered only** (no DiffTemporary); RR guides + disocclusion mask
+- `deps/RTGL/Source/DLSSRR.cpp` — guide bindings, `pInDisocclusionMask`, null `pInSpecularHitDistance`
 - `sourcecode/gzdoom-rt/.../rt_main.cpp` — ceiling lamps, `rt_rr_temporal`
 - Launcher: soft lamp cvars + `+rt_rr_temporal 0`
 
@@ -176,6 +179,10 @@ rt_ceiling_lamp_intensity 400
 rt_ceiling_lamp_off 0.12
 rt_ceiling_lamp_fade 8
 rt_rr_temporal 0            // REQUIRED (ghost if 1; black if Compose reads empty temporal)
+rt_rr_disocc 1              // disocclusion mask (transient linger fix); 0 = A/B off
+rt_rr_disocc_ratio 3.0      // tile lum ratio to fire; lower = more responsive, noisier
+rt_rr_disocc_mindelta 0.01  // absolute delta floor (near-black guard)
+rt_rr_disocc_show 1         // debug: tint fired tiles red
 rt_rayreconstr 0            // full A-SVGF reference (world returns → RR/compose path)
 rt_dynlight 0               // split dynlights vs ceiling lamps
 ```
@@ -199,7 +206,7 @@ Dev: Materials A/B → strip N/ORM/H; keep **Override** off; leave **RR temporal
 | DLL version | **310.7.0 (latest)** |
 | **pInSpecularHitDistance = nullptr** | **Landed** — was FB_DEPTH_WORLD |
 | **Corrected RR guides (diffuse + specular)** | **Landed** — diffuse to DiffColorHistory, spec = envBRDFApprox2×mod; sky=(0.5,0.5,0.5) |
-| **Transient-light ghosting (barrel/muzzle linger)** | **P0 blocker — zero improvement from guide fixes.** RR history retains bright flashes for ~10s after source is gone. Guide corrections do not address this at all. Needs `pInDisocclusionMask`. See §1.2. |
+| **Transient-light ghosting (barrel/muzzle linger)** | **Disocclusion mask landed (2026-08-06), pending in-game A/B.** Tile-luminance-change mask → `pInDisocclusionMask` sentinel 10000.0. See §1.2. |
 | **Guide fixes + null hitDistance: net effect** | **No visible improvement.** Salt still present; ghosting from transients dominates any guide-correction benefit. Guide fixes are necessary but not sufficient — RR needs explicit history-management signals (disocclusion, biasCurrentColor, responsivity) to be usable. |
 | Muzzle flash weakness | Reported; likely from guide modulation or specularHitDistance removal; investigate after ghosting fix |
 | Exposure/emission baked into RR input | **Open** — pipeline reorder deferred |
@@ -213,4 +220,17 @@ Dev: Materials A/B → strip N/ORM/H; keep **Override** off; leave **RR temporal
 - `Source/Shaders/CmNoisyCompose.comp`: rewrote guide staging — diffuse=ro_d×mod→DiffColorHistory, spec=envBRDF×mod→DiffPong, sky=(0.5,0.5,0.5); reads ViewDirection for NoV
 - `Source/Denoiser.cpp`: added `FB_DIFF_COLOR_HISTORY` + `FB_VIEW_DIRECTION` to ComposeNoisy barriers
 
-**Next priority:** disocclusion mask (`pInDisocclusionMask`) to fix barrel/muzzle linger (§1.2). Without this, RR is unusable for gameplay — any transient light sticks for seconds. Guide fixes alone are insufficient; RR needs explicit signals to discard stale history.
+**Changes 2026-08-06 (pushed to public branches — `jlrouzies-fr/RTGL@doom64-rt`, `jlrouzies-fr/gzdoom-rt@doom64-rt`):**
+
+> ⚠️ The 2026-08-05 guide fixes above were **local-only** on the play machine; the public RTGL branch never had them. The 2026-08-06 RTGL commit **re-lands them** (from this doc's description) *plus* the disocclusion mask. On the play machine: stash/discard the local uncommitted `deps/RTGL` changes before pulling, then diff the stash against the pulled commit to confirm nothing local is lost.
+
+- `RTGL/Source/Generated/GenerateShaderCommon.py` (+regen): new framebufs `RrDisocclusion` (R16F), `RrLumHistory` (R16F, STORE_PREV); uniform `rrDisoccEnable/Ratio/MinDelta/ShowMask`
+- `RTGL/Source/Shaders/CmNoisyCompose.comp`: corrected RR guides (diffuse `ro_d×mod`→DiffColorHistory, spec `envBRDFApprox2×mod`→DiffPong, sky 0.5) + tile-luminance disocclusion mask (motion-reprojected, shared-memory reduction, no early-outs so `barrier()` stays uniform)
+- `RTGL/Source/Shaders/BRDF.h`: `envBRDFApprox2()` (HLSL matrices transposed for GLSL column-major)
+- `RTGL/Source/Shaders/CmPrepareFinal.comp`: red debug tint for fired tiles
+- `RTGL/Source/DLSSRR.cpp`: `pInDiffuseAlbedo`=DiffColorHistory, `pInSpecularHitDistance`=nullptr, `pInDisocclusionMask`=RrDisocclusion
+- `RTGL/Source/Denoiser.cpp`: ComposeNoisy barriers (ViewDirection, MotionDlss, DiffColorHistory, RrDisocclusion, RrLumHistory; dropped dead DiffTemporary/SpecAccum/IndirAccum)
+- `RTGL/Include/RTGL1/RTGL1.h` + `VulkanDevice.cpp`: `RgDrawFrameIlluminationParams.enableRrDisocclusionMask/rrDisocclusionThreshold/rrDisocclusionMinDelta/rrDisocclusionShowMask`
+- `gzdoom-rt/src/common/rendering/rt/rt_main.cpp`: cvars `rt_rr_disocc[_ratio|_mindelta|_show]`
+
+**Next priority:** in-game A/B of the disocclusion mask (§1.2): barrel explosion + muzzle flash + walk-behind-pillar occlusion on MAP01/MAP02, with `rt_rr_disocc_show 1` to sanity-check where it fires (should be: transient-lit regions only, NOT constantly while walking). Tune `rt_rr_disocc_ratio` 2.0/3.0/4.0. Then: real specular hitT (proposals §3.3 step 2) and ReSTIR decorrelation (§4).

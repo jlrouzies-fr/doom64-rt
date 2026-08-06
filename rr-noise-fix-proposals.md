@@ -195,11 +195,12 @@ These are additive — do them after §3, they need new plumbing from gzdoom-rt 
 | 1 | §2.1 DLL version check | ✅ **Done** — 310.7.0 (latest, June 2026) |
 | 2 | §2.2 dev-overlay sweep | ⏸ Skipped (no dev DLL; guide validation via visual A/B) |
 | 3 | §3.3 step 1: null `pInSpecularHitDistance` | ✅ **Landed** (`DLSSRR.cpp:400`) |
-| 4 | §3.1 + §3.2 guide rewrite | ✅ **Landed** (`CmNoisyCompose.comp` + `BRDF.h`) |
+| 4 | §3.1 + §3.2 guide rewrite | ✅ **Landed** (`CmNoisyCompose.comp` + `BRDF.h`); pushed to public RTGL branch 2026-08-06 |
 | 5 | §3.4 reorder exposure/emission/raster after RR | ⏸ Deferred (needs post-RR exposure pass) |
 | 6 | §3.3 step 2: real specular hitT | ⬜ Pending |
 | 7 | §4 ReSTIR permutation sampling + boiling | ⬜ Pending |
 | 8 | §5 content routing (transparency layer) | ⬜ Pending |
+| 9 | §5 disocclusion mask (`pInDisocclusionMask`) for transient-light linger | ✅ **Landed 2026-08-06** (tile-luminance change → sentinel 10000.0; see investigation §1.2) |
 
 Log every A/B in `rr-noise-investigation.md` as usual.
 
