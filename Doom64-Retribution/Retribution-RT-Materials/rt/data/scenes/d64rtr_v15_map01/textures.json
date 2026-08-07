@@ -166,12 +166,6 @@
       "isMirrorIfSmooth": true
     },
     {
-      "textureName": "SFLATAQ",
-      "roughnessDefault": 0.9,
-      "metallicDefault": 0.0,
-      "emissiveMult": 1.0
-    },
-    {
       "textureName": "SWXSAA",
       "roughnessDefault": 0.82,
       "metallicDefault": 0.0
@@ -267,12 +261,6 @@
       "metallicDefault": 0.0
     },
     {
-      "textureName": "SFLATAS",
-      "roughnessDefault": 0.9,
-      "metallicDefault": 0.0,
-      "emissiveMult": 1.0
-    },
-    {
       "textureName": "SFLATAF",
       "roughnessDefault": 0.9,
       "metallicDefault": 0.0
@@ -342,12 +330,6 @@
       "textureName": "SFLATC",
       "roughnessDefault": 0.9,
       "metallicDefault": 0.0
-    },
-    {
-      "textureName": "SFLATAP",
-      "roughnessDefault": 0.9,
-      "metallicDefault": 0.0,
-      "emissiveMult": 1.0
     },
     {
       "textureName": "SFLATBE",

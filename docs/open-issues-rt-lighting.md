@@ -48,6 +48,8 @@ Yellow SKUL sprites via `d64r-lostsoul-rt.pk3` ship; same-sprite attached light 
 
 ### 1.6 MAP02 yellow door + dark absorb room — **ENGINE FIX 2026-08-04** (needs confirm)
 
+**Blue armor room follow-up (2026-08-07):** Retribution's MAP02 blue-room sectors use `lightcolor = 20735` (`0x0050FF`). The RT compatibility path intentionally whitened world vertex RGB to prevent yellow-door wash and black lightlevel-0 rooms, which also removed this room-wide blue filter. The engine now carries `FColormap.LightColor` into RT primitive state and restores a bounded blue surface tint only for the `map02` `0x0050FF` profile. It does not add a center light or affect other maps/sectors. Rebuild and visually confirm against `screen/level2-blueroom.png`.
+
 | | |
 |---|---|
 | **Yellow door** | `SDOOR6` on sectors with `lightcolor` yellow + high `lightlevel` — not RT `_e`. Sector tint baked into vertex color → neon wash. |

@@ -104,18 +104,6 @@
       "emissiveMult": 0.9
     },
     {
-      "textureName": "SFLATAP",
-      "emissiveMult": 1.0
-    },
-    {
-      "textureName": "SFLATAQ",
-      "emissiveMult": 1.0
-    },
-    {
-      "textureName": "SFLATAS",
-      "emissiveMult": 1.0
-    },
-    {
       "textureName": "SKEYFLBL",
       "emissiveMult": 1.3
     },

@@ -24,16 +24,30 @@ rem
 rem Usage: ab-rr-disocc.cmd <0|1> [1-32]
 rem ---------------------------------------------------------------------------
 
+rem ARM "show": tints every tile RED at the moment it tells RR to discard
+rem history. This measures the mechanism directly instead of asking anyone to
+rem judge noise. Stand still -- expect sparse red, mostly around sprites. Then
+rem WALK AND TURN. If the screen fills with red while moving and clears when you
+rem stop, the mask is firing on camera motion (reprojected tile luminance shifts
+rem with parallax and disocclusion, not just with real lighting changes), which
+rem wipes RR's history exactly when you move. That would be the cause.
 set "MODE=%~1"
 set "MAP=%~2"
 if "%MODE%"=="" set "MODE=0"
 if "%MAP%"==""  set "MAP=2"
 
+if /i "%MODE%"=="show" (
+  echo === rt_rr_disocc_show 1, MAP%MAP% ===
+  echo     stand still, then WALK: does the screen fill with red while moving?
+  call "%~dp0launch-retribution-rt.cmd" %MAP% -- +rt_rr_disocc 1 +rt_rr_disocc_show 1
+  exit /b %ERRORLEVEL%
+)
+
 if not "%MODE%"=="0" if not "%MODE%"=="1" (
-  echo Usage: %~nx0 ^<0^|1^> [1-32]
+  echo Usage: %~nx0 ^<0^|1^|show^> [1-32]
   exit /b 1
 )
 
 echo === rt_rr_disocc %MODE%, MAP%MAP% ===
-call "%~dp0launch-retribution-rt.cmd" %MAP% -- +rt_rr_disocc %MODE%
+call "%~dp0launch-retribution-rt.cmd" %MAP% -- +rt_rr_disocc %MODE% +rt_rr_disocc_show 0
 exit /b %ERRORLEVEL%

@@ -92,12 +92,6 @@ NAME_RULES: list[tuple[str, float, float, tuple[int, int, int] | None]] = [
     ("C22", 1.0, 0, (255, 180, 60)),
     ("C23", 1.0, 0, (255, 180, 60)),
     ("D64LOGO", 1.0, 0, None),
-    # Inset lamp flats (ceiling head lights + floor panels). emissiveMult drives
-    # INDIR GI cast from _e blobs — needed for floor panels (no analytic floor lights).
-    # Ceiling analytics still blink/cast on top; mult kept moderate to limit wash.
-    ("SFLATAS", 1.0, 0, None),
-    ("SFLATAQ", 1.0, 0, None),
-    ("SFLATAP", 1.0, 0, None),
     # Teleporter pads (MAP03 SPORT*) — cyan cast; mild floor lightIntensity OK.
     ("SPORT", 2.2, 110, (70, 190, 255)),
 ]
@@ -112,9 +106,6 @@ FORCE: dict[str, tuple[float, float, tuple[int, int, int] | None]] = {
     "SKEYFLRD": (1.2, 0.0, (255, 50, 40)),
     "SKEYFLBL": (1.3, 0.0, (60, 160, 255)),
     "SEXIT": (0.9, 0.0, (255, 40, 40)),
-    "SFLATAS": (1.0, 0.0, None),
-    "SFLATAQ": (1.0, 0.0, None),
-    "SFLATAP": (1.0, 0.0, None),
     "SPORT1": (2.2, 110.0, (70, 190, 255)),
     "SPORT2": (2.2, 110.0, (70, 190, 255)),
     "SPORT3": (2.2, 110.0, (70, 190, 255)),
@@ -1273,10 +1264,6 @@ def main() -> None:
                 # Missing BMTX* brightmaps — green LED strip only, never metal luma.
                 eimg = _e_switch_led_from_albedo(albedo, tint)
                 src = "switch-led"
-            elif u.startswith(("SFLATAS", "SFLATAQ", "SFLATAP")):
-                # Inset lamp flats — tight bright blobs; cast via emissiveMult INDIR.
-                eimg = _e_ceiling_blobs_from_albedo(albedo)
-                src = "ceiling-blobs"
             elif u.startswith("SPORT"):
                 # Teleporter pads — cyan-tinted mask (not grey ceiling-blob luma).
                 eimg = _e_teleporter_from_albedo(albedo, tint)
@@ -1363,6 +1350,21 @@ def main() -> None:
     ):
         print(sample, entries.get(sample))
 
+    # Generic SFLAT* flats are geometry, not fixture identities. They used to
+    # receive ceiling-blob masks here, which created false point emitters in
+    # unrelated rooms (notably MAP02). Remove artifacts from older runs.
+    removed_sflat = 0
+    for d in (MAT, MAT_DEV, OMAT):
+        if not d.exists():
+            continue
+        for stem in ("SFLATAS", "SFLATAQ", "SFLATAP"):
+            p = d / f"{stem}_e.png"
+            if p.exists():
+                p.unlink()
+                removed_sflat += 1
+    if removed_sflat:
+        print(f"removed obsolete generic SFLAT _e.png: {removed_sflat}")
+
     # Drop stale non-emitters (falls / glow / OUTTEX / idle SWX).
     keep_e = {k.upper() for k in entries}
     removed_e = 0
@@ -1397,7 +1399,7 @@ def main() -> None:
         for e in arr:
             name = str(e.get("textureName", ""))
             u = name.upper()
-            if (FALL_RE.match(u) or GLOW_RE.search(u)) and u not in keep_u:
+            if (FALL_RE.match(u) or GLOW_RE.search(u) or u in {"SFLATAS", "SFLATAQ", "SFLATAP"}) and u not in keep_u:
                 n += 1
                 continue
             new.append(e)
