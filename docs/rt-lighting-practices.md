@@ -172,7 +172,13 @@ reached the renderer.
 | `rt_sector_tint_albedo` | 1.0 | Sector colormap hue applied to surface albedo. 1.0 matches the original game. Clamped to [0,1]. |
 | `rt_sector_tint_lights` | 0.85 | Same hue applied to light/emitter colour — ceiling lamps, hanging lamps, sector lights, emissive surfaces. |
 | `rt_sector_emis` | 0.35 | Bright surfaces self-emit, scaled by sector lightlevel. Restores rooms the original lit purely with lightlevel. |
-| `rt_sector_emis_minlight` | 160 | Lightlevel floor for self-emission, so ordinary mid-lit walls stay inert. |
+| `rt_sector_emis_minlight` | 160 | Absolute *floor* only. Effective threshold is `max(this, map median + margin)`. |
+| `rt_sector_emis_margin` | 40 | How far above the map's own median a sector must be to self-emit. This is what prevents the whole-image flood. |
+| `rt_wall_strips` | true | Analytic lights along `SPACEAR*` wall bulb trim. |
+| `rt_wall_strip_intensity` | 500 | High because a strip light is flush against the wall it lights (see §19). |
+| `rt_ceiling_edge_lamps` | true | Lights around the perimeter of lamp ceilings, for halls `rt_ceiling_lamps` skips. |
+| `rt_ceiling_edge_intensity` | 500 | Same occlusion reasoning as wall strips. |
+| `rt_dynlight_minradius` | 16 | Drops raster-era helper `PointLight`s (r=12) while keeping real fixtures (r>=32). |
 | `rt_dynlight_rsoft` | 20 | Inverse-square roll-off above this map radius. Lowered from 40; fixed the overexposed yellow key-door jambs. |
 | `rt_dynlight_debug` | false | Console stats: upload count + xy-stack histogram + nearest-light dump. |
 | `rt_dynlight_debug_marks` | false | Magenta marker spheres, separated so they cannot flood the scene. |
@@ -242,25 +248,86 @@ the lamp texture. A feature that walks `primaryLevel->lines` sees only the first
 and the launcher disables it by default — so before writing new code to find a missing
 fixture, check whether an existing path already covers it and is merely switched off.
 
-## Known open item
+## 16. Absolute lightlevel thresholds do not transfer between maps
 
-**MAP03 upper wall light strips still cast no light.** The floor-level bulb trim
-(`SPACEAR`/`SPACEAR1`) is handled by `RT_UploadWallStripLights` and works — 57 matched
-sidedefs, 98 lights, no rejections. The strips higher on the wall are *not* sidedef
-textures: within 256u the only other names present are `SPACEAI1` (flat normal map,
-metallic band in ORM — panelling), `SPACEAC` (ribbed panel), `SWXSFB`, `SPACEBE` and
-`SMONAA`, none of which is a bulb fixture.
+`rt_sector_emis` originally emitted from any sector above a fixed lightlevel of 160. That
+was correct on MAP02, whose dark corridor has bright panels, and catastrophic on MAP03,
+whose *ordinary* rooms sit at 180–200 — every wall, floor and ceiling in the level became
+an emitter. With `rt_emis_mapboost` at 200, a plain 180-lightlevel wall emits
+`albedo * 0.074 * 200 = albedo * 14.8`. The whole image goes uniformly bright and
+directionless: the "fake, not ray traced" look.
 
-Most likely they are thin sector steps whose **flats** carry the lamp texture, which
-`RT_UploadCeilingInsetLamps` already handles — and which the launcher force-disables with
-`rt_ceiling_lamps 0`. Test that before writing new code:
+180 means "glowing panel" in a dark corridor and "ordinary lit room" on a bright deck. No
+global constant can mean both.
+
+The fix is to judge each sector against **its own map's distribution**:
+`threshold = max(absolute_floor, map_median_lightlevel + margin)`, computed once per map
+(`RT_UpdateSectorEmisThreshold`). Self-tuning, no per-room authoring, and it degrades
+sensibly on maps of any overall brightness.
+
+Generalise this: any heuristic keyed on a raw map value should be expressed relative to
+that map's own statistics, not to a number tuned on the first map you happened to test.
+
+## 17. Confirm texture identity from source data, not from derived art
+
+`SPACEAI1` was the leading suspect for the MAP03 ceiling strip for several iterations: it
+was the nearest texture, it was the only one with a `top` part reaching ceiling height,
+and its `_orm`/`_n` maps showed a horizontal band that looked plausibly like a fixture.
+
+It is `SPACEAI` composited with a mirrored copy of itself — plain panelling. The WAD's
+`TEXTURES` lump says so in four lines:
 
 ```
-.\tools\launch-retribution-rt.cmd 3 -- +rt_ceiling_lamps 1 +rt_ceiling_lamp_intensity 400
+Texture SPACEAI1, 64, 128
+{
+	Patch SPACEAI, 0, 0
+	Patch SPACEAI, 0, 64 { FlipY }
+}
 ```
 
-`rt_ceiling_lamp_maxspan 128` skips large sectors, so a long corridor shelf may still be
-excluded.
+Authored PBR side-maps (`rt/mat/*_h.png`, `_n`, `_orm`) are interpretations and can
+mislead — a rivet row reads much like a bulb row at 64×64. Extract the actual patch from
+the WAD, and read `TEXTURES` for composites. A texture named `FOO1` frequently does not
+exist as a lump at all.
+
+Note also that `docs/texture-status.md` records use counts: `SPACEBE` has 12,556 uses,
+which alone rules it out as a light fixture.
+
+## 18. Read the existing cvar descriptions — they encode prior root causes
+
+The MAP03 ceiling strips were dark for a reason already written down in this codebase, in
+the description of `rt_ceiling_lamp_maxspan`:
+
+> "Large SFLATAQ halls only have edge texture blobs — a center sphere looks like a fake
+> mid-ceiling light (MAP02)"
+
+That single line explains the whole symptom: large lamp ceilings are *skipped* to avoid a
+bogus centre light, so their bulbs cast nothing. It would have saved several iterations of
+hunting for a wall texture that never existed.
+
+A guard that skips a case is not the same as that case being handled. When a fixture is
+unlit, check whether some existing path is deliberately excluding it.
+
+The answer was `RT_UploadCeilingEdgeLamps()`: trace the sector **perimeter** instead of
+its centre, which suits both a long corridor edge and a small square ceiling panel, and
+lives on its own cvar so the centre-sphere path can stay off.
+
+## 19. Lights flush against geometry need far more intensity than free-hanging ones
+
+Wall strips read as *completely unlit* at intensity 120 and 250, and only appeared at 500
+— while ceiling lamps hanging in open air look right at 700. A light sitting against the
+surface it illuminates has most of its sphere occluded, so the same nominal intensity buys
+a fraction of the visible contribution.
+
+Do not conclude "the feature is broken" from a dim result before comparing against an
+existing light of known-good intensity in a *similar geometric situation*.
+
+## Pending visual confirmation
+
+`RT_UploadCeilingEdgeLamps` (MAP03 ceiling strips) and the map-relative
+`rt_sector_emis` threshold are built and wired into the launcher but **not yet confirmed
+by eye**. Check on MAP03, and on MAP01's spawn ceiling bulb panel, which the perimeter
+walk should also cover.
 
 ## Resolved this session
 
