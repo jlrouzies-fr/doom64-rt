@@ -17,21 +17,28 @@ per-frame full history discard). **Any test run before this was found is
 unreliable and needs redoing** — see "Now confirmed" below for what has
 actually been validated with a clean cvar state.
 
-**Root cause #3 (fixed 2026-08-07, `bbe1d1b85`, awaiting in-game
-confirmation): the dynlight appear/disappear diff counted brightness dips as
-disappearances.** Pulse/Flicker lights crossing the `0.01f` radius/intensity
-cutoffs left and re-entered the tracked set, firing `InReset` as often as every
-frame — a third independent route to "full history discard every frame", and
-the leading explanation for the residual noise below. Presence is now recorded
-*before* the brightness cutoffs, and a new `rt_rr_reset_debug` cvar makes any
-remaining over-firing directly observable.
+**Root cause #3 (fixed, `bbe1d1b85`): the dynlight appear/disappear diff
+counted brightness dips as disappearances.** Pulse/Flicker lights crossing the
+`0.01f` radius/intensity cutoffs left and re-entered the tracked set, firing
+`InReset` as often as every frame. Fixed — presence is now recorded before the
+brightness cutoffs. **In-game: image confirmed genuinely more stable** (incl.
+MAP01), no more light linger. This cause did **not**, however, explain the
+noise reported at MAP02 spawn — see #4.
 
-**Current unresolved question: is the residual noise gone?** RR is stable (no
-more lingering) but was reported "noisier than A-SVGF", at a level resembling
-*before* the 2026-08-05 guide-fix commit (`0683fbb`). Cause #3 is a sufficient
-explanation, but it is **unverified in-game** — that needs a play session, see
-"NEXT ACTION" below. If noise survives a quiet `rt_rr_reset_debug` log, the
-guide computation is the next suspect.
+**Root cause #4 (fixed, `5b36421d3`): ceiling inset lamps (a third,
+independent synthetic-light system, `rt_ceiling_lamps`) swing ~33x in
+intensity every cycle, too fast for ReSTIR's temporal reservoir reuse to
+track.** Not gated by `rt_dynlight`/`rt_sector_lights` — that's why the
+MAP02-spawn "4 blinking lights" ignored every dynlight cvar tested. Fix:
+`rt_ceiling_lamp_fade` default raised 8 → 40 tics. **Awaiting in-game
+re-check** (should reduce, not necessarily eliminate, localized salt at those
+lamps — see NEXT ACTION).
+
+**Ruled out this session:** `rt_emis_maxscrcolor` (proposals-doc item 1,
+screen-emission unguided into RR color) — tested at MAP02 spawn, no effect on
+the blinking-light noise; not the cause *there* (may still matter elsewhere,
+untested). Stale NGX DLL (proposals-doc item 5) — checked, `nvngx_dlssd.dll`
+is 310.7.0, Preset E confirmed active, no fallback.
 
 Every earlier "no effect" symptom in this doc follows from causes #1 and #2,
 including all six failed experiments recorded in `flashlight-linger-issue.md`
@@ -96,6 +103,7 @@ Net: **no denoiser at all**, which is exactly the "raw 1-spp noise" seen.
 | `sourcecode/gzdoom-rt` | `d19782c36` | `rt_rr_status` CCMD — prints the full RR decision chain (request, upscale mode, Remix flag, DLSS2/DLSS3-FG availability + RTGL failure reasons, resulting requested flag). This is what surfaced the bug. |
 | `sourcecode/gzdoom-rt` | `0a42122f5` | Transient-light history flush (see below). |
 | `sourcecode/gzdoom-rt` | `bbe1d1b85` | Root cause #3: record dynlight presence before the brightness cutoffs so pulse dips stop firing `InReset`; add `rt_rr_reset_debug`. |
+| `sourcecode/gzdoom-rt` | `5b36421d3` | Root cause #4: `rt_ceiling_lamp_fade` default 8 → 40 tics — gentler intensity swing for ReSTIR/RR reservoirs. |
 | `Doom64-RT` (top) | `01aefc6`, `0d146f3` | Docs + launcher cvars. |
 
 ### Verification that the DLL is now correct
@@ -179,34 +187,79 @@ launch. Every `RT_CVAR` is `CVAR_ARCHIVE`, so root cause #2 (a diagnostic left
 at `1` persisting silently in the ini) can no longer contaminate a test run
 started from the launcher.
 
-## NEXT ACTION — verify in-game (needs a play session; not doable from code)
+## In-game verification (2026-08-07 play session)
 
-1. **Baseline.** Launch via `tools\launch-retribution-rt.cmd 1 debug`. Run
-   `rt_rr_status` — expect `DLSS2 available = YES`, `RR REQUESTED = YES`.
-2. **Confirm the trigger no longer over-fires.** `rt_rr_reset_debug 1`, stand
-   still 10–15 s near the MAP01 spawn blink lamps. Expected now: **no**
-   `dynlight set changed` lines and no per-second tally at all while nothing
-   happens. If those lines still stream, the churn has another source — the
-   `+N/-M` numbers say how many lights are involved, and `rt_dynlight_debug 1`
-   alongside it identifies them.
-3. **Confirm real cuts still fire.** Shoot a barrel / fire a rocket: expect a
-   single `FLUSH (cause: dynlight)`. Toggle `rt_flsh`: expect
-   `FLUSH (cause: flashlight)`. Rapid-fire the pistol: expect **no** flushes
-   (muzzle flash is deliberately excluded).
-4. **Judge the noise.** With `rt_rr_reset_debug 0`, compare RR against A-SVGF
-   via the Dev GUI toggle. If RR is now at or below A-SVGF noise, causes #1–#3
-   were the whole story and Parts 2/3 can be re-planned from a clean base.
-5. **If noise persists** with a quiet reset log, it isn't the reset work —
-   compare against the pre-`0683fbb` guide computation
-   (`rr-noise-fix-proposals.md`, `rr-noise-investigation.md`) for a separate
-   regression in the diffuse/specular guides. A quick bisect of the trigger
-   itself is still available: `rt_rr_reset_on_dynlight 0` +
-   `rt_rr_reset_on_lightcut 0` and see whether the image changes at all.
-6. **Then** the disocclusion mask (`rt_rr_disocc 0` vs `1`) — still never
-   tested with a working RR and clean cvars. Note finding #4 below (missing
-   `RR_DISOCCLUSION` barrier in `ImageComposition::Finalize()`) is still
-   unfixed and is an RTGL-side change requiring an `RTGL1.dll` rebuild.
-7. Re-verify lingering under a clean cvar state: toggle `rt_flsh`, trigger an
+- **Confirmed:** image is genuinely more stable than the pre-DLL-fix baseline,
+  including on MAP01 (which was noisy even under the 2026-08-05 guide fix, but
+  had the linger bug). No more light linger. Root causes #1–#3 are real
+  improvements, not just theory.
+- **`rt_emis_maxscrcolor 0` test: negative.** It only dims the emissive
+  *texture* itself; it does not touch the separately-blinking lights sitting
+  on top of that texture. Proposal item 1 (screen-emission unguided into RR
+  color) is **not** the cause of the MAP02-spawn noise — still plausible for
+  *other* noise, just not this specific symptom. Ruled out for this case only.
+- **`rt_dynlight 0` test: negative.** The 4 blinking lights at MAP02 spawn kept
+  blinking with dynlights fully disabled — they are not GZDoom dynlights, so
+  every `rt_dynlight_*`/`rt_rr_reset_on_dynlight` cvar was structurally unable
+  to affect them. This sent the investigation to a **third, separate light
+  system** — see root cause #4.
+- **NGX DLL version: cleared.** `rt/bin/nvngx_dlssd.dll` is 310.7.0, well past
+  the 310.2.1 Preset-E requirement — no silent CNN fallback (proposals doc §0
+  item 5). Was flagged "verify first" and had never actually been checked
+  because RR wasn't running until this week.
+
+## Root cause #4 (found and fixed, 2026-08-07): ceiling-lamp intensity swing
+
+`rt_main.cpp:4089-4250`, `RT_UploadCeilingInsetLamps` (name approximate — see
+`rt_ceiling_lamps` cvar block). A **third, independent** synthetic-light path,
+gated by ceiling texture name (`SFLATAS`/`SFLATAQ`/`SFLATAP`/`SPORT*`) —
+comment at line 4142 names MAP02 SFLATAQ corridors explicitly. Not gated by
+`rt_dynlight` or `rt_sector_lights`, which is why neither affected it.
+
+Each qualifying sector blinks on a per-sector phase
+(`maptime*4 + sectorIndex*23) % 256`) between full intensity
+(`rt_ceiling_lamp_intensity`, default 700) and a dim floor
+(`peak * rt_ceiling_lamp_off * 0.25`, ≈21 at defaults) — a ~33x swing. The
+light is deliberately *never removed* from the ReSTIR/RR list (existing
+comment: "hard delete was the RR noise source"), so it never trips the
+history-reset path from root cause #3. But the swing itself, eased over only
+`rt_ceiling_lamp_fade` = 8 tics (≈0.2s) at the old default, is too abrupt for
+ReSTIR's temporal reservoir reuse to track — producing salt/noise localized
+right at the lamp. This matches the reported symptom exactly (noise
+concentrated on 4 independently-phased lights at MAP02 spawn, unaffected by
+any dynlight/sector-light cvar).
+
+**Fix (`sourcecode/gzdoom-rt` `5b36421d3`):** raised the `rt_ceiling_lamp_fade`
+default 8 → 40 tics (~1.1s), spreading the same swing thin enough for ReSTIR to
+track smoothly. Also updated in `tools\launch-retribution-rt.cmd`, which was
+pinning the old value of 8 explicitly (would have overridden the new default).
+User-confirmed direction: "more gentle on the denoiser, should be default."
+
+Built and staged: `build/RelWithDebInfo/gzdoom.exe`. No RTGL rebuild needed.
+
+## NEXT ACTION — verify root cause #4 in-game
+
+1. Launch at MAP02 spawn, watch the 4 lamps. Expect noticeably less salt right
+   at them than before, without the lamps looking noticeably less "blinky" —
+   40 tics is still a fast fade, not a slow glow.
+2. If noise is still visible there, try further: `rt_ceiling_lamp_fade 80` or
+   raise `rt_ceiling_lamp_off` (default 0.12, e.g. 0.4) to shrink the swing
+   itself rather than just spreading it. Both are live cvars.
+3. Also check `rt_hang_lamps` — a sibling system (`rt_main.cpp:4307+`,
+   "hanging tech lamps", warm shadow-casting lights at Doom 64 lamp things) —
+   for the same fixed-swing pattern, in case other maps show similar localized
+   noise at those.
+4. Once localized-at-lamp noise is resolved, re-judge overall RR vs A-SVGF
+   noise via the Dev GUI toggle. If still worse, the next suspect is the guide
+   computation itself (`rr-noise-fix-proposals.md` items 1–3 — note item 1,
+   screen-emission, was tested and ruled out for *this* symptom but not
+   globally; items 2–3 on PBR/ORM surfaces are untested).
+5. Then the disocclusion mask (`rt_rr_disocc 0` vs `1`) — still never tested
+   with a working RR and clean cvars. Finding #4 in "Findings that remain
+   valid" below (missing `RR_DISOCCLUSION` barrier in
+   `ImageComposition::Finalize()`) is unrelated to this root cause #4 (same
+   number, different list) and still unfixed — RTGL-side, needs a DLL rebuild.
+6. Re-verify lingering under a clean cvar state: toggle `rt_flsh`, trigger an
    explosion, confirm no ~3–7 s delay.
 
 ### Original theory (now confirmed — kept for the reasoning trail)

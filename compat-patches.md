@@ -405,4 +405,33 @@ diagnostic left at `1` in one console session persists in the ini and silently
 poisons every later A/B test — `rt_rr_reset_hold 1` did exactly this for a whole
 session. `tools/launch-retribution-rt.cmd` now forces
 `rt_rr_reset_hold/_now/_debug` to 0 on launch.
+
+**In-game (2026-08-07):** confirmed genuinely more stable, no more light
+linger. Did **not** explain noise reported at MAP02 spawn — that's a different
+light system entirely, see next entry.
+
+## DLSS-RR: ceiling-lamp intensity swing too abrupt for ReSTIR (2026-08-07)
+
+**Symptom:** persistent salt/noise localized right at 4 lights blinking near
+MAP02 spawn, unaffected by `rt_dynlight 0`, `rt_sector_lights`, or
+`rt_emis_maxscrcolor 0` — none of which gate this code path.
+
+**Cause:** `rt_ceiling_lamps` (`rt_main.cpp:4089+`) is a third, independent
+synthetic-light system — analytic lights placed under ceiling textures named
+`SFLATAS`/`SFLATAQ`/`SFLATAP`/`SPORT*` (MAP02 SFLATAQ corridors explicitly
+named in a comment), each blinking on its own per-sector phase. The light
+swings ~33x in intensity (`rt_ceiling_lamp_intensity` 700 down to
+`peak * rt_ceiling_lamp_off * 0.25` ≈ 21) but is deliberately *never removed*
+from the ReSTIR/RR list (avoids the history-reset noise a hard on/off would
+cause). At the old default `rt_ceiling_lamp_fade` = 8 tics (~0.2s), that swing
+is too fast for ReSTIR's temporal reservoir reuse to track, producing salt
+concentrated at the lamp every cycle.
+
+**Fix (`sourcecode/gzdoom-rt` `5b36421d3`, gzdoom-rt only, no RTGL rebuild):**
+`rt_ceiling_lamp_fade` default raised 8 → 40 tics (~1.1s), spreading the same
+swing thin enough for ReSTIR to track smoothly. Also updated in
+`tools/launch-retribution-rt.cmd`, which was pinning the old value explicitly.
+Sibling system `rt_hang_lamps` (`rt_main.cpp:4307+`) uses a hard on/off, not
+this swing — not touched, but worth checking if similar localized noise shows
+up at hanging lamps on other maps.
 - Rebuild: `tools/build-gzdoom-rt.cmd` (2026-08-06). No `deps/RTGL` changes.

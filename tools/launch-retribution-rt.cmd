@@ -107,7 +107,7 @@ start "" gzdoom.exe ^
   +rt_sector_lights 0 +rt_sector_flicker 0 ^
   +rt_dynlight 1 +rt_dynlight_flicker 0 +rt_dynlight_intensity 40 +rt_dynlight_max 500 +rt_dynlight_rsoft 40 +rt_dynlight_stack_atten 1 +rt_dynlight_radius 0.08 ^
   +rt_ceiling_lamps 1 +rt_ceiling_lamp_intensity 700 +rt_ceiling_lamp_radius 0.10 ^
-  +rt_ceiling_lamp_off 0.12 +rt_ceiling_lamp_fade 8 +rt_ceiling_lamp_maxspan 128 ^
+  +rt_ceiling_lamp_off 0.12 +rt_ceiling_lamp_fade 40 +rt_ceiling_lamp_maxspan 128 ^
   +rt_hang_lamps 1 +rt_hang_lamp_intensity 220 +rt_hang_lamp_radius 0.09 +rt_hang_lamp_zofs 4 ^
   +rt_translucent_minalpha 0.72 ^
   +rt_rr_temporal 0 ^
