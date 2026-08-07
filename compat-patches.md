@@ -346,4 +346,63 @@ gzdoom-rt only, no RTGL rebuild.
   `g_resetposteffects`, for inline-method lookup reasons); `RT_OnLevelLoad`
   sets it unconditionally. Consumed once per frame in
   `RTFrameBuffer::RT_DrawFrame`.
+
+## DLSS-RR was compiled out of RTGL1.dll (2026-08-06)
+
+**Symptom:** every DLSS-RR cvar and experiment above produced *zero* difference,
+and the image showed raw ~1-spp noise. Diagnosed as: there was no denoiser at
+all. `deps/RTGL/CMakeLists.txt` gated the DLSS block on
+`if (RG_WITH_NATIVE_DLSS AND DEFINED ENV{DLSS_SDK_PATH})`, but the SDK path had
+been passed as a CMake *variable* (`-DDLSS_SDK_PATH=...`), for which
+`DEFINED ENV{...}` is false. So `RG_USE_NATIVE_DLSS2` was never defined,
+`nvsdk_ngx_d.lib` never linked, and `DLSSRR.cpp` compiled to its empty `#else`
+stub — `nvDlssRr` permanently null. No build error, no link error, and no
+runtime log either (the `"DLSSRR: ..."` strings live inside the compiled-out
+branch, so even `-rtdebug` printed nothing). Meanwhile gzdoom still *requested*
+RR (`nvDlss` survives on DLSS3-FG availability alone), and
+`VulkanDevice.cpp:798` skips A-SVGF whenever RR is requested — so both denoisers
+were off.
+
+**Fix:**
+- `deps/RTGL` `f133bda` — accept `DLSS_SDK_PATH` from env **or** `-D`;
+  `FATAL_ERROR` if the path is set but `nvsdk_ngx.h` is missing; loud
+  `message(WARNING)` if `RG_WITH_NATIVE_DLSS=ON` with no path. Note CMake had
+  cached the poisoned value (`DLSS_SDK_PATH:UNINITIALIZED=...`), so every
+  rebuild silently reused it — clear the cache when changing this.
+- `sourcecode/gzdoom-rt` `d19782c36` — `rt_rr_status` CCMD printing the whole RR
+  decision chain (request, upscale mode, Remix flag, DLSS2/DLSS3-FG availability
+  + RTGL failure reasons, resulting flag). This is what surfaced the bug; use it
+  first whenever RR behaves unexpectedly.
+
+To check a DLL for these symbols on this box, use PowerShell
+(`[Text.Encoding]::ASCII.GetString([IO.File]::ReadAllBytes($p))`) — there is no
+`strings` binary, and `strings` under bash silently returns nothing, which looks
+exactly like a real negative.
+
+## DLSS-RR: pulse lights fired a history flush every frame (2026-08-07)
+
+**Symptom:** with RR genuinely running, the image was stable (lingering fixed)
+but noisier than A-SVGF.
+
+**Cause:** `RT_UploadGzDoomDynamicLights` recorded a light's stable ID into the
+frame-over-frame presence set *after* the brightness cutoffs
+(`m_currentRadius <= 0.01f`, scaled `intensity <= 0.01f`, black colour). A
+Pulse/Flicker light dipping under one for a few tics left the set and re-entered
+it, which reads as a scene-lighting cut and fires `InReset` — up to every frame.
+Invisible to the earlier `rt_dynlight_debug` check because that prints the
+*count*, and one ID leaving as another enters keeps the count flat while
+`curDynIds != s_prevDynIds` is still true.
+
+**Fix (`sourcecode/gzdoom-rt` `bbe1d1b85`, gzdoom-rt only, no RTGL rebuild):**
+record presence right after the *static* eligibility checks, so it means "this
+`FDynamicLight` exists and is active". Genuine appear/disappear events
+(explosion flashes, pickups) still fire. Adds `rt_rr_reset_debug` — per-flush
+cause logging, throttled dynlight `+N/-M` deltas, and a once-a-second
+fired/suppressed tally.
+
+**Related trap:** every `RT_CVAR` is `CVAR_ARCHIVE` (`rt_main.cpp:84`), so a
+diagnostic left at `1` in one console session persists in the ini and silently
+poisons every later A/B test — `rt_rr_reset_hold 1` did exactly this for a whole
+session. `tools/launch-retribution-rt.cmd` now forces
+`rt_rr_reset_hold/_now/_debug` to 0 on launch.
 - Rebuild: `tools/build-gzdoom-rt.cmd` (2026-08-06). No `deps/RTGL` changes.

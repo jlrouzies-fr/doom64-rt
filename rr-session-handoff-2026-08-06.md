@@ -17,12 +17,21 @@ per-frame full history discard). **Any test run before this was found is
 unreliable and needs redoing** — see "Now confirmed" below for what has
 actually been validated with a clean cvar state.
 
-**Current unresolved question (post-fix): RR is stable (no more lingering)
-but noisier than expected — reported as "more stable but noisier than
-A-SVGF", resembling the noise level from *before* the 2026-08-05 guide-fix
-commit (`0683fbb`) that was supposed to have reduced it (at the cost of the
-lingering bug this whole session chased). Not yet diagnosed — see "Next
-action" below.
+**Root cause #3 (fixed 2026-08-07, `bbe1d1b85`, awaiting in-game
+confirmation): the dynlight appear/disappear diff counted brightness dips as
+disappearances.** Pulse/Flicker lights crossing the `0.01f` radius/intensity
+cutoffs left and re-entered the tracked set, firing `InReset` as often as every
+frame — a third independent route to "full history discard every frame", and
+the leading explanation for the residual noise below. Presence is now recorded
+*before* the brightness cutoffs, and a new `rt_rr_reset_debug` cvar makes any
+remaining over-firing directly observable.
+
+**Current unresolved question: is the residual noise gone?** RR is stable (no
+more lingering) but was reported "noisier than A-SVGF", at a level resembling
+*before* the 2026-08-05 guide-fix commit (`0683fbb`). Cause #3 is a sufficient
+explanation, but it is **unverified in-game** — that needs a play session, see
+"NEXT ACTION" below. If noise survives a quiet `rt_rr_reset_debug` log, the
+guide computation is the next suspect.
 
 Every earlier "no effect" symptom in this doc follows from causes #1 and #2,
 including all six failed experiments recorded in `flashlight-linger-issue.md`
@@ -86,6 +95,7 @@ Net: **no denoiser at all**, which is exactly the "raw 1-spp noise" seen.
 | `deps/RTGL` | `f133bda` | Accept `DLSS_SDK_PATH` from env **or** `-D`; `FATAL_ERROR` if path set but `nvsdk_ngx.h` missing; loud `message(WARNING)` if `RG_WITH_NATIVE_DLSS=ON` with no path. Verified all three cases. |
 | `sourcecode/gzdoom-rt` | `d19782c36` | `rt_rr_status` CCMD — prints the full RR decision chain (request, upscale mode, Remix flag, DLSS2/DLSS3-FG availability + RTGL failure reasons, resulting requested flag). This is what surfaced the bug. |
 | `sourcecode/gzdoom-rt` | `0a42122f5` | Transient-light history flush (see below). |
+| `sourcecode/gzdoom-rt` | `bbe1d1b85` | Root cause #3: record dynlight presence before the brightness cutoffs so pulse dips stop firing `InReset`; add `rt_rr_reset_debug`. |
 | `Doom64-RT` (top) | `01aefc6`, `0d146f3` | Docs + launcher cvars. |
 
 ### Verification that the DLL is now correct
@@ -129,7 +139,77 @@ Deployed artifacts (`sourcecode/gzdoom-rt/build/RelWithDebInfo/`):
   2026-08-05 guide fixes that reduced noise but caused the lingering this
   whole session set out to fix).
 
-## NEXT ACTION — diagnose the residual RR noise level
+## Root cause #3 (found in code and fixed, 2026-08-07): dynlight set churn
+
+`sourcecode/gzdoom-rt` `bbe1d1b85`. The working theory below was confirmed by
+reading the code: `RT_UploadGzDoomDynamicLights` recorded a light's `stableId`
+into `curDynIds` **after** the brightness cutoffs —
+`m_currentRadius <= 0.01f`, post-scaling `intensity <= 0.01f`, and
+`cr+cg+cb <= 0`. Any Pulse/Flicker light dipping below one of those for a few
+tics therefore *left* the set and re-entered it, which reads as a scene-lighting
+cut and fires `InReset`. With several such lights on a map that can fire every
+frame — i.e. permanent full-history discard, which is exactly the observed
+"stable but noisier than A-SVGF".
+
+This is the same failure mode as stuck `rt_rr_reset_hold` (root cause #2),
+reached by a different route, which is why the image looked identical in both
+states. And it was invisible to the earlier `rt_dynlight_debug` check for the
+reason predicted below: that prints the *count*, and one ID leaving as another
+enters leaves the count flat while `curDynIds != s_prevDynIds` is still true.
+
+**Fix:** record presence right after the *static* eligibility checks
+(`IsActive` / subtractive / uninitialized / flicker-disabled), before any
+brightness cutoff. Presence now means "this `FDynamicLight` exists and is
+active", which is what actually corresponds to a lighting cut. Explosion
+flashes and pickups still fire correctly (those are genuinely new/destroyed
+lights).
+
+**Also added: `rt_rr_reset_debug`** (default off) — logs every flush with its
+cause (`flashlight` / `dynlight` / `levelload`), a throttled dynlight set-delta
+line (`+N/-M`, one line per 15 changes so an every-frame trigger can't drown the
+console), and a once-a-second `fired / suppressed-by-rate-limit` tally. An
+over-firing trigger is now directly observable instead of inferred.
+
+Built and staged: `build/RelWithDebInfo/gzdoom.exe` (2026-08-07 05:27). No
+`RTGL1.dll` change, so no RTGL rebuild needed.
+
+**Launcher hardening** (same date): `tools\launch-retribution-rt.cmd` now
+forces `rt_rr_reset_hold 0`, `rt_rr_reset_now 0`, `rt_rr_reset_debug 0` on every
+launch. Every `RT_CVAR` is `CVAR_ARCHIVE`, so root cause #2 (a diagnostic left
+at `1` persisting silently in the ini) can no longer contaminate a test run
+started from the launcher.
+
+## NEXT ACTION — verify in-game (needs a play session; not doable from code)
+
+1. **Baseline.** Launch via `tools\launch-retribution-rt.cmd 1 debug`. Run
+   `rt_rr_status` — expect `DLSS2 available = YES`, `RR REQUESTED = YES`.
+2. **Confirm the trigger no longer over-fires.** `rt_rr_reset_debug 1`, stand
+   still 10–15 s near the MAP01 spawn blink lamps. Expected now: **no**
+   `dynlight set changed` lines and no per-second tally at all while nothing
+   happens. If those lines still stream, the churn has another source — the
+   `+N/-M` numbers say how many lights are involved, and `rt_dynlight_debug 1`
+   alongside it identifies them.
+3. **Confirm real cuts still fire.** Shoot a barrel / fire a rocket: expect a
+   single `FLUSH (cause: dynlight)`. Toggle `rt_flsh`: expect
+   `FLUSH (cause: flashlight)`. Rapid-fire the pistol: expect **no** flushes
+   (muzzle flash is deliberately excluded).
+4. **Judge the noise.** With `rt_rr_reset_debug 0`, compare RR against A-SVGF
+   via the Dev GUI toggle. If RR is now at or below A-SVGF noise, causes #1–#3
+   were the whole story and Parts 2/3 can be re-planned from a clean base.
+5. **If noise persists** with a quiet reset log, it isn't the reset work —
+   compare against the pre-`0683fbb` guide computation
+   (`rr-noise-fix-proposals.md`, `rr-noise-investigation.md`) for a separate
+   regression in the diffuse/specular guides. A quick bisect of the trigger
+   itself is still available: `rt_rr_reset_on_dynlight 0` +
+   `rt_rr_reset_on_lightcut 0` and see whether the image changes at all.
+6. **Then** the disocclusion mask (`rt_rr_disocc 0` vs `1`) — still never
+   tested with a working RR and clean cvars. Note finding #4 below (missing
+   `RR_DISOCCLUSION` barrier in `ImageComposition::Finalize()`) is still
+   unfixed and is an RTGL-side change requiring an `RTGL1.dll` rebuild.
+7. Re-verify lingering under a clean cvar state: toggle `rt_flsh`, trigger an
+   explosion, confirm no ~3–7 s delay.
+
+### Original theory (now confirmed — kept for the reasoning trail)
 
 Working theory: the Part 1 dynlight-diff reset trigger
 (`rt_rr_reset_on_dynlight`, `RT_UploadGzDoomDynamicLights`) may be firing far
@@ -144,26 +224,9 @@ map has multiple Pulse-type lights whose `m_currentRadius` independently
 oscillates across the `0.01f` cutoff (`rt_main.cpp` upload loop) — net count
 stable, membership constantly different, reset firing almost every frame.
 
-1. **Isolate the trigger.** With RR active and `reset_hold` confirmed `0`:
-   ```
-   rt_rr_reset_on_dynlight 0
-   rt_rr_reset_on_lightcut 0
-   ```
-   Stand still, watch the image. If noise drops to a clean/expected level,
-   the dynlight (or lightcut) trigger is over-firing — re-enable one at a
-   time to find which, then either rate-limit harder
-   (`rt_rr_reset_min_ms`) or fix the membership-diff false-positive above.
-2. **If noise persists with both triggers off**, it isn't the reset work —
-   compare against the pre-`0683fbb` guide fixes directly (`rr-noise-fix-
-   proposals.md`, `rr-noise-investigation.md`) to see if this is a known,
-   separate regression in the diffuse/specular guide computation.
-3. **Only after 1–2**, revisit the disocclusion mask (`rt_rr_disocc 0` vs
-   `1`) — it has still never been tested with a working RR + clean cvars.
-4. Re-verify lingering is actually fixed under a *clean* cvar state (not
-   just "seemed better" while other things were still stuck): toggle
-   `rt_flsh`, trigger a barrel/rocket explosion, confirm no ~3–7 s delay.
-5. Rapid-fire check: confirm muzzle flash does **not** trigger resets (it's
-   deliberately excluded — see Part 1 below).
+Confirmed by code inspection and fixed in `bbe1d1b85` — see root cause #3
+above. The predicted mechanism was exactly right, including why the
+`rt_dynlight_debug` count check couldn't see it.
 
 `tools\launch-retribution-rt.cmd 1 debug` still writes the full console
 transcript to `G:\ai\Doom64-RT\rt-console.log` (gitignored) for anything that
@@ -195,17 +258,19 @@ Consumed once per frame in `RTFrameBuffer::RT_DrawFrame`, rate-limited by
 
 New cvars: `rt_rr_reset_on_lightcut` (on), `rt_rr_reset_delta` (0.5),
 `rt_rr_reset_on_dynlight` (on), `rt_rr_reset_min_ms` (250),
-`rt_rr_reset_hold` / `rt_rr_reset_now` (diagnostics).
+`rt_rr_reset_hold` / `rt_rr_reset_now` / `rt_rr_reset_debug` (diagnostics —
+all three forced to 0 by the launcher, since `CVAR_ARCHIVE` makes a stuck one
+poison later tests).
 
-**Caveat, now the leading suspect for the residual noise (see NEXT ACTION):**
-a commit-message claim that flicker/pulse lights "never touch" the dynlight
-diff is wrong — lights crossing the `intensity <= 0.01f` /
-`m_currentRadius <= 0.01f` cutoffs can enter/leave the set. `rt_dynlight_debug`
-showed a rock-steady count of 67, but that only proves the *count* didn't
-change — one ID leaving and a different ID entering the same frame nets to an
-unchanged count while still tripping `curDynIds != s_prevDynIds`. That check
-was also run before the DLL fix, when RR wasn't consuming `resetHistory` at
-all, so it never exercised this path for real.
+**Caveat — this was root cause #3, fixed in `bbe1d1b85`:** the original
+commit-message claim that flicker/pulse lights "never touch" the dynlight diff
+was wrong. Lights crossing the `intensity <= 0.01f` / `m_currentRadius <= 0.01f`
+cutoffs entered and left the set. `rt_dynlight_debug` showed a rock-steady count
+of 67, but that only proves the *count* didn't change — one ID leaving and a
+different ID entering the same frame nets to an unchanged count while still
+tripping `curDynIds != s_prevDynIds`. Presence is now recorded before those
+cutoffs, so the claim holds by construction. `rt_rr_reset_debug` reports the
+actual `+N/-M` deltas if it ever needs re-checking.
 
 ---
 
@@ -265,5 +330,5 @@ means (plausible now, given the residual noise level), or may be inert because
   (debug overlay upstream of RR) is now only a *secondary* factor; the primary
   cause was the compiled-out DLL.
 - `flashlight-linger-fix-plan.md` — Part 1 marked implemented; Parts 2/3 stale.
-- `compat-patches.md` — has the Part 1 follow-up entry; needs the DLL root cause
-  and the CMake fix (`f133bda`) added.
+- `compat-patches.md` — **done (2026-08-07)**: added the DLL root cause + CMake
+  fix (`f133bda`) entry and the pulse-light reset-churn entry (`bbe1d1b85`).

@@ -44,6 +44,10 @@ rem  temporal history (InReset) on flashlight on/off and dynlight appear/disappe
 rem  (barrel/rocket explosions etc; muzzle flash intentionally excluded, too frequent).
 rem  rt_rr_disocc* is the separate per-pixel tile mask, still under investigation —
 rem  see flashlight-linger-fix-plan.md.
+rem  The rt_rr_* diagnostics (reset_hold / reset_now / reset_debug) are forced to 0
+rem  below on purpose: every RT_CVAR is CVAR_ARCHIVE, so one left at 1 in a console
+rem  session silently persists in the ini and poisons every later A/B test. Set them
+rem  from the console when testing, not here.
 
 if not exist "gzdoom.exe" (
   echo ERROR: missing gzdoom.exe under %ENGINE%
@@ -109,6 +113,7 @@ start "" gzdoom.exe ^
   +rt_rr_temporal 0 ^
   +rt_rr_disocc 1 +rt_rr_disocc_ratio 3.0 +rt_rr_disocc_mindelta 0.01 +rt_rr_disocc_show 0 ^
   +rt_rr_reset_on_lightcut 1 +rt_rr_reset_on_dynlight 1 +rt_rr_reset_delta 0.5 +rt_rr_reset_min_ms 250 ^
+  +rt_rr_reset_hold 0 +rt_rr_reset_now 0 +rt_rr_reset_debug 0 ^
   +rt_normalmap_stren 1 +rt_heightmap_stren 1
 exit /b 0
 
