@@ -18,9 +18,13 @@ Open lighting bugs / test log (wash, blink, ceiling lamps):
 
 → **`open-issues-rt-lighting.md`**
 
-DLSS-RR salt / unfiltered-direct bleed (PBR interaction, failed clamps, temporal prefilter, black-world regression):
+Anything DLSS Ray Reconstruction:
 
-→ **`rr-noise-investigation.md`**
+→ **`RAYRECONSTRUCTION.md`** (root, ~35 lines — start here, always)
+
+It carries the working rules and the five faults that cost days. The full history is
+`docs/rayreconstruction/`; those files are large, so only open one when
+`RAYRECONSTRUCTION.md` points you at it.
 
 Update those when phases complete or facts change. Do not invent parallel trackers.
 
@@ -169,7 +173,7 @@ Clear all enemy `_e` + strip meta: `python tools/clear_enemy_eye_emissives.py` t
 
 ## Suggested next work
 
-1. **`rr-noise-investigation.md`** — RR salt with lamps + PBR; soft fades only (boiling / temporal-into-RR / Compose clamps all failed). Materials A/B on MAP02.
+1. **`RAYRECONSTRUCTION.md`** — RR is working and the worm artifact is solved (a stuck cvar, not a renderer bug). Open levers: `rt_spp_direct`/`rt_spp_indirect`, `rt_restir_initial`.
 2. **`open-issues-rt-lighting.md`** — ceiling lamp visual confirm; wash residuals.
 3. Continue Phase 4 PBR; optional HEAD/BOSS eye masks.
 4. Lost Soul: finish or drop LSGL; Phase 5 overlay pk3.

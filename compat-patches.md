@@ -164,7 +164,8 @@ Rebuild: `tools/build-gzdoom-rt.cmd`. User confirmed sky looks good.
 
 ## Native DLSS Ray Reconstruction (2026-08-02)
 
-Remix RR (-rtxremix + t_remix_rayreconstr) blacks out Retribution. Native path only had A-SVGF.
+Remix RR (-rtxremix + 
+t_remix_rayreconstr) blacks out Retribution. Native path only had A-SVGF.
 
 **RTGL (deps/RTGL):**
 - RgStartFrameRenderResolutionParams.rayReconstruction — when set with NVIDIA_DLSS, skip A-SVGF, run noisy compose + NGX DLSS-RR
@@ -237,7 +238,7 @@ vngx_dlssd.dll)
 
 **RR boiling filter (2026-08-05) — REVERTED:** Screen-space boiling / sample clamps corrupted the noise distribution RR expects and made IQ worse. Do not re-enable.
 
-**RR temporal prefilter (2026-08-05) — FAILED:** Feeding A-SVGF temporal into ComposeNoisy/`DLSS-RR` produced a **faded duplicate / ghost depth-like view** (`screen/rrasvgghost.png`). Likely double reprojection and/or checkerboard vs regular sampling mismatch. **`AccumulateForRR` removed** from RR frame path; cvar **`rt_rr_temporal 0`**. Soft analytic-light fades remain the safe lever. See `rr-noise-investigation.md`.
+**RR temporal prefilter (2026-08-05) — FAILED:** Feeding A-SVGF temporal into ComposeNoisy/`DLSS-RR` produced a **faded duplicate / ghost depth-like view** (`screen/rrasvgghost.png`). Likely double reprojection and/or checkerboard vs regular sampling mismatch. **`AccumulateForRR` removed** from RR frame path; cvar **`rt_rr_temporal 0`**. Soft analytic-light fades remain the safe lever. See `docs/rayreconstruction/rr-noise-investigation.md`.
 
 **Black world / muzzle-only (2026-08-05) — FIXED:** After removing the writer, `CmNoisyCompose` could still read DiffTemporary when `rrTemporalPrefilterEnabled` was set → empty lighting → black PT world; raster fire sprites still drew. Fix: delete temporal branch from `CmNoisyCompose` (always unfiltered); force Dev Override off; rebuild `tools/build-rtgl.cmd`. Do not re-add a Compose temporal reader without a matching every-frame writer.
 
@@ -330,8 +331,8 @@ See `spectre-issue-log.md` for full architecture and regeneration instructions.
 - Rebuild: `tools/build-gzdoom-rt.cmd` (2026-08-06).
 
 **Follow-up (2026-08-06, same day):** the mask above produced zero visible
-effect — see `flashlight-linger-issue.md` for the (superseded) investigation
-and `flashlight-linger-fix-plan.md` for the corrected diagnosis. Landed
+effect — see `docs/rayreconstruction/flashlight-linger-issue.md` for the (superseded) investigation
+and `docs/rayreconstruction/flashlight-linger-fix-plan.md` for the corrected diagnosis. Landed
 instead: pulse `RgDrawFrameInfo.resetHistory` (already-wired, previously
 unused → `DLSSRR.cpp` `evalParams.InReset`) on an abrupt transient-light edge,
 gzdoom-rt only, no RTGL rebuild.
@@ -578,6 +579,6 @@ Two implementation notes for anyone touching this shader:
   corruption this investigation spent days chasing.
 
 **Conclusion of the whole RR noise investigation:** see
-`rr-noise-investigation.md` §10. Short version — with a 1-spp input, anything
+`docs/rayreconstruction/rr-noise-investigation.md` §10. Short version — with a 1-spp input, anything
 that buys stability pays in blur or lag; A-SVGF is the better denoiser for this
 content, and that is now a choice rather than an accident.

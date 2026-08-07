@@ -61,7 +61,7 @@ rem DLSS-RR transient-light ghosting: rt_rr_reset_on_lightcut/on_dynlight flush 
 rem  temporal history (InReset) on flashlight on/off and dynlight appear/disappear
 rem  (barrel/rocket explosions etc; muzzle flash intentionally excluded, too frequent).
 rem  rt_rr_disocc* is the separate per-pixel tile mask, still under investigation —
-rem  see flashlight-linger-fix-plan.md.
+rem  see docs/rayreconstruction/flashlight-linger-fix-plan.md.
 rem  The rt_rr_* diagnostics (reset_hold / reset_now / reset_debug) are forced to 0
 rem  below on purpose: every RT_CVAR is CVAR_ARCHIVE, so one left at 1 in a console
 rem  session silently persists in the ini and poisons every later A/B test. Set them

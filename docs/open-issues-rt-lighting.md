@@ -3,7 +3,7 @@
 Living punch list of **what still fails**, what we **tested**, and what **works**.  
 Do not treat this as a progress cheer sheet — only unresolved / partially resolved items belong in §1.
 
-**Related:** `AGENTS.md`, `compat-patches.md`, `material-authoring-spec.md`, `gallery-emis-wall-wash-fix-plan.md`, `gallery-emis-wall-wash-diagnostics.md`, **`rr-noise-investigation.md`** (DLSS-RR salt / PBR)
+**Related:** `AGENTS.md`, `compat-patches.md`, `material-authoring-spec.md`, `gallery-emis-wall-wash-fix-plan.md`, `gallery-emis-wall-wash-diagnostics.md`, **`rayreconstruction/rr-noise-investigation.md`** (DLSS-RR salt / PBR)
 
 **Play path (canonical):** `tools/launch-retribution-rt.cmd` → `sourcecode/gzdoom-rt/build/RelWithDebInfo/`
 
@@ -28,7 +28,7 @@ Do not treat this as a progress cheer sheet — only unresolved / partially reso
 | **Why wall terminals blinked** | Alcove secs **32/34** are `dLight_Flicker` (65) + green **9802** at the SMON. Dynlight upload (and any sector_flicker/lights) lightstyles those alcoves. |
 | **Why `rt_sector_lights 1` looked dead for ceilings** | Booth ceilings have **special 0 / steady lightlevel 200** — sector lights never blink them. Enabling all-sector lights mostly adds steady fill; the only blink still comes from alcove 65 / 9802. |
 | **Fix landed** | `RT_UploadCeilingInsetLamps()` under `SFLATAS*`/`SPORT*`. `rt_dynlight_flicker 0` skips 9802 wall flashers. `rt_sector_flicker 0`. Debug: `rt_ceiling_lamp_debug 1` → cyan markers + console. |
-| **RR noise (2026-08-05)** | See **`rr-noise-investigation.md`**. Soft lamp fade landed; boiling + `rt_rr_temporal` both **failed** (worse / ghost). Follow-on: black world when Compose still read empty temporal buffers — **fixed** (ComposeNoisy raw-only). PBR suspected amp — do not strip. |
+| **RR noise (2026-08-05)** | See **`rayreconstruction/rr-noise-investigation.md`**. Soft lamp fade landed; boiling + `rt_rr_temporal` both **failed** (worse / ghost). Follow-on: black world when Compose still read empty temporal buffers — **fixed** (ComposeNoisy raw-only). PBR suspected amp — do not strip. |
 
 ### 1.2 MAP01 directional wash / sky leak — **MITIGATED** (night sky 2026-08-03)
 
@@ -101,9 +101,9 @@ Isolated `build/WashScratch` starts from stock `rt/` and must **re-stage** eyes/
 
 Single overlay pk3 + clean install docs (Phase 5) still pending.
 
-### 1.8 DLSS-RR residual sparkle / salt — **OPEN detail in `rr-noise-investigation.md`**
+### 1.8 DLSS-RR residual sparkle / salt — **OPEN detail in `rayreconstruction/rr-noise-investigation.md`**
 
-Short status: debug match = unfiltered diffuse direct; ceiling lamps confirmed amplifier; soft fades landed; boiling **reverted**; `rt_rr_temporal` **failed** (ghost) then left a **black world** when Compose still sampled empty DiffTemporary after `AccumulateForRR` was removed — ComposeNoisy is now **raw unfiltered only**. Full-tree PBR suspected — **do not strip**. Detail → **`rr-noise-investigation.md`**.
+Short status: debug match = unfiltered diffuse direct; ceiling lamps confirmed amplifier; soft fades landed; boiling **reverted**; `rt_rr_temporal` **failed** (ghost) then left a **black world** when Compose still sampled empty DiffTemporary after `AccumulateForRR` was removed — ComposeNoisy is now **raw unfiltered only**. Full-tree PBR suspected — **do not strip**. Detail → **`rayreconstruction/rr-noise-investigation.md`**.
 
 ---
 

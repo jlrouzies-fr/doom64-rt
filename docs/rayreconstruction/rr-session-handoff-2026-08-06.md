@@ -588,5 +588,5 @@ means (plausible now, given the residual noise level), or may be inert because
   (debug overlay upstream of RR) is now only a *secondary* factor; the primary
   cause was the compiled-out DLL.
 - `flashlight-linger-fix-plan.md` — Part 1 marked implemented; Parts 2/3 stale.
-- `compat-patches.md` — **done (2026-08-07)**: added the DLL root cause + CMake
+- `../../compat-patches.md` — **done (2026-08-07)**: added the DLL root cause + CMake
   fix (`f133bda`) entry and the pulse-light reset-churn entry (`bbe1d1b85`).

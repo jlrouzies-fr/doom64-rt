@@ -300,4 +300,4 @@ call site, in a separate change.
 **Docs:** update `flashlight-linger-issue.md` — the "suspected root cause"
 (unallocated framebuffer) and the assumed pass order are both wrong, and the six
 recorded negative results were measured upstream of the denoiser. Add the fix to
-`compat-patches.md` next to the existing disocclusion-mask entry.
+`../../compat-patches.md` next to the existing disocclusion-mask entry.

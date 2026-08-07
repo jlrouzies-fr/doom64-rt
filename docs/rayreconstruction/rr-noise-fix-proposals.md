@@ -6,9 +6,9 @@ Research doc, 2026-08-05. Cross-checks **our** native RR integration (published 
 - **RTX Remix** (`NVIDIAGameWorks/dxvk-remix`) — NVIDIA's own shipping "raw path tracer → RR" integration
 - **nvpro-samples/vk_denoise_dlssrr** — official minimal Vulkan RR sample
 
-**Related:** `rr-noise-investigation.md` (symptoms / failed fixes), `compat-patches.md`, `AGENTS.md`.
+**Related:** `rr-noise-investigation.md` (symptoms / failed fixes), `../../compat-patches.md`, `../../AGENTS.md`.
 
-> Housekeeping: `AGENTS.md` says branch `rayreconstruction` → `doom64-rt.git`. Publicly the RR code lives on branch **`doom64-rt`** of `jlrouzies-fr/gzdoom-rt` + `jlrouzies-fr/RTGL`; no `doom64-rt` repo exists. Fix the pointer or push the missing repo.
+> Housekeeping: `../../AGENTS.md` says branch `rayreconstruction` → `doom64-rt.git`. Publicly the RR code lives on branch **`doom64-rt`** of `jlrouzies-fr/gzdoom-rt` + `jlrouzies-fr/RTGL`; no `doom64-rt` repo exists. Fix the pointer or push the missing repo.
 
 ---
 
@@ -209,7 +209,7 @@ Log every A/B in `rr-noise-investigation.md` as usual.
 ## 9. Sources
 
 - DLSS-RR Integration Guide: `github.com/NVIDIA/DLSS` → `doc/DLSS-RR Integration Guide.pdf` (§3.4.2 sky albedo, §3.5 sampling/noise, §3.7 exposure unsupported, §3.13 presets, ch. 8 dev overlay)
-- Streamline: `github.com/NVIDIA-RTX/Streamline` → `docs/ProgrammingGuideDLSS_RR.md`, `include/sl_dlss_d.h` (row-major matrices, HDR-only, spec-albedo env-BRDF listing)
+- Streamline: `github.com/NVIDIA-RTX/Streamline` → `ProgrammingGuideDLSS_RR.md`, `include/sl_dlss_d.h` (row-major matrices, HDR-only, spec-albedo env-BRDF listing)
 - NGX headers: `nvsdk_ngx_defs_dlssd.h` (presets D=4/E=5, A–C removed), `nvsdk_ngx_helpers_dlssd_vk.h` (full optional-input list: transparency layer, disocclusion/bias/responsivity masks, colorBeforeTransparency…)
 - SDK releases: 310.1.0 (RR transformer, 2025-01), 310.2.1 (Preset E), 310.4.0 (A–C removed), 310.7.0 (2026-06, current)
 - RTX Remix: `github.com/NVIDIAGameWorks/dxvk-remix` — `rtx_ray_reconstruction.cpp` (NGX bindings), `demodulate.comp.slang:608` (`evalSpecularAlbedoGGXSchlick`), `prepare_ray_reconstruction.comp.slang` (guide post-processing, roughness demodulation), `restir_gi_temporal_reuse.comp.slang:287` (`useDLSSRRCompatibilityMode` 80-px decorrelation), `rtx_options.cpp:309` (RR path-tracer preset), `geometry_resolver.slangh` (RR G-buffer, particle layer, disocclusion sentinel)

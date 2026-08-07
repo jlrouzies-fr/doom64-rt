@@ -3,7 +3,7 @@
 Living doc for **RR salt / walk noise / unfiltered-direct bleed** on Retribution.  
 Not a cheer sheet: record symptoms, failed fixes, working knobs, and next experiments.
 
-**Related:** `AGENTS.md`, `open-issues-rt-lighting.md`, `compat-patches.md`, `material-authoring-spec.md`
+**Related:** `../../AGENTS.md`, `../open-issues-rt-lighting.md`, `../../compat-patches.md`, `../material-authoring-spec.md`
 
 **Play path:** `tools/launch-retribution-rt.cmd` → `sourcecode/gzdoom-rt/build/RelWithDebInfo/`  
 **RR path in code:** `deps/RTGL` — `ComposeNoisy` (raw unfiltered only) → NGX DLSS-RR (`nvngx_dlssd.dll`)  
