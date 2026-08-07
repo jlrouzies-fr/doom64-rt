@@ -34,11 +34,24 @@ MAP02-spawn "4 blinking lights" ignored every dynlight cvar tested. Fix:
 re-check** (should reduce, not necessarily eliminate, localized salt at those
 lamps — see NEXT ACTION).
 
-**Ruled out this session:** `rt_emis_maxscrcolor` (proposals-doc item 1,
-screen-emission unguided into RR color) — tested at MAP02 spawn, no effect on
-the blinking-light noise; not the cause *there* (may still matter elsewhere,
-untested). Stale NGX DLL (proposals-doc item 5) — checked, `nvngx_dlssd.dll`
-is 310.7.0, Preset E confirmed active, no fallback.
+**Root cause #5 (the big one, fixed 2026-08-07): RTGL's Dev UI was silently
+overriding `rt_rayreconstr`, and the override persisted across launches.** RR
+was **off** for essentially every test in this document. Everything reported as
+"RR is stable / RR is noisy / RR fixed the linger" was measuring **A-SVGF**.
+`rt_rr_status` could not detect this — it reads gzdoom's request, upstream of
+the override. See "Root cause #5" below for the mechanism and what it
+invalidates.
+
+**Ruled out this session — one of these is now RETRACTED:**
+- ~~`rt_emis_maxscrcolor` (proposals item 1, unguided screen emission)~~
+  **Retracted.** `ovrd_enable = true` was persisted in
+  `rt/devmode_settings.json`, and `Dev_Override` forces
+  `emissionMaxScreenColor` from the Dev value every frame
+  (`VulkanDevice_Dev.cpp:1897`). Typing `rt_emis_maxscrcolor 0` did nothing.
+  **Item 1 is still an open suspect and needs re-testing.**
+- Stale NGX DLL (proposals item 5) — **still valid**, this one was a direct
+  file inspection: `nvngx_dlssd.dll` is 310.7.0, Preset E supported. Not
+  affected by any cvar or override.
 
 Every earlier "no effect" symptom in this doc follows from causes #1 and #2,
 including all six failed experiments recorded in `flashlight-linger-issue.md`
@@ -104,6 +117,8 @@ Net: **no denoiser at all**, which is exactly the "raw 1-spp noise" seen.
 | `sourcecode/gzdoom-rt` | `0a42122f5` | Transient-light history flush (see below). |
 | `sourcecode/gzdoom-rt` | `bbe1d1b85` | Root cause #3: record dynlight presence before the brightness cutoffs so pulse dips stop firing `InReset`; add `rt_rr_reset_debug`. |
 | `sourcecode/gzdoom-rt` | `5b36421d3` | Root cause #4: `rt_ceiling_lamp_fade` default 8 → 40 tics — gentler intensity swing for ReSTIR/RR reservoirs. |
+| `deps/RTGL` | (this session) | Root cause #5: don't restore `ovrd_enable` / sticky flags from `devmode_settings.json`; warn when a Dev override contradicts the game's RR request. |
+| `sourcecode/gzdoom-rt` | (this session) | `rt_rr_status` now states it reports a *request*, not the applied state. |
 | `Doom64-RT` (top) | `01aefc6`, `0d146f3` | Docs + launcher cvars. |
 
 ### Verification that the DLL is now correct
@@ -129,7 +144,14 @@ Deployed artifacts (`sourcecode/gzdoom-rt/build/RelWithDebInfo/`):
 
 ## Now confirmed (this session, post-DLL-fix)
 
-- `rt_rr_status`: `DLSS2 available = YES`, `RR REQUESTED = YES`. RR is real.
+> **RETRACTED 2026-08-07 — see root cause #5.** The first and last bullets below
+> are wrong. `rt_rr_status` reports gzdoom's *request*, which RTGL's Dev UI was
+> silently overriding; RR was **off** for these tests and A-SVGF produced the
+> "more stable" image. Kept verbatim as a record of how the wrong conclusion was
+> reached.
+
+- ~~`rt_rr_status`: `DLSS2 available = YES`, `RR REQUESTED = YES`. RR is real.~~
+  **False** — proves only that gzdoom asked, not that RTGL complied.
 - `rt_rr_reset_hold` is `CVAR_ARCHIVE` (persists in the ini across launches —
   every `RT_CVAR` does, see `rt_main.cpp:84`: `CVAR_GLOBALCONFIG | CVAR_ARCHIVE`
   unless the name starts with `_`). It was left at `1` from an earlier
@@ -138,14 +160,13 @@ Deployed artifacts (`sourcecode/gzdoom-rt/build/RelWithDebInfo/`):
   cvar** (`rt_rr_status`, plus `rt_rr_reset_hold`, `rt_rr_reset_now`,
   `rt_rr_disocc_show`) rather than assuming defaults — a past console session
   can leave any of them stuck.
-- RR toggling now works correctly via the **Dev GUI** (confirmed by user);
-  console `rt_rayreconstr` may or may not sync live the same way — not
-  independently confirmed, use the Dev GUI as the trusted control.
-- With RR genuinely active and (per user) a clean `reset_hold`: **lingering
-  is fixed** — RR now reads as "more stable" than before. But the image is
-  **noisier than A-SVGF**, at a level resembling pre-`0683fbb` (before the
-  2026-08-05 guide fixes that reduced noise but caused the lingering this
-  whole session set out to fix).
+- RR toggling works via the **Dev GUI**; console `rt_rayreconstr` does **not**
+  — now explained by root cause #5. The Dev GUI was the only working control
+  precisely *because* it set the sticky flag that killed the cvar.
+- ~~With RR genuinely active … **lingering is fixed**, RR reads as "more
+  stable"~~ **False (root cause #5).** RR was off. The stable, linger-free
+  image was **A-SVGF**. The "noisier than A-SVGF" comparison was RR-off vs
+  RR-off — it measured nothing about RR.
 
 ## Root cause #3 (found in code and fixed, 2026-08-07): dynlight set churn
 
@@ -237,7 +258,106 @@ User-confirmed direction: "more gentle on the denoiser, should be default."
 
 Built and staged: `build/RelWithDebInfo/gzdoom.exe`. No RTGL rebuild needed.
 
-## NEXT ACTION — verify root cause #4 in-game
+## Root cause #5 (fixed, 2026-08-07): Dev UI override killed `rt_rayreconstr`
+
+**RR was off for essentially every test recorded in this document.** The
+"more stable, no linger" image everyone was judging was **A-SVGF**.
+
+`rt/devmode_settings.json` persisted three fields across launches:
+
+```
+ovrd_enable             = true    ← Override master switch
+rayReconstruction       = true
+rayReconstructionSticky = true
+```
+
+`VulkanDevice_Dev.cpp`, `Dev_Override(RgStartFrameInfo&, ...)`, the branch
+taken when the Override checkbox is **unchecked**:
+
+```cpp
+else if( devmode->rayReconstructionSticky )
+{
+    resolution.rayReconstruction = devmode->rayReconstruction;  // stomps rt_rayreconstr
+}
+```
+
+`rayReconstructionSticky` is set `true` by *either* RR checkbox in the Dev UI
+and cleared only by the "Follow game (rt_rayreconstr)" button. It was
+serialized to JSON and restored on load. So touching that checkbox once, in any
+session, permanently disabled `rt_rayreconstr` in every later launch —
+regardless of the Override switch. The UI advertises "works without Override",
+so the live behaviour is intentional; **persisting it across launches is the
+bug.**
+
+**Why nothing caught it:** `rt_rr_status` prints `g_rr_dbg_rrRequested`
+(`rt_main.cpp:3290`) — gzdoom's request, produced *before* `Dev_Override` runs
+inside the DLL. It reported `RR REQUESTED = YES` while RTGL forced RR off. An
+intention was read as a fact, and that single misreading is what let a wrong
+conclusion survive multiple sessions.
+
+**Second blast radius — `ovrd_enable = true`.** It also gates
+`Dev_Override(illumination, tonemapping, textures)`, which force-replaces
+`emissionMapBoost`, **`emissionMaxScreenColor`**, `normalMapStrength`,
+`heightMapDepth`, `maxBounceShadows`, ev100 range, saturation/crosstalk, plus
+`upscaleTechnique` / `resolutionMode` / `frameGeneration` on the resolution
+side. **Any console cvar mapping into those was silently reverted every
+frame** — which is exactly what invalidated the `rt_emis_maxscrcolor 0` test.
+
+**Fix (`deps/RTGL`, RTGL1.dll rebuilt + staged):**
+1. `ApplyDevmodeSettings` no longer restores `drawInfoOvrd.enable`,
+   `rayReconstructionSticky`, `rrTemporalPrefilterSticky`, or
+   `illumSensSticky` — all forced `false` on load. Override *values* still
+   persist, so Dev tuning survives a relaunch; only the switches that make them
+   replace the game's values reset. Same principle as forcing
+   `rt_rr_reset_hold/_now/_debug` to 0 in the launcher.
+2. New edge-triggered `debug::Warning` whenever the applied RR value disagrees
+   with the game's request: `"Dev override: DLSS Ray Reconstruction forced
+   ON/OFF (game requested ...)"`. Needs `-rtdebug` to be visible.
+3. `rt_rr_status` now states outright that it reports a *request*, not the
+   applied state, and how to confirm the real one.
+
+Also found stuck in that JSON: `rrTemporalPrefilter = true` +
+`rrTemporalPrefilterSticky = true`, despite the Dev UI labelling it
+"EXPERIMENTAL — default OFF" and blaming it for a "faded duplicate/ghost depth
+view". Inert today (`AccumulateForRR` is never called — finding #5 below), but
+it was on.
+
+**Deleted** the poisoned `rt/devmode_settings.json` (backup in the session
+scratchpad as `devmode_settings.json.bak`).
+
+### What this invalidates, and what survives
+
+| Claim | Status |
+|---|---|
+| Root cause #1 — RR compiled out of the DLL | **Valid** — binary string/symbol inspection, independent of runtime state |
+| Root cause #2 — `CVAR_ARCHIVE` stuck cvars | **Valid** — code fact |
+| Root cause #3 — dynlight set churn | **Valid as a code bug** (read directly from source); its *effect on RR* is unmeasured |
+| Root cause #4 — ceiling-lamp 33x swing | **Valid as a code bug**; feeds ReSTIR, upstream of both denoisers, so the fix stands. But "confirmed in-game" measured A-SVGF |
+| NGX DLL 310.7.0 / Preset E | **Valid** — file inspection |
+| "RR is genuinely running" | **False** |
+| "RR more stable, no linger" | **False** — that was A-SVGF |
+| "`rt_emis_maxscrcolor` rules out proposals item 1" | **False** — override reverted it; item 1 still open |
+| Ghosting on shotgun sprite vs flashlight | Not reproducible on retry; parked |
+
+## NEXT ACTION — re-baseline everything with RR actually on
+
+Nothing about DLSS-RR's real behaviour is currently known. Start over:
+
+1. Launch with `tools\launch-retribution-rt.cmd 1 debug`. Confirm **no**
+   `Dev override: DLSS Ray Reconstruction forced ...` warning appears. If one
+   does, the Dev UI is still overriding — hit "Follow game (rt_rayreconstr)"
+   or delete `rt/devmode_settings.json` again.
+2. Establish the A/B properly: `rt_rayreconstr 0` vs `1` should now visibly
+   change the image. **If it does not, stop** — the cvar still isn't reaching
+   RTGL and everything downstream stays unmeasurable.
+3. Only then re-judge: RR vs A-SVGF noise, whether the linger is actually fixed
+   under RR (root causes #3/#4 have never been tested against RR), and the
+   MAP02 blinking-lamp noise.
+4. Re-test `rt_emis_maxscrcolor 0` (proposals item 1) — the previous run was
+   contaminated and proved nothing.
+5. Then the disocclusion mask (`rt_rr_disocc 0` vs `1`), still never validated.
+
+## Superseded NEXT ACTION — verify root cause #4 in-game
 
 1. Launch at MAP02 spawn, watch the 4 lamps. Expect noticeably less salt right
    at them than before, without the lamps looking noticeably less "blinky" —

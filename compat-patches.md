@@ -434,4 +434,55 @@ swing thin enough for ReSTIR to track smoothly. Also updated in
 Sibling system `rt_hang_lamps` (`rt_main.cpp:4307+`) uses a hard on/off, not
 this swing — not touched, but worth checking if similar localized noise shows
 up at hanging lamps on other maps.
+
+**Caveat (2026-08-07):** the in-game observations that motivated this ran with
+DLSS-RR **off** — see the next entry. The lamp swing is a real defect and the
+fix targets ReSTIR (upstream of both denoisers), so it stands, but its effect
+under RR specifically has never been measured.
+
+## RTGL Dev UI silently overrode rt_rayreconstr, persistently (2026-08-07)
+
+**Symptom:** `rt_rayreconstr 0` vs `1` did nothing. DLSS-RR was off through an
+entire multi-session investigation *into DLSS-RR*; every "RR is stable / noisy /
+fixed" observation actually measured A-SVGF.
+
+**Cause:** `rt/devmode_settings.json` persisted `ovrd_enable`,
+`rayReconstruction` and `rayReconstructionSticky` across launches. In
+`VulkanDevice_Dev.cpp`, `Dev_Override` applies the sticky RR value **even when
+the Override master switch is off**:
+
+```cpp
+else if( devmode->rayReconstructionSticky )
+{
+    resolution.rayReconstruction = devmode->rayReconstruction;  // stomps rt_rayreconstr
+}
+```
+
+Sticky is set by either Dev-UI RR checkbox and cleared only by the "Follow game
+(rt_rayreconstr)" button. Touching that checkbox once disabled the cvar in every
+subsequent launch. The live "works without Override" behaviour is intentional;
+persisting it across launches is the bug.
+
+`ovrd_enable = true` compounded it by force-replacing `emissionMapBoost`,
+`emissionMaxScreenColor`, `normalMapStrength`, `heightMapDepth`,
+`maxBounceShadows`, ev100 range, and the upscale/resolution/frame-gen params
+every frame — so console cvars mapping to any of those were silently reverted.
+
+**Why it stayed hidden:** `rt_rr_status` reports `g_rr_dbg_rrRequested`
+(`rt_main.cpp:3290`), gzdoom's request, computed *before* the DLL's
+`Dev_Override` runs. It printed `RR REQUESTED = YES` while RTGL forced RR off.
+
+**Fix (`deps/RTGL`, needs `tools/build-rtgl.cmd`):**
+- `ApplyDevmodeSettings` no longer restores `drawInfoOvrd.enable`,
+  `rayReconstructionSticky`, `rrTemporalPrefilterSticky`, `illumSensSticky` —
+  forced `false` on load. Override values still persist; only the switches that
+  make them apply reset each launch.
+- Edge-triggered `debug::Warning` when the applied RR value disagrees with the
+  game's request (visible with `-rtdebug`).
+- `rt_rr_status` now says outright that it reports a request, not applied state.
+
+**Lesson (same shape as the `CVAR_ARCHIVE` trap above):** any diagnostic or
+override that outlives the session which enabled it will eventually be mistaken
+for normal behaviour. Persist the *value*, never the *switch*. And never treat a
+"requested" readout as confirmation — instrument the applied state.
 - Rebuild: `tools/build-gzdoom-rt.cmd` (2026-08-06). No `deps/RTGL` changes.
