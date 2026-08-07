@@ -11,6 +11,20 @@ Not a cheer sheet: record symptoms, failed fixes, working knobs, and next experi
 
 ---
 
+> # ⚠️ READ §10 FIRST (2026-08-07)
+>
+> **DLSS-RR was not running for any observation in §1–§9.** Three independent
+> faults kept it off (compiled out of the DLL, a persisted Dev override, and a
+> stale `rt_upscale_fsr2` that clobbered the DLSS upscaler), behind three layers
+> of muted diagnostics. Everything recorded below as "RR looks like X" was
+> measuring **A-SVGF**.
+>
+> All three are fixed and RR is now verified running. **§10 supersedes the
+> conclusions in §1, §3.3 and §9.** The investigation is closed with a
+> recommendation, not an open hunt — do not resume §7 without reading §10.
+
+---
+
 ## 1. Symptom (current)
 
 | | |
@@ -78,9 +92,16 @@ NVIDIA guidance (Streamline / Remix / peer denoisers): need **high-quality noisy
 | **Why stripping PBR is wrong** | Loses CE look and Phase 4 track. Goal is **RR-compatible PBR**, not flat albedos. |
 | **Safe A/B (live)** | Dev → Materials A/B: strip normals / ORM / height **separately** — diagnose without deleting overlays. |
 
-### 3.3 Dev Override / sticky persist — **RED HERRING for salt; REAL for blackouts**
+### 3.3 Dev Override / sticky persist — ~~RED HERRING~~ **WRONG, see §10.1**
 
-Salt itself is not Dev-settings-dependent. Still: keep **Override unchecked**. Sticky `rt/devmode_settings.json` can re-enable Override / temporal / Linear after a session and confuse A/B — wipe or Reset if the image goes weird.
+> **Superseded 2026-08-07.** "Salt is not Dev-settings-dependent" was wrong in the
+> most consequential way possible: sticky `rayReconstructionSticky` was overriding
+> `rt_rayreconstr` **even with Override unchecked**, so the salt being compared was
+> A-SVGF's. Fixed — sticky flags and `ovrd_enable` no longer restore from disk.
+
+Original text: salt itself is not Dev-settings-dependent. Still: keep **Override
+unchecked**. Sticky `rt/devmode_settings.json` can re-enable Override / temporal /
+Linear after a session and confuse A/B — wipe or Reset if the image goes weird.
 
 ---
 
@@ -151,6 +172,11 @@ Safe stability lever for blink: **soft analytic-light fades**, not ComposeNoisy 
 ---
 
 ## 7. Next experiments (ordered)
+
+> **Superseded by §10.4 (2026-08-07).** Items 1–4 below were formulated against
+> observations that were actually A-SVGF, and 1–3 have since been measured with
+> RR genuinely running and found to make no difference. Do not resume this list;
+> the one live item is ReSTIR decorrelation (item 6 here / §10.4).
 
 MAP01 spawn + MAP02 dark/key. Prefer Dev Materials A/B over deleting mats.
 
@@ -234,3 +260,126 @@ Dev: Materials A/B → strip N/ORM/H; keep **Override** off; leave **RR temporal
 - `gzdoom-rt/src/common/rendering/rt/rt_main.cpp`: cvars `rt_rr_disocc[_ratio|_mindelta|_show]`
 
 **Next priority:** in-game A/B of the disocclusion mask (§1.2): barrel explosion + muzzle flash + walk-behind-pillar occlusion on MAP01/MAP02, with `rt_rr_disocc_show 1` to sanity-check where it fires (should be: transient-lit regions only, NOT constantly while walking). Tune `rt_rr_disocc_ratio` 2.0/3.0/4.0. Then: real specular hitT (proposals §3.3 step 2) and ReSTIR decorrelation (§4).
+
+---
+
+## 10. Conclusion (2026-08-07) — RR verified running; investigation closed
+
+### 10.1 Why everything above is unreliable
+
+RR never ran during §1–§9. Three independent faults, each silent:
+
+| # | Fault | Effect |
+|---|---|---|
+| 1 | `deps/RTGL/CMakeLists.txt` gated DLSS on `DEFINED ENV{DLSS_SDK_PATH}`, but the path was passed as a CMake `-D` variable | `DLSSRR.cpp` compiled to its empty stub; `nvDlssRr` permanently null |
+| 2 | `rayReconstructionSticky` persisted in `rt/devmode_settings.json` and overrode `rt_rayreconstr` **even with the Dev Override master switch off** | RR forced to whatever the Dev UI last held, across every relaunch |
+| 3 | **Stale `rt_upscale_fsr2=2` in the ini** — DLSS and FSR2 both write `upscaleTechnique` and the FSR switch runs *second*, while `rayReconstruction` was gated only on `nvDlss != 0` | gzdoom sent RTGL "upscaler=FSR2 + RR=on"; RTGL resolves that by silently dropping RR → A-SVGF |
+
+Fault 3 was the actual blocker and survived the fix for fault 2.
+
+**Three layers of muted diagnostics** hid all of it, and each is now fixed:
+
+| Layer | Effect |
+|---|---|
+| `RgInstanceCreateInfo::allowedMessages = 0` without `-rtdebug` | muted RTGL **WARNING and ERROR** — how fault 1 hid |
+| `RT_Print` → `DPrintf( DMSG_WARNING, … )` | second gate behind gzdoom `developer >= 2` |
+| nothing reported the **applied** state | `rt_rr_status` printed gzdoom's *request*, computed before RTGL's override |
+
+**Verification instrument (use this, never infer again).** Every launch now prints,
+with no flags required:
+
+```
+Denoiser path: DLSS-RR (ComposeNoisy -> nvDlssRr->Apply) (DLSS-RR object=present, DLSS upscaler=on, RR flag=on)
+DLSSRR: using Ray Reconstruction preset E (5)
+```
+
+If that first line does not say `DLSS-RR`, **no RR observation is valid**. This
+one line is the acceptance test for any future RR work.
+
+### 10.2 What the noise actually is
+
+With RR genuinely running, two measurements settled it:
+
+- **Raw 1-spp input** (`rt_rayreconstr 0` + `rt_upscale_dlss 0`, Dev → *Unfiltered
+  diffuse direct*): **very noisy, and identically noisy static vs in motion.**
+  ReSTIR does *not* degrade under camera movement — item 4 is exonerated as the
+  *cause* (though still the best remaining improvement, see 10.4).
+- **RR output:** converges cleanly when static; fizzles on surfaces in motion.
+
+So RR's temporal accumulation works. Motion legitimately costs it history, and
+underneath is a raw 1-spp signal with **no other filtering whatsoever** —
+`ComposeNoisy` applies none, and `AccumulateForRR` is never called. A-SVGF
+survives the same history loss because it still has anti-firefly + a
+variance-driven à-trous. **A-SVGF is buying stability with blur**; that trade is
+invisible until the two are compared directly.
+
+This is a missing pipeline stage, not a defect.
+
+### 10.3 Ruled out (measured, not assumed)
+
+| Hypothesis | Verdict |
+|---|---|
+| Disocclusion mask misfiring | `rt_rr_disocc 0` no change; `_show 1` fires sparsely near sprites, as designed |
+| Volumetrics unguided in `pInColor` | `rt_volume_type 0` no change |
+| Parallax / normal maps (view-dependent guides) | `rt_heightmap_stren 0`, `rt_normalmap_stren 0` no change |
+| Sample density | DLAA (`rt_upscale_dlss 6`) no change — more *pixels*, still 1 spp each |
+| Preset E wrong | Preset D **clearly worse** (noisy even static). E retained |
+| Firefly clamp (Remix-style) | Marginal at best, and **added weapon-sprite trailing**. Off by default |
+| MV units / scale | Verified correct: UV deltas × `renderSize`; identical to working DLSS2 |
+| Depth convention | Verified standard `[0=near,1=far]`; `DepthInverted` correctly unset |
+| Guide buffer formats | All `R16G16B16A16_SFLOAT` — signed, so normals store correctly |
+| Ping-pong / checkerboard coverage | `GetImageHandles` resolves by frame parity; the two checkerboard halves give complementary parities → full coverage |
+| Stale NGX DLL | `nvngx_dlssd.dll` 310.7.0, Preset E supported |
+
+The firefly result is the informative one: it cut noise slightly and immediately
+produced ghosting. **With a 1-spp input, anything that buys stability pays in
+blur or lag.** A full spatial prefilter would buy more stability at
+proportionally more blur — converging toward A-SVGF's look, which is why it was
+not built.
+
+### 10.4 Recommendation
+
+**Ship A-SVGF as the default for this content; keep RR as a user option.** For
+dark 1-spp Doom 64 interiors A-SVGF is genuinely the better denoiser. Unlike
+before, this is now a *choice*: RR runs correctly, the toggle works, and every
+setting is observable.
+
+The only remaining lever that **adds information rather than redistributing
+artefacts** is reducing variance at the source — ReSTIR decorrelation
+(permutation sampling + boiling filter inside ReSTIR, `rr-noise-fix-proposals.md`
+item 4; NVIDIA §3.5 requires it for RR). That improves *both* denoisers. It is a
+raygen change and real work.
+
+**Do not** resume §7 as written: items 1–4 there were formulated against
+A-SVGF observations.
+
+### 10.5 Status
+
+| Item | State |
+|---|---|
+| RR actually running | **Verified** — logged every launch |
+| `rt_rayreconstr` toggle | **Works** — switches denoiser path, verified both ways |
+| Renderer warnings/errors | **Always visible** now (no `-rtdebug` needed) |
+| Dev override persistence | **Fixed** — values persist, switches reset each launch |
+| RR preset | **E** (D A/B'd and worse) |
+| Firefly clamp | Landed, **off by default** (`rt_rr_firefly 0`) — trades noise for ghosting |
+| RR vs A-SVGF in motion | **A-SVGF better** — structural (no spatial prefilter on RR path) |
+| ReSTIR decorrelation | **Open** — the only lever left that adds information |
+| Exposure / screen-emission unguided in `pInColor` | **Open**, but volumetrics (same class) measured no effect — low prior |
+| Missing `RR_DISOCCLUSION` barrier in `ImageComposition::Finalize()` | **Open** — real RAW hazard, unrelated to this symptom |
+
+### 10.6 Console cheat sheet (supersedes §8 where they disagree)
+
+```
+rt_rayreconstr 1 / 0        // RR vs A-SVGF — NOW WORKS; check the log line
+rt_upscale_fsr2 0           // MUST stay 0 or it silently disables RR
+rt_rr_firefly 0 / 4 / 2     // firefly clamp; 0 = off (default). Adds trailing when on
+rt_rr_firefly_minlum 0.01   // near-black guard for the clamp
+rt_rr_disocc_show 1         // sparse red dots near sprites = working as designed
+rt_upscale_dlss 6           // DLAA (native). More pixels, NOT more spp
+rt_rr_reset_debug 1         // history-flush cause + per-second fired/suppressed tally
+```
+
+Launcher forces `rt_upscale_fsr2 0` and the `rt_rr_reset_*` diagnostics to 0 —
+every `RT_CVAR` is `CVAR_ARCHIVE`, and a stale one poisoned three separate
+investigations. **Persist the value, never the switch.**

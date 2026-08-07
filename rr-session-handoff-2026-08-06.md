@@ -411,22 +411,36 @@ Each had to be removed before the bug was even observable.
 `nvDlssRr` is non-null, so root cause #1's CMake fix is also confirmed good at
 runtime.
 
-## NEXT ACTION — re-baseline everything with RR actually on
+## RESOLVED — re-baselined with RR on; investigation closed 2026-08-07
 
-Nothing about DLSS-RR's real behaviour is currently known. Start over:
+The re-baseline was completed the same day. **Full conclusion lives in
+`rr-noise-investigation.md` §10** — read that, not this section, for the
+finding and the recommendation. Summary:
 
-1. **Done — the plumbing is fixed and verified** (root cause #6). Any launch
-   now prints `Denoiser path: ...` to the console/log without needing
-   `-rtdebug`. Confirm it reads `DLSS-RR` before trusting any RR observation;
-   that one line is the whole acceptance test.
-2. **Done** — `rt_rayreconstr 0` vs `1` now demonstrably switches the denoiser
-   path. Both states verified from inside RTGL.
-3. Now re-judge: RR vs A-SVGF noise, whether the linger is actually fixed
-   under RR (root causes #3/#4 have never been tested against RR), and the
-   MAP02 blinking-lamp noise.
-4. Re-test `rt_emis_maxscrcolor 0` (proposals item 1) — the previous run was
-   contaminated and proved nothing.
-5. Then the disocclusion mask (`rt_rr_disocc 0` vs `1`), still never validated.
+1. **Done** — plumbing fixed and verified (root cause #6). Every launch prints
+   `Denoiser path: ...` with no `-rtdebug` needed. If it doesn't say `DLSS-RR`,
+   no RR observation is valid. That line is the whole acceptance test.
+2. **Done** — `rt_rayreconstr 0` vs `1` demonstrably switches denoiser paths,
+   verified from inside RTGL in both states.
+3. **Done, and it's structural, not a bug.** With RR genuinely running: the raw
+   1-spp input is very noisy and *identically* noisy static vs in motion, while
+   RR converges when static and fizzles in motion. RR's temporal accumulation
+   works; motion costs it history, and the RR path has **no spatial or temporal
+   prefilter at all** to fall back on, whereas A-SVGF has anti-firefly plus a
+   variance-driven à-trous. A-SVGF is buying stability with blur.
+   Measured and ruled out: disocclusion mask, volumetrics, parallax/normal maps,
+   sample density (DLAA), preset D (worse), firefly clamp (added ghosting).
+   **Recommendation: default to A-SVGF, keep RR as an option.**
+4. `rt_emis_maxscrcolor` — not retested. Low prior: volumetrics is the same
+   class of unguided `pInColor` contaminant and measured no effect.
+5. Disocclusion mask — **validated**: `rt_rr_disocc 0` changes nothing and
+   `_show 1` fires sparsely near sprites, i.e. working as designed and not a
+   noise source.
+
+**Still genuinely open:** ReSTIR decorrelation (the only lever that adds
+information rather than trading artefacts) and the missing `RR_DISOCCLUSION`
+barrier in `ImageComposition::Finalize()` (a real RAW hazard, unrelated to this
+symptom).
 
 ## Superseded NEXT ACTION — verify root cause #4 in-game
 

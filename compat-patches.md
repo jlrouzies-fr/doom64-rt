@@ -537,3 +537,47 @@ First confirmation that DLSS-RR actually runs, and confirmation that root cause
 such pairs mutually exclusive and loud, and validate derived flags against the
 value that actually survived — not against the input that motivated them.
 - Rebuild: `tools/build-gzdoom-rt.cmd` (2026-08-06). No `deps/RTGL` changes.
+## DLSS-RR tuning A/Bs with RR verified running (2026-08-07)
+
+First experiments ever run with DLSS-RR confirmed active (see previous entry).
+Both are recorded because both are **negative results** worth not repeating.
+
+**RR preset D vs E** (`deps/RTGL` `0c73464`). `DLSSRR.cpp` pinned Preset E on all
+five quality slots. A/B'd D (default transformer) against E (latest): **D was
+clearly worse — visibly noisy even with a static camera**, where E converges
+cleanly. E retained. Only D and E are usable at all; A/B/C were removed in SDK
+310.4.0 and F..O silently revert to default. The five literals were collapsed to
+one `RR_PRESET` constant and the live preset is now logged, so `rt_upscale_dlss`
+can no longer change preset alongside resolution and confound an image A/B.
+
+Incidentally the first *positive control* of the whole investigation: the change
+visibly altered RR output, independently confirming settings reach NGX.
+
+**Neighbourhood firefly clamp** (`deps/RTGL` `f2822e2`, `gzdoom-rt` `2a81d65d3`).
+The RR path applies no prefilter whatsoever — `ComposeNoisy` hands raw 1-spp
+radiance to NGX and `AccumulateForRR` is never called — while A-SVGF gets
+anti-firefly plus a variance-driven à-trous. Remix runs an equivalent clamp, and
+an `RTGL1.h` comment showed one existed here once and was replaced by the
+now-inert temporal prefilter. Added back, deliberately conservative: a pixel is
+scaled down only if it out-shines the *brightest* of its 4 spatial neighbours by
+`rt_rr_firefly`, with uniform RGB scale so chroma is preserved and no blur added.
+
+**Result: marginal noise reduction at best, and it ADDED a visible trail behind
+the weapon sprite.** Mechanism is the instructive part — suppressing outliers
+removes the local contrast RR uses to detect change, so RR over-trusts history
+and ghosts. It trades noise for ghosting rather than fixing anything. Kept as a
+documented knob, **off by default** (`rt_rr_firefly 0`), with the 12 neighbour
+fetches guarded out of the default path.
+
+Two implementation notes for anyone touching this shader:
+- Neighbours are taken in **regular** pixel space then mapped through
+  `getCheckerboardPix`. Stepping in checkerboard coords does *not* give spatial
+  neighbours — the two halves interleave into alternating columns.
+- The uniform fields reuse existing `_pad` slots, so the std140 layout is
+  byte-identical. A C++↔GLSL layout mismatch is exactly the kind of silent
+  corruption this investigation spent days chasing.
+
+**Conclusion of the whole RR noise investigation:** see
+`rr-noise-investigation.md` §10. Short version — with a 1-spp input, anything
+that buys stability pays in blur or lag; A-SVGF is the better denoiser for this
+content, and that is now a choice rather than an accident.
