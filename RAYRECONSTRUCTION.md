@@ -20,11 +20,12 @@ and applies a variance-guided **spatial** filter, which suits sparse 1-spp inter
 many small dynamic lights. RR accumulates after exposure is baked in and leans on temporal
 reconstruction, which motion weakens.
 
-**Untested when work stopped:** render resolution (`ab-rr-res.cmd`). At 1280×720 Balanced,
-RR reconstructs from ~742×418, and "detail breaks in motion, stabilises when still" is the
-signature of spatial reconstruction rather than sampling — which fits the spp/shadow-ray
-nulls. Every earlier resolution test is **void**; they ran during the `rt_restir_tjitter`
-regression.
+Render resolution is eliminated too: retested on a clean build (`ab-rr-res.cmd dlaa`),
+DLAA is still unstable in motion. So it is not spatial reconstruction from a low render
+resolution either — RR is unstable at **native** res on this content.
+
+**The investigation is closed. There is no remaining hypothesis.** Reopen only with new
+evidence, not a new guess.
 
 **Every fault that cost this project days was an invisible setting, never a renderer bug:**
 RR compiled out of the DLL (CMake `ENV{}` vs `-D`); a Dev-UI sticky override in
@@ -55,7 +56,7 @@ looked exactly like an RR defect for a full day. It wasn't.
 - `build-rtgl-variant.cmd <commit> <name>` + `ab-rtgl-baseline.cmd <name>` — swap a historical
   RTGL runtime (DLL **and** its SPIR-V together; uniform layout changes, never mix).
 - `ab-rr-quality.cmd <stock|free|shadow|max>` — input-quality cost/benefit ladder.
-- `ab-rr-res.cmd <dlaa|quality|balanced>` — render resolution.
+- `ab-rr-res.cmd <dlaa|quality|balanced>` — render resolution (eliminated: DLAA still bad).
 - Levers: `rt_restir_initial` (launcher now sets **32**) traces no rays and helps both
   denoisers, but is **not yet A/B'd under A-SVGF** — verify before trusting it.
   `rt_spp_direct`/`rt_spp_indirect` [1..8] stay at 1; ~20% at 8 is a poor trade.
