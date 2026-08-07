@@ -383,3 +383,96 @@ rt_rr_reset_debug 1         // history-flush cause + per-second fired/suppressed
 Launcher forces `rt_upscale_fsr2 0` and the `rt_rr_reset_*` diagnostics to 0 —
 every `RT_CVAR` is `CVAR_ARCHIVE`, and a stale one poisoned three separate
 investigations. **Persist the value, never the switch.**
+
+---
+
+## 11. RR worm artifact + samples-per-pixel (2026-08-07, later session)
+
+Supersedes §10.4's "stop here" recommendation: RR has a **specific, isolated
+defect** beyond the general 1-spp noise, and a real quality lever now exists.
+
+### 11.1 The worm artifact — RR-only, and it is not noise
+
+**Symptom:** distant, dimly-lit *detailed* textures are replaced by correlated
+dark filaments. Near, brightly-lit surfaces are clean. Screenshots:
+`screen/blackdotsfurther.png` (RR) vs `screen/asvgnoworm.png` (A-SVGF).
+
+**It is not noise — it is failed texture reconstruction.** Magnifying the far
+ceiling shows A-SVGF resolving a clean diamond lattice where RR produces
+worms in the same place. RR is destroying a real texture, not adding grain.
+
+**Cause: render resolution.** The artifact is monotonic in it:
+
+| `rt_upscale_dlss` | result |
+|---|---|
+| 2 = Balanced (default) | worms, lattice destroyed |
+| 1 = Quality | lattice partially resolved |
+| 6 = DLAA (native) | lattice resolved |
+
+RR's albedo guide is produced at **render** resolution, so texture detail beyond
+its Nyquist limit is simply not available for RR to reconstruct at output
+resolution — and RR hallucinates filaments in its place. A-SVGF + DLSS-SR escapes
+this because DLSS-SR upscales an already-denoised, texture-complete image,
+whereas RR must denoise *and* upscale from noisy inputs.
+
+**Ruled out by measurement (do not repeat):**
+
+| Hypothesis | Result |
+|---|---|
+| Albedo guides not floored (`rt_rr_guide_min`) | 0 vs 0.01 a wash; higher is *worse* |
+| Texture mip LOD bias too sharp (`rt_mip_bias`) | +1.0 and +1.8 both leave worms |
+| Normal maps (`rt_normalmap_stren 0`) | no change |
+| Sampling (`rt_spp_direct/indirect 4`) | no change |
+| Blue-noise reuse taps (`rt_restir_bluenoise 0`) | no change |
+| `pInSpecularHitDistance` | no change |
+
+**Recommendation:** run RR at **DLAA or Quality**, not Balanced. At Balanced,
+A-SVGF is the better choice on this content.
+
+> A metric caution: plain high-pass energy scored RR and A-SVGF as *equal* here,
+> because worms and real texture detail carry similar energy at the same scale.
+> The artifact is only visible by direct magnified comparison against A-SVGF as
+> ground truth. Do not trust a scalar noise metric for this.
+
+### 11.2 Samples per pixel — landed, and it works
+
+Multi-sampling now exists for both lighting terms, defaulting to stock:
+
+- `rt_spp_direct` [1..8] — N independent direct estimates, averaged. Each sample
+  draws its own light point, RIS candidates and reuse taps. +1 shadow ray each;
+  the candidates are free (`calcInitialReservoir` traces no rays outside the
+  initial pass).
+- `rt_spp_indirect` [1..8] — N independent GI paths RIS-combined into the single
+  initial reservoir (the storage format holds one sample + one weight, and
+  neighbours read it during spatial reuse). ~4 extra rays each.
+
+Both take the stock code path verbatim at N=1, so the default build is
+unchanged. **User-confirmed: raising them does make the image more stable in
+motion** — the first lever all session to move that needle.
+
+Because sampling happens in the raygen, upstream of the denoiser choice, it
+helps A-SVGF and DLSS-RR equally; `rt_rayreconstr` remains the perf fallback.
+
+Also promoted the hardcoded ReSTIR constants to cvars — `rt_restir_initial`
+(RIS candidates, traces **no rays**, so try it before `rt_spp_direct`),
+`rt_restir_spatial`, `rt_restir_spatial_radius`, `rt_restir_mcap`.
+
+**Implementation traps worth knowing:** one sample consumes ~64 salts in
+`selectLight_Direct` and ~128 in `calcInitialReservoir`, so the per-sample salt
+stride is 256 — a smaller stride silently correlates the samples and the
+averaging does nothing while appearing to work. The blue-noise seed folds the
+per-sample salt in for the same reason.
+
+### 11.3 Not a regression: the flashlight history flush
+
+Toggling the flashlight makes the whole image re-settle at once. That is
+`rt_rr_reset_on_lightcut` firing a **global** `InReset` — landed 2026-08-06,
+but a no-op until RR actually started running. Working as designed; keep it at 1.
+
+### 11.4 Tooling for future sessions
+
+Automated static A/B without user involvement, in the session scratchpad:
+`probe.ps1` (launch with extra cvars → settle → screenshot → kill), `shot.ps1`
+(captures the "Ray Traced" window; **must call `SetProcessDPIAware()`** — this
+display is 200%, and without it the capture grabs the wrong screen region
+entirely). Only camera *motion* needs a human.
