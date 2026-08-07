@@ -143,8 +143,10 @@ start "" gzdoom.exe ^
   +rt_flsh_battery 1 +rt_flsh_on_secs 30 +rt_flsh_die_secs 4 +rt_flsh_off_secs 5 ^
   +rt_flsh_color ffbe82 ^
   +rt_emis_mapboost 200 +rt_emis_additive_dflt 0.15 +rt_emis_maxscrcolor 3 ^
+  +rt_sector_tint_lights 0.85 +rt_sector_tint_albedo 1.0 ^
+  +rt_sector_emis 0.35 +rt_sector_emis_minlight 160 ^
   +rt_sector_lights 0 +rt_sector_flicker 0 ^
-  +rt_dynlight 1 +rt_dynlight_flicker 0 +rt_dynlight_intensity 40 +rt_dynlight_max 500 +rt_dynlight_rsoft 40 +rt_dynlight_stack_atten 1 +rt_dynlight_radius 0.08 ^
+  +rt_dynlight 1 +rt_dynlight_flicker 0 +rt_dynlight_intensity 40 +rt_dynlight_max 500 +rt_dynlight_rsoft 20 +rt_dynlight_stack_atten 1 +rt_dynlight_debug 0 +rt_dynlight_debug_marks 0 +rt_dynlight_radius 0.08 ^
   +rt_ceiling_lamps 0 +rt_ceiling_lamp_intensity 0 +rt_ceiling_lamp_radius 0.10 ^
   +rt_ceiling_lamp_off 0.12 +rt_ceiling_lamp_fade 40 +rt_ceiling_lamp_maxspan 128 ^
   +rt_hang_lamps 1 +rt_hang_lamp_intensity 220 +rt_hang_lamp_radius 0.09 +rt_hang_lamp_zofs 4 ^

@@ -1,85 +1,96 @@
-# MAP02 Blue Room — RT Lighting Investigation
+# MAP02 Blue Room — RT Lighting
 
-**Date:** 2026-08-07  
-**Status:** Engine change implemented and built; visual confirmation still pending.
+**Date:** 2026-08-07
+**Status:** Superseded and replaced. The general fix is in; visually confirmed on the
+blue room and the red corridor.
+
+For the reusable principles behind this, see [rt-lighting-practices.md](rt-lighting-practices.md).
 
 ## Problem
 
-The Retribution MAP02 blue armor room did not match the original game in the RT renderer. In the original, the room has a strong blue atmosphere/filter. In the RT version, the aligned ceiling spotlight textures appeared neutral white and the room lost most of its blue character.
+The Retribution MAP02 blue armor room did not match the original game under RT. The
+original has a strong blue atmosphere; the RT version was neutral brown/grey with a warm
+white ceiling glow. Compare `screen/level2-blueroom.png` against
+`screen/level2-currentblueroom.png`.
 
-This was separate from the previously fixed false blinking lights in the middle of the room. Those were caused by over-broad ceiling emissive/analytic-light handling and are not recreated by this fix.
+The give-away is the hazard stripes: yellow-on-black in RT, cyan-on-dark in the original.
+Same texture — so the difference was lighting, not a missing texture or a missing lamp.
 
 ## Diagnosis
 
-Inspection of Retribution MAP02 `TEXTMAP` data in `Doom64-Retribution/D64RTR_v15.WAD` found sectors in the blue armor area using:
+Sectors in the blue armor area use `lightcolor = 20735 = 0x0050FF`. The RT compat path
+forces world vertex RGB to white under `rt_mod_compat`, which discards it. That
+force-white is itself a necessary workaround: sector colour and lightlevel arrive baked
+into vertex colour, and feeding them to the path tracer as albedo double-counts shading —
+the cause of the yellow key-door neon wash and the black light-absorbing rooms.
 
-```text
-lightcolor = 20735 = 0x0050FF
-```
+## What was tried first, and why it was rejected
 
-The RT compatibility path in `sourcecode/gzdoom-rt/src/common/rendering/rt/rt_main.cpp` intentionally forces world vertex RGB to white under `rt_mod_compat`. That earlier fix is necessary because sector colors and light levels caused other problems, including yellow key-door neon wash and black/light-absorbing dark rooms. However, forcing every world primitive to white also discarded the original MAP02 blue sector filter.
+An initial attempt detected Retribution MAP02 by map name, matched the specific
+`0x0050FF` colour profile with a hand-tuned RGB window, and applied three eyeballed
+constants `(0.35, 0.58, 1.0)` as an albedo tint.
 
-The missing color was therefore not treated as a missing point light or a new emissive texture. The correction restores the original sector color as a narrowly scoped surface tint.
+Rejected on review, for reasons that generalize:
 
-## Implementation
+- **Wrong channel.** It tinted albedo, not light. The room's emitters, bloom and speculars
+  stayed warm white, so the result was blue paint under a white lamp rather than blue
+  light. The reference shows blue *emitters*.
+- **Wrong scope.** A map-name check plus a tuned colour window fixes one room; colored
+  sector light is used across the whole game. (`strstr(name, "map02")` also matches
+  `map020`.)
+- **Wrong source for the constants.** The sector colour is available as map data; the
+  tint did not derive from it.
 
-The following engine files were changed:
+## What shipped
 
-- `sourcecode/gzdoom-rt/src/common/rendering/rt/rt_state.h`
-  - Added `FRtState::m_sectorLightColor` to carry the active sector colormap color.
+`RT_SectorHue()` in `rt_main.cpp`: peak-normalize the sector colormap to hue only — the
+largest channel becomes exactly 1, so the transform can never brighten or darken, only
+remove off-hue channels — then lerp toward white by a strength cvar. Lightlevel stays
+discarded, so neither the black rooms nor the neon wash can return through this path.
 
-- `sourcecode/gzdoom-rt/src/rendering/hwrenderer/scene/hw_flats.cpp`
-  - Stores `FColormap.LightColor` in RT state for floors and ceilings.
+The hue is applied to:
 
-- `sourcecode/gzdoom-rt/src/rendering/hwrenderer/scene/hw_walls.cpp`
-  - Stores the active wall colormap color in RT state.
-  - Also updates the state for 3D-light wall slices using their local colormap.
+- ceiling inset lamps (`RT_UploadCeilingInsetLamps`)
+- hanging tech lamps, via the lamp actor's own sector
+- sector-centre lights (`RT_UploadExportableSectorLights`), replacing a hardcoded
+  `RG_PACKED_COLOR_WHITE`
+- emissive world surfaces, at full light strength — **this is the one that mattered for
+  this room**, because the launcher forces `rt_ceiling_lamps 0` and the ceiling glow is
+  texture emissive under `rt_emis_mapboost`, not an analytic sphere
+- ordinary world surfaces, as albedo
 
-- `sourcecode/gzdoom-rt/src/common/rendering/rt/rt_main.cpp`
-  - Detects Retribution MAP02 using the RT map name.
-  - Matches only the strong blue profile: low red, medium green, and high blue, corresponding to the measured `0x0050FF` color.
-  - Applies a bounded tint of approximately `(0.35, 0.58, 1.0)` to affected world primitives.
-  - Keeps the existing white-world-albedo behavior everywhere else.
+`rt_sector_tint_albedo` defaults to 1.0: full normalized hue is what matches the original,
+confirmed visually on this room.
 
-The change does **not**:
+## The red corridor — a different failure
 
-- Add a point light at the sector center.
-- Re-enable generic ceiling lamps.
-- Add or restore `SFLAT*` emissive masks.
-- Affect other maps.
-- Tint ordinary MAP02 sectors such as the yellow-door areas.
-- Change sprites, weapons, UI, sky, decals, or particles.
+`screen/level2-corridor.png` vs `screen/level2-currentcorridor.png`. The original is black
+with saturated red panels; RT was simply unlit.
 
-## Validation
+That corridor has **no light source at all** under RT — no analytic lamp, no emissive
+texture, flashlight off. Hue tint provably cannot help: albedo is a reflectance
+multiplier, and zero incident light times red albedo is still black.
 
-The first build exposed type issues in the new code (`FVector3` uses `X/Y/Z`, and strict MSVC narrowing rules require float literals). Those were corrected.
+Fixed with `rt_sector_emis`: surfaces above `rt_sector_emis_minlight` self-emit, scaled by
+their own sector lightlevel and tinted by the sector hue, so the panels glow and light the
+room by GI. A sector-centre analytic sphere was tried first and rejected — it read as a red
+bulb floating in the corner rather than glowing floor panels.
 
-The final engine build completed successfully:
+## Also fixed in this pass
 
-```text
-sourcecode/gzdoom-rt/build/RelWithDebInfo/gzdoom.exe
-```
+- **Sticky render state.** `m_sectorLightColor` was a plain assignment written only by
+  walls/flats, leaking the last sector's hue onto later geometry. Now scoped via
+  `push_sectorlight()` (RAII), which also carries `m_sectorLightLevel` — kept separate from
+  `m_lightlevel`, which is sprite-only and feeds `localLightsIntensity` for every primitive.
+- **Overexposed yellow key-door jambs.** `rt_dynlight_rsoft` lowered 40 → 20. Unrelated to
+  the tint work: `RT_SectorHue` is peak-normalized and cannot add luminance.
+- **Debug usability.** `rt_dynlight_debug` now reports an xy-stack histogram and the five
+  lights nearest the camera; marker spheres moved to `rt_dynlight_debug_marks` because 67
+  markers at intensity 400 flooded the scene purple.
 
-## Remaining confirmation
+## Open
 
-Launch MAP02 with the rebuilt engine:
-
-```text
-tools/launch-retribution-rt.cmd 2
-```
-
-Compare the blue armor room against:
-
-```text
-screen/level2-blueroom.png
-screen/level2-currentblueroom.png
-```
-
-Confirm that:
-
-1. The room has the intended blue cast.
-2. The aligned spotlights remain visually plausible rather than becoming overbright blue emitters.
-3. The yellow key-door area does not regain its previous neon wash.
-4. No center-room blinking light returns.
-
-If the tint is too weak or too strong after visual testing, adjust the three bounded tint constants in `rt_main.cpp`; do not restore global sector-color multiplication.
+A white `PointLight` sits on the blue-room switch and does not belong there. Confirmed a
+GZDoom map/GLDEFS dynlight (`rt_dynlight 0` removes it, `rt_sector_emis 0` does not). Not
+yet fixed — use the nearest-light dump to identify its owner class and filter on that
+rather than on map position.
