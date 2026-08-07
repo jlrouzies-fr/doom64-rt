@@ -177,10 +177,96 @@ reached the renderer.
 | `rt_dynlight_debug` | false | Console stats: upload count + xy-stack histogram + nearest-light dump. |
 | `rt_dynlight_debug_marks` | false | Magenta marker spheres, separated so they cannot flood the scene. |
 
+## 12. Emissive surfaces are not light sources in RTGL1
+
+This is the single most important fact in this document.
+
+`HitInfo.inl` computes `emission = h.albedo * tr.emissiveMult` (or the `_e` map), and
+`RtRaygenIndirect.inl` applies `emissionMapBoost` — but **only inside `traceBounce()`**.
+Emission is collected when an indirect bounce ray happens to land on the surface. It
+never reaches `processDirectIllumination`, which is what samples uploaded lights and
+traces shadow rays.
+
+Consequences, none of which are tunable away:
+
+- An emissive surface **cannot cast a pool of light and cannot cast a shadow.**
+- At 1 spp indirect it contributes weak, noisy, diffuse fill — which reads as "flat".
+- Raising `rt_sector_emis` or `rt_emis_mapboost` increases noise and flatness, not
+  directional light.
+
+Use emission for **colour and glow**. Use `rgUploadLight` for anything that must
+actually light the room. The MAP02 blue room needed colour, so emission was right; the
+MAP03 corridor needed cast light, so it needed real lights.
+
+Note also that `RgLightPolygonalEXT` exists in `RTGL1.h` with a working encoder, but
+`LightManager.cpp` compiles it out behind `#if TRIANGLE_LIGHTS` and calls
+`debug::Error("Polygonal / triangle lights are not supported")`. **Checking the public
+header is not enough — check the implementation.** Uploading one crashes the game.
+Spherical lights with a wide radius and tight spacing are the working substitute for a
+strip.
+
+## 13. Never derive a direction from a winding convention you have not verified
+
+Wall strip lights were offset 2 units off the surface to avoid being coplanar with it.
+The offset used the left normal `(-dy, dx)` while treating sidedef 0 as the front — but
+Doom's front sidedef is on the **right**. Every light was placed 2 units *inside* solid
+geometry, fully occluded, emitting nothing.
+
+By eye this is indistinguishable from the lights never being uploaded.
+
+Derive the direction from geometry you can test instead: compare against the sector's own
+`centerspot` and flip the sign if it points the wrong way. That is correct regardless of
+how the mapper drew the line.
+
+## 14. Debug output must be aggregated, not truncated
+
+Two failures of the same kind, both of which cost a round trip:
+
+- A "12 nearest sidedefs" dump was swamped by a handful of repeated wall panels, so the
+  rarer fixture textures never appeared at all. Aggregating by distinct texture name —
+  with use count, which parts they appear as, lightlevel range, and whether the current
+  matcher accepts them — showed the whole picture in six lines.
+- A bare "0 lights uploaded" cannot distinguish "no fixtures in this map" from "fixtures
+  found, all rejected". Print a **rejection tally** broken down by cause, and put the
+  cheap gate (texture match) before the expensive one (lightlevel) so the counts mean
+  something.
+
+Related: when a fixture-driven feature only half works, the question is always "which
+surfaces did the matcher miss", and only a deduplicated inventory answers it.
+
+## 15. Sidedefs are not the only place fixtures live
+
+Doom 64 puts light strips on wall textures **and** on thin sector steps whose flats carry
+the lamp texture. A feature that walks `primaryLevel->lines` sees only the first kind.
+`RT_UploadCeilingInsetLamps` covers the second (`SFLATAS`/`SFLATAQ`/`SFLATAP`/`SPORT*`),
+and the launcher disables it by default — so before writing new code to find a missing
+fixture, check whether an existing path already covers it and is merely switched off.
+
 ## Known open item
 
-A white dynamic light sits on the MAP02 blue-room switch and does not belong there. It is
-a GZDoom map/GLDEFS `PointLight` (confirmed: `rt_dynlight 0` removes it; `rt_sector_emis 0`
-does not). It has **not** been fixed. `rt_dynlight_debug` now dumps the five lights
-nearest the camera with owner class, colour, radius and position — walk up to the switch,
-read `rt-console.log`, and filter on the owner class rather than on map position.
+**MAP03 upper wall light strips still cast no light.** The floor-level bulb trim
+(`SPACEAR`/`SPACEAR1`) is handled by `RT_UploadWallStripLights` and works — 57 matched
+sidedefs, 98 lights, no rejections. The strips higher on the wall are *not* sidedef
+textures: within 256u the only other names present are `SPACEAI1` (flat normal map,
+metallic band in ORM — panelling), `SPACEAC` (ribbed panel), `SWXSFB`, `SPACEBE` and
+`SMONAA`, none of which is a bulb fixture.
+
+Most likely they are thin sector steps whose **flats** carry the lamp texture, which
+`RT_UploadCeilingInsetLamps` already handles — and which the launcher force-disables with
+`rt_ceiling_lamps 0`. Test that before writing new code:
+
+```
+.\tools\launch-retribution-rt.cmd 3 -- +rt_ceiling_lamps 1 +rt_ceiling_lamp_intensity 400
+```
+
+`rt_ceiling_lamp_maxspan 128` skips large sectors, so a long corridor shelf may still be
+excluded.
+
+## Resolved this session
+
+The white dynamic light on the MAP02 blue-room switch is fixed. It was a bare stock
+`PointLight` map thing (white, map radius 12) placed to keep the switch readable under the
+raster renderer. Real fixtures nearby are r>=32 (`64BlueArmor` 32, `64TechPoleShort` 48),
+so `rt_dynlight_minradius` (default 16) separates helper lights from fixtures by radius —
+no class list, no position match. It is applied after `curDynIds.insert` so skipping a
+light does not register as a light disappearing and flush RR temporal history.
