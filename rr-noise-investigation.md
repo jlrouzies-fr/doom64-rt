@@ -20,8 +20,15 @@ Not a cheer sheet: record symptoms, failed fixes, working knobs, and next experi
 > measuring **A-SVGF**.
 >
 > All three are fixed and RR is now verified running. **§10 supersedes the
-> conclusions in §1, §3.3 and §9.** The investigation is closed with a
-> recommendation, not an open hunt — do not resume §7 without reading §10.
+> conclusions in §1, §3.3 and §9.** Do not resume §7 without reading §10.
+>
+> **§11.1 then closes the "RR worm artifact" that §10 left open — and it was a
+> fourth invisible setting, not a renderer defect.** `rt_restir_tjitter` was
+> stuck at `0` from an A/B, which removes the decorrelation from ReSTIR temporal
+> reuse; RR turns the resulting correlated noise into filaments, A-SVGF absorbs
+> it. Every "RR is worse than A-SVGF" observation in this document is suspect
+> unless the `ReSTIR uniforms:` / `RR guides:` / `Denoiser path:` log lines were
+> checked for that run.
 
 ---
 
@@ -391,57 +398,82 @@ investigations. **Persist the value, never the switch.**
 Supersedes §10.4's "stop here" recommendation: RR has a **specific, isolated
 defect** beyond the general 1-spp noise, and a real quality lever now exists.
 
-### 11.1 The worm artifact — RR-only, and it is not noise
+### 11.1 The worm artifact — SOLVED: a stuck cvar, not an RR defect
 
-**Symptom:** distant, dimly-lit *detailed* textures are replaced by correlated
-dark filaments. Near, brightly-lit surfaces are clean. Screenshots:
-`screen/blackdotsfurther.png` (RR) vs `screen/asvgnoworm.png` (A-SVGF).
+**Symptom:** distant, dimly-lit *detailed* textures replaced by correlated dark
+filaments; near, brightly-lit surfaces clean. RR only — A-SVGF was always clean
+on the same signal. Screenshots: `screen/blackdotsfurther.png`,
+`screen/rr-dlaa-still-worms.png` (RR) vs `screen/asvgnoworm.png` (A-SVGF).
 
-**It is not noise — it is failed texture reconstruction.** Magnifying the far
-ceiling shows A-SVGF resolving a clean diamond lattice where RR produces
-worms in the same place. RR is destroying a real texture, not adding grain.
+**Root cause: `rt_restir_tjitter 0`, left over from an A/B earlier the same
+day.** Confirmed by explicit A/B (`tools/ab-restir-stock.cmd broken|stock`).
 
-**Cause: still unknown.** Render resolution changes how *visible* it is, but is
-not the cause:
+`rt_restir_tjitter` is the ReSTIR temporal reuse tap jitter radius, stock 2.
+At 0 every pixel reprojects to *exactly* the same previous pixel, so neighbours
+reuse in lockstep and the residual noise becomes spatially correlated. RR's
+temporal pass latches onto that correlation and smears it into filaments;
+A-SVGF's spatial filter absorbs it, which is precisely why the artifact looked
+RR-specific and led the whole investigation astray.
 
-| `rt_upscale_dlss` | result |
-|---|---|
-| 2 = Balanced (default) | worms worst, lattice destroyed |
-| 1 = Quality | less visible |
-| 6 = DLAA (native) | least visible — **but still present** |
+Two other cvars were also stuck: `rt_shadow_samples 3` and
+`rt_rr_spechitdist 0`. Neither is implicated in the worms.
 
-> **Retracted 2026-08-07.** This section previously claimed DLAA *resolves* the
-> artifact, and recommended running RR at DLAA on that basis. Wrong, on both the
-> facts and the method: the conclusion came from my own reading of screenshots,
-> and user comparison of `screen/rr-dlaa-still-worms.png` against
-> `screen/asvgnoworm.png` shows the worms surviving at DLAA in a frame where
-> A-SVGF at the same resolution is clean. **Lesson: I cannot reliably judge this
-> artifact from screenshots. Confirm every visual verdict on it with the user.**
+**There was no code regression.** Nothing in the renderer was broken.
 
-That A-SVGF is clean at the *same* render resolution is the load-bearing fact:
-whatever RR is failing at, the input signal is sufficient to reconstruct the
-texture, because another denoiser does. Resolution only scales the artifact's
-amplitude. So a Nyquist/albedo-guide-detail explanation does not hold, and the
-mechanism is still open.
+#### How the bisect lied
 
-**Ruled out by measurement (do not repeat):**
+`tools/build-rtgl-variant.cmd` built five historical RTGL runtimes (DLL + its
+SPIR-V, which must be swapped together — the `ShGlobalUniform` layout changed
+repeatedly). Every build up to `3adfcf8` was clean; `b031a21` and later were
+wormy. That looks conclusive and is completely misleading: `b031a21` is the
+commit that replaced the hardcoded `TEMPORAL_RADIUS 2` with the
+`restirTemporalJitter` uniform. Older builds physically *cannot* read the stuck
+cvar, so they use the constant and look correct.
 
-| Hypothesis | Result |
-|---|---|
-| Albedo guides not floored (`rt_rr_guide_min`) | 0 vs 0.01 a wash; higher is *worse* |
-| Texture mip LOD bias too sharp (`rt_mip_bias`) | +1.0 and +1.8 both leave worms |
-| Normal maps (`rt_normalmap_stren 0`) | no change |
-| Sampling (`rt_spp_direct/indirect 4`) | no change |
-| Blue-noise reuse taps (`rt_restir_bluenoise 0`) | no change |
-| `pInSpecularHitDistance` | no change |
+> **A bisect that lands on the commit which introduced a knob should be
+> suspected of finding the knob's stuck value, not a code defect.** The tell was
+> visible and ignored: `b031a21`'s only functional change at default values was
+> that one substitution, i.e. a no-op if the cvar really were 2.
 
-**Recommendation:** run RR at **DLAA or Quality**, not Balanced. At Balanced,
-A-SVGF is the better choice on this content.
+#### What actually found it
 
-> A metric caution: plain high-pass energy scored RR and A-SVGF as *equal* here,
-> because worms and real texture detail carry similar energy at the same scale.
-> The artifact is only visible by direct magnified comparison against A-SVGF as
-> ground truth. Do not trust a scalar noise metric for this.
+Logging the values reaching the shader (`ReSTIR uniforms:` in
+`VulkanDevice.cpp`, beside `Denoiser path:` and `RR guides:`):
+
+```
+ReSTIR uniforms: temporalJitter=0 (stock 2), shadowSamples=3 (stock 1), ...
+```
+
+One line, and the whole search collapsed. Measuring the value beat four rounds
+of reasoning about mechanisms.
+
+#### Method failures to not repeat
+
+1. **A tuning knob outlived its session.** `rt_restir_tjitter 0` was set for an
+   A/B, judged "not much difference", and never reset. Fixed: every
+   investigation knob is now `RT_CVAR_NOARCH` (§11.5).
+2. **An A/B arm that sets nothing is not a control.** `stock` vs `live` came
+   back "identical" because `stock` archived its values and `live` then read
+   them — both arms were the fixed state. For a persisted cvar **both arms must
+   set every value explicitly**.
+3. **"No difference" was repeatedly accepted without checking the arm was
+   real.** `rt_rr_disocc 0` left `pInDisocclusionMask` bound (it only wrote
+   zeros), so neither arm tested "no mask". `rt_restir_bluenoise` was judged in
+   the *unfiltered* view, which by construction cannot show a temporal effect.
+   Treat a null result as a reason to verify the test.
+4. **Screenshot analysis produced two confident wrong conclusions** — the DLAA
+   claim and the "failed texture reconstruction" reading. Both were retracted
+   after the user looked. Visual verdicts on this artifact need a human.
+
+**Ruled out along the way (all genuinely negative, all irrelevant to the real
+cause):** `rt_rr_guide_min`, `rt_mip_bias` (+1.0/+1.8), `rt_normalmap_stren 0`,
+`rt_spp_direct/indirect 4`, `rt_restir_bluenoise 0`, `pInSpecularHitDistance`,
+`pInDisocclusionMask`, `rt_rr_guide_mode 0/1/2`, RR preset D vs E, render
+resolution (Balanced/Quality/DLAA changes visibility only).
+
+> A metric caution that still stands: plain high-pass energy scored RR and
+> A-SVGF as *equal* here, because filaments and real texture detail carry
+> similar energy at the same scale. Do not trust a scalar noise metric for this.
 
 ### 11.2 Samples per pixel — landed, and it works
 
@@ -476,7 +508,10 @@ per-sample salt in for the same reason.
 
 Toggling the flashlight makes the whole image re-settle at once. That is
 `rt_rr_reset_on_lightcut` firing a **global** `InReset` — landed 2026-08-06,
-but a no-op until RR actually started running. Working as designed; keep it at 1.
+but a no-op until RR actually started running. Working as designed.
+
+It is now `RT_CVAR_NOARCH`, so it comes up enabled on every launch and a `0`
+left behind by an A/B can no longer silently reinstate the ~3-7 s linger.
 
 ### 11.4 Tooling for future sessions
 
@@ -484,4 +519,39 @@ Automated static A/B without user involvement, in the session scratchpad:
 `probe.ps1` (launch with extra cvars → settle → screenshot → kill), `shot.ps1`
 (captures the "Ray Traced" window; **must call `SetProcessDPIAware()`** — this
 display is 200%, and without it the capture grabs the wrong screen region
-entirely). Only camera *motion* needs a human.
+entirely). Only camera *motion* needs a human — and per §11.1, so does any
+visual verdict on the worm artifact.
+
+In `tools/`, committed:
+
+| tool | purpose |
+|---|---|
+| `launch-retribution-rt.cmd <map> [debug] [-- +cvar val ...]` | the `--` passthrough lands after the built-in cvars, so it wins. A/B arms are pre-set, never typed into the console. |
+| `ab-restir-stock.cmd <stock\|broken>` | the arms that identified §11.1. Both set every value explicitly. |
+| `ab-rr-guide.cmd`, `ab-rr-disocc.cmd`, `ab-rr-bluenoise.cmd` | single-knob arms, all measured negative |
+| `build-rtgl-variant.cmd <commit> <name>` | builds a historical RTGL into `tools/rtgl-variants/<name>/` via a throwaway git worktree; captures DLL **and** SPIR-V (the `ShGlobalUniform` layout changed repeatedly, so they must be swapped together) and refuses a variant with no RR compiled in |
+| `ab-rtgl-baseline.cmd <variant>` | swaps a whole RTGL runtime into place |
+
+`tools/rtgl-variants/` is gitignored — the binaries are reproducible.
+
+### 11.5 The durable fix: knobs must not outlive their session
+
+15 investigation cvars moved from `RT_CVAR` to `RT_CVAR_NOARCH`
+(`CVAR_GLOBALCONFIG` without `CVAR_ARCHIVE`): `rt_restir_tjitter`,
+`rt_shadow_samples`, `rt_rr_spechitdist`, `rt_restir_bluenoise`,
+`rt_spp_direct/indirect`, `rt_restir_initial/spatial/spatial_radius/mcap`,
+`rt_rr_guide_min`, `rt_rr_guide_mode`, `rt_mip_bias`, `rt_debug_restir_m`,
+`rt_rr_firefly`, `rt_rr_firefly_minlum` — plus `rt_rr_reset_on_lightcut`.
+
+They stay console-settable for a deliberate in-session A/B; they simply do not
+survive a restart.
+
+**Acceptance test (run it if this is ever touched):** launch with
+`+rt_restir_tjitter 0`, confirm `ReSTIR uniforms: temporalJitter=0` in
+`rt-console.log`; quit; relaunch with no arguments; the same line must read
+`temporalJitter=2`. Verified 2026-08-07.
+
+The diagnostics that made this findable — `Denoiser path:`, `RR guides:`,
+`ReSTIR uniforms:`, all edge-triggered in `VulkanDevice.cpp` — should stay.
+Four faults in this investigation were invisible settings, and the one that took
+longest was found by printing a number rather than by reasoning about it.
