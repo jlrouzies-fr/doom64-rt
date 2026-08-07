@@ -401,19 +401,28 @@ dark filaments. Near, brightly-lit surfaces are clean. Screenshots:
 ceiling shows A-SVGF resolving a clean diamond lattice where RR produces
 worms in the same place. RR is destroying a real texture, not adding grain.
 
-**Cause: render resolution.** The artifact is monotonic in it:
+**Cause: still unknown.** Render resolution changes how *visible* it is, but is
+not the cause:
 
 | `rt_upscale_dlss` | result |
 |---|---|
-| 2 = Balanced (default) | worms, lattice destroyed |
-| 1 = Quality | lattice partially resolved |
-| 6 = DLAA (native) | lattice resolved |
+| 2 = Balanced (default) | worms worst, lattice destroyed |
+| 1 = Quality | less visible |
+| 6 = DLAA (native) | least visible — **but still present** |
 
-RR's albedo guide is produced at **render** resolution, so texture detail beyond
-its Nyquist limit is simply not available for RR to reconstruct at output
-resolution — and RR hallucinates filaments in its place. A-SVGF + DLSS-SR escapes
-this because DLSS-SR upscales an already-denoised, texture-complete image,
-whereas RR must denoise *and* upscale from noisy inputs.
+> **Retracted 2026-08-07.** This section previously claimed DLAA *resolves* the
+> artifact, and recommended running RR at DLAA on that basis. Wrong, on both the
+> facts and the method: the conclusion came from my own reading of screenshots,
+> and user comparison of `screen/rr-dlaa-still-worms.png` against
+> `screen/asvgnoworm.png` shows the worms surviving at DLAA in a frame where
+> A-SVGF at the same resolution is clean. **Lesson: I cannot reliably judge this
+> artifact from screenshots. Confirm every visual verdict on it with the user.**
+
+That A-SVGF is clean at the *same* render resolution is the load-bearing fact:
+whatever RR is failing at, the input signal is sufficient to reconstruct the
+texture, because another denoiser does. Resolution only scales the artifact's
+amplitude. So a Nyquist/albedo-guide-detail explanation does not hold, and the
+mechanism is still open.
 
 **Ruled out by measurement (do not repeat):**
 

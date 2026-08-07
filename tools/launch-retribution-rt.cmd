@@ -1,5 +1,7 @@
 @echo off
-setlocal EnableExtensions
+rem DelayedExpansion is needed to accumulate the "--" passthrough in a loop.
+rem Safe here: no literal '!' appears anywhere else in this script.
+setlocal EnableExtensions EnableDelayedExpansion
 set "ENGINE=G:\AI\Doom64-RT\sourcecode\gzdoom-rt\build\RelWithDebInfo"
 set "IWAD=D:\Games\GZDoom\doom2.wad"
 set "MOD=G:\AI\Doom64-RT\Doom64-Retribution\D64RTR_v15.WAD"
@@ -14,13 +16,29 @@ rem whitelisted to run at GS_STARTUP (c_dispatch.cpp), so it captures
 rem everything from boot, including RTGL -rtdebug output.
 set "LOGF=G:\AI\Doom64-RT\rt-console.log"
 
-rem Usage: launch-retribution-rt.cmd [1-32] [debug]
+rem Usage: launch-retribution-rt.cmd [1-32] [debug] [-- +cvar val ...]
 rem   Optional map number (default 1) → +map map01 … map32
 rem   Second arg "debug" → -rtdebug (RTGL messages to console: DLSS-RR init
 rem     success/failure, shader load errors. Muted by default; rt_main.cpp
 rem     sets allowedMessages=0 without it, so RR failing is otherwise silent.)
+rem   Everything after "--" is appended verbatim to the command line, so it
+rem     lands AFTER the cvars below and therefore wins. This is how A/B arms
+rem     get pre-set (see ab-rr-guide.cmd) instead of being typed into the
+rem     console: a hand-typed cvar is one forgotten keystroke from an invalid
+rem     comparison, and CVAR_ARCHIVE then persists the mistake into later runs.
 set "RTDEBUG="
 if /i "%~2"=="debug" set "RTDEBUG=-rtdebug"
+
+rem Collect the post-"--" passthrough without disturbing %1/%2 parsing above.
+set "EXTRA="
+set "SEEN_SEP="
+for %%A in (%*) do (
+  if defined SEEN_SEP (
+    set "EXTRA=!EXTRA! %%~A"
+  ) else (
+    if "%%~A"=="--" set "SEEN_SEP=1"
+  )
+)
 set "MAPNUM=%~1"
 if "%MAPNUM%"=="" set "MAPNUM=1"
 set /a "N=MAPNUM" 2>nul
@@ -118,7 +136,7 @@ start "" gzdoom.exe ^
   +rt_rr_disocc 1 +rt_rr_disocc_ratio 3.0 +rt_rr_disocc_mindelta 0.01 +rt_rr_disocc_show 0 ^
   +rt_rr_reset_on_lightcut 1 +rt_rr_reset_on_dynlight 1 +rt_rr_reset_delta 0.5 +rt_rr_reset_min_ms 250 ^
   +rt_rr_reset_hold 0 +rt_rr_reset_now 0 +rt_rr_reset_debug 0 ^
-  +rt_normalmap_stren 1 +rt_heightmap_stren 1
+  +rt_normalmap_stren 1 +rt_heightmap_stren 1 %EXTRA%
 exit /b 0
 
 :badmap

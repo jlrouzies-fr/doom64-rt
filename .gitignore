@@ -126,3 +126,7 @@ tools/_switch_qa/
 .cache/
 **/huggingface/
 **/.huggingface/
+
+# A/B snapshots of built RTGL runtimes (DLL + SPIR-V). Reproducible from
+# git history via tools/build-rtgl.cmd; never commit the binaries.
+tools/rtgl-variants/
