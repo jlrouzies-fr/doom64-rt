@@ -9,6 +9,16 @@ rem contents, guide floor, specular hit distance, disocclusion mask, mip bias,
 rem blue noise, spp) came back negative, so the cause is something with no knob
 rem on it. This compares two complete runtimes and cannot miss it.
 rem
+rem BISECT POINTS (build more with build-rtgl-variant.cmd <commit> <name>):
+rem   aug03  df2797e  08-02  native NGX Vulkan DLSS-RR path      <- CONFIRMED GOOD
+rem   aug04  cb067f5  08-04  Dev Materials A/B, RR live knobs, roughness matte
+rem   aug05  d50bbcb  08-05  DLSS-RR, emissive mult>1, ceiling/hang lamps
+rem   aug06  0683fbb  08-06  guide fixes + disocclusion mask
+rem   head            08-07  current                             <- CONFIRMED BAD
+rem
+rem Binary search: test aug05 first. Good -> the cause is in aug06 or the 08-07
+rem commits; bad -> it is in aug04 or aug05.
+rem
 rem   aug03 = sourcecode/gzdoom-rt/build/WashScratch/rt (2026-08-03)
 rem           Predates the 08-05 guide rework, the 08-06 disocclusion mask and
 rem           every 08-07 change. Verified to have RR compiled IN (it contains
