@@ -34,10 +34,20 @@ MAP02-spawn "4 blinking lights" ignored every dynlight cvar tested. Fix:
 re-check** (should reduce, not necessarily eliminate, localized salt at those
 lamps — see NEXT ACTION).
 
-**Root cause #5 (the big one, fixed 2026-08-07): RTGL's Dev UI was silently
+**Root cause #6 (THE blocker, fixed + VERIFIED 2026-08-07): a stale
+`rt_upscale_fsr2=2` in the ini overwrote the DLSS upscaler selection, and RTGL
+silently drops Ray Reconstruction whenever the upscaler isn't DLSS.** Fixing #5
+was *not* enough — `rt_rayreconstr` still did nothing until this. **DLSS-RR is
+now confirmed running**, by logging from inside RTGL, and `rt_rayreconstr`
+`0`/`1` demonstrably switches denoiser paths. Three independent layers of muted
+diagnostics had to be removed before the bug was even observable. See root
+cause #6 below — this is the one to read.
+
+**Root cause #5 (fixed 2026-08-07): RTGL's Dev UI was silently
 overriding `rt_rayreconstr`, and the override persisted across launches.** RR
 was **off** for essentially every test in this document. Everything reported as
 "RR is stable / RR is noisy / RR fixed the linger" was measuring **A-SVGF**.
+Real, but not the blocker — see #6.
 `rt_rr_status` could not detect this — it reads gzdoom's request, upstream of
 the override. See "Root cause #5" below for the mechanism and what it
 invalidates.
@@ -339,18 +349,79 @@ scratchpad as `devmode_settings.json.bak`).
 | "`rt_emis_maxscrcolor` rules out proposals item 1" | **False** — override reverted it; item 1 still open |
 | Ghosting on shotgun sprite vs flashlight | Not reproducible on retry; parked |
 
+## Root cause #6 (THE one that kept RR off, fixed + verified 2026-08-07)
+
+Root cause #5 was real but was **not** why `rt_rayreconstr` did nothing. After
+fixing #5 the cvar still had no effect. Ground-truth logging (added this
+session, see below) produced the contradiction that cracked it:
+
+```
+gzdoom : RT upscale/RR decision: DLSS2=yes nvDlss=2 wantNativeRr=yes -> rayReconstruction=ON
+RTGL   : Setup(): params.upscaleTechnique=2  params.rayReconstruction=1
+RTGL   : Denoiser path: A-SVGF (DLSS-RR object=present, DLSS upscaler=off, RR flag=off)
+```
+
+`upscaleTechnique=2` is `AMD_FSR2`; `NVIDIA_DLSS` is `3`.
+
+**Cause:** in `RT_UpscaleCvarsToRtgl`, DLSS and FSR2 both write
+`pDst->upscaleTechnique`, and the FSR switch runs **second**:
+
+```cpp
+switch( nvDlss ) { case 2: pDst->upscaleTechnique = NVIDIA_DLSS; ... }
+switch( amdFsr ) { case 2: pDst->upscaleTechnique = AMD_FSR2; ... }  // clobbers
+```
+
+`rayReconstruction` was then set anyway, because that check only tested
+`nvDlss != 0` and never rechecked that DLSS survived. gzdoom therefore sent
+RTGL **"upscaler = FSR2 + rayReconstruction = 1"**, and
+`RenderResolutionHelper::Setup` resolves that contradiction by silently
+clearing `rayReconstruction` (it requires DLSS) and running A-SVGF.
+
+The trigger was `rt_upscale_fsr2=2` sitting in
+`Documents/My Games/GZDoom/gzdoom-rt2.ini` (default `0`). `RT_CVAR` ⇒
+`CVAR_ARCHIVE`, the launcher never reset it — **the third time a persisted
+archived cvar silently invalidated an entire run of tests** (see #2, #5).
+
+**Fixes (`gzdoom-rt` `23e12994b`):**
+1. Upscalers made mutually exclusive — DLSS wins when both are set (RR needs
+   it), with a one-time console warning naming both cvars.
+2. `rayReconstruction` now gated on the technique that actually survived both
+   switches, so the contradiction cannot be reconstructed.
+3. Launcher forces `+rt_upscale_fsr2 0`; the stale ini value was corrected
+   (backup: `gzdoom-rt2.ini.bak` in the session scratchpad).
+
+### Why this took so long: three layers of silence
+
+Each had to be removed before the bug was even observable.
+
+| Layer | Effect | Fix |
+|---|---|---|
+| `RgInstanceCreateInfo::allowedMessages = 0` without `-rtdebug` | muted RTGL **WARNING and ERROR** — this is how "RR compiled out of the DLL" (#1) hid | always allow `WARNING\|ERROR` |
+| `RT_Print` → `DPrintf( DMSG_WARNING, ... )` | second gate: needs gzdoom `developer >= 2` | `Printf` for warnings |
+| No report of the *applied* state anywhere | `rt_rr_status` showed only the request | RTGL logs `Setup()` params + resolved denoiser path |
+
+**Verified in-game, ground truth from inside RTGL:**
+
+| `rt_rayreconstr` | logged denoiser path |
+|---|---|
+| `1` | `DLSS-RR (ComposeNoisy -> nvDlssRr->Apply)` — upscaler=on, RR flag=on |
+| `0` | `A-SVGF (Denoise)` — DLSS upscaler still on |
+
+**DLSS-RR is now confirmed running for the first time in this investigation.**
+`nvDlssRr` is non-null, so root cause #1's CMake fix is also confirmed good at
+runtime.
+
 ## NEXT ACTION — re-baseline everything with RR actually on
 
 Nothing about DLSS-RR's real behaviour is currently known. Start over:
 
-1. Launch with `tools\launch-retribution-rt.cmd 1 debug`. Confirm **no**
-   `Dev override: DLSS Ray Reconstruction forced ...` warning appears. If one
-   does, the Dev UI is still overriding — hit "Follow game (rt_rayreconstr)"
-   or delete `rt/devmode_settings.json` again.
-2. Establish the A/B properly: `rt_rayreconstr 0` vs `1` should now visibly
-   change the image. **If it does not, stop** — the cvar still isn't reaching
-   RTGL and everything downstream stays unmeasurable.
-3. Only then re-judge: RR vs A-SVGF noise, whether the linger is actually fixed
+1. **Done — the plumbing is fixed and verified** (root cause #6). Any launch
+   now prints `Denoiser path: ...` to the console/log without needing
+   `-rtdebug`. Confirm it reads `DLSS-RR` before trusting any RR observation;
+   that one line is the whole acceptance test.
+2. **Done** — `rt_rayreconstr 0` vs `1` now demonstrably switches the denoiser
+   path. Both states verified from inside RTGL.
+3. Now re-judge: RR vs A-SVGF noise, whether the linger is actually fixed
    under RR (root causes #3/#4 have never been tested against RR), and the
    MAP02 blinking-lamp noise.
 4. Re-test `rt_emis_maxscrcolor 0` (proposals item 1) — the previous run was

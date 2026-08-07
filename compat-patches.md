@@ -485,4 +485,55 @@ every frame — so console cvars mapping to any of those were silently reverted.
 override that outlives the session which enabled it will eventually be mistaken
 for normal behaviour. Persist the *value*, never the *switch*. And never treat a
 "requested" readout as confirmation — instrument the applied state.
+
+## Stale rt_upscale_fsr2 silently disabled DLSS-RR (2026-08-07)
+
+**Symptom:** `rt_rayreconstr 0` vs `1` did nothing, even after fixing the Dev-UI
+override above. DLSS-RR never ran.
+
+**Cause:** `rt_upscale_dlss` and `rt_upscale_fsr2` both write
+`RgStartFrameRenderResolutionParams::upscaleTechnique` in
+`RT_UpscaleCvarsToRtgl`, and the FSR switch runs **second**:
+
+```cpp
+switch( nvDlss ) { case 2: pDst->upscaleTechnique = NVIDIA_DLSS; ... }
+switch( amdFsr ) { case 2: pDst->upscaleTechnique = AMD_FSR2; ... }  // clobbers
+```
+
+`rayReconstruction` was set afterwards regardless, because that check only
+tested `nvDlss != 0` and never rechecked that DLSS survived. gzdoom thus sent
+RTGL `upscaler = FSR2` **and** `rayReconstruction = 1`;
+`RenderResolutionHelper::Setup` resolves that contradiction by silently
+clearing RR (it requires DLSS) and running A-SVGF.
+
+Trigger: `rt_upscale_fsr2=2` persisted in
+`Documents/My Games/GZDoom/gzdoom-rt2.ini` (default `0`). Every `RT_CVAR` is
+`CVAR_ARCHIVE` and the launcher never reset it — the third instance of a
+persisted archived cvar invalidating an entire run of tests.
+
+**Fix (`sourcecode/gzdoom-rt` `23e12994b`):** upscalers made mutually exclusive
+(DLSS wins when both are set, since RR requires it, with a one-time console
+warning naming both cvars); `rayReconstruction` gated on the technique that
+actually survived both switches; launcher forces `+rt_upscale_fsr2 0`.
+
+**Three layers of silence had to be removed before this was observable** — each
+is a fix in its own right:
+
+| Layer | Effect |
+|---|---|
+| `RgInstanceCreateInfo::allowedMessages = 0` without `-rtdebug` | muted RTGL **WARNING and ERROR**; this is how "RR compiled out of the DLL" hid |
+| `RT_Print` → `DPrintf( DMSG_WARNING, ... )` | second gate, needs gzdoom `developer >= 2` |
+| nothing reported the *applied* state | `rt_rr_status` only ever showed the request |
+
+Now: `WARNING\|ERROR` always allowed, warnings use `Printf`, and RTGL logs both
+the incoming `Setup()` params and the resolved denoiser path (`RTGL 3e524bb`).
+
+**Verified in-game:** `rt_rayreconstr 1` → `Denoiser path: DLSS-RR (ComposeNoisy
+-> nvDlssRr->Apply)`; `rt_rayreconstr 0` → `Denoiser path: A-SVGF (Denoise)`.
+First confirmation that DLSS-RR actually runs, and confirmation that root cause
+\#1's CMake fix is good at runtime (`nvDlssRr` non-null).
+
+**Lesson:** when two settings write one field, the second silently wins. Make
+such pairs mutually exclusive and loud, and validate derived flags against the
+value that actually survived — not against the input that motivated them.
 - Rebuild: `tools/build-gzdoom-rt.cmd` (2026-08-06). No `deps/RTGL` changes.

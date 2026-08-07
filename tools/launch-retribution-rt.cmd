@@ -48,6 +48,10 @@ rem  The rt_rr_* diagnostics (reset_hold / reset_now / reset_debug) are forced t
 rem  below on purpose: every RT_CVAR is CVAR_ARCHIVE, so one left at 1 in a console
 rem  session silently persists in the ini and poisons every later A/B test. Set them
 rem  from the console when testing, not here.
+rem  rt_upscale_fsr2 0 is forced for the same reason and matters more: DLSS and FSR2
+rem  share one upscaler slot, FSR2 is applied second, and Ray Reconstruction only
+rem  runs under DLSS. A stale rt_upscale_fsr2=2 in the ini silently disabled RR on
+rem  every launch while rt_rayreconstr still read 1 (2026-08-07).
 
 if not exist "gzdoom.exe" (
   echo ERROR: missing gzdoom.exe under %ENGINE%
@@ -96,7 +100,7 @@ start "" gzdoom.exe ^
   +rt_mod_compat 1 +r_drawvoxels 0 ^
   +d64_enterfade 0 +d64_exitfade 0 ^
   +rt_fluid false +rt_autoexport false ^
-  +rt_upscale_dlss 2 +rt_rayreconstr 1 +rt_framegen 0 ^
+  +rt_upscale_dlss 2 +rt_upscale_fsr2 0 +rt_rayreconstr 1 +rt_framegen 0 ^
   +gl_noskyboxes false ^
   +rt_sky 25 +rt_sky_always true ^
   +rt_classic 0 ^
