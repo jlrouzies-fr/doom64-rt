@@ -154,10 +154,19 @@ rem SFLATC_e/SPACECE_e emissive maps go to rt/mat so the painted bulbs actually 
 rem
 rem rt_faux_lamps: SFLATC (flat) and SPACECE (wall) are NOT lamp textures -- no bulbs in
 rem the art, and the original game lights neither -- but they ceiling and clad rooms that
-rem read as too dark under RT, MAP03's stair hall among them. They are run through the
-rem same perimeter walks as the real bulb arrays, in a dark blue-grey and at a lower
-rem intensity, with their own light budget so an invented fixture can never push a real
-rem one out of the nearest-N set. Set rt_faux_lamps 0 to see the rooms as authored.
+rem read as too dark under RT, MAP03's stair hall among them. SFLATC places on its own
+rem bulb lattice (see d64r-bulb-textures.wad above); SPACECE still uses the wall strip
+rem perimeter walk. Colour is a dark blue-grey, used RAW rather than hue-normalised, with
+rem its own light budget so an invented fixture can never push a real one out of the
+rem nearest-N set. Set rt_faux_lamps 0 to see the rooms as authored.
+rem
+rem Colour and intensity were raised together (2026-08-08): at the old 110 the tint was
+rem too faint to read as deliberately blue-grey rather than dim-white. 500 is well above
+rem the real bulb arrays' 180 -- these rooms needed more lift than the real fixtures give
+rem elsewhere -- and the colour was resaturated from 6E7F94 to 3C5078 (channel spread
+rem 1.35x -> 2.0x) to survive it: the colour is RAW radiance, not hue-normalised, so
+rem scaling intensity scales all three channels together and a weakly-saturated colour
+rem gets pushed toward the tonemapper's white clip point faster than a saturated one does.
 rem
 rem d64r-seqlight-fix.wad replaces maps to clear LightSequence chains -- phased
 rem waves of light that travel along a run of sectors with no fixture casting
@@ -203,10 +212,11 @@ start "" gzdoom.exe ^
   +rt_ceiling_edge_radius 0.35 +rt_ceiling_edge_zofs 10 +rt_ceiling_edge_inset 10 ^
   +rt_ceiling_edge_max 320 +rt_ceiling_edge_maxdist 1536 ^
   +rt_ceiling_edge_debug 0 +rt_ceiling_edge_debug_marks 0 ^
-  +rt_faux_lamps 1 +rt_faux_lamp_color 6E7F94 +rt_faux_lamp_intensity 110 ^
+  +rt_faux_lamps 1 +rt_faux_lamp_color 3C5078 +rt_faux_lamp_intensity 500 ^
   +rt_faux_lamp_max 128 +rt_faux_lamp_stride 2 ^
   +rt_light_mark_intensity 25 +rt_light_mark_max 24 ^
   +rt_translucent_minalpha 0.72 ^
+  +rt_spectre_corpse_solid 1 +rt_ghost_solid 1 ^
   +rt_rr_temporal 0 ^
   +rt_rr_disocc 1 +rt_rr_disocc_ratio 3.0 +rt_rr_disocc_mindelta 0.01 +rt_rr_disocc_show 0 ^
   +rt_rr_reset_on_lightcut 1 +rt_rr_reset_on_dynlight 1 +rt_rr_reset_delta 0.5 +rt_rr_reset_min_ms 250 ^

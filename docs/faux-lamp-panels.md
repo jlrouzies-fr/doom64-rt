@@ -26,16 +26,32 @@ Feeding either to the other walk would match almost nothing.
 | cvar | default | notes |
 |---|---|---|
 | `rt_faux_lamps` | `1` | master switch. `0` shows the rooms as authored |
-| `rt_faux_lamp_color` | `6E7F94` | dark blue-grey, used **raw** |
-| `rt_faux_lamp_intensity` | `110` | below the real bulbs' 180, on purpose |
+| `rt_faux_lamp_color` | `3C5078` | dark blue-grey, used **raw**, resaturated to survive intensity 500 |
+| `rt_faux_lamp_intensity` | `500` | above the real bulbs' 180, raised after playtest found 110 too dark |
 | `rt_faux_lamp_max` | `128` | its own budget, see below |
 
 The colour is deliberately *not* hue-normalised. `RT_SectorHue` forces the peak
 channel to 1 so a tint can never darken a light; here the darkness is the point,
-so `6E7F94` emits `(0.43, 0.50, 0.58)` — roughly half power and cool. These
+so `3C5078` emits `(0.24, 0.31, 0.47)` — a 2.0× blue:red channel spread. These
 fixtures do not exist, so they should read as ambient fill the room happens to
-sit in, not as a lamp the player will go looking for. Brightness is
-`rt_faux_lamp_intensity`'s job, not the colour's.
+sit in, not as a lamp the player will go looking for. Brightness is mostly
+`rt_faux_lamp_intensity`'s job — but not entirely, see below.
+
+**Colour and intensity are not independent, because the colour is raw.**
+Started at `6E7F94` / `110`: a 1.35× channel spread at a modest brightness. In
+play it read as plain white, not blue-grey. The cause is the *raw* design
+itself — the RGB you set is multiplied directly by intensity to get emitted
+radiance, so once a light is bright enough the tonemapper compresses every
+channel toward 1.0 (display white), and channels that started close together
+end up closer still as they approach that clip point. Some white-hot clipping
+right at the socket is normal for any bright point light; the problem was that
+a weakly-saturated tint washed out over a much wider radius than a
+well-saturated one would. Raising `rt_faux_lamp_intensity` to `500` (playtest:
+110 left target rooms still too dark) made this worse on its own, so the colour
+was resaturated to `3C5078` (2.0× spread) at the same time, not raised in
+isolation. If intensity is pushed higher still, the colour will likely need
+another pass — the failure mode to watch for is the same one, tint reading as
+white rather than blue-grey.
 
 ## Three decisions worth knowing
 
