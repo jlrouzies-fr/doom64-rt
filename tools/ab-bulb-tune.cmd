@@ -30,6 +30,13 @@ rem   sharp     r 0.03  seg 192  I 540  S 8   closest to pin, max denoising
 rem   balanced  r 0.05  seg 128  I 360  S 8   the expected landing spot
 rem   smooth    r 0.07  seg 128  I 360  S 8   softer; watch the fence shadow
 rem   dense     r 0.05  seg  96  I 270  S 8   more lights, same sharpness
+rem   denser    r 0.05  seg  64  I 180  S 8   the original spacing, sharp source
+rem   densest   r 0.05  seg  48  I 135  S 8   more lights than ever shipped
+rem
+rem   The dense end is where the fence shadow is most at risk: every added light
+rem   is another chance for an unoccluded one to refill the umbra, which is what
+rem   erased these shadows at 113 lights in the first place. If denser/densest
+rem   lose the fence, that is the trade-off showing its floor, not a regression.
 rem   cheap     r 0.05  seg 128  I 360  S 1   balanced WITHOUT the extra rays,
 rem                                           to see what shadow_samples is
 rem                                           actually buying and what it costs
@@ -42,7 +49,7 @@ rem   3. does the bulb band still read as a continuous strip, or has it beaded?
 rem   4. vid_fps on `cheap` vs `balanced` -- that difference is the cost of
 rem      shadow_samples 8.
 rem
-rem Usage: ab-bulb-tune.cmd <sharp^|balanced^|smooth^|dense^|cheap> [map 1-32]
+rem Usage: ab-bulb-tune.cmd <sharp^|balanced^|smooth^|dense^|denser^|densest^|cheap> [map 1-32]
 rem ---------------------------------------------------------------------------
 
 set "WHICH=%~1"
@@ -58,10 +65,14 @@ if /i "%WHICH%"=="sharp" (
   set "R=0.07" & set "SEG=128" & set "I=360" & set "S=8"
 ) else if /i "%WHICH%"=="dense" (
   set "R=0.05" & set "SEG=96"  & set "I=270" & set "S=8"
+) else if /i "%WHICH%"=="denser" (
+  set "R=0.05" & set "SEG=64"  & set "I=180" & set "S=8"
+) else if /i "%WHICH%"=="densest" (
+  set "R=0.05" & set "SEG=48"  & set "I=135" & set "S=8"
 ) else if /i "%WHICH%"=="cheap" (
   set "R=0.05" & set "SEG=128" & set "I=360" & set "S=1"
 ) else (
-  echo Usage: %~nx0 ^<sharp^|balanced^|smooth^|dense^|cheap^> [map 1-32]
+  echo Usage: %~nx0 ^<sharp^|balanced^|smooth^|dense^|denser^|densest^|cheap^> [map 1-32]
   exit /b 1
 )
 
