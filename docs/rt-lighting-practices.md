@@ -142,6 +142,15 @@ Two lessons from the yellow-door hunt:
   very light being hunted. Console statistics and marker spheres are now separate
   (`rt_dynlight_debug` vs `rt_dynlight_debug_marks`).
 
+  **That separation was not enough, and this recurred on 2026-08-08.** The flat bulb lamps
+  copied the same 400-intensity marker and emitted up to 320 of them, turning a whole MAP02
+  room cyan. A marker *is* a real uploaded light, so N markers light the scene N times over
+  — the danger scales with **count**, and a per-marker toggle does not bound it.
+
+  All marker spheres now share `rt_light_mark_intensity` (25) and `rt_light_mark_max` (24
+  nearest per path). When a debug aid is itself made of the thing being measured, the
+  budget has to be on the aggregate.
+
 ## 11. Verify a change is live before believing a null result
 
 Before concluding "the tint is too weak" or "that setting does nothing", force the value
