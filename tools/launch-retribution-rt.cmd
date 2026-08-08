@@ -125,6 +125,15 @@ set "WINY=0"
 for /f %%i in ('powershell -NoProfile -Command "Add-Type -AssemblyName System.Windows.Forms; [Math]::Max(0, [int](([Windows.Forms.Screen]::PrimaryScreen.WorkingArea.Height-720)/2-300))"') do set "WINY=%%i"
 echo win_y=%WINY%
 
+rem rt_tnmp_ev100_min/max are forced because the ini had BOTH pinned to 1. Equal
+rem bounds lock auto-exposure, and EV100 1 exposes the scene very bright, so every
+rem region is lifted, no umbra ever reads dark, and shadows vanish globally --
+rem independent of every lighting cvar. It survived from an ab-rr-exposure run:
+rem CVAR_ARCHIVE wrote it once and it applied to every launch after. Four lighting
+rem A/B arms (density x2, emissive fill, all-lights-off) all came back negative
+rem because none of them could reach it. Same story for rt_lightlevel_min/max,
+rem which the ini had at 200/1 -- min ABOVE max (2026-08-08).
+rem
 rem Combined 3D-floor strip for every Retribution map that had special 160.
 start "" gzdoom.exe ^
   -iwad "%IWAD%" ^
@@ -142,6 +151,10 @@ start "" gzdoom.exe ^
   +rt_flsh 0 +rt_flsh_intensity 90 +rt_flsh_angle 42 +rt_flsh_pitch 22 ^
   +rt_flsh_battery 1 +rt_flsh_on_secs 30 +rt_flsh_die_secs 4 +rt_flsh_off_secs 5 ^
   +rt_flsh_color ffbe82 ^
+  +rt_tnmp_ev100_min 2 +rt_tnmp_ev100_max 7.7 ^
+  +rt_lightlevel_min 80 +rt_lightlevel_max 230 +rt_lightlevel_exp 2 ^
+  +rt_illum_sens_direct 1 +rt_illum_sens_indirect 0.75 +rt_illum_sens_spec 1 ^
+  +rt_shadowrays 4 ^
   +rt_emis_mapboost 200 +rt_emis_additive_dflt 0.15 +rt_emis_maxscrcolor 3 ^
   +rt_sector_tint_lights 0.85 +rt_sector_tint_albedo 1.0 ^
   +rt_sector_emis 0.35 +rt_sector_emis_minlight 160 +rt_sector_emis_margin 40 +rt_sector_emis_debug 0 ^
