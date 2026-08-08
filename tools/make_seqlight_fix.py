@@ -1,5 +1,10 @@
 """
-Build d64r-seqlight-fix.wad: strip chosen LightSequence chains from Retribution.
+Build d64r-seqlight-fix.wad: strip chosen animated sector-light specials.
+
+Two families, two tables. CHAINS holds LightSequence chains, described below.
+BLINKS holds per-sector blink specials (dLight_Flicker and friends), which need
+no walk to resolve -- one special animates one sector, so the sector list is the
+effect. Both end up in the same output wad, which may cover several maps.
 
 A LightSequenceStart (special 2) sector anchors a chain of alternating
 LightSequenceSpecial1/2 (3/4) sectors. GZDoom walks it once at map load
@@ -16,9 +21,14 @@ Below 160 the special only shades the surface and reads far less wrong.
 Clearing the special leaves each sector at its base lightlevel -- the value it
 already shows between waves -- so nothing gets darker.
 
-Only chains with enabled=True are stripped. The whole survey is listed here so
+Only entries with enabled=True are stripped. The whole survey is listed here so
 the rejected ones stay visible; see docs/sequence-light-chains.md for what each
-one looks like in game and why it is or is not on.
+one looks like in game and why it is or is not on. A blink with a real fixture
+in the room -- a hanging lamp, a monitor with its own light thing -- is kept:
+the complaint is sourceless light, not animation as such.
+
+Any map that also appears in d64r-3dfloor-rtfix.wad gets its Sector_Set3dFloor
+linedefs re-stripped here, because this wad loads later and therefore wins.
 
   python tools/make_seqlight_fix.py           # build the wad
   python tools/make_seqlight_fix.py --list    # show the table, build nothing
@@ -43,6 +53,7 @@ from make_map_3dfloor_rtfix import (
     decode_textmap,
     map_lump_range,
     read_wad_lumps,
+    strip_3dfloor,
     write_wad,
 )
 
@@ -99,7 +110,58 @@ CHAINS = [
 ]
 
 
-def clear_specials(text: str, wanted: dict[int, None], mapname: str) -> tuple[str, int]:
+class Blink:
+    """A set of sectors carrying a per-sector blink special (dLight_Flicker and
+    friends) rather than a sequence chain. No walk to resolve -- blink specials
+    animate one sector each, so the sector list IS the effect."""
+
+    def __init__(self, mapname: str, sectors: list[int], special: int,
+                 enabled: bool, note: str):
+        self.mapname = mapname
+        self.sectors = sectors
+        self.special = special
+        self.enabled = enabled
+        self.note = note
+
+
+BLINKS = [
+    Blink(
+        "MAP05", [258, 259, 260, 261, 262], 65,
+        enabled=True,
+        note="The light pylons. Five gateways between corridors, each one a bar "
+             "176x80 and 136 tall whose middle 80 units are the opening and whose "
+             "two 48-unit ends are solid, clad floor-to-ceiling in SPACECC -- a "
+             "dark panel of vertical blue light strips. That is two lit pylons "
+             "flanking every gate, ten in all. dLight_Flicker on the sector "
+             "flashes the strips with nothing casting the light. Reported from "
+             "play.",
+    ),
+    Blink(
+        "MAP05", [122], 65,
+        enabled=False,
+        note="KEPT. 264x264 room, 208 tall, light 255 -- and it contains a "
+             "64LampTechLongHang (thing type 1015) hanging in it. The flicker has "
+             "a real fixture to come from, which is the whole difference from the "
+             "pylons.",
+    ),
+    Blink(
+        "MAP05", [155, 162, 164, 295], 65,
+        enabled=False,
+        note="KEPT. Thin 64x8x64 slabs faced with SMONDA/SMONAA -- computer "
+             "monitors set into walls. Each holds its own 9802 FlickerLight thing "
+             "at height 32, so the blink is authored deliberately and has a "
+             "source. A flickering CRT is not a fake light.",
+    ),
+]
+
+
+def clear_specials(
+    text: str, wanted: dict[int, tuple[int, ...]], mapname: str
+) -> tuple[str, int]:
+    """wanted maps sector index -> the specials it may currently carry. A chain
+    member is allowed the whole LightSequence family (the walk decided which of
+    2/3/4 each one is); a blink sector must match its exact special. Either way
+    the check is what stops this patching a map whose numbering has shifted."""
     index = -1
     cleared = 0
 
@@ -111,11 +173,12 @@ def clear_specials(text: str, wanted: dict[int, None], mapname: str) -> tuple[st
         body = m.group(1)
         found = re.search(r"special\s*=\s*(\d+)\s*;", body)
         got = int(found.group(1)) if found else 0
-        if got not in (2, 3, 4):
+        want = wanted[index]
+        if got not in want:
             raise SystemExit(
-                f"{mapname} sector {index}: expected a LightSequence special "
-                f"(2/3/4), found {got} — map data changed, refusing to patch "
-                f"blind. Re-run tools/scan_light_specials.py --chains."
+                f"{mapname} sector {index}: expected special in {want}, found "
+                f"{got} — map data changed, refusing to patch blind. Re-run "
+                f"tools/scan_light_specials.py --chains."
             )
         cleared += 1
         return "sector\n{" + re.sub(r"(?m)^\s*special\s*=\s*\d+;\s*\n", "", body) + "}"
@@ -126,8 +189,14 @@ def clear_specials(text: str, wanted: dict[int, None], mapname: str) -> tuple[st
 def show_table() -> None:
     for c in CHAINS:
         state = "STRIP" if c.enabled else "keep "
-        print(f"[{state}] {c.mapname} start={c.start:4d} sectors={len(c.sectors):3d}")
+        print(f"[{state}] {c.mapname} sequence start={c.start:4d} "
+              f"sectors={len(c.sectors):3d}")
         print(f"          {c.note}")
+    for b in BLINKS:
+        state = "STRIP" if b.enabled else "keep "
+        print(f"[{state}] {b.mapname} blink special={b.special} "
+              f"sectors={b.sectors}")
+        print(f"          {b.note}")
 
 
 def main() -> None:
@@ -136,25 +205,48 @@ def main() -> None:
         return
 
     active = [c for c in CHAINS if c.enabled]
-    if not active:
-        raise SystemExit("no chains enabled — nothing to build")
+    activeBlinks = [b for b in BLINKS if b.enabled]
+    if not active and not activeBlinks:
+        raise SystemExit("nothing enabled — nothing to build")
 
-    by_map: dict[str, list[Chain]] = {}
+    # sector index -> the specials it may currently carry, per map
+    SEQ_FAMILY = ( 1, 2, 3, 4 )
+    by_map: dict[str, dict[int, tuple[int, ...]]] = {}
+    labels: dict[str, list[str]] = {}
     for c in active:
-        by_map.setdefault(c.mapname, []).append(c)
+        m = by_map.setdefault(c.mapname, {})
+        for i in c.sectors:
+            m[i] = SEQ_FAMILY
+        labels.setdefault(c.mapname, []).append(f"chain {c.start}")
+    for b in activeBlinks:
+        m = by_map.setdefault(b.mapname, {})
+        for i in b.sectors:
+            m[i] = ( b.special, )
+        labels.setdefault(b.mapname, []).append(
+            f"blink {b.special} x{len(b.sectors)}")
 
     lumps = read_wad_lumps(WAD)
     items: list[tuple[str, bytes]] = []
-    for mapname, chains in by_map.items():
+    for mapname, wanted in by_map.items():
         start, end = map_lump_range(lumps, mapname)
         members = {nm.upper(): blob for nm, blob in lumps[start:end]}
         if "TEXTMAP" not in members or "BEHAVIOR" not in members:
             raise SystemExit(f"{mapname}: missing TEXTMAP/BEHAVIOR in {WAD}")
 
-        wanted = {i: None for c in chains for i in c.sectors}
         fixed, n = clear_specials(decode_textmap(members["TEXTMAP"]), wanted, mapname)
         if n != len(wanted):
             raise SystemExit(f"{mapname}: cleared {n} of {len(wanted)} sectors")
+
+        # Carry the 3D-floor strip forward on any map that needs it.
+        #
+        # This wad loads AFTER d64r-3dfloor-rtfix.wad, so for a map present in
+        # both, ours is the one GZDoom uses and ours alone decides what the map
+        # contains. MAP03 was safe by accident -- it has no special-160 linedefs
+        # and is absent from the combined wad. MAP05 has one and IS in it, so
+        # replacing the map without re-stripping would silently hand back the 3D
+        # floor that hangs RT live upload, undoing a fix from another tool
+        # entirely. Re-derived here rather than assumed.
+        fixed, n3d = strip_3dfloor(fixed)
 
         items.append((mapname, b""))
         for nm, blob in lumps[start + 1 : end]:
@@ -167,8 +259,8 @@ def main() -> None:
                 items.append((nm, blob))
         if items[-1][0].upper() != "ENDMAP":
             items.append(("ENDMAP", b""))
-        print(f"{mapname}: cleared {n} sectors "
-              f"({', '.join(f'chain {c.start}' for c in chains)})")
+        print(f"{mapname}: cleared {n} sectors ({', '.join(labels[mapname])})"
+              f"{f', re-stripped {n3d} 3D-floor linedef(s)' if n3d else ''}")
 
     write_wad(OUTWAD, items)
     print(f"wrote {OUTWAD} maps={len(by_map)} lumps={[nm for nm, _ in items]}")
