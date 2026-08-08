@@ -25,14 +25,24 @@ Two details that matter when scoping a fix:
 
 ## Why RT makes it worse
 
-`rt_sector_emis` turns sector lightlevel into surface emission for any sector at
-or above `rt_sector_emis_minlight` (160 in the launcher). So an animated sector
-at or above 160 *is* the light source under RT — the floor and steps themselves
-glow and pulse with no fixture. Below 160 the special only shades the surface,
-which reads far less wrong.
+`rt_sector_emis` turns sector lightlevel into surface emission above a threshold
+that is computed **per map**, not fixed:
 
-That threshold is the triage rule: **base lightlevel ≥ 160 → sourceless pulsing
-emitter; below → cosmetic shading only.**
+    threshold = max(rt_sector_emis_minlight, map median lightlevel + margin)
+
+With the launcher's `minlight 160` and `margin 40` that is **220 on MAP03 and
+MAP12, 240 on MAP05** — the 160 floor almost never binds. An earlier version of
+this document asserted a flat 160 and mis-triaged chains on the strength of it.
+
+The correct triage differs by family:
+
+- **Sequence chains.** `DPhased` ramps every sector to **255** at the crest of
+  the wave, which clears any threshold a Doom map can produce. So *every*
+  sequence chain in the game becomes a sourceless emitter as the wave passes,
+  whatever its base. The base only decides whether it *also* emits steadily
+  between crests — on MAP03 exactly 1 of 63 sequence sectors does.
+- **Blink specials.** `DFlicker` and the strobes only ever dim *below* the
+  sector's own lightlevel, never above it. There the base is the whole story.
 
 Clearing the special leaves each sector at its base lightlevel — the value it
 already showed between waves — so nothing gets darker.
@@ -60,17 +70,22 @@ pulse?
 
 ### TODO — MAP03 chain 150, the SDFLTA room
 
-14 sectors around `(−700, −2450)`, base **150 — under the threshold**, so RT
-never turns these into a source. Floor 96, ceiling 288, SDFLTA/SFLATAC.
+14 sectors around `(−700, −2450)`, base 150, floor 96, ceiling 288,
+SDFLTA/SFLATAC.
 
-Lowest priority: the pulse only shades surfaces here. Worth a look mainly to
-decide whether the shading animation alone is still distracting.
+**Corrected.** This was previously listed as harmless on the grounds that 150 is
+below the threshold and RT would never make it a source. That was wrong: the
+crest of the wave is 255, well above MAP03's 220, so these sectors *do* flare
+into being emitters as the wave passes — they simply go dark again between
+crests. Its base being lowest of the three means the pulse has the highest
+contrast, not the least.
 
 ### TODO — MAP12 chain 196, the 20-wedge ring
 
 20 sectors nested concentrically around `(−1340, −930)`, CASFL27 floor / CASF80
-ceiling, floor 96, ceiling 356, base **160 — exactly on the threshold**, so it
-emits, but only just.
+ceiling, floor 96, ceiling 356, base 160 — below MAP12's threshold of 220, so it
+does not emit steadily, but like every chain it crests at 255 and flares as the
+wave goes round.
 
 The one I would not strip without looking. Twenty wedges arranged in a ring with
 a light rotating around them reads like an intentional beacon effect rather than

@@ -13,10 +13,12 @@ base lightlevel to 255 and back, offset by phase -- so a wave of light travels
 along the chain forever, with nothing in the world casting it.
 
 Under RT that is worse than in the original renderer: rt_sector_emis turns
-sector lightlevel into surface emission for any sector at or above
-rt_sector_emis_minlight (160 in the launcher), so an animated sector at or
-above 160 IS the light source. The wave becomes a pulsing sourceless glow.
-Below 160 the special only shades the surface and reads far less wrong.
+sector lightlevel into surface emission above a PER-MAP threshold,
+max(rt_sector_emis_minlight, map median + margin) -- 220 on MAP03 and MAP12,
+240 on MAP05 with the launcher's 160/40. The crest of a phased wave is 255,
+which clears any such threshold, so every sequence chain flares into being a
+real emitter as the wave passes. The base lightlevel only decides whether it
+also emits steadily in between.
 
 Clearing the special leaves each sector at its base lightlevel -- the value it
 already shows between waves -- so nothing gets darker.
@@ -94,8 +96,10 @@ CHAINS = [
         [150, 131, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 157, 158],
         enabled=False,
         note="PENDING PLAYTEST. 14 sectors, SDFLTA room around (-700,-2450), "
-             "base 150 -- BELOW rt_sector_emis_minlight 160, so RT never makes "
-             "these a source. The pulse only shades. Lowest priority.",
+             "base 150. Previously written off as harmless for being under the "
+             "threshold -- wrong: the crest is 255, above MAP03's 220, so these "
+             "do flare as the wave passes, and the low base gives the pulse the "
+             "HIGHEST contrast of the three, not the least.",
     ),
     Chain(
         "MAP12", 196,
@@ -103,9 +107,9 @@ CHAINS = [
          203, 194, 201, 180, 216, 218],
         enabled=False,
         note="PENDING PLAYTEST. 20 wedge sectors nested concentrically around "
-             "(-1340,-930), CASFL27/CASF80, base 160 -- exactly on the emission "
-             "threshold. The layout reads like a deliberate rotating beacon, so "
-             "this one may be worth keeping.",
+             "(-1340,-930), CASFL27/CASF80, base 160, under MAP12's threshold of "
+             "220 but cresting to 255 like every chain. The layout reads like a "
+             "deliberate rotating beacon, so this one may be worth keeping.",
     ),
 ]
 

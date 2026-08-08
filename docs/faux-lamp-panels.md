@@ -47,6 +47,11 @@ pool would push real bulbs out of the nearest-N set — darkening fixtures that
 exist in order to light ones that do not. Both walks collect and trim the two
 sets independently, then merge.
 
+(Note: `rt_sector_emis_minlight` 160 is a *floor* on the emission threshold, not
+the threshold — rt_main.cpp takes `max(160, map median + 40)`, which is 220 on
+MAP03. It does not affect the faux lights, which are analytic and never gated by
+it, but the distinction matters wherever that number is quoted.)
+
 **Faux panels ignore the min-light gate.** `rt_wall_strip_minlight` (120) stops
 a real strip double-lighting an already-bright room. A faux panel's only job is
 to lift a room that is *too dark*, so applying the same gate would reject
