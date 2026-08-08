@@ -9,6 +9,7 @@ set "BM=G:\AI\Doom64-RT\Doom64-Retribution\D64RTR_BRIGHTMAPS.PK3"
 set "SKUL=G:\AI\Doom64-RT\Doom64-Retribution\d64r-lostsoul-rt.pk3"
 set "FLSH=G:\AI\Doom64-RT\Doom64-Retribution\d64r-rt-flashlight.pk3"
 set "FIX3D=G:\AI\Doom64-RT\Doom64-Retribution\d64r-3dfloor-rtfix.wad"
+set "STAIR=G:\AI\Doom64-RT\Doom64-Retribution\d64r-map03-stairlight.wad"
 set "SKY=G:\AI\Doom64-RT\Doom64-Retribution\d64r-rt-sky.pk3"
 set "MUS=G:\AI\Doom64-RT\Doom64-Retribution\D64MUS.PK3"
 rem Full console transcript (incl. startup) -> shareable log. `logfile` is
@@ -116,6 +117,10 @@ if not exist "%FIX3D%" (
   echo ERROR: missing %FIX3D% — run: python tools\make_map_3dfloor_rtfix.py
   exit /b 1
 )
+if not exist "%STAIR%" (
+  echo ERROR: missing %STAIR% — run: python tools\make_map03_stairlight_fix.py
+  exit /b 1
+)
 
 echo Native RT path tracing, A-SVGF denoiser (no Remix^)
 echo   map=%MAPLUMP%  +rt_upscale_dlss 2 +rt_rayreconstr 0 +rt_framegen 0
@@ -135,9 +140,16 @@ rem because none of them could reach it. Same story for rt_lightlevel_min/max,
 rem which the ini had at 200/1 -- min ABOVE max (2026-08-08).
 rem
 rem Combined 3D-floor strip for every Retribution map that had special 160.
+rem
+rem d64r-map03-stairlight.wad replaces MAP03 to clear the LightSequence chain on
+rem the twin staircases (sectors 34-42 + start 156). It was a phased 180->255
+rem wave running up the steps with no fixture anywhere in the room, and under RT
+rem the steps themselves emit (rt_sector_emis, minlight 160), so it pulsed as a
+rem sourceless glow. Cleared, the steps sit steady at their base 180. MAP03 has
+rem no special-160 linedefs, so it is absent from FIX3D and nothing conflicts.
 start "" gzdoom.exe ^
   -iwad "%IWAD%" ^
-  -file "%MOD%" "%BM%" "%SKUL%" "%FLSH%" "%MUS%" "%FIX3D%" "%SKY%" ^
+  -file "%MOD%" "%BM%" "%SKUL%" "%FLSH%" "%MUS%" "%FIX3D%" "%STAIR%" "%SKY%" ^
   -rtnolauncher -width 1280 -height 720 %RTDEBUG% ^
   +logfile "%LOGF%" ^
   +vid_fullscreen 0 +win_x -1 +win_y %WINY% +queryiwad false +sv_cheats 1 +god +notarget +map %MAPLUMP% ^
