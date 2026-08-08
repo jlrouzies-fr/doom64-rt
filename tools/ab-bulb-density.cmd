@@ -3,41 +3,43 @@ setlocal EnableExtensions
 rem ---------------------------------------------------------------------------
 rem Light COUNT vs shadow contrast for the bulb bands.
 rem
-rem The problem this exists to test. Sprites stopped casting visible shadows once
-rem the bulb bands were lit, but they still cast a clear one from a muzzle flash,
-rem and they cast fine before any of this work. So shadow casting is not broken;
-rem shadow CONTRAST is being destroyed.
+rem What rt_debug_visibility 1 established: NOTHING casts a shadow from the bulb
+rem bands -- not the fence, not sprites -- while the character still casts one
+rem from another source in the same scene. So shadow rays work and the occluders
+rem are in the acceleration structure. What fails is specific to these lights.
 rem
-rem Why that follows. A shadow is the absence of one light's contribution. With
-rem N lights of roughly equal strength filling a room, blocking one removes about
-rem 1/N of the illumination at that point -- the other N-1 fill the umbra straight
-rem back in. MAP01's cage reports 113 lights within 1536u, so an occluder hides
-rem under 1% of the light reaching the floor. A muzzle flash is a single dominant
-rem source, which is why it still reads.
-rem
-rem This is a property of the light DISTRIBUTION, not of rt_shadowrays,
-rem rt_shadow_samples or any sprite flag, and no amount of shadow-ray budget
-rem recovers it. The lever is fewer, stronger lights.
+rem Why count is the suspect. ReSTIR chooses ONE light per pixel. A point sitting
+rem in lamp A's shadow does not go dark -- it simply gets assigned lamp B, which
+rem nothing occludes. With 113 lamps spread across a ceiling there is almost
+rem always an unoccluded one, so visibility comes back 1.0 nearly everywhere and
+rem no umbra ever forms. This is not a bug: a ceiling of 113 lamps genuinely is
+rem near-shadowless. The original game implies far fewer, brighter fixtures.
 rem
 rem Each arm keeps total emitted flux roughly constant: doubling the spacing
-rem halves the light count, so intensity doubles to compensate. If the theory is
-rem right, overall brightness stays similar across arms while shadows sharpen
-rem from left to right -- and that separation is the whole point of holding flux
-rem fixed rather than just thinning the lights out.
+rem halves the light count, so intensity doubles. If the theory holds, overall
+rem brightness stays similar across arms while shadows appear from left to right.
+rem That separation is the point of holding flux fixed rather than just thinning
+rem the lights out -- otherwise "darker" and "more shadowed" are indistinguishable.
 rem
 rem ARMS  (seglen = map units between lights; I = intensity each)
-rem   dense   seglen  64  I 180   what ships now; the reference
-rem   mid     seglen 128  I 360
-rem   sparse  seglen 192  I 540
-rem   point   seglen 256  I 720   fewest, strongest
+rem   dense   seglen  64  I  180   what ships now; the reference
+rem   mid     seglen 128  I  360
+rem   sparse  seglen 256  I  720
+rem   point   seglen 512  I 1440   fewest, strongest
 rem
 rem What to judge, in this order:
-rem   1. do sprites and props cast a readable shadow?
-rem   2. does the band still read as a continuous strip, or has it gone scalloped
-rem      into separate blobs? (rt_wall_strip_seglen's own note warns that spacing
-rem      wider than the source radius scallops -- so the arms raise radius with
-rem      spacing to hold the strip together as long as possible)
-rem   3. overall brightness, which should NOT move much between arms
+rem   1. do the fence and sprites cast a readable shadow? Check under
+rem      +rt_debug_visibility 1 as well as normally -- black there is the
+rem      unambiguous answer.
+rem   2. does the band still read as a continuous strip, or has it scalloped into
+rem      separate blobs? This is the real cost of the fix, and if it bites, the
+rem      answer is a tighter seglen with a SMALL radius, not a wide radius.
+rem   3. overall brightness, which should NOT move much between arms. If it does,
+rem      the flux compensation is wrong and so is the comparison.
+rem
+rem Watch "uploaded=N of M wanted" in the console: N is the light count driving
+rem all of this, and if it does not fall between arms, the arm never reached the
+rem renderer and the result is void.
 rem
 rem Usage: ab-bulb-density.cmd <dense^|mid^|sparse^|point> [map 1-32]
 rem ---------------------------------------------------------------------------
@@ -47,14 +49,21 @@ set "MAP=%~2"
 if "%WHICH%"=="" set "WHICH=mid"
 if "%MAP%"==""  set "MAP=1"
 
+rem RADIUS IS FIXED ACROSS EVERY ARM. The first version of this ladder raised it
+rem from 0.35 to 0.80 as it lowered the count, so a softer source cancelled
+rem whatever contrast fewer lights bought, and the whole ladder read as "changes
+rem nothing". That null was a broken experiment, not a result. 0.10 is near the
+rem dynlight radius that demonstrably casts crisp shadows (2026-08-08).
+set "R=0.10"
+
 if /i "%WHICH%"=="dense" (
-  set "SEG=64"  & set "I=180" & set "R=0.35"
+  set "SEG=64"  & set "I=180"
 ) else if /i "%WHICH%"=="mid" (
-  set "SEG=128" & set "I=360" & set "R=0.50"
+  set "SEG=128" & set "I=360"
 ) else if /i "%WHICH%"=="sparse" (
-  set "SEG=192" & set "I=540" & set "R=0.65"
+  set "SEG=256" & set "I=720"
 ) else if /i "%WHICH%"=="point" (
-  set "SEG=256" & set "I=720" & set "R=0.80"
+  set "SEG=512" & set "I=1440"
 ) else (
   echo Usage: %~nx0 ^<dense^|mid^|sparse^|point^> [map 1-32]
   exit /b 1
