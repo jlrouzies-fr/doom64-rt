@@ -58,6 +58,62 @@ feature does nothing. Real strips still respect it.
 "turn the real fixtures down and judge the fake ones alone" is the obvious
 comparison to want.
 
+## Placement follows the bulb lattice, not the perimeter
+
+First attempt used the same perimeter walk as the real bulb arrays: a light every
+`rt_ceiling_edge_seglen` (64) units around the sector edge. Judged in play, the
+lights looked *misplaced* — and they were. The perimeter has no relation to where
+the art puts its sockets, so lights landed between bulbs, in the middle of blank
+plate, which reads as light coming from nowhere.
+
+Faux flats now bypass the perimeter walk entirely and place on the socket
+lattice. Doom flats map 1:1 to world units anchored at the world origin, so a
+socket at texture u appears at every world x where `x mod 64 == u`. SFLATC's
+sockets are at 7.5, 23.5, 39.5, 55.5 on both axes, so every faux light now sits
+inside a painted socket.
+
+`rt_faux_lamp_stride` (default 2) subsamples that lattice. One light per bulb is
+unaffordable — at 16-unit spacing a single 512×512 room wants over a thousand —
+so the stride takes every Nth socket on each axis. It counts *absolute* lattice
+position rather than a per-sector counter, so the chosen bulbs stay aligned
+across tile and sector seams instead of jumping at every boundary.
+
+Two supporting details: the sector bounding box is not the sector, so each
+candidate is checked with `PointInSector` (an L-shaped room would otherwise get
+lights hanging in its neighbour); and light IDs are derived from sector index
+plus lattice cell, never from an emit counter, because the nearest-N set changes
+as the camera moves and counter-derived IDs would renumber every light each frame
+and flush RR temporal history.
+
+**Still on the perimeter walk: SPACECE.** It is a wall texture, and wall texture
+coordinates depend on the sidedef's offsets and pegging rather than on world
+position, so the same trick needs real UV work. Its lights are therefore still
+placed every 64 units at mid-height and will not line up with its 3×3 lattice.
+Open item.
+
+## Lit bulbs in the art
+
+`tools/make_bulb_textures.py` builds `d64r-bulb-textures.wad`, which repaints
+both textures' sockets as lit bulbs so the light has a visible fixture. It also
+writes `SFLATC_e.png` / `SPACECE_e.png` emissive masks into `rt/mat`, joining the
+291 `_e` maps already there, so the painted bulbs actually emit rather than just
+looking pale.
+
+The socket centres are **detected** from the art, not assumed, and assuming cost
+a pass. SPACECE's columns sit at 10.1/31.1/52.1 but its rows at 9.0/30.0/51.0 —
+the axes do not share an offset, and one guessed lattice painted every bulb low
+in its housing with a dark crescent above. Detection flood-fills the dark blobs
+(with wraparound, since a socket may straddle the tile seam) and asserts the
+count against the grid expected.
+
+Only `r <= 1.5` is repainted. The radial profile bottoms out at luminance 37 in
+the centre against a plate mean of 59 and is back to plate by `r = 2`, where
+SPACECE has a bright rim — the lip of the housing. Painting wider would erase
+that lip and the bulb would lose its socket.
+
+Note the interpreter: this tool needs Pillow, which on this machine lives only in
+Python 3.13, not the default `python` on PATH.
+
 ## Verifying
 
 `rt_ceiling_edge_debug 1` and `rt_wall_strip_debug 1` each print a faux tally
@@ -65,8 +121,8 @@ alongside the real one — matched surfaces, uploaded, cap, intensity — so a
 glance answers whether invented fixtures are crowding real ones.
 
 The build was confirmed to carry the change by reading the cvar names and both
-texture literals back out of `gzdoom.exe`. It has **not** been judged in game
-yet; that is the open item.
+texture literals back out of `gzdoom.exe`. The lattice placement and the repainted
+bulbs have **not** been judged in game.
 
 ## Deliberately not done: emission
 
