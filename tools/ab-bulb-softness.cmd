@@ -33,12 +33,16 @@ rem   mid     r 0.20  samples 1
 rem   hard    r 0.10  samples 1   about the dynlight radius that already works
 rem   hard4   r 0.10  samples 4   same, but soft shadows can actually resolve
 rem   dyn     r 0.08  samples 4   exactly the dynlight radius
+rem   pin     r 0.02  samples 4   the FLASHLIGHT/muzzle-flash radius, and those
+rem                               two do make the fence cast. Also drops the count
+rem                               (seglen 256, I 720): small radius and low count
+rem                               have never been tried together.
 rem
 rem Judge: stand so the fence or a prop is between you and a bulb band, and look
 rem for an umbra on the wall behind. Then check whether the strip still reads as
 rem a strip.
 rem
-rem Usage: ab-bulb-softness.cmd <soft^|mid^|hard^|hard4^|dyn> [map 1-32]
+rem Usage: ab-bulb-softness.cmd <soft^|mid^|hard^|hard4^|dyn^|pin> [map 1-32]
 rem ---------------------------------------------------------------------------
 
 set "WHICH=%~1"
@@ -56,19 +60,35 @@ if /i "%WHICH%"=="soft" (
   set "R=0.10" & set "S=4"
 ) else if /i "%WHICH%"=="dyn" (
   set "R=0.08" & set "S=4"
+) else if /i "%WHICH%"=="pin" (
+  rem The flashlight and muzzle flash both run rt_*_radius 0.02 and BOTH make the
+  rem MAP01 fence cast a shadow. At 1 map unit = 1/32 m that is 0.64 map units
+  rem against the 11.2 of the 0.35 default -- 17x. Penumbra width scales with
+  rem source size, so an 11-unit source erases the shadow of a 4-unit fence wire
+  rem while a 0.64-unit one draws it sharply. Wide occluders (a character, a
+  rem wall) are far wider than the penumbra either way, which is exactly the
+  rem split observed: everything casts except the fence.
+  rem
+  rem Paired with sparse spacing on purpose. Small radius and low count have
+  rem never been tested TOGETHER: the earlier radius arms ran at 113 lights,
+  rem where whatever umbra formed was filled by another lamp.
+  set "R=0.02" & set "S=4" & set "SEG=256" & set "I=720"
 ) else (
-  echo Usage: %~nx0 ^<soft^|mid^|hard^|hard4^|dyn^> [map 1-32]
+  echo Usage: %~nx0 ^<soft^|mid^|hard^|hard4^|dyn^|pin^> [map 1-32]
   exit /b 1
 )
+
+if "%SEG%"=="" set "SEG=64"
+if "%I%"==""   set "I=180"
 
 rem Held fixed so radius is the only thing moving: same spacing, same intensity,
 rem on both walks. The earlier ladder's mistake was letting these drift.
 set "ARGS=+rt_wall_strip_radius %R% +rt_ceiling_edge_radius %R% +rt_dynlight_radius 0.08"
-set "ARGS=%ARGS% +rt_wall_strip_seglen 64 +rt_ceiling_edge_seglen 64"
-set "ARGS=%ARGS% +rt_wall_strip_intensity 180 +rt_ceiling_edge_intensity 180"
+set "ARGS=%ARGS% +rt_wall_strip_seglen %SEG% +rt_ceiling_edge_seglen %SEG%"
+set "ARGS=%ARGS% +rt_wall_strip_intensity %I% +rt_ceiling_edge_intensity %I%"
 set "ARGS=%ARGS% +rt_shadow_samples %S%"
 
-echo === bulb softness: %WHICH% (radius=%R% shadow_samples=%S%), MAP%MAP% ===
+echo === bulb softness: %WHICH% (radius=%R% samples=%S% seglen=%SEG% I=%I%), MAP%MAP% ===
 echo     %ARGS%
 echo     judge: 1) umbra behind the fence  2) is the strip still continuous
 call "%~dp0launch-retribution-rt.cmd" %MAP% -- %ARGS%
