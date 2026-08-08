@@ -151,9 +151,9 @@ start "" gzdoom.exe ^
   +rt_ceiling_lamps 0 +rt_ceiling_lamp_intensity 0 +rt_ceiling_lamp_radius 0.10 ^
   +rt_ceiling_lamp_off 0.12 +rt_ceiling_lamp_fade 40 +rt_ceiling_lamp_maxspan 128 ^
   +rt_hang_lamps 1 +rt_hang_lamp_intensity 220 +rt_hang_lamp_radius 0.09 +rt_hang_lamp_zofs 4 ^
-  +rt_wall_strips 1 +rt_wall_strip_intensity 500 +rt_wall_strip_minlight 120 ^
+  +rt_wall_strips 1 +rt_wall_strip_intensity 180 +rt_wall_strip_minlight 120 ^
   +rt_wall_strip_seglen 64 +rt_wall_strip_radius 0.35 +rt_wall_strip_max 128 +rt_wall_strip_debug 0 +rt_wall_strip_debug_marks 0 ^
-  +rt_ceiling_edge_lamps 1 +rt_ceiling_edge_intensity 500 +rt_ceiling_edge_seglen 64 ^
+  +rt_ceiling_edge_lamps 1 +rt_ceiling_edge_intensity 180 +rt_ceiling_edge_seglen 64 ^
   +rt_ceiling_edge_radius 0.35 +rt_ceiling_edge_zofs 10 +rt_ceiling_edge_inset 10 ^
   +rt_ceiling_edge_max 320 +rt_ceiling_edge_maxdist 1536 ^
   +rt_ceiling_edge_debug 0 +rt_ceiling_edge_debug_marks 0 ^
