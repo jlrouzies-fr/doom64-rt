@@ -177,8 +177,10 @@ reached the renderer.
 | `rt_wall_strips` | true | Analytic lights on wall-mounted bulb arrays: `SPACEAZ`, `SFLATAQ`, `SFLATAS`, `SFLATAP`. Not `SPACEAR` — see §20. |
 | `rt_wall_strip_intensity` | 500 | High because a strip light is flush against the wall it lights (see §19). |
 | `rt_wall_strip_minlight` | 120 | Was 140, tuned on MAP03's 180s. MAP02 has fixtures at exactly 120. |
-| `rt_ceiling_edge_lamps` | true | Lights around the perimeter of lamp ceilings, for halls `rt_ceiling_lamps` skips. |
+| `rt_ceiling_edge_lamps` | true | Lights around the perimeter of lamp **flats** — ceilings *and* floors (§23), for halls `rt_ceiling_lamps` skips. |
 | `rt_ceiling_edge_intensity` | 500 | Same occlusion reasoning as wall strips. |
+| `rt_ceiling_edge_max` | 320 | Raised from 160 when floors were added — both planes share the cap. |
+| `rt_ceiling_edge_debug_marks` | false | Cyan markers, vs the wall strips' magenta, so both paths can be shown at once. |
 | `rt_dynlight_minradius` | 16 | Drops raster-era helper `PointLight`s (r=12) while keeping real fixtures (r>=32). |
 | `rt_dynlight_rsoft` | 20 | Inverse-square roll-off above this map radius. Lowered from 40; fixed the overexposed yellow key-door jambs. |
 | `rt_dynlight_debug` | false | Console stats: upload count + xy-stack histogram + nearest-light dump. |
@@ -377,6 +379,31 @@ An hour went into candidates from the visible 24 while the answer may never have
 If output can be capped, the cap must announce itself (`... N more not shown`). A count in
 the header that disagrees with the number of rows below it is not a notice — nobody
 subtracts.
+
+## 23. A fixture that turns a corner spans two code paths
+
+Doom 64 runs one continuous bulb band along a wall and then across the flat it meets. To
+the map it is a single fixture. To this renderer it is two: sidedef textures go through
+`RT_UploadWallStripLights`, sector flats through `RT_UploadCeilingEdgeLamps`. A band that
+turns a corner lights up on one side of the corner and stops dead on the other.
+
+Two separate bugs produced that symptom at once, and they are easy to confuse:
+
+- `RT_UploadCeilingEdgeLamps` read only `sector_t::ceiling`. Bulb **floors** — 19 sectors
+  on MAP02, 46 on MAP03 — were never even looked at. The name of the function is the whole
+  explanation, which is why it survived: nobody re-reads a function that is doing exactly
+  what it says.
+- The flat path had **no marker visualization** while the wall path did. So even the
+  ceilings it *was* lighting looked absent in the debug view.
+
+Note `zOfs` has to flip sign with the plane — down from a ceiling, up from a floor.
+Sharing one sign buries every floor lamp under the floor where it is fully occluded, which
+looks identical to it never being uploaded (§13 again).
+
+**Rule:** when a fixture is unlit on one face and lit on another, ask which *walk* owns each
+face before touching either one's matcher. And give paired debug visualizations parity —
+one path with markers and one without does not show you "half the lights are missing", it
+shows you a half-instrumented renderer.
 
 ## Pending visual confirmation
 
