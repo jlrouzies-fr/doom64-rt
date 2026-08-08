@@ -141,6 +141,13 @@ rem which the ini had at 200/1 -- min ABOVE max (2026-08-08).
 rem
 rem Combined 3D-floor strip for every Retribution map that had special 160.
 rem
+rem rt_faux_lamps: SFLATC (flat) and SPACECE (wall) are NOT lamp textures -- no bulbs in
+rem the art, and the original game lights neither -- but they ceiling and clad rooms that
+rem read as too dark under RT, MAP03's stair hall among them. They are run through the
+rem same perimeter walks as the real bulb arrays, in a dark blue-grey and at a lower
+rem intensity, with their own light budget so an invented fixture can never push a real
+rem one out of the nearest-N set. Set rt_faux_lamps 0 to see the rooms as authored.
+rem
 rem d64r-seqlight-fix.wad replaces maps to clear LightSequence chains -- phased
 rem waves of light that travel along a run of sectors with no fixture casting
 rem them. Under RT they are worse than in the original renderer: rt_sector_emis
@@ -185,6 +192,7 @@ start "" gzdoom.exe ^
   +rt_ceiling_edge_radius 0.35 +rt_ceiling_edge_zofs 10 +rt_ceiling_edge_inset 10 ^
   +rt_ceiling_edge_max 320 +rt_ceiling_edge_maxdist 1536 ^
   +rt_ceiling_edge_debug 0 +rt_ceiling_edge_debug_marks 0 ^
+  +rt_faux_lamps 1 +rt_faux_lamp_color 6E7F94 +rt_faux_lamp_intensity 110 +rt_faux_lamp_max 128 ^
   +rt_light_mark_intensity 25 +rt_light_mark_max 24 ^
   +rt_translucent_minalpha 0.72 ^
   +rt_rr_temporal 0 ^
