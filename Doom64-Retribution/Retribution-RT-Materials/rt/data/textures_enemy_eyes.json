@@ -676,6 +676,231 @@
     {
       "textureName": "SAR2H5",
       "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SAR2I0"
+    },
+    {
+      "textureName": "SAR2J0"
+    },
+    {
+      "textureName": "SAR2K0"
+    },
+    {
+      "textureName": "SAR2L0"
+    },
+    {
+      "textureName": "SAR2M0"
+    },
+    {
+      "textureName": "SAR2N0"
+    },
+    {
+      "textureName": "TRO2A3A7",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2A4A6",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2A5",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2B3B7",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2B4B6",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2B5",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2C3C7",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2C4C6",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2C5",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2D3D7",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2D4D6",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2D5",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2E3E7",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2E4E6",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2E5",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2F1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2F3F7",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2F4F6",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2F5",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2G3G7",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2G4G6",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2G5",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2H1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2H2H8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2H3H7",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2H4H6",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2H5",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2I1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2I2I8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2I3I7",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2I4I6",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2I5",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2J1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2J2J8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2J3J7",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2J4J6",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2J5",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2K1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2K2K8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2K3K7",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2K4K6",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2K5",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2L0"
+    },
+    {
+      "textureName": "TRO2M0"
+    },
+    {
+      "textureName": "TRO2N0"
+    },
+    {
+      "textureName": "TRO2O0"
+    },
+    {
+      "textureName": "TRO2P0"
+    },
+    {
+      "textureName": "TRO2Q0"
+    },
+    {
+      "textureName": "TRO2R0"
+    },
+    {
+      "textureName": "TRO2S0"
+    },
+    {
+      "textureName": "TRO2T0"
+    },
+    {
+      "textureName": "TRO2U0"
+    },
+    {
+      "textureName": "TRO2V0"
+    },
+    {
+      "textureName": "TRO2W0"
+    },
+    {
+      "textureName": "TRO2X0"
     }
   ]
 }

@@ -86,19 +86,148 @@ Death:   SAR2 I,J,K,L,M,N            (despawn fade)
 
 All living + pain frames (A–H) need `_e` PNGs + emissiveMult. Death/gib frames (I–N) skipped — they use `A_FadeIn` which handles fading.
 
-## ⚠ Regeneration hazards
+## ⚠ Regeneration hazards — RESOLVED (2026-08-08)
 
-After running `gen_enemy_eye_emissives.py`:
-- Front A–G `_e` PNGs: regenerated correctly (generator creates them)
-- Side/rear A–G `_e` PNGs: NOT regenerated (generator skips — no SARG donor for those rotations)
-- H-frame `_e` PNGs: NOT regenerated (generator skips H+ frames as death/gib)
-- textures.json entries: SURVIVE regeneration (upsert keeps existing entries)
+The side/rear and H-frame `_e` files used to be hand-made and were destroyed by every
+`gen_enemy_eye_emissives.py` run. That whole step is now inside the generator
+(`SOFTBLEND_ACTORS`), so a plain re-run reproduces the full 40-file SAR2 set:
 
-**To restore after regeneration:**
-1. Re-run the side/rear transparent `_e` generator (single-pixel → now fully transparent)
-2. Re-run the H-frame `_e` generator
+- Front A–G: brightmap eye masks cloned from SARG (unchanged)
+- Front H (pain): cloned from the same rotation's G-frame mask
+- All side/rear rotations: fully transparent `_e`
+- Corpse I–N: no `_e`, and emissiveMult explicitly **cleared** (see below)
 
-Scripts for regeneration are inline in this doc; see commit history for the exact Python.
+`rescale_mask()` replaced `Image.resize`: an eye is 4–18 pixels, and NEAREST resampling
+of 72x84 → 56x93 misses every one of them and returns an empty mask. That is how
+`SAR2H2H8_e.png` went blank the first time this was consolidated.
+
+---
+
+# Round 2 (2026-08-08): the dead spectre glowed, the live one looked baked-lit
+
+Two more defects, both downstream of the same fact: **a spectre is rasterized, and the
+rasterizer does not light anything.**
+
+## 1. Dead spectre glowed — `emissiveMult` with no `_e` mask
+
+`SAR2I0`…`SAR2N0` (the six death frames) carried `"emissiveMult": 2` in
+`rt/data/textures.json`, but no `SAR2I0_e.png` etc. ever existed. RTGL1's raster shader
+falls back to the BASE texture when there is no emissive texture — `RsWorld.inl`:
+
+```glsl
+if( emissiveTextureIndex != MATERIAL_NO_TEXTURE ) ldrEmis = baseColor().rgb * emisTex;
+else                                              ldrEmis = ldrColor.rgb;   // whole sprite!
+ldrEmis *= emissiveMult;
+```
+
+So "the eyes glow at 2×" quietly became "**the entire corpse emits at 2× its albedo**"
+into `outScreenEmission`. Fixed by clearing emissiveMult on corpse/gib frames — step 4b
+of the generator does this for every actor in `SOFTBLEND_ACTORS`.
+
+## 2. Nothing lights a rasterized primitive
+
+`makePrimFlags()` gives a spectre `RG_MESH_PRIMITIVE_TRANSLUCENT`; RTGL1 rasterizes any
+translucent primitive (`VulkanDevice.cpp IsRasterized`) instead of tracing it, and
+`RsWorld.inl` outputs `vertexColor * texture` with **no lighting term at all**. On top of
+that, `forceSpriteUnlitAlbedo` strips the sector lightlevel out of the vertex colour —
+correct for a path-traced sprite, but it leaves a rasterized one with nothing to darken
+it. Result: full texture brightness in a pitch-dark room.
+
+### The corpse — `rt_spectre_corpse_solid` (default 1)
+
+`IsSpectre()` returns false for SAR2 frames I–N. The corpse becomes an ordinary
+alpha-tested sprite at alpha 1.0, clears `MESH_TRANSLUCENT_ALPHA_THRESHOLD`, enters the
+BLAS, is path-traced and casts a shadow like every other corpse. DECORATE's Death
+sequence ends on `A_SetTranslucent(1.0)`, so a solid corpse is what the actor asks for.
+
+### The living body — `rt_ghost_solid` (default 1)
+
+Same treatment, extended to the living frames of **both** monsters: not translucent,
+alpha forced to 1.0, alpha-tested. Both halves are required — the `TRANSLUCENT` flag
+forces rasterization on its own regardless of alpha, and alpha under 0.98 forces it
+regardless of the flag.
+
+The result is what "lit like everything else" actually means: in an unlit room the body
+goes black and only the `_e` eye mask emits. **The cost is the see-through look** — a
+spectre is now a solid dark sprite. `+rt_ghost_solid 0` restores the rasterized ghost,
+and with it the baked-lit appearance.
+
+⚠ **Two other routes to the same goal were tried and rejected — don't retry them:**
+
+1. **Dimming the vertex colour by sector lightlevel.** Cannot work in principle:
+   `RsWorld.inl` builds its emissive out of `baseColor()`, so darkening the body darkens
+   the eye mask by exactly the same factor. Body and eyes are inseparable from there.
+2. **`GLASS | ALPHA_TESTED`.** Traced *and* see-through (`IsRasterized()` exempts
+   GLASS/WATER/ACID), so it keeps the ghost look — but it is a refractive material on a
+   billboard, which is not the look this mod wants. Rejected 2026-08-08; the same
+   approach had already been removed once in `56e9c2ae`.
+
+### ⚠ Going solid makes every living `_e` load-bearing
+
+`HitInfo.inl` has the **same no-`_e` fallback as the rasterizer**:
+
+```glsl
+if( tr.emissiveTexture != MATERIAL_NO_TEXTURE ) emission = <sample _e>;
+else                                            emission = h.albedo * tr.emissiveMult;
+```
+
+So a traced sprite carrying `emissiveMult` with no `_e` file glows over its whole body —
+exactly the bug that made the dead spectre glow, just on the other pipeline. Every living
+SAR2 and TRO2 rotation has an `_e` (eyes on the front, fully transparent elsewhere) and
+corpse frames carry no `emissiveMult`, so the set is closed. **Re-run the coverage check
+after any change to the generator:**
+
+```python
+bad = [n for n, e in metas.items()
+       if n[:4] in ("SAR2", "TRO2") and e.get("emissiveMult", 0) > 0
+       and not (MAT / f"{n}_e.png").exists()]   # must be empty
+```
+
+## 3. `patch_global()` had been appending duplicates for months
+
+Its updater was a single-line regex, but most of `rt/data/textures.json` is
+pretty-printed across four lines — so every "update" missed and fell through to the
+append branch. The file had **231 duplicated textureNames**. Nothing looked broken only
+because RTGL1 loads the array with `insert_or_assign` (`TextureMeta.cpp:115`), i.e. LAST
+occurrence wins — meaning any entry hand-edited near the top of that file was dead
+weight, silently overridden from the bottom. `patch_global()` now parses the JSON and
+collapses duplicates last-wins (semantics-preserving: 1643 names before and after, 0
+added, 0 removed, only the intended 48 changed).
+
+---
+
+# 64NightmareImp (TRO2) — same bug, same fix
+
+`ACTOR 64NightmareImp` is `RenderStyle Translucent, Alpha 0.60`, so it hits the identical
+pipeline split: a rotation WITH a textures.json entry gets promoted to ADDITIVE, a
+rotation WITHOUT one stays plain translucent. Brightmaps only ever exist for rotations 1
+and 2A8, so the imp was ghostly-additive from the front and a flat solid body from the
+side and rear.
+
+- All 55 living sprites (frames A–K × 5 rotations) now carry `emissiveMult: 2.0`.
+- Death/gib frames L0–X0 carry a bare entry with no emissiveMult.
+- Front rotations 1 and 2A8 of frames A–G keep their existing TROO-cloned eye masks,
+  byte-for-byte unchanged.
+- **Every other living rotation gets a fully transparent `_e`** — side, rear and the
+  pain/missile frames. No eyes are visible from the side or the back, exactly as on the
+  spectre. The `_e` exists only so the rotation is on the same pipeline as the front.
+
+An earlier pass derived cyan eye masks from the imp's own art and lit the 3/4 views. That
+was rolled back — side/rear are meant to show nothing.
+
+### Eye colour and fireball colour
+
+The nightmare imp is the one monster that isn't red-eyed. Its mask **geometry** is still
+the TROO donor clone; only the colour changed, via `EYE_COLOR` in the generator
+(`recolor_mask()` recovers each texel's intensity as `max(r,g,b)/255` — exact for a
+RED-painted source — and repaints it). Blue-violet `(120,100,255)`, chosen to match its
+own art (eyes are a cold blue `(90,140,189)`) and its violet fireball.
+
+Its fireball light was separately wrong: `gen_fx_emissives.py` had `BAL3` pinned to
+`ff5533`, so a violet projectile — brightest texels `(88,48,184)`, peak-normalizing to
+~`7a42ff` — lit the room orange. Now `9a5cff`, lifted slightly off the raw art so lit
+surfaces read violet rather than near-black blue. `BAL2` beside it was already purple,
+which is what made the miss visible.
 
 ## SARG (regular pinky) — unaffected
 

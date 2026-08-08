@@ -93,8 +93,12 @@ Clear all enemy `_e` + strip meta: `python tools/clear_enemy_eye_emissives.py` t
 ### Lost Soul — `tools/pack_lostsoul_rt.py` → `d64r-lostsoul-rt.pk3`
 
 - **Do not replace** the `64LostSoul` actor (stock BRIGHT/SoulTrans stays).
-- Pk3 = yellow/orange **SKUL sprite replacements** + `LSGL` offset-glow actor/EventHandler (experimental; floor light not fully dialed).
-- SKUL mat: low `emissiveMult` (~0.12), **`SKUL_LIGHT = 0`** on the fire sprite itself (attached light on the same sprite white-blooms fire).
+- Pk3 = yellow/orange **SKUL sprite replacements** only. No ZSCRIPT, no MAPINFO, no extra actor.
+- **Sprite replacements MUST carry the original `grAb` offset** (`png_set_grab()`). PIL drops ancillary PNG chunks, so a plain `Image.save()` loses it; GZDoom then falls back to a zero offset and the sprite hangs *below* the actor origin. This is what buried every Lost Soul in the floor (fixed 2026-08-08) — it was the yellow-tinting pass, not the light work. The packer warns loudly if any lump has no `grAb`. Same trap applies to **any** pk3 `sprites/` replacement.
+- **The light rides on the SKUL fire frames themselves** — `SKUL_LIGHT` (900) + `SKUL_EMIS` (0.35), frames **A–F only** (`G0`+ is death/gib; a corpse must not light the room). **No `noShadow`.**
+- `lightIntensity` and `emissiveMult` are **coupled**, not independent: RTGL1 derives the attached light from emissive coverage, so dimming the emissive to hide a glow also kills the cast light. Tune `SKUL_LIGHT` first.
+- **`LSGL` carrier blob: removed 2026-08-08, do not reintroduce.** A separate disc actor holding the light cannot be hidden under RT — the play launcher's `rt_translucent_minalpha 0.72` *floors* translucent sprite alpha, so the disc renders near-opaque at any `Alpha` and reads as a solid orange ball on every soul.
+- The old "attached light on the same sprite white-blooms the fire" note came from `gen_fx_emissives` PREFIX_RULES applying `lightIntensity 700` **plus `noShadow`** — `noShadow` is the part that blows out.
 - Wired into both Retribution and enemy-gallery launchers.
 - **Do not** put `SKUL*` back into `gen_fx_emissives.py` PREFIX_RULES (that re-adds `lightIntensity`/`noShadow` and undoes this).
 

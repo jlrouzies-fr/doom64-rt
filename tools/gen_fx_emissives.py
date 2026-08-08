@@ -72,7 +72,11 @@ PREFIX_RULES: list[tuple[str, float, float, str | None]] = [
     # imp / hell projectiles
     ("BAL1", 0.35, 700, "ff6f00"),
     ("BAL2", 0.35, 900, "b65cff"),
-    ("BAL3", 0.35, 800, "ff5533"),
+    # 64NightmareImpBall. The sprite is violet — its brightest texels are (88,48,184),
+    # peak-normalizing to ~7a42ff — so the orange-red ff5533 this used to carry lit the
+    # room like an ordinary fireball while the projectile itself read purple. Lifted a
+    # little off the raw art so lit surfaces read violet rather than near-black blue.
+    ("BAL3", 0.35, 800, "9a5cff"),
     ("BAL7", 0.35, 1000, "66ff55"),  # baron green
     ("BAL8", 0.35, 1000, "88ff66"),  # retribution green spit
     ("RBAL", 0.4, 1100, "ff4040"),  # red ball

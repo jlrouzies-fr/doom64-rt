@@ -42,9 +42,20 @@ Do not treat this as a progress cheer sheet — only unresolved / partially reso
 
 9802s by wall terminals are **not** the desired spawn blink. Play launcher sets `rt_dynlight_flicker 0` so those Flicker lights are not uploaded; ceiling lamps handle §1.1.
 
-### 1.4 Lost Soul LSGL offset floor light — **UNFINISHED / OPTIONAL**
+### 1.4 Lost Souls buried in the floor + LSGL bubble — **FIXED 2026-08-08** (needs confirm)
 
-Yellow SKUL sprites via `d64r-lostsoul-rt.pk3` ship; same-sprite attached light abandoned (white bloom). LSGL EventHandler experimental — not dialed. Accept yellow fire under BRIGHT or finish/drop LSGL.
+| | |
+|---|---|
+| **Symptom** | `screen/lostsoulsstillbadandroundbubble.png` (MAP05) — every Lost Soul renders sunk into the floor; a white/pink round dome sits on the floor nearby. |
+| **Cause** | **Lost sprite offsets.** All 40 original `SKUL*` lumps carry a PNG `grAb` chunk (e.g. `SKULA1` 56×62, offset `(27,65)`). `tone_skul_albedo()` round-trips each through PIL, which silently drops ancillary chunks, so every replacement shipped with **no** `grAb`. GZDoom falls back to a zero offset → the whole sprite hangs *below* the actor origin instead of above it. `LSGLA0` (synthetic, never had one) sank the same way, showing only its top half above the floor = the "bubble". |
+| **Fix** | `png_set_grab()` in `pack_lostsoul_rt.py` re-inserts `grAb` before `IDAT`, carrying each lump's original offset; `LSGLA0` gets `(24,58)` to centre on the flame. Packer warns if any lump lacks `grAb`. Verified: 41/41 sprites in the pk3 match their source offsets. |
+| **Blob removed** | The `LSGL` carrier disc is **gone** (2026-08-08). With offsets fixed it stopped being a floor dome and became a solid orange **ball** on each soul instead: the play launcher sets `rt_translucent_minalpha 0.72`, which *floors* translucent sprite alpha under PT, so no `Alpha` value can hide it. Dimming via `emissiveMult` fails too — RTGL1 derives the attached light from emissive coverage, so the cast light dies with it. **They are coupled knobs.** |
+| **Light now** | Attached to the `SKUL` fire frames themselves — `lightIntensity` **900**, `emissiveMult` **0.35**, frames **A–F only** (`G0`+ = death/gib), **no `noShadow`**. The pk3 is sprites-only now: no ZSCRIPT, no MAPINFO, no extra actor. |
+| **Confirm** | `tools\launch-retribution-rt.cmd 5` — souls float at head height, flame casts warm light on nearby walls, no ball. Tune with `SKUL_LIGHT`. |
+
+> **Shared-tree hazard:** the global `rt/data/textures.json` lives in the gitignored build tree and is rewritten by *every* generator. A concurrent session clobbered the Lost Soul entry once during this fix (18:17 overwrote a 14:23 run), silently restoring old values and making a correct fix look broken. Re-check the live entry before concluding a lighting change did nothing.
+
+**General rule:** any pk3 `sprites/` replacement generated through PIL must re-apply `grAb`, or it renders at the wrong height.
 
 ### 1.6 MAP02 yellow door + dark absorb room — **ENGINE FIX 2026-08-04** (needs confirm)
 
