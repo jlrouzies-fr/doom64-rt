@@ -174,8 +174,9 @@ reached the renderer.
 | `rt_sector_emis` | 0.35 | Bright surfaces self-emit, scaled by sector lightlevel. Restores rooms the original lit purely with lightlevel. |
 | `rt_sector_emis_minlight` | 160 | Absolute *floor* only. Effective threshold is `max(this, map median + margin)`. |
 | `rt_sector_emis_margin` | 40 | How far above the map's own median a sector must be to self-emit. This is what prevents the whole-image flood. |
-| `rt_wall_strips` | true | Analytic lights along `SPACEAR*` wall bulb trim. |
+| `rt_wall_strips` | true | Analytic lights on wall-mounted bulb arrays: `SPACEAZ`, `SFLATAQ`, `SFLATAS`, `SFLATAP`. Not `SPACEAR` — see §20. |
 | `rt_wall_strip_intensity` | 500 | High because a strip light is flush against the wall it lights (see §19). |
+| `rt_wall_strip_minlight` | 120 | Was 140, tuned on MAP03's 180s. MAP02 has fixtures at exactly 120. |
 | `rt_ceiling_edge_lamps` | true | Lights around the perimeter of lamp ceilings, for halls `rt_ceiling_lamps` skips. |
 | `rt_ceiling_edge_intensity` | 500 | Same occlusion reasoning as wall strips. |
 | `rt_dynlight_minradius` | 16 | Drops raster-era helper `PointLight`s (r=12) while keeping real fixtures (r>=32). |
@@ -322,12 +323,73 @@ a fraction of the visible contribution.
 Do not conclude "the feature is broken" from a dim result before comparing against an
 existing light of known-good intensity in a *similar geometric situation*.
 
+## 20. A fixture rule can be right by proximity on the map you tested
+
+`rt_wall_strips` originally matched `SPACEAR`, and on MAP03 it looked completely correct:
+lights appeared, in the right places, along the right trim. It was wrong anyway.
+
+`SPACEAR` is a plain trim panel. The actual bulbs are a separate family of **lamp arrays** —
+`SPACEAZ` (4×4 bulbs), `SFLATAQ` (4×4), `SFLATAS` (2×2 large), `SFLATAP`. `SPACEAR` happens
+to be the panel on the same thin step that a bulb flat caps, so:
+
+| | `SPACEAR` sidedefs | adjacent to a bulb flat |
+| --- | --- | --- |
+| MAP03 | 57 | **54 (95%)** |
+| MAP02 | 41 | **4 (10%)** |
+
+On MAP03 the light landed a few units from a real fixture and read as correct. On MAP02 the
+same rule lights blank wall and misses every lamp in the level.
+
+This is more dangerous than a rule that visibly fails, because the confirming screenshot is
+genuinely convincing. Two defences:
+
+- **Confirm the fixture from the pixels, not from the result.** `SPACEAR` has no visible
+  bulbs at all — extracting it from the WAD next to `SPACEAZ` settles it in seconds. §17 said
+  to check source data over derived art; this extends it: check source data over a
+  *good-looking outcome* too.
+- **Measure the rule's precision on a second map before believing it.** "How often is this
+  texture actually next to the thing I care about" is a query over map data, and 95% vs 10%
+  is the entire finding.
+
+Corollary: `SFLAT*` names are not only flats. Doom 64 hangs them on sidedefs — MAP02 carries
+`SFLATAQ` as `bottom` 26 times and `middle` 4 times — so the sidedef walk and the flat walk
+(`RT_UploadCeilingInsetLamps` / `RT_UploadCeilingEdgeLamps`) each see part of the same
+fixture family. Neither is redundant.
+
+## 21. A `middle` texture on a two-sided line does not span the sector
+
+The band code gave `middle` the whole `thisSec` floor→ceiling range, which put MAP02's
+lights at mid-room height, floating in front of the fixture rather than on it. The band a
+middle texture actually covers is the line's **opening**: `max(floors) … min(ceilings)`.
+
+Only `top` and `bottom` had been special-cased, because MAP03 — the map the feature was
+built on — uses the fixture exclusively as `bottom`. The untested part was the wrong part.
+
+## 22. Truncated debug output regresses; make truncation impossible to miss
+
+§14 already recorded that a truncated dump hides rare fixtures. The replacement aggregated
+by texture name — and then printed `std::min(24, sorted.size())` rows, sorted nearest-first,
+with **no notice that it had truncated**. It reported "30 distinct" and listed 24.
+
+The six it dropped were the farthest, which is exactly where a fixture across the room sits.
+An hour went into candidates from the visible 24 while the answer may never have printed.
+
+If output can be capped, the cap must announce itself (`... N more not shown`). A count in
+the header that disagrees with the number of rows below it is not a notice — nobody
+subtracts.
+
 ## Pending visual confirmation
 
 `RT_UploadCeilingEdgeLamps` (MAP03 ceiling strips) and the map-relative
 `rt_sector_emis` threshold are built and wired into the launcher but **not yet confirmed
 by eye**. Check on MAP03, and on MAP01's spawn ceiling bulb panel, which the perimeter
 walk should also cover.
+
+The re-aimed `rt_wall_strips` matcher (§20) is likewise unconfirmed. On MAP02 it should now
+find 30 wall-mounted bulb arrays (26 `SFLATAQ` bottoms, 4 middles) where it previously found
+none; on MAP03, 4 `SPACEAZ` bottoms where it previously lit 57 `SPACEAR` trim panels. **MAP03
+will look different** — the lights move from the trim onto the bulbs, and there are far fewer
+of them. Judge it against the fixtures, not against the previous screenshot.
 
 ## Resolved this session
 
