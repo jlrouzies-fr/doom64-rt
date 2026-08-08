@@ -4,6 +4,11 @@ Lighting two textures as if they were bulb arrays, to lift rooms that read as
 too dark under RT. They are not lamps. This is a deliberate invention, and the
 implementation is shaped around keeping it separable from the real fixtures.
 
+See also [[solo-bulb-lamps]] — SFLATDE/SFLATCH, a related but distinct system:
+those textures show a real lit bulb in the art, so the light there is white and
+modest rather than invented and blue-grey. Same tile-lattice placement
+mechanism underneath, generalized to serve both.
+
 ## Why these two
 
 Neither carries bulbs in the art and the original game lights neither. What they

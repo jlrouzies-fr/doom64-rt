@@ -168,6 +168,16 @@ rem 1.35x -> 2.0x) to survive it: the colour is RAW radiance, not hue-normalised
 rem scaling intensity scales all three channels together and a weakly-saturated colour
 rem gets pushed toward the tonemapper's white clip point faster than a saturated one does.
 rem
+rem rt_solo_lamps: SFLATDE and SFLATCH are a DIFFERENT case from rt_faux_lamps above, not
+rem the same feature reused -- these textures show a real lit bulb baked into the art (a
+rem bright white blob centred in the housing), the base game just never wired a light to
+rem it. So the light is white (not faux's invented blue-grey) and modest (90, well under
+rem the real bulb arrays' 180 and faux's 500) -- "not too strong", per request. One light
+rem per texture tile (both textures are a single bulb, not a grid), own colour/budget so
+rem it can never crowd rt_faux_lamps or the real ceiling-edge walk. Found in MAP03's big
+rem stepped-shaft room (sectors 24-30/43, tags 6-11) and reused in MAP08. Set
+rem rt_solo_lamps 0 to see those ceilings as authored.
+rem
 rem d64r-seqlight-fix.wad replaces maps to clear LightSequence chains -- phased
 rem waves of light that travel along a run of sectors with no fixture casting
 rem them. Under RT they are worse than in the original renderer: rt_sector_emis
@@ -214,9 +224,11 @@ start "" gzdoom.exe ^
   +rt_ceiling_edge_debug 0 +rt_ceiling_edge_debug_marks 0 ^
   +rt_faux_lamps 1 +rt_faux_lamp_color 3C5078 +rt_faux_lamp_intensity 500 ^
   +rt_faux_lamp_max 128 +rt_faux_lamp_stride 2 ^
+  +rt_solo_lamps 1 +rt_solo_lamp_color FFFFFF +rt_solo_lamp_intensity 90 ^
+  +rt_solo_lamp_radius 0.06 +rt_solo_lamp_zofs 8 +rt_solo_lamp_max 64 +rt_solo_lamp_stride 1 ^
   +rt_light_mark_intensity 25 +rt_light_mark_max 24 ^
   +rt_translucent_minalpha 0.72 ^
-  +rt_spectre_corpse_solid 1 +rt_ghost_solid 1 ^
+  +rt_spectre_corpse_solid 1 +rt_ghost_solid 0 +rt_illum_volume 1 ^
   +rt_rr_temporal 0 ^
   +rt_rr_disocc 1 +rt_rr_disocc_ratio 3.0 +rt_rr_disocc_mindelta 0.01 +rt_rr_disocc_show 0 ^
   +rt_rr_reset_on_lightcut 1 +rt_rr_reset_on_dynlight 1 +rt_rr_reset_delta 0.5 +rt_rr_reset_min_ms 250 ^
