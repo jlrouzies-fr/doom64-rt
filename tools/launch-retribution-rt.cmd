@@ -224,11 +224,11 @@ start "" gzdoom.exe ^
   +rt_ceiling_edge_debug 0 +rt_ceiling_edge_debug_marks 0 ^
   +rt_faux_lamps 1 +rt_faux_lamp_color 3C5078 +rt_faux_lamp_intensity 500 ^
   +rt_faux_lamp_max 128 +rt_faux_lamp_stride 2 ^
-  +rt_solo_lamps 1 +rt_solo_lamp_color FFFFFF +rt_solo_lamp_intensity 90 ^
+  +rt_solo_lamps 1 +rt_solo_lamp_color FFFFFF +rt_solo_lamp_intensity 45 ^
   +rt_solo_lamp_radius 0.06 +rt_solo_lamp_zofs 8 +rt_solo_lamp_max 64 +rt_solo_lamp_stride 1 ^
   +rt_light_mark_intensity 25 +rt_light_mark_max 24 ^
   +rt_translucent_minalpha 0.72 ^
-  +rt_spectre_corpse_solid 1 +rt_ghost_solid 0 +rt_illum_volume 1 ^
+  +rt_spectre_corpse_solid 1 +rt_ghost_solid 0 +rt_illum_volume 0 +rt_ghost_lightscale 1 ^
   +rt_rr_temporal 0 ^
   +rt_rr_disocc 1 +rt_rr_disocc_ratio 3.0 +rt_rr_disocc_mindelta 0.01 +rt_rr_disocc_show 0 ^
   +rt_rr_reset_on_lightcut 1 +rt_rr_reset_on_dynlight 1 +rt_rr_reset_delta 0.5 +rt_rr_reset_min_ms 250 ^
