@@ -140,27 +140,187 @@ alpha-tested sprite at alpha 1.0, clears `MESH_TRANSLUCENT_ALPHA_THRESHOLD`, ent
 BLAS, is path-traced and casts a shadow like every other corpse. DECORATE's Death
 sequence ends on `A_SetTranslucent(1.0)`, so a solid corpse is what the actor asks for.
 
-### The living body — `rt_ghost_solid` (default 1)
+### The living body — solved: `rt_ghost_lightscale` (default 1, engine-side only)
 
-Same treatment, extended to the living frames of **both** monsters: not translucent,
-alpha forced to 1.0, alpha-tested. Both halves are required — the `TRANSLUCENT` flag
-forces rasterization on its own regardless of alpha, and alpha under 0.98 forces it
-regardless of the flag.
+**This is the fix that keeps the see-through look.** It landed after three prior
+attempts were tried and rejected — including `rt_illum_volume`, which shipped, looked
+wrong in play, and was reverted. That history is preserved below because the reasoning
+that killed each one is what points at this one.
 
-The result is what "lit like everything else" actually means: in an unlit room the body
-goes black and only the `_e` eye mask emits. **The cost is the see-through look** — a
-spectre is now a solid dark sprite. `+rt_ghost_solid 0` restores the rasterized ghost,
-and with it the baked-lit appearance.
+The separation of body from eyes happens in **blending**, not in shading. `RsWorld.inl`
+writes two colour attachments, and `RasterizerPipelines.cpp` gives them different blend
+factors:
 
-⚠ **Two other routes to the same goal were tried and rejected — don't retry them:**
+| attachment | contents | src factor | dst factor |
+|---|---|---|---|
+| 0 | `outColor` — the sprite body | `SRC_ALPHA` | `ONE_MINUS_SRC_ALPHA` (or `ONE` if additive) |
+| 1 | `outScreenEmission` — the `_e` eye mask | `ONE` | `ONE` |
+
+Attachment 1 **never sees alpha**. So scaling the sprite's vertex alpha dissolves the
+body and leaves the eyes at full strength. In a pitch-black room a nightmare imp becomes
+a pair of floating eyes, and a spectre — whose `_e` is fully transparent — disappears
+outright. That is exactly the requested behaviour, and it needs no shader change, no
+RTGL1 rebuild, and no new data.
+
+`GhostLightScale()` in `rt_main.cpp` computes the multiplier for living ghost frames
+only (corpses are excluded — they are solid, traced and genuinely lit):
+
+```cpp
+const float ll  = clamp( float( rtstate.m_lightlevel ) / 255.f, 0.f, 1.f );
+const float lit = sqrt( ll );          // Doom lightlevels read brighter than linear
+return 1.f - amount * ( 1.f - lit );   // amount = rt_ghost_lightscale
+```
+
+### The idle-vs-active gap — `rt_spectre_alpha` / `rt_nightmareimp_alpha`
+
+`rt_ghost_lightscale` alone left **idle** ghosts still reading as baked-lit while the same
+monster looked right once it woke up and charged. It was not a missed code path — the two
+states render at different alpha, and the lightscale was correctly scaling a body that was
+4× more opaque to begin with. The two monsters had *different* bugs:
+
+**64Spectre** — its DECORATE `Spawn` loop sets alpha once and never lowers it:
+
+```
+Spawn:  SAR2 A 0 A_SetTranslucent(1.0, 0)
+        SAR2 BD 10 A_Look
+        Goto Spawn+1          <- loops HERE, skipping the A_SetTranslucent line
+See:    ... A_SetTranslucent(0.75) -> 0.50 -> 0.25 -> 0.20
+```
+
+so idle sat at `1.0` and chasing at `0.20`. The old `min(a, rt_translucent_minalpha)` only
+clipped the top, landing idle at **0.80**. `rt_spectre_alpha` (default `0.20`, the value the
+actor's own active states use) now *forces* one value across every state — which is what
+the old comment there already claimed to do but `min()` never did. Chasing spectres are
+unchanged. Cost: the `Idle` state's `0.25 → 1.0` alpha pulse is flattened; under PT that
+pulse reads as the ghost glowing on and off rather than as a shimmer.
+
+**64NightmareImp** — no idle/active discrepancy at all: it declares a flat `Alpha 0.60` and
+never calls `A_SetTranslucent`. Its bug was the **opposite** one — the
+`max(a, rt_translucent_minalpha)` *floor* for soft-blend sprites was raising it from the
+authored `0.60` to `0.80`, i.e. making it more opaque than the actor asks for. Living
+ghosts now bypass that floor entirely. `rt_nightmareimp_alpha` was briefly left at the
+authored `0.60` once the floor was gone, then tuned down to **`0.35`** by eye — deliberately
+below what DECORATE asks for, on the same reasoning that settled the spectre (see the caveat
+below). Still well above the spectre's `0.20`: a nightmare imp is a semi-transparent monster,
+not an invisible one.
+
+⚠ **Caveat on `rt_ghost_lightscale`'s signal, recorded because it may resurface.**
+`Sector->GetSpriteLight()` is the map-authored sector lightlevel, which in this project is
+deliberately decoupled from actual RT brightness — the same decoupling `forceWorldWhiteRgb`
+exists to enforce, and the launcher runs `rt_ceiling_lamps 0 / rt_sector_lights 0` so room
+brightness comes from emissive textures and placed lights, not lightlevel. A sector can read
+`lightlevel 200` while being pitch black under RT. In practice this stopped mattering once
+the alpha gap was closed: at 0.20/0.35 the ghosts are faint enough that imperfect light
+tracking is not visible. If it ever does resurface, the fix is *not* the fog froxel
+(see above) — it would need a real surface-irradiance probe.
+
+`GhostLightScale()` is applied in `l_spriteAlpha()` **after** the alpha selection above and
+after the `rt_translucent_minalpha` floor/cap —
+those pin how see-through the ghost is at full light; this then fades that whole look out
+with the room. Folding it in earlier would let `minalpha` clamp the darkness back off.
+
+⚠ **`m_lightlevel`, not `m_sectorLightLevel`.** These are deliberately separate fields
+(see the comment on `push_sectorlight` in `rt_state.h`). `m_sectorLightLevel` is only ever
+pushed from `hw_walls.cpp` / `hw_flats.cpp` — on a sprite it is stale, and using it here
+would have read as a permanently pitch-black room and erased every ghost everywhere.
+`m_lightlevel` is the sprite-only one, set in `hw_sprites.cpp` from
+`actor->Sector->GetSpriteLight()`, defaulting to 255.
+
+This is **static sector light only** — the flashlight and muzzle flashes do not brighten
+the ghost back up. That is deliberate, and it is precisely what went wrong with the
+illumination volume below.
+
+### Rejected: `rt_illum_volume` (shipped 2026-08-08, reverted 2026-08-09)
+
+`RsWorld.inl` has a branch that looks purpose-built for this problem:
+
+```glsl
+if( globalUniform.illumVolumeEnable != 0 ) {
+    vec3 illum = textureLod( g_illuminationVolume_Sampler, sp, 0.0 ).rgb;
+    outColor.rgb *= illum;                                    // body — darkens with the room
+} else {
+    outColor.rgb *= max( vec3( 1 ), tonemapping.avgLuminance ); // old behaviour — can only brighten
+}
+// ... computed AFTER the branch above, from baseColor() — never touched by illum:
+ldrEmis = ... ;             // eyes (_e mask)
+outScreenEmission = ldrEmis;
+```
+
+`max(vec3(1), avgLuminance)` is a floor, not a light response — it can raise a dim
+sprite up to scene average brightness but can never darken one, which is the entire
+mechanism behind "baked-lit in the dark." The `illumVolumeEnable` branch instead samples
+`g_illuminationVolume` — the same froxel grid `RtVolumetric.rgen` already fills every
+frame (`rt_volume_type` defaults to 1, unmodified by the launcher, so this data was being
+computed and thrown away the whole time) — and multiplies only the body. `ldrEmis` is
+computed from `baseColor()` *after* this multiply, so the eyes never see it.
+
+**Why it was reverted.** The thing it samples is *not surface irradiance*.
+`RtVolumetric.rgen` writes `g_illuminationVolume` from the same froxel pass that feeds
+volumetric **fog**: a coarse 3D grid, temporally blended at `mix(prev, cur, 0.05)`
+(~20-frame lag), storing **absolute, unnormalized** radiance. Every artifact followed
+directly from that:
+
+- a muzzle flash or the flashlight lights up whole froxel **cells**, so the sprite reads
+  foggy, fuzzy and haloed — you are literally seeing the fog grid
+- the radiance is unnormalized and exceeds 1 under any real light, so the
+  additive-blended body **brightens** until it stops looking see-through — "they are not
+  transparent when direct light is cast on them"
+- the 0.05 temporal blend adds visible lag
+- `illumVolumeEnable` is a **global** switch in `RsWorld.inl`, so it hit every particle
+  and additive FX in the game, not just the two monsters
+
+Reported in play as "when those happen it's like there is fog around" — correct, and
+correctly diagnosed by the user as a workaround rather than a fix.
+
+`rt_illum_volume` now defaults to `0` and the launcher pins it off. The RTGL1 build
+changes below were **kept** — they are inert at runtime while the cvar is 0, and they
+cost a full DLL rebuild to redo if the path is ever worth re-testing.
+
+**It was compiled out.** `ILLUMINATION_VOLUME` is a build-time constant, `0` upstream, in
+two files that must agree (`Volumetric.cpp` has a `static_assert` enforcing it):
+
+- `deps/RTGL/Source/Volumetric.h` → `#define ILLUMINATION_VOLUME_ 0` (gates the C++:
+  the illumination image, its descriptor bindings, and the fill/read calls in
+  `Volumetric.cpp`)
+- `deps/RTGL/Source/Generated/GenerateShaderCommon.py` → `"ILLUMINATION_VOLUME": 0`
+  (gates the GLSL side via the generated `ShaderCommonC.h` / `ShaderCommonGLSL.h`,
+  regenerated by `GenerateShaders.py -g`, which `tools/build-rtgl.cmd` already runs)
+
+Both flipped to `1`. **A second, separate gap surfaced on the first build**: the two
+descriptor-binding slots the feature needs, `BINDING_VOLUMETRIC_ILLUMINATION` /
+`_SAMPLER`, were *commented out* in the same dict, right after the live volumetric
+bindings — `Volumetric.cpp`'s `#if ILLUMINATION_VOLUME` blocks reference them by name, so
+turning on the top-level flag without them is a straight compile failure (`undeclared
+identifier`, both in the GLSL shader compile and the C++ compile). Uncommented; slots 3
+and 4 were already reserved for them and nothing else claims those numbers. This
+confirms the feature was fully authored upstream and deliberately shipped disabled —
+consistent with the DLSS-RR discovery earlier in this project (see
+`docs/rayreconstruction/`).
+
+The engine side is `rt_illum_volume` →
+`RgDrawFrameVolumetricParams::useIlluminationVolume`, gated additionally on
+`rt_volume_type != 0` (no point enabling illum sampling when there's no volumetric pass
+filling it). Requires a rebuilt `RTGL1.dll` — on the old one this cvar is inert, RTGL1
+silently ignores the field.
+
+### Other rejected routes — don't retry
 
 1. **Dimming the vertex colour by sector lightlevel.** Cannot work in principle:
    `RsWorld.inl` builds its emissive out of `baseColor()`, so darkening the body darkens
-   the eye mask by exactly the same factor. Body and eyes are inseparable from there.
+   the eye mask by exactly the same factor. Body and eyes are inseparable *in that
+   channel* — the separation exists one stage later, in the per-attachment blend
+   factors, which is what `rt_ghost_lightscale` uses.
 2. **`GLASS | ALPHA_TESTED`.** Traced *and* see-through (`IsRasterized()` exempts
    GLASS/WATER/ACID), so it keeps the ghost look — but it is a refractive material on a
    billboard, which is not the look this mod wants. Rejected 2026-08-08; the same
    approach had already been removed once in `56e9c2ae`.
+3. **`rt_ghost_solid` — give up transparency, get real lighting.** Works, and is still
+   there as a fallback (default `0`), but the solid dark silhouette breaks the original
+   look. Rejected by the user 2026-08-08: *"this is sadly a no go, it break the original
+   look."*
+
+Corpses are unaffected by any of this: `rt_spectre_corpse_solid` stays on, since a dead
+spectre/imp is meant to read as a solid body per its own Death sequence — see above.
 
 ### ⚠ Going solid makes every living `_e` load-bearing
 
