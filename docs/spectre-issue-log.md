@@ -204,6 +204,33 @@ below what DECORATE asks for, on the same reasoning that settled the spectre (se
 below). Still well above the spectre's `0.20`: a nightmare imp is a semi-transparent monster,
 not an invisible one.
 
+### ⚠ A living ghost must be TRANSLUCENT, never ALPHA_TESTED
+
+`makePrimFlags()` used to send only `IsSpectre()` sprites down the rasterized
+`TRANSLUCENT` path and drop **64NightmareImp into the `ALPHA_TESTED` cutout branch**. That
+is wrong for a `RenderStyle Translucent, Alpha 0.60` monster, and it is a trap, because
+`RsWorld.inl` ends with:
+
+```glsl
+if( alphaTest != 0 ) { if( outColor.a < ALPHA_THRESHOLD ) discard; }   // 0.5
+```
+
+`discard` kills the **whole fragment — including `outScreenEmission`**. So below alpha 0.5
+the emissive eyes die *with* the body, and the monster vanishes completely rather than
+fading to a pair of floating eyes. Everything the alpha work was built on stops applying.
+
+This is also the real reason the old `max(a, rt_translucent_minalpha)` floor existed: 0.80
+kept these sprites above the 0.5 threshold. Its job was clearing the discard, not looks.
+Dropping the floor to the authored 0.60 left almost no margin — and since
+`GhostLightScale()` multiplies on top, any room dimming past ~0.83× would have popped the
+imp out entirely. At `rt_nightmareimp_alpha 0.35` it was invisible everywhere.
+
+`IsLivingGhost()` now routes every living soft-blend monster down the spectre's
+`TRANSLUCENT` path with `alphaTest = false`. With no threshold to fall off, the body fades
+smoothly to nothing while the eyes — on the `ONE/ONE` attachment — are never discarded at
+any alpha. Corpses and anything under `rt_ghost_solid` are excluded and stay solid
+alpha-tested cutouts.
+
 ⚠ **Caveat on `rt_ghost_lightscale`'s signal, recorded because it may resurface.**
 `Sector->GetSpriteLight()` is the map-authored sector lightlevel, which in this project is
 deliberately decoupled from actual RT brightness — the same decoupling `forceWorldWhiteRgb`
