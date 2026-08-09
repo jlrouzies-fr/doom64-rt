@@ -100,6 +100,39 @@ BLINK = {
 }
 
 
+# The third family, and the one this tool originally could not see at all.
+#
+# A map can carry no animated sector special anywhere and still blink, because an
+# ACS script installs the effect at load: MAP07 is nothing but Light_Glow/Flicker/
+# Strobe calls in `script 669 OPEN`, and this scanner called it clean while the map
+# was visibly flashing. Whether these are worse than a sector special under RT is
+# the same question with the same answer -- Light_Glow/Flicker/Strobe all take an
+# upper bound of 255 in practice, which clears any threshold emis_threshold can
+# produce, so each one turns its tagged sectors into sourceless emitters.
+#
+# Matched against the SCRIPTS source lump rather than the compiled BEHAVIOR: every
+# Retribution map ships its ACS source, and reading it is both exact and readable.
+# tools/make_seqlight_fix.py is the other half -- it patches the compiled bytecode.
+ACS_ANIMATED = ("Glow", "Flicker", "Strobe")
+ACS_CALL = re.compile(
+    r"Light_(" + "|".join(ACS_ANIMATED) + r")\s*\(\s*([^)]*?)\s*\)", re.I
+)
+
+
+def scan_acs(text: str) -> list[tuple[str, tuple[int, ...]]]:
+    """Every animated Light_* call in a map's ACS source, in source order.
+
+    Duplicates are kept rather than collapsed: a tag re-armed by several scripts
+    (MAP20 re-strobes the same eight tags from four different scripts) is several
+    calls, and make_seqlight_fix.py has to name each one it strips.
+    """
+    out = []
+    for name, rawargs in ACS_CALL.findall(text):
+        args = tuple(int(a) for a in re.findall(r"-?\d+", rawargs))
+        out.append((f"Light_{name.title()}", args))
+    return out
+
+
 def fields(body: str) -> dict[str, str]:
     return {k: v.strip() for k, v in re.findall(r"(\w+)\s*=\s*([^;]+);", body)}
 
@@ -165,8 +198,10 @@ class MapData:
             cur = nxt
 
 
-def scan(mapname: str, text: str, show_chains: bool) -> tuple[int, int, int]:
+def scan(mapname: str, text: str, show_chains: bool,
+         acs: list[tuple[str, tuple[int, ...]]] | None = None) -> tuple[int, int, int, int]:
     m = MapData(text)
+    acs = acs or []
     seq = [i for i in range(len(m.sectors)) if m.special(i) in SEQUENCE]
     blink = [i for i in range(len(m.sectors)) if m.special(i) in BLINK]
     thr = emis_threshold([m.light(i) for i in range(len(m.sectors))])
@@ -178,8 +213,8 @@ def scan(mapname: str, text: str, show_chains: bool) -> tuple[int, int, int]:
     blink_emis = [i for i in blink if m.light(i) >= thr]
     starts = [i for i in seq if m.special(i) in (1, 2)]
 
-    if not seq and not blink:
-        return 0, 0, 0
+    if not seq and not blink and not acs:
+        return 0, 0, 0, 0
 
     print(
         f"{mapname}  sectors={len(m.sectors):4d}  thr={thr:.0f}  "
@@ -192,6 +227,15 @@ def scan(mapname: str, text: str, show_chains: bool) -> tuple[int, int, int]:
         for i in blink:
             kinds[BLINK[m.special(i)]] += 1
         print("      blink kinds: " + ", ".join(f"{k}x{v}" for k, v in sorted(kinds.items())))
+    if acs:
+        print(f"      acs light calls: {len(acs)}")
+        for name, args in acs:
+            tagged = [i for i in range(len(m.sectors))
+                      if args and m.sectors[i].get("id") == str(args[0])]
+            base = sorted({m.light(i) for i in tagged})
+            print(f"        {name}({', '.join(str(a) for a in args)})"
+                  f"  sectors={tagged}  base={base}"
+                  f"{'  DARKENS if stripped' if base and max(base) < PHASED_PEAK else ''}")
 
     if show_chains:
         for s in starts:
@@ -209,7 +253,7 @@ def scan(mapname: str, text: str, show_chains: bool) -> tuple[int, int, int]:
         orphans = sorted(set(seq) - {i for s in starts for i in [s] + m.chain_from(s)})
         if orphans:
             print(f"      unreached 3/4 sectors (no start adjacent): {orphans}")
-    return len(seq), len(blink), len(starts)
+    return len(seq), len(blink), len(starts), len(acs)
 
 
 def main() -> None:
@@ -221,17 +265,20 @@ def main() -> None:
         wanted = {f"MAP{int(a):02d}" for a in args}
         names = [n for n in names if n in wanted]
 
-    tot_seq = tot_blink = tot_chain = 0
+    tot_seq = tot_blink = tot_chain = tot_acs = 0
     for name in names:
         start, end = map_lump_range(lumps, name)
         members = {nm.upper(): blob for nm, blob in lumps[start:end]}
         if "TEXTMAP" not in members:
             continue
-        s, b, c = scan(name, decode_textmap(members["TEXTMAP"]), show_chains)
+        acs = scan_acs(members["SCRIPTS"].decode("latin-1")) if "SCRIPTS" in members else []
+        s, b, c, a = scan(name, decode_textmap(members["TEXTMAP"]), show_chains, acs)
         tot_seq += s
         tot_blink += b
         tot_chain += c
-    print(f"\nTOTAL sequence sectors={tot_seq} in {tot_chain} chains; blink sectors={tot_blink}")
+        tot_acs += a
+    print(f"\nTOTAL sequence sectors={tot_seq} in {tot_chain} chains; "
+          f"blink sectors={tot_blink}; acs light calls={tot_acs}")
 
 
 if __name__ == "__main__":

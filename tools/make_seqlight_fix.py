@@ -1,10 +1,13 @@
 """
 Build d64r-seqlight-fix.wad: strip chosen animated sector-light specials.
 
-Two families, two tables. CHAINS holds LightSequence chains, described below.
+Three families, three tables. CHAINS holds LightSequence chains, described below.
 BLINKS holds per-sector blink specials (dLight_Flicker and friends), which need
 no walk to resolve -- one special animates one sector, so the sector list is the
-effect. Both end up in the same output wad, which may cover several maps.
+effect. SCRIPTED holds Light_Glow/Flicker/Strobe calls the map's own ACS makes at
+runtime, which carry no sector special at all and so are invisible to any survey
+of the map geometry -- see the Scripted class. All three end up in the same
+output wad, which may cover several maps.
 
 A LightSequenceStart (special 2) sector anchors a chain of alternating
 LightSequenceSpecial1/2 (3/4) sectors. GZDoom walks it once at map load
@@ -44,6 +47,7 @@ PhaseHelper's walk. Re-run it after any map data change:
 from __future__ import annotations
 
 import re
+import struct
 import sys
 from pathlib import Path
 
@@ -159,6 +163,228 @@ BLINKS = [
 ]
 
 
+class Scripted:
+    """A single Light_* call made by the map's ACS at runtime.
+
+    The third family, and the one no sector-special survey can see: the map
+    carries no special at all, an OPEN script installs the effect at load. That
+    is why tools/scan_light_specials.py reported MAP07 clean while the map was
+    visibly blinking -- it reads special= out of TEXTMAP, and there is nothing
+    there to read.
+
+    Identity is (script, special, args). Args are matched exactly, because that
+    tuple is what the byte signature below is built from and an exact match is
+    the whole safety story: if the map is ever recompiled and the call moves or
+    its arguments change, the signature stops matching and the build aborts
+    rather than NOP-ing out some unrelated instruction.
+    """
+
+    def __init__(self, mapname: str, script: int, special: int,
+                 args: tuple[int, ...], enabled: bool, note: str):
+        self.mapname = mapname
+        self.script = script
+        self.special = special
+        self.args = args
+        self.enabled = enabled
+        self.note = note
+
+    @property
+    def label(self) -> str:
+        name = ACS_LIGHT_SPECIALS.get(self.special, f"special {self.special}")
+        return f"{name}({', '.join(str(a) for a in self.args)})"
+
+
+ACS_LIGHT_SPECIALS = {
+    112: "Light_ChangeToValue",
+    113: "Light_Fade",
+    114: "Light_Glow",
+    115: "Light_Flicker",
+    116: "Light_Strobe",
+    117: "Light_Stop",
+}
+
+
+SCRIPTED = [
+    # MAP07 script 669 OPEN is nothing BUT these eight calls, so stripping all
+    # of them leaves an OPEN script that runs a run of NOPs and terminates.
+    #
+    # Every one of them crests at 255, which clears any threshold rt_sector_emis
+    # can produce (max(minlight, map median + margin) -- 160/40 in the launcher),
+    # so each one turns its sectors into sourceless emitters exactly the way a
+    # phased sequence chain does. Reported from play on the tag 8 alcoves: a
+    # white patch blinking on the wall beside a 64TechPoleLong, with the pole
+    # itself -- which has a real GLDEFS pointlight -- visibly steady throughout.
+    Scripted(
+        "MAP07", 669, 115, (8, 255, 200), enabled=True,
+        note="THE REPORTED ONE. Flicker 255<->200 on sectors 243/245/265/303 -- "
+             "64-tall alcoves clad SMONBA/SPACEBK/SPACEBO, ceiling SFLATAS, "
+             "around (-700..-1160, -1000..-1900). Sector 243 contains the "
+             "64TechPoleLong at (-768,-1536) and 245 the one at (-1140,-1892), "
+             "which is the pole-plus-blinking-patch in screen/"
+             "fakelightblinklevel7.png. Base is 255 on 243/245/303 and 220 on "
+             "265, so clearing it leaves the alcoves steady bright -- 265 sits "
+             "at 220 rather than pulsing up to 255, the only change worth "
+             "noticing.",
+    ),
+    Scripted(
+        "MAP07", 669, 115, (28, 255, 220), enabled=True,
+        note="Flicker 255<->220 on sectors 193/194/195, the stepped bay at "
+             "(1808..1920, 16..208). Same defect, same map, base 255 so same "
+             "no-darkening result. Stripped with tag 8 rather than left to be "
+             "re-reported.",
+    ),
+    Scripted(
+        "MAP07", 669, 116, (16, 255, 140, 2, 2), enabled=True,
+        note="Strobe 2 tics on / 2 off on sector 218 -- a 64x64 cell at "
+             "(64..128, -512..-448) floored AND ceilinged in SPORT1. Note this "
+             "is the one entry here with an arguable source: SPORT1 is a lamp "
+             "texture, so a room lit by it flashing is not quite the sourceless "
+             "lie the others are. Stripped on the instruction to remove the "
+             "scripted sequences; base 255 so it stays lit, just steady. Flip "
+             "this one first if the room reads dead.",
+    ),
+    Scripted(
+        "MAP07", 669, 114, (7, 255, 180, 35), enabled=True,
+        note="Glow 255<->180 on sectors 224/257/262/348/354/423 -- thin 24x12 "
+             "slivers faced with STRAKB1/STRAKY1, the animated light-strip "
+             "textures. Base 255, so clearing leaves them at full.",
+    ),
+    Scripted(
+        "MAP07", 669, 114, (17, 255, 140, 70), enabled=True,
+        note="Glow 255<->140 on sectors 236/426/427, the SPACEBB/SPACEBD/SPACEBI "
+             "room at (16..336, -720..-400). Base 255, no darkening.",
+    ),
+    # The three below DO darken. Their sectors sit at base 140, i.e. the dim end
+    # of the ramp, so removing the glow pins them there instead of letting them
+    # rise to 255. Stripped anyway on the instruction to remove the scripted
+    # sequences -- but these are the three to flip back first if the rooms read
+    # too dark, and they are called out separately in the doc for that reason.
+    Scripted(
+        "MAP07", 669, 114, (5, 255, 140, 35), enabled=True,
+        note="DARKENS. Glow on sectors 94/351, base 140 -- the 12-unit slivers "
+             "at (1012..1088, -1472..-1396), SFLATBF/SPACEBE. Pinned at 140.",
+    ),
+    Scripted(
+        "MAP07", 669, 114, (6, 255, 140, 35), enabled=True,
+        note="DARKENS. Glow on sector 95, base 140 -- 180x180 room at "
+             "(896..1076, -1460..-1280), SFLATAJ/SPACEB. Pinned at 140.",
+    ),
+    Scripted(
+        "MAP07", 669, 114, (39, 255, 140, 70), enabled=True,
+        note="DARKENS. Glow on sectors 120/121, base 140 -- the CMPSW17A/SDOOR3 "
+             "switch room at (464..688, -32..144). Pinned at 140.",
+    ),
+]
+
+
+# ACS bytecode patching -------------------------------------------------------
+#
+# There is no ACS compiler in this tree, so the calls are NOP-ed out of the
+# compiled BEHAVIOR in place rather than removed from the SCRIPTS source and
+# rebuilt. In place is the point: every instruction is overwritten with an equal
+# number of PCD_NOP bytes, so no script address, jump target or chunk offset
+# moves, and the rest of the map's ACS is bit-identical.
+#
+# Retribution's BEHAVIOR lumps are ACSe -- "little enhanced", the byte-coded
+# variant: an ACS\0 header whose directory is a dummy, with the real script
+# table in an SPTR chunk and one-byte opcodes. The two opcode families used by
+# these calls, derived from MAP07's own bytecode and asserted on every build:
+#
+#     PUSHnBYTES = 174 + n   (n = 3, 4, 5)   push n one-byte literals
+#     LSPECn     =   3 + n   (n = 1..5)      call line special, byte operand
+#
+# so Light_Flicker(8, 255, 200) compiles to 177 8 255 200 6 115, and that exact
+# six-byte string is what gets matched and zeroed.
+ACS_NOP = 0
+
+
+def _acs_chunks(behavior: bytes, mapname: str) -> tuple[dict[str, bytes], int]:
+    """Return the map's ACSe chunks by name, plus where the chunk area starts.
+
+    GZDoom locates the chunks for this format via the dword at dirofs-8, with
+    the format marker in the four bytes after it; both are checked here so a map
+    in some other ACS format fails loudly instead of being patched as if it were
+    this one.
+    """
+    if behavior[:4] != b"ACS\0":
+        raise SystemExit(f"{mapname}: BEHAVIOR is not ACS ({behavior[:4]!r})")
+    dirofs = struct.unpack_from("<I", behavior, 4)[0]
+    marker = behavior[dirofs - 4 : dirofs]
+    if marker != b"ACSe":
+        raise SystemExit(
+            f"{mapname}: BEHAVIOR format marker is {marker!r}, expected b'ACSe'. "
+            f"Only the byte-coded variant is understood -- refusing to patch."
+        )
+    start = struct.unpack_from("<I", behavior, dirofs - 8)[0]
+    chunks: dict[str, bytes] = {}
+    p = start
+    while p < dirofs - 8:
+        name = behavior[p : p + 4].decode("latin-1")
+        size = struct.unpack_from("<I", behavior, p + 4)[0]
+        chunks[name] = behavior[p + 8 : p + 8 + size]
+        p += 8 + size
+    return chunks, start
+
+
+def _acs_script_range(behavior: bytes, script: int, mapname: str) -> tuple[int, int]:
+    """Byte range of one script's code: its own address, up to the next address
+    used by any script or function (the chunk area if it is the last one)."""
+    chunks, chunk_start = _acs_chunks(behavior, mapname)
+    if "SPTR" not in chunks:
+        raise SystemExit(f"{mapname}: BEHAVIOR has no SPTR chunk")
+    sptr = chunks["SPTR"]
+    addrs: dict[int, int] = {}
+    for i in range(0, len(sptr), 8):
+        num, _type, _argc, addr = struct.unpack_from("<HBBI", sptr, i)
+        addrs[num] = addr
+    if script not in addrs:
+        raise SystemExit(
+            f"{mapname}: no script {script} in BEHAVIOR (have "
+            f"{sorted(addrs)}) -- map data changed, refusing to patch blind."
+        )
+    here = addrs[script]
+    later = [a for a in addrs.values() if a > here]
+    if "FUNC" in chunks:
+        func = chunks["FUNC"]
+        for i in range(0, len(func), 8):
+            addr = struct.unpack_from("<I", func, i + 4)[0]
+            if addr > here:
+                later.append(addr)
+    return here, min(later) if later else chunk_start
+
+
+def acs_call_signature(special: int, args: tuple[int, ...]) -> bytes:
+    n = len(args)
+    if not 3 <= n <= 5:
+        raise SystemExit(f"unsupported arg count {n} for special {special}")
+    if any(not 0 <= a <= 255 for a in args):
+        raise SystemExit(
+            f"special {special} args {args}: outside one byte, so the compiler "
+            f"would not have emitted PUSH{n}BYTES -- signature would not match."
+        )
+    return bytes([174 + n, *args, 3 + n, special])
+
+
+def strip_acs_lights(
+    behavior: bytes, wanted: list[Scripted], mapname: str
+) -> tuple[bytes, int]:
+    out = bytearray(behavior)
+    for entry in wanted:
+        lo, hi = _acs_script_range(behavior, entry.script, mapname)
+        sig = acs_call_signature(entry.special, entry.args)
+        window = bytes(out[lo:hi])
+        hits = [m.start() for m in re.finditer(re.escape(sig), window)]
+        if len(hits) != 1:
+            raise SystemExit(
+                f"{mapname} script {entry.script}: found {len(hits)} matches for "
+                f"{entry.label} (bytes {list(sig)}), expected exactly 1 -- map "
+                f"data changed, refusing to patch blind."
+            )
+        at = lo + hits[0]
+        out[at : at + len(sig)] = bytes([ACS_NOP]) * len(sig)
+    return bytes(out), len(wanted)
+
+
 def clear_specials(
     text: str, wanted: dict[int, tuple[int, ...]], mapname: str
 ) -> tuple[str, int]:
@@ -201,6 +427,10 @@ def show_table() -> None:
         print(f"[{state}] {b.mapname} blink special={b.special} "
               f"sectors={b.sectors}")
         print(f"          {b.note}")
+    for s in SCRIPTED:
+        state = "STRIP" if s.enabled else "keep "
+        print(f"[{state}] {s.mapname} acs script {s.script} {s.label}")
+        print(f"          {s.note}")
 
 
 def main() -> None:
@@ -210,7 +440,8 @@ def main() -> None:
 
     active = [c for c in CHAINS if c.enabled]
     activeBlinks = [b for b in BLINKS if b.enabled]
-    if not active and not activeBlinks:
+    activeScripted = [s for s in SCRIPTED if s.enabled]
+    if not active and not activeBlinks and not activeScripted:
         raise SystemExit("nothing enabled — nothing to build")
 
     # sector index -> the specials it may currently carry, per map
@@ -229,9 +460,17 @@ def main() -> None:
         labels.setdefault(b.mapname, []).append(
             f"blink {b.special} x{len(b.sectors)}")
 
+    # ACS entries live on the same maps or on their own; a map can appear here
+    # with no sector work at all, which is exactly MAP07's case.
+    acs_by_map: dict[str, list[Scripted]] = {}
+    for s in activeScripted:
+        acs_by_map.setdefault(s.mapname, []).append(s)
+        labels.setdefault(s.mapname, []).append(f"acs {s.label}")
+
     lumps = read_wad_lumps(WAD)
     items: list[tuple[str, bytes]] = []
-    for mapname, wanted in by_map.items():
+    for mapname in dict.fromkeys([*by_map, *acs_by_map]):
+        wanted = by_map.get(mapname, {})
         start, end = map_lump_range(lumps, mapname)
         members = {nm.upper(): blob for nm, blob in lumps[start:end]}
         if "TEXTMAP" not in members or "BEHAVIOR" not in members:
@@ -240,6 +479,12 @@ def main() -> None:
         fixed, n = clear_specials(decode_textmap(members["TEXTMAP"]), wanted, mapname)
         if n != len(wanted):
             raise SystemExit(f"{mapname}: cleared {n} of {len(wanted)} sectors")
+
+        behavior, nacs = (
+            strip_acs_lights(members["BEHAVIOR"], acs_by_map[mapname], mapname)
+            if mapname in acs_by_map
+            else (members["BEHAVIOR"], 0)
+        )
 
         # Carry the 3D-floor strip forward on any map that needs it.
         #
@@ -257,17 +502,21 @@ def main() -> None:
             upper = nm.upper()
             if upper == "TEXTMAP":
                 items.append((nm, fixed.encode("utf-8")))
+            elif upper == "BEHAVIOR":
+                items.append((nm, behavior))
             elif upper == "SCRIPTS":
                 continue  # ACS source; BEHAVIOR is the compiled lump and is kept
             else:
                 items.append((nm, blob))
         if items[-1][0].upper() != "ENDMAP":
             items.append(("ENDMAP", b""))
-        print(f"{mapname}: cleared {n} sectors ({', '.join(labels[mapname])})"
+        print(f"{mapname}: cleared {n} sectors, {nacs} acs call(s) "
+              f"({', '.join(labels[mapname])})"
               f"{f', re-stripped {n3d} 3D-floor linedef(s)' if n3d else ''}")
 
     write_wad(OUTWAD, items)
-    print(f"wrote {OUTWAD} maps={len(by_map)} lumps={[nm for nm, _ in items]}")
+    maps = len({*by_map, *acs_by_map})
+    print(f"wrote {OUTWAD} maps={maps} lumps={[nm for nm, _ in items]}")
 
 
 if __name__ == "__main__":

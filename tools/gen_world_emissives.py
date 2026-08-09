@@ -90,7 +90,14 @@ NAME_RULES: list[tuple[str, float, float, tuple[int, int, int] | None]] = [
     ("SKEYFLBL", 1.3, 0, (60, 160, 255)),
     ("SKEYFL", 1.2, 0, None),
     ("C22", 1.0, 0, (255, 180, 60)),
-    ("C23", 1.0, 0, (255, 180, 60)),
+    # C23 is a wall panel, so the "no lightIntensity on walls" policy above would
+    # normally apply — but it was the one case where the policy produced a visible
+    # wrong: on MAP09 the panel glowed and lit nothing, so it read as a decal rather
+    # than a fixture (2026-08-09). 80 is deliberately well under the wall strips' 180;
+    # the panel repeats on 24 sidedefs of MAP09 alone, so anything stronger stacks into
+    # a courtyard-wide wash. RTGL glues the light to the prim centre, which for a
+    # 32x128 tile lands on the middle eye pair — close enough to the art to read right.
+    ("C23", 1.0, 80, (255, 180, 60)),
     ("D64LOGO", 1.0, 0, None),
     # Teleporter pads (MAP03 SPORT*) — cyan cast; mild floor lightIntensity OK.
     ("SPORT", 2.2, 110, (70, 190, 255)),
@@ -101,7 +108,7 @@ FORCE: dict[str, tuple[float, float, tuple[int, int, int] | None]] = {
     "D64LOGO": (1.0, 0.0, None),
     "CRTRAKA": (1.0, 0.0, (80, 220, 120)),
     "C22": (1.0, 0.0, (255, 180, 60)),
-    "C23": (1.0, 0.0, (255, 180, 60)),
+    "C23": (1.0, 80.0, (255, 180, 60)),
     "SKEYFLYL": (1.2, 0.0, (255, 200, 40)),
     "SKEYFLRD": (1.2, 0.0, (255, 50, 40)),
     "SKEYFLBL": (1.3, 0.0, (60, 160, 255)),
@@ -672,6 +679,49 @@ def _is_sparse_smon_text(name: str) -> bool:
     return bool(re.match(r"^SMON[ACDE]", name.upper()))
 
 
+def _is_static_screen_smon(name: str) -> bool:
+    """SMONB = CRT showing white static; brightmap is a solid screen rect.
+
+    Unlike the sparse LED families, carving albedo RGB here copies the whole
+    rusty screen *and* its dark blue bezel into the emit, so the monitor glows
+    muddy brown with cyan speckle. Static is white — emit luminance instead.
+    """
+    return bool(re.match(r"^SMONB", name.upper()))
+
+
+def make_e_static_screen(
+    bm: Image.Image, albedo: Image.Image | None, gain: float = 1.6
+) -> Image.Image:
+    """White CRT static: brightmap = mask, albedo *luminance* = per-pixel level.
+
+    Flat white loses the static entirely (the emit is not modulated by
+    baseColor here). Keying on luminance keeps the speckle while forcing
+    R==G==B, so no albedo hue — cyan bezel included — can leak into the glow.
+    """
+    bm = bm.convert("RGBA")
+    if albedo is not None and bm.size != albedo.size:
+        bm = bm.resize(albedo.size, Image.Resampling.NEAREST)
+    out = Image.new("RGBA", bm.size, (0, 0, 0, 0))
+    bp = bm.load()
+    op = out.load()
+    ap = albedo.convert("RGBA").load() if albedo is not None else None
+    for y in range(bm.size[1]):
+        for x in range(bm.size[0]):
+            r, g, b, a = bp[x, y]
+            if a < 8 or max(r, g, b) < 20:
+                continue
+            if ap is None:
+                lum = 255
+            else:
+                ar, ag, ab, aa = ap[x, y]
+                if aa < 8:
+                    continue
+                lum = int(0.299 * ar + 0.587 * ag + 0.114 * ab)
+            v = min(255, int(lum * gain))
+            op[x, y] = (v, v, v, 255)
+    return out
+
+
 def clone_anim_pbr_maps(
     anims: dict[str, list[str]], mat_dirs: list[Path]
 ) -> int:
@@ -1233,7 +1283,12 @@ def main() -> None:
             else:
                 eimg = make_e_from_brightmap(bm_img, tint, albedo)
                 src = "brightmap"
-                if u.startswith(("SMON", "CFACE", "CRT", "CRTR")) and e_max(eimg) > 0:
+                if _is_static_screen_smon(u) and e_max(eimg) > 0:
+                    # Solid-rect screen: white static from luminance, never RGB.
+                    eimg = make_e_static_screen(bm_img, albedo)
+                    em = max(em, 2.8)
+                    src = "brightmap+white-static"
+                elif u.startswith(("SMON", "CFACE", "CRT", "CRTR")) and e_max(eimg) > 0:
                     # Tight BM LEDs only — albedo RGB (not authored teal tint / panel fill).
                     eimg = make_e_from_brightmap(
                         bm_img, tint, albedo, use_albedo_color=True
@@ -1277,6 +1332,14 @@ def main() -> None:
                 eimg = _screen_e_from_albedo(albedo, tint)
                 eimg = _boost_e(eimg, 1.2)
                 src = "albedo"
+            elif u.startswith("SMON"):
+                # No GLDEFS brightmap = authored non-emissive (SMONF*, SMONLB*).
+                # The generic albedo-luma path painted every bright metal slat
+                # with the cyan tint over ~24% of the tile, washing whole
+                # console walls ice-blue (textureissuelevel7computer.png).
+                # SMONLC* is the brightmapped sibling and glows at 0.5%.
+                by_src["smon_no_brightmap_skip"] += 1
+                continue
             else:
                 eimg = make_e_from_albedo(
                     albedo,

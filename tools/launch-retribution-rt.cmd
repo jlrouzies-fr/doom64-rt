@@ -202,6 +202,11 @@ start "" gzdoom.exe ^
   +rt_flsh 0 +rt_flsh_intensity 90 +rt_flsh_angle 42 +rt_flsh_pitch 22 ^
   +rt_flsh_battery 1 +rt_flsh_on_secs 30 +rt_flsh_die_secs 4 +rt_flsh_off_secs 5 ^
   +rt_flsh_color ffbe82 ^
+  +rt_gunglow 1 +rt_gunglow_intensity 150 +rt_gunglow_color 3355FF ^
+  +rt_gunglow_radius 0.05 +rt_gunglow_f 0.7 +rt_gunglow_u -0.35 ^
+  +rt_wpn_solid_bright 1 +rt_wpn_debug 0 ^
+  +rt_mzlflsh_perweapon 1 +rt_mzlflsh_color_plasma 3355FF +rt_mzlflsh_color_bfg A0FFA0 ^
+  +rt_mzlflsh_color_unmaker FF1111 +rt_mzlflsh_color_chaingun 9677FF ^
   +rt_tnmp_ev100_min 2 +rt_tnmp_ev100_max 7.7 ^
   +rt_lightlevel_min 80 +rt_lightlevel_max 230 +rt_lightlevel_exp 2 ^
   +rt_illum_sens_direct 1 +rt_illum_sens_indirect 0.75 +rt_illum_sens_spec 1 ^

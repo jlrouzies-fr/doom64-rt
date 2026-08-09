@@ -7,7 +7,9 @@
     },
     {
       "textureName": "C23",
-      "emissiveMult": 1.0
+      "emissiveMult": 1.0,
+      "lightColorHEX": "ffb43c",
+      "lightIntensity": 80.0
     },
     {
       "textureName": "CFACEA",
@@ -133,19 +135,19 @@
     },
     {
       "textureName": "SMONBA",
-      "emissiveMult": 1.0
+      "emissiveMult": 2.8
     },
     {
       "textureName": "SMONBB",
-      "emissiveMult": 1.0
+      "emissiveMult": 2.8
     },
     {
       "textureName": "SMONBC",
-      "emissiveMult": 1.0
+      "emissiveMult": 2.8
     },
     {
       "textureName": "SMONBD",
-      "emissiveMult": 1.0
+      "emissiveMult": 2.8
     },
     {
       "textureName": "SMONCA",

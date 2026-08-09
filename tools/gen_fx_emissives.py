@@ -58,6 +58,20 @@ FORCE: dict[str, dict] = {
     },
 }
 
+# Unmaker laser — beam, muzzle flash and impact puff all share one hex.
+UNMAKER_RED = "ff1408"
+
+# Shared flame palette. Every torch/flame in the game draws from these four, so a colour
+# fix lands everywhere at once. Each is within 10 deg of its measured sprite art and
+# matches the mod's own GLDEFS intent (TORCHLONG*/TORCHSHORT*/*TORCH) without GLDEFS'
+# fully-primary saturation, which bleaches under path tracing.
+# tools/gen_torch_emissives.py mirrors these for the TL*/TS* standing torches — keep the
+# two in step (the LPUF regression happened exactly this way).
+FLAME_BLUE = "4488ff"
+FLAME_GREEN = "44ff66"
+FLAME_RED = "ff4020"
+FLAME_YELLOW = "ffcc33"
+
 # Prefix rules: (emissiveMult, lightIntensity, optional forced HEX or None=sample)
 # Intensity 0 => emissive only (no analytic light).
 # Do NOT add SKUL* here — owned by gen_enemy_eye / pack_lostsoul_rt.
@@ -71,41 +85,77 @@ PREFIX_RULES: list[tuple[str, float, float, str | None]] = [
     ("MISF", 0.25, 0, "ffb060"),  # rocket launcher HUD flash — no same-sprite light
     # imp / hell projectiles
     ("BAL1", 0.35, 700, "ff6f00"),
-    ("BAL2", 0.35, 900, "b65cff"),
+    # 64CacodemonBall. Was "b65cff" — a pale violet inherited from stock RTGL1's own
+    # BAL2A0/B0 entries. The sprite is red-orange (flight frames avg (99,24,8), hot core
+    # aside), so the cast light read near-white lavender on a red projectile. Normalized
+    # art is ff3e14; lifted a little so lit surfaces don't go blood-dark.
+    ("BAL2", 0.35, 900, "ff5a28"),
     # 64NightmareImpBall. The sprite is violet — its brightest texels are (88,48,184),
     # peak-normalizing to ~7a42ff — so the orange-red ff5533 this used to carry lit the
     # room like an ordinary fireball while the projectile itself read purple. Lifted a
     # little off the raw art so lit surfaces read violet rather than near-black blue.
     ("BAL3", 0.35, 800, "9a5cff"),
     ("BAL7", 0.35, 1000, "66ff55"),  # baron green
-    ("BAL8", 0.35, 1000, "88ff66"),  # retribution green spit
-    ("RBAL", 0.4, 1100, "ff4040"),  # red ball
-    ("TRCR", 0.45, 1200, "ffaa55"),  # tracer / revenant-like
+    # 64BaronBall2 — same miss as BAL2, opposite direction. BAL8 is BAL7 recoloured RED
+    # (brightest texels (248,48,0) on the death frames, (248,104,80) in flight); it was
+    # pinned green "88ff66" because it shares BAL7's frame layout, so the hell-knight
+    # shot lit rooms baron-green.
+    ("BAL8", 0.35, 1000, "ff4a20"),
+    # 64MotherBall (Mother Demon). Deep red — the art has literally zero blue and the
+    # death frames normalize to ff0000. The old "ff4040" carried equal G and B, so it
+    # washed pink/white rather than reading red.
+    ("RBAL", 0.4, 1100, "ff2606"),
+    # 64TracerMissile. Orange, not tan: flight frames normalize to ~ff8840 and the death
+    # frames redden to ff5e1f. "ffaa55" was pale enough to read yellow-cream.
+    ("TRCR", 0.45, 1200, "ff8a38"),
     ("RECT", 0.25, 400, "ff8844"),  # revenant missile trail-ish
-    ("MANF", 0.4, 1200, "ff8c20"),  # mancubus
-    ("APLS", 0.4, 1000, "88fa84"),
-    ("APBX", 0.4, 1200, "6eff69"),
+    ("MANF", 0.4, 1200, "ff8c20"),  # 64FatShot — orange, matches its art (ff7b3c..ff8229)
+    # 64ArachnotronPlasma is BLUE-VIOLET: every frame has r == g with a dominant blue
+    # (APLSA0 (43,43,111) → 6262ff). "88fa84" green was a straight mis-pin.
+    ("APLS", 0.4, 1000, "6666ff"),
+    # APBX is the vanilla plasma boom and is unreachable in Retribution — the mod's
+    # 64ArachnotronPlasma REPLACES the stock actor and fades out on APLSE0–H0 instead.
+    # Kept in step with APLS so it cannot flash green if a vanilla actor ever spawns.
+    ("APBX", 0.4, 1200, "6666ff"),
     ("FATB", 0.35, 900, "ff7020"),
     # plasma / bfg
-    ("PLSS", 0.45, 900, "55aaff"),
-    ("PLSE", 0.45, 1100, "66bbff"),
-    ("PLSF", 0.25, 0, "66bbff"),  # HUD plasma flash — no same-sprite light
-    ("PLSG", 0.5, 900, "55aaff"),
-    ("CPLS", 0.5, 1000, "66ccff"),
+    # Plasma bolt + impact. Measured down from 0.45/900-1100, which was the real cause
+    # of "the weapon is invisible while shooting": at point-blank the bolt's glare is a
+    # screen-filling white disc that swallows the gun, and sustained fire keeps one on
+    # screen permanently (screen/weapon_probe_plasma-auto_v2 vs _fxlow). Colour also
+    # moved off the old cyan 55aaff/66bbff — see PLASMA_BLUE in gen_hud_gun_emissive.py.
+    ("PLSS", 0.15, 300, "3355ff"),
+    ("PLSE", 0.15, 300, "3355ff"),
+    # No PLSG / PLSF / BFGG rule here — tools/gen_hud_gun_emissive.py owns those.
+    # They are all first-person GUN BODY sprites (Retribution's PLSF frames are the
+    # whole rifle drawn on the WEAPON layer during Fire, not a small muzzle overlay),
+    # and a blanket emissiveMult makes the WHOLE gun emit: solid white on a dark
+    # backdrop (screen/plasmagunissue.png, screen/bfgbug.png), see-through on a bright
+    # one (screen/plasmariflegettingtransparent.png). They get a core-masked _e map
+    # instead, so only the electric core emits. Run that tool after this one.
+    ("CPLS", 0.15, 300, "3355ff"),
     ("BFS1", 0.5, 3000, "66ff33"),
     ("BFE1", 0.5, 3000, "66ff33"),
     ("BFE2", 0.45, 2500, "66ff33"),
     ("BFGF", 0.3, 0, "66ff33"),  # HUD BFG flash
-    ("BFGG", 0.8, 1400, "66ff33"),
     ("CBFG", 0.8, 1600, "66ff33"),
     ("CRCK", 0.5, 1400, "ffaa33"),  # custom rocket-ish
     # puffs / fog
     ("PUFF", 0.6, 250, "ffd0a0"),
     ("PUF2", 0.5, 220, "ffd0a0"),
     ("PUF3", 0.5, 220, "ffd0a0"),
-    ("LPUF", 0.55, 300, "aaccff"),
+    # Unmaker laser puff. Never blue — the old "aaccff" was fixed in the JSON by hand
+    # (see docs/sprite-illumination.md) but the rule here was left stale, so a re-run of
+    # this tool would have reverted it. It is also not orange: "f15a26" came from the
+    # few hot rim texels, while the mass of the sprite normalizes to ff4004 / ff0d04.
+    # Shares UNMAKER_RED with UNMF/UNML below — one weapon, one colour.
+    ("LPUF", 0.55, 300, UNMAKER_RED),
     ("TFOG", 0.75, 1200, "40ff40"),  # Retribution 64TeleportFog — GLDEFS DTFOG is green
-    ("IFOG", 0.65, 1000, "66ffaa"),
+    # 64ItemFog is BLUE, not a second green teleport fog. Its texels carry zero red and
+    # near-zero green (brightest (0,57,247), normalizing to 0000ff-000cff); the old
+    # "66ffaa" mint came from assuming it matched TFOG. Lifted a touch off pure blue so
+    # it is not a single-channel light.
+    ("IFOG", 0.65, 1000, "1a44ff"),
     # weapon HUD flashes — low emissiveMult (1.0 bleached PISF pure white under PT).
     # Scene cast comes from engine RT_AddMuzzleFlash (rt_mzlflsh*); same-sprite
     # lightIntensity bleaches the HUD flash (Lost Soul lesson) — keep 0 here.
@@ -120,19 +170,27 @@ PREFIX_RULES: list[tuple[str, float, float, str | None]] = [
     ("RLFT", 0.2, 0, "ff8844"),
     ("PUNF", 0.2, 0, "ffcc88"),
     ("SAWG", 0.15, 0, "ffcc88"),
-    # unmaker / custom beams (world/projectile — keep some attached light)
-    ("UNMF", 0.35, 900, "ff3366"),
-    ("UNML", 0.3, 800, "ff2255"),
+    # unmaker / custom beams (world/projectile — keep some attached light).
+    # The Unmaker fires a PURE RED laser: UNMLA0 is literally (255,0,0), UNMFA0
+    # normalizes to ff0b08. The old ff3366 / ff2255 were pink — enough magenta to read
+    # wrong on white walls. UNMAKER_RED keeps a token 20/8 of G/B so the light is not a
+    # degenerate single-channel source.
+    ("UNMF", 0.35, 900, UNMAKER_RED),
+    ("UNML", 0.3, 800, UNMAKER_RED),
     ("A030", 0.35, 700, None),
     ("A031", 0.35, 700, None),
     ("A032", 0.35, 700, None),
     # torches / flames
     ("FIRE", 0.7, 700, "ff8020"),
-    ("BFLM", 0.8, 650, "4488ff"),
-    ("RFLM", 0.8, 650, "ff4020"),
-    ("YFLM", 0.8, 650, "ffcc33"),
-    ("GFLM", 0.8, 650, "44ff66"),
-    ("GTCH", 0.7, 500, "44ff66"),
+    ("BFLM", 0.8, 650, FLAME_BLUE),
+    ("RFLM", 0.8, 650, FLAME_RED),
+    ("YFLM", 0.8, 650, FLAME_YELLOW),
+    ("GFLM", 0.8, 650, FLAME_GREEN),
+    # Wall torches. These ARE drawn BRIGHT (`GTCH ABCDE 4 BRIGHT`) and are almost all
+    # flame, so a blanket emissiveMult is safe. The TL*/TS* standing torches are not —
+    # see tools/gen_torch_emissives.py, which owns those 40 sprites. Do not add TL/TS
+    # prefixes here.
+    ("GTCH", 0.7, 500, FLAME_GREEN),
     ("CAND", 0.5, 280, "ffaa55"),
     # pickups (soft glow)
     ("ART1", 0.6, 220, "66ffaa"),

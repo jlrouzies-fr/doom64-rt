@@ -1,8 +1,9 @@
 # Fake sector lights — survey and playtest list
 
 Animated sector light with nothing in the world casting it: travelling waves
-(sequence chains) and per-sector blinks. Found by
-`tools/scan_light_specials.py`, stripped by `tools/make_seqlight_fix.py`.
+(sequence chains), per-sector blinks, and effects a map's own ACS installs at
+load. Found by `tools/scan_light_specials.py`, stripped by
+`tools/make_seqlight_fix.py`.
 
 ## The mechanism
 
@@ -94,15 +95,16 @@ sloppy lighting. If it stays, it stays on purpose.
 ## Applying a decision
 
 Flip `enabled=True` on the entry in `tools/make_seqlight_fix.py` — the `CHAINS`
-table for a sequence chain, `BLINKS` for a per-sector blink — then:
+table for a sequence chain, `BLINKS` for a per-sector blink, `SCRIPTED` for an
+ACS call — then:
 
     python tools/make_seqlight_fix.py           # build
-    python tools/make_seqlight_fix.py --list    # show both tables, build nothing
+    python tools/make_seqlight_fix.py --list    # show all three tables, build nothing
 
-The launcher already loads `d64r-seqlight-fix.wad`. The builder asserts the
-special it finds at every sector it touches — the 1/2/3/4 family for a chain
-member, the exact value for a blink — and aborts rather than patching blind if
-the map data ever changes.
+The launcher already loads `d64r-seqlight-fix.wad`. The builder asserts what it
+finds everywhere it touches — the 1/2/3/4 family for a chain member, the exact
+value for a blink, the exact byte signature for an ACS call — and aborts rather
+than patching blind if the map data ever changes.
 
 ## The other family: per-sector blinks
 
@@ -146,6 +148,93 @@ ruled out — they stand in non-flickering sectors and GLDEFS gives them a stead
 Thin 64×8×64 slabs faced with SMONDA/SMONAA — computer monitors set into walls.
 Each holds its own `9802 FlickerLight` thing at height 32, so the blink was
 placed deliberately and has a source. A flickering CRT is not a fake light.
+
+## The third family: effects installed by ACS
+
+The two families above are both visible in the map geometry — a sector carries a
+special, and a survey of specials finds it. The third is not. The map carries no
+special at all; an `OPEN` script calls `Light_Glow` / `Light_Flicker` /
+`Light_Strobe` on a sector *tag* at load, and the effect exists only at runtime.
+
+This blind spot cost a session. `scan_light_specials.py 7` reported MAP07
+completely clean — zero sequence sectors, zero blinks — while the map was
+visibly flashing in play, and the search went to textures, then to sprites, then
+to GLDEFS before landing on `SCRIPTS`. The scanner now reads the ACS source lump
+too, so it cannot happen again:
+
+    python tools/scan_light_specials.py 7
+
+The triage is the sequence-chain triage. `Light_Glow` and `Light_Strobe` take an
+upper bound that is 255 almost everywhere in this game, and `Light_Flicker`'s
+first argument is likewise 255 — which clears any threshold `rt_sector_emis` can
+produce, so every one of these turns its tagged sectors into sourceless emitters.
+
+**Where clearing one is not free.** A sector's `lightlevel` in the map data is
+the *low* end of an ACS ramp, not its resting value. Where the base is already
+255 (most of them), removing the call leaves the room steady bright and nothing
+is lost. Where the base is 140, removing the call pins the sector at 140 instead
+of letting it rise — that room genuinely gets darker. The scanner prints
+`DARKENS if stripped` on exactly those, and it is the one thing to check before
+enabling an entry.
+
+### The whole game: 203 calls in 27 maps
+
+Re-derive with `python tools/scan_light_specials.py`. This is a large surface and
+almost none of it has been looked at in play. MAP20 alone re-arms the same eight
+tags from four different scripts (48 calls); MAP08 has 29, MAP34 17. Only MAP07
+has been acted on.
+
+### DONE — MAP07 script 669, all eight calls
+
+Reported from play as a white patch blinking on a wall beside a tech pole
+(`screen/fakelightblinklevel7.png`), with the pole itself steady — the pole is a
+`64TechPoleLong` carrying a real GLDEFS `pointlight LONGLAMP`, so it was never
+the blink. The patch is `Light_Flicker(8, 255, 200)` on sectors 243/245/265/303,
+64-tall alcoves clad SMONBA/SPACEBK/SPACEBO; sector 243 contains the pole at
+`(−768, −1536)` and 245 the one at `(−1140, −1892)`.
+
+Script 669 is *nothing but* these eight calls, so all eight were stripped on
+instruction and the script is now a run of NOPs and its terminator. Five are
+free (base 255). Three darken and are called out as such in the table:
+
+| call | sectors | base | on strip |
+|---|---|---|---|
+| `Light_Flicker(8, 255, 200)` | 243, 245, 265, 303 | 255 (265 is 220) | steady bright |
+| `Light_Flicker(28, 255, 220)` | 193, 194, 195 | 255 | steady bright |
+| `Light_Strobe(16, 255, 140, 2, 2)` | 218 | 255 | steady bright |
+| `Light_Glow(7, 255, 180, 35)` | 224, 257, 262, 348, 354, 423 | 255 | steady bright |
+| `Light_Glow(17, 255, 140, 70)` | 236, 426, 427 | 255 | steady bright |
+| `Light_Glow(5, 255, 140, 35)` | 94, 351 | 140 | **darkens** |
+| `Light_Glow(6, 255, 140, 35)` | 95 | 140 | **darkens** |
+| `Light_Glow(39, 255, 140, 70)` | 120, 121 | 140 | **darkens** |
+
+Two to reconsider first if the map reads wrong. Tag 16 is the one entry with an
+arguable source — its sector is floored *and* ceilinged in SPORT1, a lamp
+texture, so a room flashing under it is not quite the sourceless lie the others
+are. And the three glows above are the only changes that can make anything
+darker than it was.
+
+## How the ACS patch works
+
+There is no ACS compiler in this tree, so `make_seqlight_fix.py` does not edit
+`SCRIPTS` and rebuild. It overwrites each call in the compiled `BEHAVIOR` with an
+equal number of `PCD_NOP` bytes, in place. Nothing moves: no script address, no
+jump target, no chunk offset, and the lump comes out the same length with the
+rest of the map's ACS bit-identical. MAP07 changes exactly 55 contiguous bytes.
+
+Retribution's `BEHAVIOR` lumps are **ACSe** — the byte-coded "little enhanced"
+variant, with an `ACS\0` header whose directory is a dummy, the real script table
+in an `SPTR` chunk, and one-byte opcodes. Two opcode families carry these calls:
+
+    PUSHnBYTES = 174 + n   (n = 3, 4, 5)   push n one-byte literals
+    LSPECn     =   3 + n   (n = 1..5)      call line special, byte operand
+
+so `Light_Flicker(8, 255, 200)` compiles to `177 8 255 200 6 115`, and that exact
+six-byte string is what gets matched and zeroed. The builder requires **exactly
+one** match inside the script's own address range and aborts otherwise, which is
+the whole safety story: if the map is ever recompiled and a call moves or its
+arguments change, the build fails rather than NOP-ing some unrelated instruction.
+The format marker is checked too, so a map in any other ACS format refuses.
 
 ## Load-order trap: maps that are also in the 3D-floor wad
 
