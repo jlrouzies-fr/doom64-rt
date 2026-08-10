@@ -632,6 +632,11 @@ def animdefs_lump(anims: list[StaticAnim]) -> bytes:
         out.append(f"// {a.base}: {a.first} pinned to {a.pin}")
         out.append(f"texture {a.first}")
         out.append("allowdecals")
+        # TWO identical frames, not one. animations.cpp:480 rejects a single-frame
+        # animation outright -- "Animation needs at least 2 frames" -- and the error
+        # aborts startup inside Texman.Init, before the game ever reaches a map.
+        # Two copies of the same pic satisfy the parser and are visually static.
+        out.append(f"pic {a.pin} tics 65535")
         out.append(f"pic {a.pin} tics 65535")
         out.append("")
     return "\n".join(out).encode("ascii")
@@ -705,7 +710,9 @@ def add_light_things(
                     f"arg4 = {lamp.lo};\n"
                     "skill1 = true;\nskill2 = true;\nskill3 = true;\n"
                     "skill4 = true;\nskill5 = true;\n"
-                    "single = true;\ncoop = true;\ndeathmatch = true;\n"
+                    # Flag set copied from the mod's own light things (MAP02 9800/9802):
+                    # skill1-5, single, coop, class1-5. No `dm` — they do not set it.
+                    "single = true;\ncoop = true;\n"
                     "class1 = true;\nclass2 = true;\nclass3 = true;\n"
                     "class4 = true;\nclass5 = true;\n"
                     "}\n"
