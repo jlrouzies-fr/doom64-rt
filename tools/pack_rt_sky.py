@@ -24,11 +24,10 @@ OUT = ROOT / r"Doom64-Retribution\d64r-rt-sky.pk3"
 # at the WAD's own textures and appear in neither list.
 PER_MAP_SKIES = (
     "SKYMTNA",    # MAP02/04/05/34: starfield + the tall MOUNTA ring
-    "SKYMTNB",    # MAP10/16:       CLOUDBRN over MOUNTB
-    "SKYMTNC",    # MAP12/30:       CLOUDPRP over MOUNTC
-    "SKYMTNCD",   # MAP14:          MOUNTC, flat backdrop (cloud is the RT deck)
-    "SKYCLDPK",   # MAP09/15/18/19/20: pink overcast
-    "SKYCLDBR",   # MAP17/27:       brown overcast
+    "SKYMTNB",    # MAP10/16:       MOUNTB, orange backdrop (cloud is the RT deck)
+    "SKYMTNC",    # MAP12/14/30:    MOUNTC, purple backdrop (cloud is the RT deck)
+    "SKYCLDPK",   # MAP09/15/18/19/20: pink overcast, projected here
+    "SKYCLDBR",   # MAP17/27:       brown overcast, projected here
     "SKYSTORM",   # MAP11:          storm backdrop for the deck and the lightning
 )
 

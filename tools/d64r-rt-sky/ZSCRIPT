@@ -42,10 +42,19 @@ class D64RtSkyFix : EventHandler
 	// MOONSKY so every sky in the game takes the same branch of SetupMatrices
 	// and the horizon does not move from map to map.
 	//
-	// MAP11 and MAP14 are the RT_CLOUD_PRESETS maps (rt_main.cpp): their cloud
-	// is the volumetric deck drawn as geometry, so their dome textures carry a
-	// flat backdrop and no painted cloud. Painting cloud there too would show
-	// two unrelated cloud layers at once.
+	// A map's cloud comes from exactly one of two places, never both. If the
+	// map is in RT_CLOUD_PRESETS (rt_main.cpp) its cloud is the volumetric DECK
+	// drawn as geometry, tinted to that room's own hue -- MAP10/16 orange,
+	// MAP12/30 dark purple, MAP14 a lighter purple, MAP11 storm grey -- and its
+	// dome texture is a flat backdrop with the mountain ring and no painted
+	// cloud at all. Painting cloud there too would put two unrelated cloud
+	// layers on screen. Only MAP09/15/17/18/19/20/27 still take their cloud
+	// from the dome, and those are the SKYCLD* pair.
+	//
+	// That is why SKYMTNB and SKYMTNC are backdrops rather than skies: every map
+	// they serve is on the deck now. If a map is ever taken back off the deck,
+	// its sky has to go back to a projected one in gen_d64_skies.py or it will
+	// have no cloud whatsoever.
 	//
 	// The moon disc (rt_moon_geo) is still global and still drawn on every map,
 	// including the hell maps that now have a fire sky behind it. That is an
@@ -68,14 +77,11 @@ class D64RtSkyFix : EventHandler
 			case 'MAP02': case 'MAP04': case 'MAP05': case 'MAP34':
 				return "SKYMTNA";
 
-			// -- CLOUDBRN over MOUNTB. ------------------------------------
+			// -- MOUNTB, orange backdrop; the cloud is the RT deck. -------
 			case 'MAP10': case 'MAP16': return "SKYMTNB";
 
-			// -- CLOUDPRP over MOUNTC. ------------------------------------
-			case 'MAP12': case 'MAP30': return "SKYMTNC";
-
-			// -- same peaks, but the cloud is the RT deck here. -----------
-			case 'MAP14': return "SKYMTNCD";
+			// -- MOUNTC, purple backdrop; the cloud is the RT deck. -------
+			case 'MAP12': case 'MAP14': case 'MAP30': return "SKYMTNC";
 
 			// -- overcast, no mountain ring in the room. ------------------
 			case 'MAP09': case 'MAP15': case 'MAP18': case 'MAP19':

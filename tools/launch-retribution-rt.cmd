@@ -85,21 +85,37 @@ rem   - fire maps (22/24/28, 23/32) -> FRSKYNRM / FRSKYGRN, the WAD's own 100-fr
 rem     ANIMDEFS fire skies, which animate on the dome because hw_sky.cpp fetches the
 rem     sky with GetGameTexture(tex, true);
 rem   - void maps (25/26/31) -> VOIDSKY;
-rem   - mountain and overcast maps -> SKYMTNA/B/C/CD, SKYCLDPK/BR, SKYSTORM, baked by
-rem     tools\gen_d64_skies.py from each room's own geometry (the cloud flat projected
-rem     as the plane it is, the MOUNT* ring composited at the altitude that room's
-rem     radius and ceiling put it at -- `--report` prints the survey);
+rem   - mountain and overcast maps -> SKYMTNA/B/C, SKYCLDPK/BR, SKYSTORM, baked by
+rem     tools\gen_d64_skies.py from each room's own geometry (the MOUNT* ring
+rem     composited at the altitude that room's radius and ceiling put it at --
+rem     `--report` prints the survey);
 rem   - everything else is a SPACE starfield room and stays on MOONSKY.
-rem  MAP11 and MAP14 are the RT_CLOUD_PRESETS maps, so their dome textures carry a
-rem  flat backdrop and NO painted cloud -- their weather is the deck below.
+rem  A map's CLOUD comes from one of two places and never both: the volumetric deck
+rem  if it is in RT_CLOUD_PRESETS, or painted into its dome texture if it is not.
+rem  All twelve cloud maps are on the deck now, tinted to their own room's hue, so
+rem  every baked sky above is a flat backdrop plus whatever mountain ring the room
+rem  had. Take a map off that table and its sky must go back to a projected one in
+rem  gen_d64_skies.py or it will have no cloud at all.
 rem  Every one of these is 1024x128 like MOONSKY, so they all take the same branch of
 rem  SetupMatrices and the horizon does not move from map to map.
 rem  MOONSKY itself is the WAD's SPACE starfield tiled to 1024 wide (hw_skydome tiles
 rem  anything narrower, so 256-wide SPACE wraps 4x and a painted moon would appear
 rem  four times) -- tools\gen_moon_sky.py.
-rem  NOT per-map yet: the moon disc. rt_moon_geo is global, so it is drawn on the
-rem  hell maps too, now in front of a fire sky. That needs an entry in the engine's
-rem  RT_MOON_PRESETS table, not a change here.
+rem THE DOME'S OWN LIGHT (rt_sky) IS NOW PER MAP, and the 25 pinned below is only the
+rem  fallback. It has to be: rt_sky 25 was chosen when every map wore the same
+rem  near-black starfield, and the domes now span three orders of magnitude of mean
+rem  linear radiance -- starfield 1x, SKYMTNA 12x, the cloud backdrops 30-45x,
+rem  VOIDSKY 186x, FRSKYGRN 410x, FRSKYNRM 953x. One value cannot serve that. The
+rem  per-map value is the `sky` field of RT_MOON_PRESETS (rt_main.cpp), negative
+rem  meaning "keep this pin"; it is set on the VOIDSKY and fire maps and left alone
+rem  everywhere else.
+rem  On the FIRE maps the moon is gone entirely -- disc AND light -- and nothing
+rem  replaces it, because the burning dome already is the light. Nothing about a
+rem  fire sky is directional: the art is black at the top and bright at the bottom,
+rem  so the fire is a RING at the horizon arriving from every azimuth at once, and
+rem  any bearing chosen for a directional would rake shadows nothing on screen
+rem  justifies. Settle the brightness with tools\ab-firesky.cmd; the shipping 1.2 /
+rem  2.7 are parity arithmetic off those radiances, not values anyone has looked at.
 rem The moon is a PAIR, and the two halves have to agree:
 rem  - the disc you see is painted in MOONSKY at azimuth 135 (north-west);
 rem  - the light you feel is rt_sun, an analytic directional light down the same

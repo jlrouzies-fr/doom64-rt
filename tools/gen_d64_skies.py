@@ -67,11 +67,21 @@ than wallpaper. A haze fade towards the tile's mean colour takes over as r
 grows, both because that is what distance does and because without it the
 horizon rows alias into confetti.
 
-MAP11 and MAP14 get flat backgrounds with no painted cloud at all. Those two are
-the RT_CLOUD_PRESETS maps (rt_main.cpp): they already get the volumetric cloud
-DECK drawn as geometry over the sky, and painting cloud into the dome as well
-would show two unrelated cloud layers at once. Their sky is the dark purple the
-deck is meant to sit against.
+A map's cloud comes from exactly one of two places, never both: the volumetric
+DECK if the map is in RT_CLOUD_PRESETS (rt_main.cpp), or the projection here if
+it is not. Painting cloud into the dome of a deck map would put two unrelated
+cloud layers on screen at once.
+
+As it stands **every cloud map is on the deck** -- all twelve of them, tinted to
+their own room's hue: orange for MAP10/16, dark purple for MAP12/30, a lighter
+purple for MAP14, red-pink for MAP09/15/18/19/20, brown for MAP17/27, storm grey
+for MAP11. So every sky below is either a starfield or a flat backdrop, and no
+sky currently uses the "cloud" mode.
+
+That mode is kept rather than deleted because it is what the choice is between:
+take a map back off `RT_CLOUD_PRESETS` and its sky has to become a projected one
+here or it will have no cloud whatsoever. Switching a sky's `bg` from
+`("flat", FLAT, dim)` to `("cloud", FLAT)` is the whole edit.
 
 Usage
 -----
@@ -156,36 +166,37 @@ SKIES = {
     },
     "SKYMTNB": {
         "maps": ["MAP10", "MAP16"],
-        "bg": ("cloud", "CLOUDBRN"),
+        "bg": ("flat", "CLOUDBRN", 0.35),
         "mtn": "MOUNTB",
-        "note": "Burnt orange overcast over red rock.",
+        "note": "Red rock under a burnt orange backdrop. Both of these maps are "
+                "in RT_CLOUD_PRESETS -- their cloud is the RT deck, tinted "
+                "orange to match CLOUDBRN -- so the dome carries no painted "
+                "cloud of its own.",
     },
     "SKYMTNC": {
-        "maps": ["MAP12", "MAP30"],
-        "bg": ("cloud", "CLOUDPRP"),
-        "mtn": "MOUNTC",
-        "note": "Purple weather over violet peaks.",
-    },
-    "SKYMTNCD": {
-        "maps": ["MAP14"],
+        "maps": ["MAP12", "MAP14", "MAP30"],
         "bg": ("flat", "CLOUDPRP", 0.35),
         "mtn": "MOUNTC",
-        "note": "Same peaks as SKYMTNC, but MAP14 is in RT_CLOUD_PRESETS -- its "
-                "cloud is the RT deck drawn as geometry, so the dome carries "
-                "none of its own or you see two skies at once.",
+        "note": "Violet peaks under a purple backdrop. All three MOUNTC maps are "
+                "in RT_CLOUD_PRESETS -- MAP14 in thin daylight purple, MAP12 and "
+                "MAP30 in a darker one -- so the dome carries no painted cloud. "
+                "MAP14 used to have its own texture for exactly this reason; now "
+                "that all three take the deck there is nothing to tell apart.",
     },
     "SKYCLDPK": {
         "maps": ["MAP09", "MAP15", "MAP18", "MAP19", "MAP20"],
-        "bg": ("cloud", "CLOUDPNK"),
+        "bg": ("flat", "CLOUDPNK", 0.35),
         "mtn": None,
-        "note": "Pink overcast. No mountain ring in these rooms -- the cloud "
-                "flat is the whole sky.",
+        "note": "Red-pink backdrop. No mountain ring in these rooms at all -- "
+                "the cloud flat was the whole sky, and that cloud is the RT "
+                "deck now, so this is only what shows between it and the "
+                "horizon.",
     },
     "SKYCLDBR": {
         "maps": ["MAP17", "MAP27"],
-        "bg": ("cloud", "CLOUDBRN"),
+        "bg": ("flat", "CLOUDBRN", 0.35),
         "mtn": None,
-        "note": "Brown overcast, no mountain ring.",
+        "note": "Brown backdrop, no mountain ring. Same deal as SKYCLDPK.",
     },
     "SKYSTORM": {
         "maps": ["MAP11"],

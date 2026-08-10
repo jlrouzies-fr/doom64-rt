@@ -318,14 +318,25 @@ global instead of inheriting the last map's preset.
 **The deck is off unless a map is listed.** A cloud layer is not neutral
 scenery — it changes what the moon does — so it opts in rather than out.
 
-| map | clouds | why |
+| map(s) | clouds | why |
 |---|---|---|
 | MAP01 | **off** | Listed explicitly rather than left to the default, so the decision is on the record. Its moon preset is altitude 90 — straight overhead, light falling vertically through the roof slots, which is the whole look of the map. A deck sits directly across that path. |
 | MAP11 | on, `9AA6C8` | The storm. The map the deck exists for. Desaturated cool grey rather than the default blue — the level is lit green-grey and a strongly blue sky reads as a separate scene behind it. |
 | MAP14 | on, `8C7AB4` | Purple. Thinner and slower than MAP11: weather, not a storm. |
+| MAP10, MAP16 | on, `C28153` | Burnt orange. Their rooms are a `CLOUDBRN` overcast over a `MOUNTB` ridge; the tint is that flat's own hue lifted to the luminance the other presets sit at. |
+| MAP12, MAP30 | on, `795EA4` | Dark purple. Same `CLOUDPRP` room as MAP14 but deliberately dimmer — MAP14 is thin daylight weather, these two are the heavy overcast the level is lit under. |
+| MAP09, MAP15, MAP18, MAP19, MAP20 | on, `E85062` | Red-pink. `CLOUDPNK` is a lurid magenta-crimson; this is that hue pushed off magenta towards red. MAP09 gets wind `0.014` rather than `0.010` because its ACS scrolls the authored ceiling at 4, the storm's rate, not 3. |
+| MAP17, MAP27 | on, `A67454` | Brown, duller and dimmer than MAP10/16's orange — those two are a lit overcast over a ridge, these two are a flat brown sky with no ridge in the room at all. |
 
 Each row carries `clouds`, `tint`, `alpha` and `wind`; 0 / negative means "keep
-the global".
+the global". Every wind value is the map's own authored `Scroll_Ceiling` rate
+read back out of its ACS: rate 3 → `0.010`, rate 4 → `0.014`.
+
+**Every cloud map in the game is now on the deck** — twelve of them. That is
+also why `tools/gen_d64_skies.py` currently bakes no projected cloud at all: a
+map's cloud comes from the deck or from its dome texture, never both, and the
+deck has won everywhere. Take a map back off this table and its sky has to
+become a projected one in that script or it will have no cloud whatsoever.
 
 Authoring loop, same as `moon`'s: set `rt_clouds_presets 0`, tune in game with
 the `clouds` CCMD (`clouds on B4C0DC 0.9 0.014`), then type bare `clouds` and
@@ -523,9 +534,11 @@ Arms — `tools/ab-storm.cmd <arm> [map]`, default MAP11:
   re-submitted to RTGL1 and rasterised into all six cubemap faces each frame —
   and twice during a flash, for the additive pass. 5 is the default; 8 is
   available and `flat` (1) is the floor.
-- **Only listed maps get clouds.** `RT_CLOUD_PRESETS` is opt-in; MAP11 and MAP14
-  are in it, MAP01 is explicitly out. Adding a map is one table row — use the
-  `clouds` CCMD's authoring loop above.
+- **Only listed maps get clouds.** `RT_CLOUD_PRESETS` is opt-in; twelve maps are
+  in it, MAP01 is explicitly out. Adding a map is one table row — use the
+  `clouds` CCMD's authoring loop above. Cost is per listed map and scales with
+  `rt_clouds_shells`, so the table growing from 3 rows to 12 means eleven more
+  maps now pay for the deck.
 - **Cloud occlusion of the moon assumes the deck is flat.** The ray/shell
   intersection ignores `rt_clouds_curve`, because solving against
   `y = h(1 - curve·r²)` needs iteration and the error only matters out near the
