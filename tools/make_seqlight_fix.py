@@ -225,6 +225,19 @@ SHAFTS = [
              "back through the windows for real, from the moon.",
     ),
     Shaft(
+        "MAP13", [126], from_light=255, to_light=180,
+        enabled=True,
+        note="The CTEL alcove, and the reason its panel read as BAKED LIT. 64x64, "
+             "floor 8 / ceiling 120, the telemetry flat on both, painted at 255 "
+             "inside room sector 127 at 180 -- its only neighbour. MAP13's "
+             "emission threshold is 200, so both flats self-emitted and the panel "
+             "lit itself: a surface glowing with nothing casting it, which is this "
+             "file's whole subject. The animated gems made it read as a light "
+             "SEQUENCE turning on and off, which is what it was mistaken for. "
+             "Dropping to the room's own 180 puts the alcove under the threshold, "
+             "and the light in it is now the real one -- see the Lamp family.",
+    ),
+    Shaft(
         "MAP13", [134, 135], from_light=255, to_light=180,
         enabled=True,
         note="The north hall, room sector 14 at L180, the same defect twice more: "
@@ -534,7 +547,7 @@ class Lamp:
 LAMPS = [
     Lamp(
         "MAP13", [126], flat="CTEL",
-        heights=[16, 96], color=(255, 0, 0), hi=48, lo=20, period_tics=140,
+        heights=[16, 96], color=(255, 0, 0), hi=144, lo=60, period_tics=140,
         enabled=True,
         note="THE REPORTED ONE. CTEL1 is an 8-frame telemetry panel whose small "
              "red gems ramp up and down; the panel is on BOTH the floor and the "
@@ -542,7 +555,10 @@ LAMPS = [
              "lights, one 16 above the floor panel and one 16 under the ceiling "
              "one, so each reads as coming off its own fixture rather than one "
              "light floating in the middle of the shaft. period 140 tics = 4.0s, "
-             "matching 'slow'. Everything tried on the TEXTURE side -- _e mask, "
+             "matching 'slow'. Radii are 3x the first pass (48/20): with the "
+             "alcove's painted 255 dropped to the room's 180 by the Shaft entry "
+             "above, the surface no longer lights itself and the real light has "
+             "to carry the whole fixture. Everything tried on the TEXTURE side -- _e mask, "
              "emissiveMult, attached lightIntensity -- made it glow and never lit "
              "the alcove; see the Lamp docstring for why that cannot work.",
     ),
