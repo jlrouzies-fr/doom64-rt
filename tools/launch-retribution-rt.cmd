@@ -74,7 +74,10 @@ rem Requires tools\build-rtgl.cmd (RTGL1.dll + nvngx_dlssd.dll in rt\bin\).
 rem All maps: d64r-3dfloor-rtfix.wad strips hangy Sector_Set3dFloor (special 160).
 rem Sky: sector skyboxes ignored under RT (white/black fix); d64r-rt-sky forces SPACE night flat + rt_sky_always.
 rem d64r-lostsoul-rt.pk3: yellow SKUL sprites + LSGL offset-glow EventHandler.
-rem d64r-rt-flashlight.pk3: stylized 5-cell battery HUD (rt_flsh_charge / battstate; F toggles).
+rem d64r-rt-flashlight.pk3: stylized 5-cell battery HUD (rt_flsh_charge / battstate; F toggles)
+rem  + battery sound cues (rt_flsh_flicker counter; d64rt_flsh_sound / _vol to mute or tune).
+rem  Charge is persistent: switching off no longer refills the cell, it trickles back up at
+rem  rt_flsh_idle_recharge x the post-burnout rate.
 rem Eye/fire mats: engine rt\mat\ + rt\data\textures.json (no extra -file).
 rem DLSS-RR transient-light ghosting: rt_rr_reset_on_lightcut/on_dynlight flush RR's
 rem  temporal history (InReset) on flashlight on/off and dynlight appear/disappear
@@ -209,9 +212,10 @@ start "" gzdoom.exe ^
   +rt_classic 0 ^
   +rt_flsh 0 +rt_flsh_intensity 90 +rt_flsh_angle 42 +rt_flsh_pitch 22 ^
   +rt_flsh_battery 1 +rt_flsh_on_secs 30 +rt_flsh_die_secs 4 +rt_flsh_off_secs 5 ^
+  +rt_flsh_idle_recharge 0.25 ^
   +rt_flsh_color ffbe82 ^
-  +rt_gunglow 1 +rt_gunglow_intensity 150 +rt_gunglow_color 3355FF ^
-  +rt_gunglow_radius 0.05 +rt_gunglow_f 0.7 +rt_gunglow_u -0.35 ^
+  +rt_gunglow 1 +rt_gunglow_intensity 90 +rt_gunglow_color 3355FF ^
+  +rt_gunglow_radius 0.07 +rt_gunglow_f 0 +rt_gunglow_u 0 +rt_gunglow_pullback 0.5 ^
   +rt_gunglow_bob 0.012 +rt_gunglow_flicker 0.22 +rt_gunglow_fire_boost 2.2 ^
   +rt_wpn_solid_bright 1 +rt_wpn_debug 0 ^
   +rt_mzlflsh_perweapon 1 +rt_mzlflsh_color_plasma 3355FF +rt_mzlflsh_color_bfg A0FFA0 ^

@@ -1,0 +1,11 @@
+// Flashlight battery cues (synthesized by tools/gen_flashlight_sounds.py).
+// Played by D64RtFlashlightHud from the rt_flsh_battstate / rt_flsh_flicker
+// readouts the engine writes each frame.
+
+d64rt/flashlight/out		D64FLKO
+d64rt/flashlight/flicker	D64FLKR
+d64rt/flashlight/on		D64FLKN
+
+$limit d64rt/flashlight/out		1
+$limit d64rt/flashlight/flicker	1
+$limit d64rt/flashlight/on		1

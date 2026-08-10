@@ -6,14 +6,81 @@ version "4.12"
 // so ultrawide pillarbox alignment matches the stock HUD (not full-bleed stretch).
 class D64RtFlashlightHud : EventHandler
 {
+	// --- battery audio -------------------------------------------------
+	// The engine writes rt_flsh_battstate (0=off 1=on 2=dying 3=recharge) and
+	// bumps rt_flsh_flicker every time the beam starts a fade-out. We only
+	// watch those readouts here: no state of our own to keep in sync.
+	private int  prevState;
+	private int  prevFlicker;
+	private bool audioPrimed;
+
+	override void WorldTick()
+	{
+		CVar stateC = CVar.FindCVar("rt_flsh_battstate");
+		CVar flickC = CVar.FindCVar("rt_flsh_flicker");
+		if (stateC == null || flickC == null)
+			return;
+
+		int state = stateC.GetInt();
+		int flick = flickC.GetInt();
+
+		// First tic of a level: adopt the readouts, don't fire on them.
+		if (!audioPrimed)
+		{
+			prevState = state;
+			prevFlicker = flick;
+			audioPrimed = true;
+			return;
+		}
+
+		double vol = SoundVolume();
+		if (vol > 0.0)
+		{
+			if (state == 3 && prevState != 3)
+			{
+				// Burnout: the beam gutters out. Swallow the flicker bump that
+				// came with it so we don't stack a blip on top of the death.
+				S_StartSound("d64rt/flashlight/out", CHAN_AUTO, CHANF_UI, vol);
+			}
+			else if (state == 1 && prevState == 3)
+			{
+				// Recharged: filament finding its pitch again.
+				S_StartSound("d64rt/flashlight/on", CHAN_AUTO, CHANF_UI, vol * 0.6);
+			}
+			else if (flick != prevFlicker && (state == 1 || state == 2))
+			{
+				// Mid-cycle blink (1) or a dying gutter (2).
+				S_StartSound("d64rt/flashlight/flicker", CHAN_AUTO, CHANF_UI,
+					vol * (state == 2 ? 0.75 : 0.5));
+			}
+		}
+
+		prevState = state;
+		prevFlicker = flick;
+	}
+
+	override void WorldLoaded(WorldEvent e)
+	{
+		audioPrimed = false;
+	}
+
+	private double SoundVolume()
+	{
+		CVar onC = CVar.GetCVar("d64rt_flsh_sound", players[consoleplayer]);
+		if (onC != null && !onC.GetBool())
+			return 0.0;
+		CVar volC = CVar.GetCVar("d64rt_flsh_sound_vol", players[consoleplayer]);
+		double v = volC != null ? volC.GetFloat() : 1.0;
+		return Clamp(v, 0.0, 1.0);
+	}
+
 	override void RenderOverlay(RenderEvent e)
 	{
 		CVar flsh = CVar.FindCVar("rt_flsh");
 		CVar batt = CVar.FindCVar("rt_flsh_battery");
-		if (flsh == null || !flsh.GetBool())
-			return;
 		if (batt != null && !batt.GetBool())
 			return;
+		bool lightOn = flsh != null && flsh.GetBool();
 
 		CVar chargeC = CVar.FindCVar("rt_flsh_charge");
 		CVar stateC  = CVar.FindCVar("rt_flsh_battstate");
@@ -25,7 +92,9 @@ class D64RtFlashlightHud : EventHandler
 			if (charge > 1.0) charge = 1.0;
 		}
 		int state = stateC != null ? stateC.GetInt() : 0;
-		if (state <= 0)
+		// Charge persists across a toggle now, so the meter still means something
+		// with the beam off — keep it up (dimmed) until the cell is topped up.
+		if (state <= 0 && (lightOn || charge >= 0.999))
 			return;
 
 		int segs = 5;
@@ -35,7 +104,9 @@ class D64RtFlashlightHud : EventHandler
 
 		// Match SBARINFO ForceScaled alpha 0.55
 		double opacity = 0.55;
-		if (state == 2)
+		if (state == 0)
+			opacity = 0.28; // switched off, trickle-charging
+		else if (state == 2)
 			opacity = ((Level.Time / 4) % 2 == 0) ? 0.55 : 0.22;
 		else if (state == 3)
 			opacity = 0.40;

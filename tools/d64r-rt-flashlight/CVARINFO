@@ -1,0 +1,3 @@
+// Client-side toggle for the flashlight battery sound cues.
+user bool d64rt_flsh_sound = true;
+user float d64rt_flsh_sound_vol = 1.0;
