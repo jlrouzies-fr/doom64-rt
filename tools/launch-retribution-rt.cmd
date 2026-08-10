@@ -11,6 +11,7 @@ set "FLSH=G:\AI\Doom64-RT\Doom64-Retribution\d64r-rt-flashlight.pk3"
 set "FIX3D=G:\AI\Doom64-RT\Doom64-Retribution\d64r-3dfloor-rtfix.wad"
 set "SEQL=G:\AI\Doom64-RT\Doom64-Retribution\d64r-seqlight-fix.wad"
 set "BULBTEX=G:\AI\Doom64-RT\Doom64-Retribution\d64r-bulb-textures.wad"
+set "CTELFIX=G:\AI\Doom64-RT\Doom64-Retribution\d64r-ctel-fix.wad"
 set "SKY=G:\AI\Doom64-RT\Doom64-Retribution\d64r-rt-sky.pk3"
 set "MUS=G:\AI\Doom64-RT\Doom64-Retribution\D64MUS.PK3"
 rem Full console transcript (incl. startup) -> shareable log. `logfile` is
@@ -153,6 +154,11 @@ if not exist "%SEQL%" (
   echo ERROR: missing %SEQL% — run: python tools\make_seqlight_fix.py
   exit /b 1
 )
+if not exist "%CTELFIX%" (
+  echo ERROR: missing %CTELFIX% — run with Python 3.13 ^(needs Pillow^):
+  echo   C:\Users\Winter\AppData\Local\Programs\Python\Python313\python.exe tools\make_ctel_static_center.py
+  exit /b 1
+)
 if not exist "%BULBTEX%" (
   echo ERROR: missing %BULBTEX% — run with Python 3.13 ^(needs Pillow^):
   echo   C:\Users\Winter\AppData\Local\Programs\Python\Python313\python.exe tools\make_bulb_textures.py
@@ -209,6 +215,19 @@ rem it can never crowd rt_faux_lamps or the real ceiling-edge walk. Found in MAP
 rem stepped-shaft room (sectors 24-30/43, tags 6-11) and reused in MAP08. Set
 rem rt_solo_lamps 0 to see those ceilings as authored.
 rem
+rem rt_spin_panels: CTEL, the telemetry panel on MAP13's alcove floor and ceiling. Its eight
+rem rim gems light in turn -- same luminance set shifted one frame each, total constant at 891
+rem every frame -- so the art depicts a light that TRAVELS clockwise without pulsing. The
+rem engine orbits one constant light at the measured bearing of whichever gem is currently
+rem lit, reading the frame from the texture itself rather than a timer, so it cannot drift.
+rem
+rem Pinned here rather than left on its compiled defaults because every RT_CVAR is
+rem CVAR_ARCHIVE: one console test value would otherwise persist into every later launch.
+rem Colour is RAW, so it multiplies intensity -- DC0602 is 0.86x on the red channel by
+rem itself. If the light leads or lags the lit gem, nudge rt_spin_panel_yaw; if it runs the
+rem wrong way round the panel, rt_spin_panel_cw 0. rt_spin_panel_debug 1 prints frame,
+rem bearing and position each second.
+rem
 rem C23 (MAP09's courtyard panel) has NO light pinned here, and that is the conclusion of a
 rem false trail worth not repeating. It looked like an unwired lamp -- a yellow speckled
 rem panel that lit nothing -- and got both a textures.json attached light and its own engine
@@ -258,7 +277,7 @@ rem Load order note: MAP03 has no special-160 linedefs, so it is absent from
 rem FIX3D and the two wads never touch the same map.
 start "" gzdoom.exe ^
   -iwad "%IWAD%" ^
-  -file "%MOD%" "%BM%" "%SKUL%" "%FLSH%" "%MUS%" "%FIX3D%" "%SEQL%" "%BULBTEX%" "%SKY%" ^
+  -file "%MOD%" "%BM%" "%SKUL%" "%FLSH%" "%MUS%" "%FIX3D%" "%SEQL%" "%BULBTEX%" "%CTELFIX%" "%SKY%" ^
   -rtnolauncher -width 1280 -height 720 %RTDEBUG% ^
   +logfile "%LOGF%" ^
   +vid_fullscreen 0 +win_x -1 +win_y %WINY% +queryiwad false +sv_cheats 1 +god +notarget +map %MAPLUMP% ^
@@ -269,7 +288,8 @@ start "" gzdoom.exe ^
   +gl_noskyboxes false ^
   +rt_sky 25 +rt_sky_always true +rt_sky_nowalls 0 ^
   +rt_sun 1 +rt_sun_intensity 90 +rt_sun_a 25 +rt_sun_b 135 +rt_sun_color B4C8FF +rt_sun_angdiam 0.5 ^
-  +rt_moon_track 1 +rt_moon_tex_b 135 +rt_moon_yawsign 1 +rt_sky_yaw 0 +rt_moon_presets 1 ^
+  +rt_moon_track 1 +rt_moon_tex_b 135 +rt_moon_tex_a 25 +rt_moon_yawsign 1 +rt_moon_pitch_scale 3 +rt_sky_yaw 0 +rt_moon_presets 1 ^
+  +rt_sun_leak_debug 0 +rt_sun_require_sky 0 ^
   +rt_classic 0 ^
   +rt_flsh 0 +rt_flsh_intensity 90 +rt_flsh_angle 42 +rt_flsh_pitch 22 ^
   +rt_flsh_battery 1 +rt_flsh_on_secs 30 +rt_flsh_die_secs 4 +rt_flsh_off_secs 5 ^
@@ -305,6 +325,9 @@ start "" gzdoom.exe ^
   +rt_ceiling_edge_debug 0 +rt_ceiling_edge_debug_marks 0 ^
   +rt_faux_lamps 1 +rt_faux_lamp_color 3C5078 +rt_faux_lamp_intensity 500 ^
   +rt_faux_lamp_max 256 +rt_faux_lamp_stride 2 ^
+  +rt_spin_panels 1 +rt_spin_panel_color DC0602 +rt_spin_panel_intensity 200 ^
+  +rt_spin_panel_radius 0.06 +rt_spin_panel_orbit 26.6 +rt_spin_panel_zofs 16 ^
+  +rt_spin_panel_yaw 0 +rt_spin_panel_cw 1 +rt_spin_panel_max 64 +rt_spin_panel_debug 0 ^
   +rt_solo_lamps 1 +rt_solo_lamp_color FFFFFF +rt_solo_lamp_intensity 45 ^
   +rt_solo_lamp_radius 0.06 +rt_solo_lamp_zofs 8 +rt_solo_lamp_max 384 +rt_solo_lamp_stride 1 ^
   +rt_flame_light_on 1 +rt_flame_light_scale 1.0 +rt_flame_light_radius 0.09 ^
@@ -323,7 +346,7 @@ start "" gzdoom.exe ^
   +rt_water_glow 0.15 +rt_water_veinref 0.1 ^
   +rt_water_wavestren 0.4 +rt_water_wavespeed 0.2 +rt_water_areascale 0.35 ^
   +rt_water_caustics 1.2 +rt_water_caustic_scale 0.8 +rt_water_caustic_speed 0.35 ^
-  +rt_water_caustic_dist 192 ^
+  +rt_water_caustic_dist 512 +rt_water_caustic_rise 64 +rt_water_caustic_slant 0.6 +rt_water_caustic_wall 4.0 ^
   +rt_water_debug 0 ^
   +rt_normalmap_stren 1 +rt_heightmap_stren 1 %EXTRA%
 exit /b 0

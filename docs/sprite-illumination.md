@@ -416,6 +416,10 @@ visible than it was on moving fists, so it is logged, not built.
 
 ## Case 7 — the candle, and making fire behave like fire (`rt_flame_light_on`)
 
+> **Full write-up: `docs/flame-lighting.md`.** That file is the one to point another agent
+> at — it carries the sprite inventory, the three-way invariant, the file list, what was
+> and was not verified, and the known limitations. What follows here is the summary.
+
 Two requests, one answer: give `CAND` a light of its own, and make the torches *flicker
 and move* instead of sitting there like a fluorescent tube. Both land in the same place,
 because a candle is just the smallest flame in a family that all had the same two defects.

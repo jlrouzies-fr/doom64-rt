@@ -172,7 +172,18 @@ BLINKS = [
 
 
 class Shaft:
-    """A painted light shaft: sectors whose only claim to being lit is a number.
+    """A sector whose only claim to being lit is a number.
+
+    Named for the case it was written for -- painted light shafts -- but the family
+    is broader than that, and the repair is identical for all of it: a sector given
+    a lightlevel its room does not have, with nothing in the world casting it. Wall
+    alcoves and door recesses on MAP13 are the same defect on a different shape.
+
+    Note that tools/scan_fake_lightshafts.py only finds the SHAFT sub-case: its
+    geometric test requires the sector to match its neighbour's floor and ceiling
+    flats, which a recess never does. For anything else, widen the test to "above
+    the map's emission threshold AND brighter than every neighbour" -- see the MAP13
+    alcove entries in SHAFTS.
 
     The fourth family, and the only one that never animates -- which is why the
     first three surveys all missed it. There is no special and no script. The
@@ -209,6 +220,97 @@ class Shaft:
 
 
 SHAFTS = [
+    # The same defect as the shafts below, on a different shape of sector: a wall
+    # element painted bright while the room it sits in is not. No special, no ACS --
+    # both were surveyed for MAP13 and neither covers these (scan_light_specials 13
+    # reports sequence=0, blink=0, and its three ACS calls are on tags 7/30/31).
+    # scan_fake_lightshafts misses them too, on purpose: its geometric test requires
+    # the sector to match its neighbour's flats, which an alcove or a door recess
+    # never does. They were found by widening that test to "above the emission
+    # threshold AND >=30 brighter than every neighbour".
+    #
+    # Judged the way the MAP05 pylons were: is there anything in the room the light
+    # could be coming from? For both of these, no -- and the screenshots show it,
+    # because the wall immediately around each one is black while the element itself
+    # is lit. A real fixture cannot light a recess and not its own wall.
+    Shaft(
+        "MAP13", [162, 170, 171, 172, 173], from_light=255, to_light=170,
+        enabled=True,
+        note="THE REPORTED ONE (screen/fakelitlevel13wallelement.png). C921 wall "
+             "alcoves -- 64x16 and 16x64 recesses holding the C92 relief, the tall "
+             "one with a pentagram at its foot -- in the L170 halls. At 255 they sit "
+             "above MAP13's 200 threshold, so the recess and its own jambs emit while "
+             "the C53 wall around them stays dark, which is exactly what was "
+             "reported: the alcove interior AND the side of the alcove lit, nothing "
+             "else. Torches exist elsewhere on this map but the nearest is 654-1461 "
+             "units from most of these, and a torch that could light one of them "
+             "would light the wall beside it too.",
+    ),
+    Shaft(
+        "MAP13", [163, 164, 165, 188, 189, 190], from_light=255, to_light=180,
+        enabled=True,
+        note="The same C921 alcoves in the L180 halls -- same element, same defect, "
+             "different host room, so a different resting value. Split from the "
+             "group above only because to_light differs; stripping one set and not "
+             "the other would leave the same fixture lit in one corridor and dark in "
+             "the next.",
+    ),
+    # Found by tools/scan_painted_light.py rather than by screenshot. Enabled here
+    # because the survey's fixture column answers the triage question outright: the
+    # nearest light-bearing thing to any of them is 1040-1189 units away, and the
+    # fixture set is derived from the mod's own GLDEFS+DECORATE (39 placeable actors
+    # that carry lights), not guessed. Nothing within a thousand units can light a
+    # 64-unit element and leave the wall beside it black.
+    Shaft(
+        "MAP13", [57, 59], from_light=255, to_light=180,
+        enabled=True,
+        note="C35 trim runs, 256x32 and 256x128. Nearest fixture 1040u.",
+    ),
+    Shaft(
+        "MAP13", [71, 72], from_light=255, to_light=180,
+        enabled=True,
+        note="C74 relief recesses -- the tall skeleton panel. Nearest fixture 1167u.",
+    ),
+    Shaft(
+        "MAP13", [73, 74], from_light=255, to_light=180,
+        enabled=True,
+        note="C79 relief recesses, the sibling of the C74 pair above and part of the "
+             "same wall arrangement. Nearest fixture 1189u.",
+    ),
+    Shaft(
+        "MAP13", [144, 208], from_light=220, to_light=160,
+        enabled=True,
+        note="C911 panels. Nearest fixture 1147u.",
+    ),
+    Shaft(
+        "MAP13", [96, 97, 98], from_light=255, to_light=180,
+        enabled=True,
+        note="THE REPORTED ONE (screen/morefakelitlevel13moving.png). The H116 "
+             "ledges -- three long thin runs, 32x1344 and 1344x32, clad in the "
+             "ribbed chevron beam -- painted 255 inside rooms at 180. A 1344-unit "
+             "beam glowing evenly along its entire length with black on both sides "
+             "of it is about as clearly sourceless as this defect gets: no falloff "
+             "anywhere, and no fixture at either end. Carries no special.",
+    ),
+    Shaft(
+        "MAP13", [35], from_light=220, to_light=180,
+        enabled=True,
+        note="THE OTHER REPORTED ONE (screen/fakelittexturearounddoorlevel13.png). "
+             "The HDOR10 door recess -- HDOR10A mirrored four ways into the big "
+             "symmetric panel with the star. 80x272, painted 220 inside a room at "
+             "180, so it clears the 200 threshold and the door, its jambs and the "
+             "lintel over it all self-emit as one pale slab. The torches flanking it "
+             "are real and were reported as good: they are things, they light the "
+             "C22 demon panels correctly, and nothing here touches them.",
+    ),
+    Shaft(
+        "MAP13", [32], from_light=220, to_light=200,
+        enabled=True,
+        note="The second HDOR10 door of the same design, host room 200. Not "
+             "reported, included so the two doors do not end up looking different "
+             "from each other. 200 is not above the threshold -- the test is "
+             "strictly greater -- so this stops emitting as well.",
+    ),
     Shaft(
         "MAP13", [136, 137], from_light=255, to_light=170,
         enabled=True,
@@ -292,6 +394,36 @@ ACS_LIGHT_SPECIALS = {
 
 
 SCRIPTED = [
+    # MAP13 script 669 OPEN. Found only after building rt_tex_probe, which showed the
+    # CTEL alcove's lightlevel sweeping 202..255 at runtime while the map data said 180
+    # -- proof the animation was neither the texture nor the stored lightlevel. An
+    # earlier hand-rolled scan of this BEHAVIOR reported "no light calls on tag 30" and
+    # was simply wrong: it searched for a dword equal to the special number, when the
+    # encoding is PUSHnBYTES args... LSPECn special -- which acs_call_signature in this
+    # very file already spells out. The correct scan finds three calls in MAP13.
+    Scripted(
+        "MAP13", 669, 114, (30, 255, 200, 35), enabled=True,
+        note="THE REPORTED ONE (screen/level13badlitstartred.png). Glow 255<->200 "
+             "over 35 tics on tag 30 = sector 126, the 64x64 CTEL alcove. This is "
+             "the 'texture fade in/out' that three rounds of texture work chased: "
+             "rt_tex_probe showed sector_emis tracking it 0.013 -> 0.350 in step "
+             "with the lightlevel, so the flats were self-emitting on a sine. With "
+             "the call stripped the sector sits at the 180 the Shaft entry gives "
+             "it, under MAP13's 200 threshold, and stops emitting entirely -- the "
+             "alcove is then lit only by the two PointLightPulse things in it.",
+    ),
+    Scripted(
+        "MAP13", 669, 115, (31, 255, 180), enabled=False,
+        note="SURVEYED, NOT STRIPPED. Flicker 255<->180 on tag 31, a different "
+             "sector and not what was reported. Listed so the next reader knows "
+             "MAP13's OPEN script has more in it than the one call above, and can "
+             "judge it on its own evidence rather than rediscovering it.",
+    ),
+    Scripted(
+        "MAP13", 4, 114, (7, 255, 220, 35), enabled=False,
+        note="SURVEYED, NOT STRIPPED. Glow 255<->220 on tag 7, in script 4 rather "
+             "than the OPEN script. Same reasoning as tag 31.",
+    ),
     # MAP07 script 669 OPEN is nothing BUT these eight calls, so stripping all
     # of them leaves an OPEN script that runs a run of NOPs and terminates.
     #
@@ -503,6 +635,77 @@ def clear_specials(
     return re.sub(r"(?ms)^sector\s*\{(.*?)\}", scrub, text), cleared
 
 
+class Tint:
+    """A sector painted a different COLOUR from its room to fake a light's colour.
+
+    The seventh family, and the second half of the painted-light problem. A Shaft
+    fakes a light's BRIGHTNESS with lightlevel; this fakes its COLOUR with the Doom
+    64 per-sector colormap (`lightcolor` plus `color1`..`color5`).
+
+    Both halves reach RT, but by different routes. Lightlevel is dropped and
+    re-derived, which is why a painted shaft shows up as self-emission. The colour
+    is NOT dropped -- rt_sector_tint_albedo carries the sector hue into albedo at
+    full strength on purpose, so a red corridor stays red. The consequence is that a
+    sector painted warm inside a cold room puts a hard-edged colour change across a
+    continuous floor, at the sector boundary, with no gradient and nothing casting
+    it.
+
+    Reported on MAP13's door: "that door floor texture still has a harsh split of
+    colour. is it the texture colour that was changed to simulate light in front of
+    the door?" -- yes, exactly that (2026-08-10).
+
+    The repair copies every colour field from a DONOR sector, normally the room the
+    element sits in, so the split disappears and the warmth comes from the torches
+    that are actually there. `from_lightcolor` is asserted before the write, like
+    every other family here, so a map edit fails the build instead of recolouring
+    the wrong sector.
+
+    Do NOT run this over a colour globally. Doom 64's per-sector colour is real art
+    direction and most of it is deliberate: MAP13 has 15 sectors sharing the door's
+    warm salmon, and only the two door recesses are wrong -- the rest are rooms that
+    are simply warm. The test is the same as everywhere else in this file: a small
+    element painted unlike the room it sits in, with no fixture to justify it.
+    """
+
+    def __init__(self, mapname: str, sectors: list[int], donor: int,
+                 from_lightcolor: int, enabled: bool, note: str):
+        self.mapname = mapname
+        self.sectors = sectors
+        self.donor = donor
+        self.from_lightcolor = from_lightcolor
+        self.enabled = enabled
+        self.note = note
+
+
+# Every colour field a Doom 64 UDMF sector carries in this WAD. color1..color5 are the
+# per-surface set (floor / ceiling / wall top / wall bottom / things); lightcolor is the
+# one RT reads through Colormap.LightColor. All of them are copied together -- taking
+# lightcolor alone would leave the floor and the walls disagreeing.
+TINT_FIELDS = ("lightcolor", "color1", "color2", "color3", "color4", "color5")
+
+
+TINTS = [
+    Tint(
+        "MAP13", [32, 35], donor=15, from_lightcolor=0xFE9276,
+        enabled=True,
+        note="THE REPORTED ONE (screen/fakelittexturearounddoorlevel13.png, the "
+             "floor). Both HDOR10 door recesses are painted warm salmon "
+             "rgb(254,146,118) while the halls they open off -- sectors 14 and 15, "
+             "2112x2112 and 512x2112 -- are cold blue rgb(89,164,255). The floor "
+             "texture is CASFL27 on both sides of the line, so the change is purely "
+             "the sector colour and lands as a hard edge across one continuous "
+             "floor. It is the author drawing torchlight onto the ground in front of "
+             "the door.\n"
+             "\n"
+             "Under RT the torches flanking that door are real lights and already "
+             "warm the floor themselves, so the paint is now double-counted as well "
+             "as hard-edged. Donor 15 is the hall; 32 opens off 14, which carries "
+             "the identical blue, so one donor serves both and the two doors stay "
+             "consistent with each other.",
+    ),
+]
+
+
 class Lamp:
     """A light THING to add to a map, for a fixture the art draws but nobody wired.
 
@@ -524,9 +727,36 @@ class Lamp:
     thing's ANGLE -- specialf1/TICRATE seconds (a_dynlight.cpp Activate) -- and
     sine-cycles the radius between arg3 and arg4.
 
-    `lo` must stay above rt_dynlight_minradius (16 in the launcher) or the light
-    is culled outright at the bottom of the cycle and the fixture blinks OFF
-    instead of dimming.
+    RADIUS IS NOT BRIGHTNESS, and getting that backwards cost a round. The engine
+    turns a light thing's map radius into RT intensity as
+
+        intensity = hi * rt_dynlight_intensity * blink      (capped at rt_dynlight_max)
+        if radius > rt_dynlight_rsoft:  intensity *= (rsoft / radius)^2
+
+    The cap bites almost immediately (16 * 40 = 640 > 500), so above `rsoft` the
+    only term still varying is an INVERSE SQUARE in radius -- i.e. past that point
+    a bigger radius makes the light DIMMER, and because the roll-off tracks the
+    CURRENT radius, the pulse also runs backwards: dimmest at the crest.
+
+    Measured, with the launcher's scale 40 / cap 500 / rsoft 20 / minradius 16:
+
+        arg3/arg4     trough -> crest
+          144/60          56 ->     10     dim and inverted   <- was shipped
+           48/20         288 ->     87     inverted
+           32/24         133 ->    195     inverted mid-cycle
+           20/17         120 ->    500     correct, 4.2x
+
+    So both radii belong at or below `rt_dynlight_rsoft`. Two constraints pin the
+    values almost exactly:
+
+      - `lo` >= rt_dynlight_minradius (16) or the light is CULLED at the bottom of
+        the cycle and the fixture blinks OFF instead of dimming.
+      - `hi` <= rt_dynlight_rsoft (20) or the roll-off inverts the pulse.
+
+    which leaves the 16..20 band. There is no way to ask for a crest DIMMER than
+    the 500 cap without re-entering the roll-off, because minradius 16 x scale 40
+    already exceeds it -- if a fixture needs to be subtler, that is a job for
+    rt_dynlight_intensity or a smaller rt_dynlight_minradius, not for this table.
     """
 
     def __init__(self, mapname: str, sectors: list[int], flat: str,
@@ -547,18 +777,32 @@ class Lamp:
 LAMPS = [
     Lamp(
         "MAP13", [126], flat="CTEL",
-        heights=[16, 96], color=(255, 0, 0), hi=144, lo=60, period_tics=140,
-        enabled=True,
-        note="THE REPORTED ONE. CTEL1 is an 8-frame telemetry panel whose small "
+        heights=[16, 96], color=(255, 0, 0), hi=20, lo=17, period_tics=140,
+        enabled=False,
+        note="SUPERSEDED by rt_spin_panels, kept because the values are still the "
+             "worked example for this table. These PULSED, and the pulsing was "
+             "imitating the ACS Light_Glow that turned out to be the actual defect: "
+             "once that was stripped there was nothing left for a fade to represent. "
+             "The artwork depicts a light that TRAVELS at constant brightness -- the "
+             "eight rim gems carry the same luminance set shifted one frame each, "
+             "total 891 in every frame -- and a map thing cannot express that, since "
+             "things do not move and GZDoom has no per-thing phase offset to fake it "
+             "with eight of them. So the engine orbits one constant light instead, "
+             "reading its bearing from the current animation frame. Original note "
+             "follows. CTEL1 is an 8-frame telemetry panel whose small "
              "red gems ramp up and down; the panel is on BOTH the floor and the "
              "ceiling of sector 126, a 64x64 alcove (floor 8, ceiling 120). Two "
              "lights, one 16 above the floor panel and one 16 under the ceiling "
              "one, so each reads as coming off its own fixture rather than one "
              "light floating in the middle of the shaft. period 140 tics = 4.0s, "
-             "matching 'slow'. Radii are 3x the first pass (48/20): with the "
-             "alcove's painted 255 dropped to the room's 180 by the Shaft entry "
-             "above, the surface no longer lights itself and the real light has "
-             "to carry the whole fixture. Everything tried on the TEXTURE side -- _e mask, "
+             "matching 'slow'. Radii 20/17 put the crest at the 500 cap and the "
+             "trough at 120, a clean 4.2x rise -- see the class docstring for why "
+             "they are NOT larger: the first two passes used 48/20 and then 144/60 "
+             "on the assumption that radius means brightness, and both were dimmer "
+             "than 20/17 AND ran the pulse backwards. With the alcove's painted 255 "
+             "dropped to the room's 180 and the tag-30 ACS glow stripped, the "
+             "surface no longer lights itself and these carry the whole fixture. "
+             "Everything tried on the TEXTURE side -- _e mask, "
              "emissiveMult, attached lightIntensity -- made it glow and never lit "
              "the alcove; see the Lamp docstring for why that cannot work.",
     ),
@@ -596,8 +840,20 @@ class StaticAnim:
 STATIC_ANIMS = [
     StaticAnim(
         "CTEL", first="CTEL1", pin="CTEL5",
-        enabled=True,
-        note="THE REPORTED ONE. CTEL1..8, 4 tics each, is a telemetry panel whose "
+        enabled=False,
+        note="WRONG FIX, KEPT AS THE RECORD. Freezing this animation threw away a "
+             "feature to remove a defect, because the animation is two things at "
+             "once and only one of them is baked light. Measured per gem cluster: "
+             "eight 4-pixel clusters around the rim carry the same luminance set "
+             "cyclically shifted by one frame, total 891 in EVERY frame -- a chase "
+             "light turning around the panel, motion rather than lighting. One "
+             "13-pixel blob dead centre runs 44 to 1166 with no rotation at all, "
+             "and is by itself the entire 2.20x brightness envelope of the tile. "
+             "Pinning to one frame stopped the fade and the rotation together. The "
+             "fade is now removed at the source instead, by holding the CENTRE blob "
+             "at its darkest across all eight frames and leaving the ring alone: "
+             "tools/make_ctel_static_center.py -> d64r-ctel-fix.wad. "
+             "Original note follows. CTEL1..8, 4 tics each, is a telemetry panel whose "
              "red gems ramp up and down: 45 gem pixels whose luminance runs 2058 "
              "at the crest (CTEL8) to 936 in the trough (CTEL5/6/7), with the "
              "stone byte-identical in all eight frames. Nothing in the map casts "
@@ -762,6 +1018,70 @@ def set_lightlevels(
     return re.sub(r"(?ms)^sector\s*\{(.*?)\}", rewrite, text), changed
 
 
+def set_sector_colors(
+    text: str, wanted: list, mapname: str
+) -> tuple[str, int]:
+    """Copy every colour field from each Tint's donor sector onto its targets.
+
+    Two passes over the sector blocks: read the donors first, then write. Doing it
+    in one pass would depend on the donor happening to appear before its targets in
+    the lump, which is not something the map format promises.
+    """
+    if not wanted:
+        return text, 0
+
+    blocks = re.findall(r"(?ms)^sector\s*\{(.*?)\}", text)
+
+    def field(body: str, key: str) -> str | None:
+        m = re.search(rf"\b{key}\s*=\s*(-?\d+)\s*;", body)
+        return m.group(1) if m else None
+
+    donors: dict[int, dict[str, str]] = {}
+    for t in wanted:
+        if t.donor >= len(blocks):
+            raise SystemExit(f"{mapname}: no donor sector {t.donor}")
+        donors[t.donor] = {
+            k: v for k in TINT_FIELDS if (v := field(blocks[t.donor], k)) is not None
+        }
+        if not donors[t.donor]:
+            raise SystemExit(
+                f"{mapname} sector {t.donor}: no colour fields to donate"
+            )
+
+    targets: dict[int, tuple] = {}
+    for t in wanted:
+        for si in t.sectors:
+            targets[si] = (t.from_lightcolor, t.donor)
+
+    index = -1
+    changed = 0
+
+    def rewrite(m: re.Match[str]) -> str:
+        nonlocal index, changed
+        index += 1
+        if index not in targets:
+            return m.group(0)
+        body = m.group(1)
+        expect, donor = targets[index]
+        got = field(body, "lightcolor")
+        if got is None or ( int( got ) & 0xFFFFFF ) != ( expect & 0xFFFFFF ):
+            raise SystemExit(
+                f"{mapname} sector {index}: expected lightcolor "
+                f"0x{expect & 0xFFFFFF:06X}, found "
+                f"{'none' if got is None else f'0x{int(got) & 0xFFFFFF:06X}'} — map "
+                f"data changed, refusing to recolour blind."
+            )
+        for k, v in donors[donor].items():
+            if re.search(rf"\b{k}\s*=\s*-?\d+\s*;", body):
+                body = re.sub(rf"\b{k}\s*=\s*-?\d+\s*;", f"{k} = {v};", body)
+            else:
+                body = body.rstrip() + f"\n{k} = {v};\n"
+        changed += 1
+        return "sector\n{" + body + "}"
+
+    return re.sub(r"(?ms)^sector\s*\{(.*?)\}", rewrite, text), changed
+
+
 def show_table() -> None:
     for c in CHAINS:
         state = "STRIP" if c.enabled else "keep "
@@ -795,8 +1115,10 @@ def main() -> None:
     activeShafts = [h for h in SHAFTS if h.enabled]
     activeLamps = [l for l in LAMPS if l.enabled]
     activeAnims = [a for a in STATIC_ANIMS if a.enabled]
+    activeTints = [t for t in TINTS if t.enabled]
     if (not active and not activeBlinks and not activeScripted
-            and not activeShafts and not activeLamps and not activeAnims):
+            and not activeShafts and not activeLamps and not activeAnims
+            and not activeTints):
         raise SystemExit("nothing enabled — nothing to build")
 
     # sector index -> the specials it may currently carry, per map
@@ -826,6 +1148,12 @@ def main() -> None:
     # their own per-map dict: sector index -> (expected, new) lightlevel. A map
     # can appear here with no special work at all, which is MAP13's case.
     light_by_map: dict[str, dict[int, tuple[int, int]]] = {}
+    tint_by_map: dict[str, list] = {}
+    for ti in activeTints:
+        tint_by_map.setdefault(ti.mapname, []).append(ti)
+        labels.setdefault(ti.mapname, []).append(
+            f"tint {ti.sectors} <- sector {ti.donor}")
+
     lamp_by_map: dict[str, list] = {}
     for l in activeLamps:
         lamp_by_map.setdefault(l.mapname, []).append(l)
@@ -841,7 +1169,9 @@ def main() -> None:
 
     lumps = read_wad_lumps(WAD)
     items: list[tuple[str, bytes]] = []
-    for mapname in dict.fromkeys([*by_map, *acs_by_map, *light_by_map, *lamp_by_map]):
+    for mapname in dict.fromkeys(
+        [*by_map, *acs_by_map, *light_by_map, *lamp_by_map, *tint_by_map]
+    ):
         wanted = by_map.get(mapname, {})
         start, end = map_lump_range(lumps, mapname)
         members = {nm.upper(): blob for nm, blob in lumps[start:end]}
@@ -856,6 +1186,11 @@ def main() -> None:
         fixed, nlight = set_lightlevels(fixed, lights, mapname)
         if nlight != len(lights):
             raise SystemExit(f"{mapname}: relit {nlight} of {len(lights)} sectors")
+
+        tints = tint_by_map.get(mapname, [])
+        fixed, ntint = set_sector_colors(fixed, tints, mapname)
+        if ntint != sum(len(x.sectors) for x in tints):
+            raise SystemExit(f"{mapname}: recoloured {ntint} sectors, expected more")
 
         lamps = lamp_by_map.get(mapname, [])
         fixed, nlamp = add_light_things(fixed, lamps, mapname)
@@ -893,7 +1228,7 @@ def main() -> None:
         if items[-1][0].upper() != "ENDMAP":
             items.append(("ENDMAP", b""))
         print(f"{mapname}: cleared {n} sectors, relit {nlight} sectors, "
-              f"added {nlamp} light thing(s), "
+              f"recoloured {ntint} sector(s), added {nlamp} light thing(s), "
               f"{nacs} acs call(s) ({', '.join(labels[mapname])})"
               f"{f', re-stripped {n3d} 3D-floor linedef(s)' if n3d else ''}")
 
@@ -904,7 +1239,7 @@ def main() -> None:
                   f"({a.base} animation frozen)")
 
     write_wad(OUTWAD, items)
-    maps = len({*by_map, *acs_by_map, *light_by_map, *lamp_by_map})
+    maps = len({*by_map, *acs_by_map, *light_by_map, *lamp_by_map, *tint_by_map})
     print(f"wrote {OUTWAD} maps={maps} lumps={[nm for nm, _ in items]}")
 
 

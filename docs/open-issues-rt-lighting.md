@@ -11,6 +11,34 @@ Do not treat this as a progress cheer sheet — only unresolved / partially reso
 
 ## 1. Unfixed / incomplete
 
+### 1.2e MAP13 CTEL alcove baked-lit — **FIXED + CONFIRMED IN PLAY 2026-08-10**
+
+The 64×64 alcove at (864, −1312), CTEL telemetry panel on floor and ceiling,
+pulsed bright/dark in an otherwise black room (`screen/level13badlitstartred.png`).
+
+**Cause:** `Light_Glow(30, 255, 200, 35)` in MAP13's script 669 (`OPEN`), on 16
+sectors including 126. MAP13's emission threshold is 200, so the sector spent its
+whole cycle above it and both flats self-emitted on a sine.
+
+**Repair**, all in `d64r-seqlight-fix.wad` unless noted:
+
+- ACS call stripped (`SCRIPTED`); the other two calls in that script are surveyed
+  and deliberately left.
+- Sector 126 painted lightlevel 255 → 180 (`SHAFTS`), under the threshold.
+- Two `PointLightPulse` (9801) things added (`LAMPS`), red, radius 144 ↔ 60,
+  `angle=140` = 4 s cycle.
+- `d64r-ctel-fix.wad` — the panel's 13-px **centre** blob held at its darkest
+  across all 8 frames (it alone was the tile's 2.2× brightness envelope). The 8
+  rim clusters are untouched: they carry a constant 891 total and rotate, which
+  is authored motion, not lighting.
+
+**Process cost — the reason this entry is long.** It was reported correctly as an
+ACS light sequence in the first message. A hand-written `BEHAVIOR` scan returned a
+false negative, and three rounds of texture work followed, all reverted. The
+existing `python tools/scan_light_specials.py 13` prints the call in one line. See
+`rt-lighting-practices.md` §24, and §25 for `rt_tex_probe`, the instrument that
+finally isolated it.
+
 ### 1.0 MAP04 first room wash — **DYNMAXRADIUS 2026-08-05** (needs rebuild + test)
 
 | | |
@@ -350,6 +378,7 @@ Short status: debug match = unfiltered diffuse direct; ceiling lamps confirmed a
 
 | Tool | What it shows | Blobs? |
 |---|---|---|
+| `rt_tex_probe <prefix>` | **Per-surface, once a second:** source **file** (load-order check), animation **frame**, **runtime** lightlevel, `sector_emis`. Start here when a surface is lit wrongly and two rounds of fixes have not shown on screen. String cvar, unarchived. | No |
 | `rt_dynlight_debug 1` | Extra **magenta** RT spheres at every uploaded GZDoom dynlight | **Yes** (engine-side; rebuild required) |
 | `rt_dump_dynlights` | Console list of GZDoom lights | No |
 | RTGL Dev → **Debug show → Light grid** | Light-grid debug buffer | Grid, not per-light markers |

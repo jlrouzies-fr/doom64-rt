@@ -4,7 +4,7 @@ Sector light with nothing in the world casting it: travelling waves (sequence
 chains), per-sector blinks, effects a map's own ACS installs at load, and
 painted light shafts that never animate at all. The first three are found by
 `tools/scan_light_specials.py` and the fourth by
-`tools/scan_fake_lightshafts.py`; all four are repaired by
+`tools/scan_fake_lightshafts.py`; all of it is repaired by
 `tools/make_seqlight_fix.py` into one wad.
 
 Three of the four are *animation* with no source. The fourth is not animated,
@@ -12,6 +12,30 @@ and is the only one where the repair has a second half: where the paint was
 imitating light from a real window, removing it leaves a real window with
 nothing coming through, so the light gets given back for real. See
 [The fourth family](#the-fourth-family-painted-light-shafts).
+
+Two later families do not fit that description at all, and are listed here
+because they share the wad and the same underlying question — *what in the world
+is casting this?*
+
+- **Fifth, `LAMPS`** — the only family that **adds** rather than strips. Where a
+  fixture is real in the art and simply was never wired, the repair is a light
+  **thing** in the map, which is how Retribution itself does it everywhere.
+- **Sixth, `STATIC_ANIMS`** — an ANIMDEFS animation that paints its own lighting,
+  frozen to one frame. Currently all disabled; see the family's section for why
+  the one attempt was wrong.
+
+## Before any theory: run the scanner
+
+The families below are invisible in the map geometry to varying degrees and the
+ACS one is invisible entirely, so a surface that "looks wrongly lit" is not a
+texture problem until the survey says so.
+
+    python tools/scan_light_specials.py 13     # sequence + blink + ACS, one map
+    python tools/scan_fake_lightshafts.py 13   # painted shafts
+
+Skipping this cost most of a day on MAP13's CTEL alcove — see
+[DONE — MAP13 script 669](#done--map13-script-669-the-tag-30-glow). The answer
+was one line of scanner output, and the work went to the texture instead.
 
 ## The mechanism
 
@@ -230,6 +254,44 @@ texture, so a room flashing under it is not quite the sourceless lie the others
 are. And the three glows above are the only changes that can make anything
 darker than it was.
 
+### DONE — MAP13 script 669, the tag 30 glow
+
+`Light_Glow(30, 255, 200, 35)`, an `OPEN` script, on **16 sectors**:
+96, 97, 98, **126**, 144, 162–165, 170–173, 188–190. Bases are 220 and 255, both
+at or above the glow's low end, so nothing darkens when it goes.
+
+Sector 126 is the one that was reported: the 64×64 alcove at (864, −1312) whose
+floor *and* ceiling are the CTEL telemetry panel. MAP13's emission threshold is
+200, so the sector spent its whole cycle above it and both flats self-emitted on
+a sine — a panel lighting itself, brightening and dimming, in an otherwise black
+room (`screen/level13badlitstartred.png`).
+
+**This one call cost most of a day, and none of it needed to.** It was reported
+as "a fake light sequence", correctly, in the first message about it. What
+followed was three rounds of work on the *texture* — an `_e` emissive mask, a
+`textures.json` attached light, an `rt_eye_panels` engine feature, then flattening
+the artwork's own animation — because a hand-written scan of `BEHAVIOR` came back
+"no light calls on tag 30" and was believed. That scan searched for a dword equal
+to the special number. The encoding is `PUSHnBYTES args… LSPECn special`, which
+`acs_call_signature()` in `make_seqlight_fix.py` spells out in six lines, and
+which the section below documents.
+
+The scanner in this repo answers it in one line and always did:
+
+    python tools/scan_light_specials.py 13
+    Light_Glow(30, 255, 200, 35)  sectors=[96, 97, 98, 126, ...]  base=[220, 255]
+
+**Run the scanner before forming any theory about a surface that looks wrongly
+lit.** Not after the texture work, not to confirm a hypothesis — first. The three
+families it covers are invisible in the map geometry to varying degrees, and the
+ACS one is invisible entirely.
+
+What finally found it was instrumentation rather than reasoning: `rt_tex_probe`
+(see `rt-lighting-practices.md` §25) printed the surface's `lightlevel` sweeping
+202↔255 at runtime while the patched map data said 180, with `sector_emis`
+tracking it 0.013 → 0.350. That is a runtime animation and nothing else, and it
+ruled out every texture-side explanation in a single line of output.
+
 ## How the ACS patch works
 
 There is no ACS compiler in this tree, so `make_seqlight_fix.py` does not edit
@@ -279,6 +341,52 @@ almost never looks like this — a lamp recess changes the ceiling height, a lig
 panel changes the flat. When nothing changes but the number, the brightness is
 not describing anything that is there. Sky-ceilinged sectors are skipped: those
 are open to a sky that is a genuine RT light, so bright is correct.
+
+### The family is wider than shafts — and the scanner only finds shafts
+
+`scan_fake_lightshafts.py` requires the bright sector to **match its neighbour's floor
+and ceiling flats**, because that is what makes a painted shaft a shaft. A wall alcove or
+a door recess never matches, so the scanner reports nothing while the defect is plainly
+on screen.
+
+When a surface looks self-lit and both `scan_light_specials.py` and
+`scan_fake_lightshafts.py` come back clean, widen the test by hand — **above the map's
+emission threshold, and brighter than every neighbour**:
+
+```python
+if lv[i] > threshold and lv[i] - max(lv[n] for n in adj[i]) >= 30: ...
+```
+
+On MAP13 that turns up 38 candidates where the two scanners find 4.
+
+The triage is the one the MAP05 pylons got: **is there anything in the room the light
+could be coming from?** The screenshots answer it directly in both cases below — the wall
+immediately around each element is black while the element is lit, and no real fixture
+lights a recess without lighting its own wall.
+
+### DONE — MAP13, the C921 wall alcoves and the HDOR10 door recesses
+
+Reported as `screen/fakelitlevel13wallelement.png` and
+`screen/fakelittexturearounddoorlevel13.png`.
+
+| sectors | element | from | to |
+|---|---|---|---|
+| 162, 170–173 | C921 alcove (C92 relief, pentagram at its foot), L170 halls | 255 | 170 |
+| 163–165, 188–190 | the same alcove in the L180 halls | 255 | 180 |
+| 35 | HDOR10 door recess (HDOR10A mirrored ×4, the star panel) | 220 | 180 |
+| 32 | the second door of that design | 220 | 200 |
+
+The alcoves are 64×16 / 16×64 recesses, so at 255 the recess *and its own jambs* emitted
+while the C53 wall around stayed dark — "the texture inside the alcove, and the side of
+the alcove itself". The door recess is 80×272 and took the door, its jambs and the lintel
+with it as one pale slab.
+
+Both were split by host-room brightness rather than done as one entry: the same fixture
+must not end up lit in one corridor and dark in the next.
+
+**The torches at the door are real and stay.** They are things, they light the C22 demon
+panels, and none of this touches them — that is the whole point of separating "the fixture
+is real" from "the sector is painted".
 
 ### DONE — MAP13, four fans in two halls
 
@@ -434,6 +542,78 @@ to match its neighbour's flats can still be perfectly well motivated — a bay
 under a lamp fixture, a floor around a glowing pool. Judge them the way the
 blinks are judged: **is there something in the room the light could be coming
 from**, and if the answer is a window, the repair is a moon, not a deletion.
+
+## The fifth family: fixtures that need a light ADDED
+
+Everything above removes light. This one gives it. Where the artwork draws a lit
+fixture that the original game never wired, the mechanism is a **light thing in
+the map** — `LAMPS` in `make_seqlight_fix.py`.
+
+That is not an invention; it is what Retribution does throughout. **MAP02 lights
+its red corridor elements with 48 `PointLight` (9800) and 35 `PointLightFlicker`
+(9802) things**, the red ones at `arg0=255, arg3=32`, with nothing whatsoever on
+the texture.
+
+Texture metadata cannot substitute, and a full day was spent proving it the hard
+way on C23 and CTEL:
+
+| attempt | result |
+|---|---|
+| `_e` mask + `emissiveMult` | glows, illuminates nothing — RTGL1 emissive is not a light source |
+| `lightIntensity` on a **wall** | nothing at all: the light lands at the quad centre with no normal offset, i.e. buried in the wall and fully occluded |
+| `lightIntensity` on a **flat** | unreliable — needs the prim to pass a strict quad test that a BSP-split subsector often fails |
+| `lightEvenOnDynamic` | did not rescue the flat case either |
+
+**Thing types and arguments.** 9800 `PointLight`, 9801 `PointLightPulse`, 9802
+`PointLightFlicker`. `arg0..2` = RGB, `arg3` = radius, `arg4` = secondary radius.
+For **Pulse** the period comes from the thing's **`angle`** — `specialf1/TICRATE`
+seconds, sine-cycling `arg3`↔`arg4` (`a_dynlight.cpp` `Activate`), so `angle=140`
+is a 4-second cycle.
+
+Keep the dim end **above `rt_dynlight_minradius`** (16 in the launcher) or the
+light is culled at the bottom of the cycle and the fixture blinks off instead of
+dimming.
+
+### DONE — MAP13 sector 126, the CTEL alcove
+
+Two 9801 things at the alcove centre (864, −1312), one 16 above the floor panel
+and one 16 under the ceiling panel so each reads as coming off its own fixture:
+red `255/0/0`, radius 144 ↔ 60, `angle=140`. Paired with the tag-30 ACS strip and
+the 255 → 180 shaft fix above; with the surface no longer lighting itself, these
+carry the whole fixture.
+
+## The sixth family: animations that paint their own lighting
+
+Some Doom 64 fixtures animate by repainting their lit elements brighter and
+darker frame by frame — the light is *in the artwork*. Under a path tracer that
+is baked lighting one level below a painted shaft, and no amount of real lighting
+corrects it, because the surface is lighting itself.
+
+`STATIC_ANIMS` freezes such an animation to one dim frame via a generated
+`ANIMDEFS` lump. **Every entry is currently disabled, and the one attempt was a
+mistake worth keeping visible.**
+
+CTEL (`CTEL1`..`CTEL8`, 4 tics each) looked like exactly this case. Measured per
+gem cluster, it is two behaviours at once:
+
+| | behaviour | verdict |
+|---|---|---|
+| 8 rim clusters, 4 px each | same luminance set cyclically shifted one frame each; total **891 in every frame** | a chase turning around the panel — **motion, keep** |
+| 1 centre blob, 13 px | `44 → 1166`, no rotation; **by itself the tile's entire 2.20× envelope** | painted fade — remove |
+
+Freezing the animation killed both. The fade was removed at the source instead —
+`tools/make_ctel_static_center.py` holds the *centre blob* at its darkest across
+all eight frames and leaves every other pixel alone, shipping replacement lumps
+in `d64r-ctel-fix.wad` (`TX_` namespace, like `make_bulb_textures.py`). The ring
+keeps turning; the panel stops pulsing.
+
+Two rules fall out of that:
+
+- **Measure per cluster before freezing anything.** "The animation pulses" and
+  "one element of the animation pulses" call for completely different repairs.
+- A single-frame ANIMDEFS animation **aborts startup** — `animations.cpp:480`,
+  *"Animation needs at least 2 frames"*, thrown inside `Texman.Init`. Emit the
+  same pic twice.
 
 ## Load-order trap: maps that are also in the 3D-floor wad
 

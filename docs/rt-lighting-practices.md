@@ -414,6 +414,104 @@ face before touching either one's matcher. And give paired debug visualizations 
 one path with markers and one without does not show you "half the lights are missing", it
 shows you a half-instrumented renderer.
 
+## 24. Run the existing survey before writing your own, and treat a user's diagnosis as evidence
+
+MAP13's CTEL alcove pulsed bright/dark in a black room. It was reported, in the first
+message about it, as *"a fake light sequence"* and then explicitly as *"that lighting ACS
+script or whatever it is"*. Both were correct.
+
+What happened instead: a hand-written scan of `BEHAVIOR` came back "no light calls on tag
+30", that null was believed, and three rounds of texture work followed — an `_e` emissive
+mask, a `textures.json` attached light, a whole `rt_eye_panels` engine feature, then
+flattening the artwork's own animation. All of it reverted. The scan was broken: it searched
+for a dword equal to the special number, when the encoding is `PUSHnBYTES args… LSPECn
+special` — documented in `acs_call_signature()` in `make_seqlight_fix.py`, in six lines, in
+this repo.
+
+And the correct scanner already existed, was already documented in
+`sequence-light-chains.md`, and answers it in one line:
+
+    python tools/scan_light_specials.py 13
+    Light_Glow(30, 255, 200, 35)  sectors=[96, 97, 98, 126, ...]  base=[220, 255]
+
+**Rules:**
+
+- Before theorising about a wrongly-lit surface, run `scan_light_specials.py <map>` and
+  `scan_fake_lightshafts.py <map>`. First, not as confirmation afterwards.
+- Before hand-rolling a parser for a project format, grep for the encoder. A repo that
+  *writes* the format contains the definition of the format.
+- A negative result from a tool you just wrote is worth much less than a positive claim
+  from the person watching the screen. When the two disagree, distrust the new tool.
+- Say which one you ran. "There is no ACS on that tag" was reported as a fact when it was
+  the output of an unvalidated five-line loop.
+
+## 25. `rt_tex_probe` — ask the running game, per surface
+
+A string cvar (unarchived, so it is off again next launch). Set it to a texture-name prefix
+and every world surface drawn with a matching texture reports once a second:
+
+    +rt_tex_probe CTEL
+
+    rt_tex_probe CTEL5  file=d64r-ctel-fix.wad  lump=11067  lightlevel=215
+                        sector_emis=0.095  color=0xFF66E0FF  drawn=1
+
+Four independent facts, each of which had been *guessed at* repeatedly:
+
+| field | answers |
+|---|---|
+| `file=` | which file the texture actually came from — i.e. whether a replacement wad is winning the load order **at all** |
+| the frame name | which animation frame is on screen; names cycling = the animation runs |
+| `lightlevel=` | the lightlevel in use **at runtime**, which is not necessarily the map data |
+| `sector_emis=` | whether the engine is making this surface self-emit, independent of any texture work |
+
+That fourth line is what finally cracked MAP13: `lightlevel` swept 202↔255 while the patched
+map data said 180, with `sector_emis` tracking it 0.013 → 0.350. A runtime animation and
+nothing else — which eliminated every texture-side explanation at once, after a day of not
+being able to.
+
+**Rule:** when two rounds have gone by without the screen changing, stop proposing fixes and
+add the instrument. It is cheaper than the third round. This is §10 and §11 again — the
+lesson keeps being re-learned because the instrument feels like a detour when you are sure
+you are one edit away.
+
+## 26. A dynlight thing's radius is not its brightness — past `rsoft` it is the inverse
+
+For GZDoom light things (9800/9801/9802), `arg3`/`arg4` are map **radii**, and the engine
+turns them into RT intensity as:
+
+    intensity = hi * rt_dynlight_intensity * blink        capped at rt_dynlight_max
+    if radius > rt_dynlight_rsoft:  intensity *= (rsoft / radius)^2
+
+With the launcher's `intensity 40 / max 500 / rsoft 20 / minradius 16`, the cap bites at
+once (16 × 40 = 640 > 500), so above `rsoft` the only term still varying is an **inverse
+square in radius**. Two consequences, both counter-intuitive:
+
+- **A bigger radius makes the light dimmer.**
+- The roll-off tracks the *current* radius, so a pulsing light also runs **backwards** —
+  dimmest at the crest of its cycle.
+
+Measured on MAP13's CTEL alcove:
+
+| `arg3/arg4` | trough → crest | |
+|---|---|---|
+| 144 / 60 | 56 → **10** | dim *and* inverted — shipped by mistake |
+| 48 / 20 | 288 → 87 | inverted |
+| 32 / 24 | 133 → 195 | inverted mid-cycle |
+| **20 / 17** | **120 → 500** | correct, 4.2× rise |
+
+"Make it 3× brighter" was implemented as 48 → 144 and made the crest **~9× dimmer**.
+
+**Rules:**
+
+- Keep both radii inside `minradius <= r <= rsoft` (16…20 here). Below `minradius` the
+  light is culled outright at the bottom of its cycle and the fixture blinks *off*; above
+  `rsoft` the roll-off inverts it.
+- That band admits no crest dimmer than the 500 cap. A fixture that needs to be subtler is
+  a job for `rt_dynlight_intensity` or `rt_dynlight_minradius`, not for the thing's args.
+- Before tuning any light-thing value, read the conversion in `RT_UploadDynLights` rather
+  than assuming radius behaves like radius. This is §18 again — the cvar descriptions and
+  the code encode prior root causes.
+
 ## Pending visual confirmation
 
 `RT_UploadCeilingEdgeLamps` (MAP03 ceiling strips) and the map-relative

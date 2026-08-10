@@ -18,6 +18,15 @@ Open lighting bugs / test log (wash, blink, ceiling lamps):
 
 → **`open-issues-rt-lighting.md`**
 
+Water (stylized surface + projected caustics, all cvars, four traps):
+
+→ **`docs/rt-water.md`**
+
+The moon, and the sky leaks it exposed (`rt_sun_*`, `rt_moon_*`, per-map aim,
+`rt_sun_require_sky`, the red/green leak debug, four wrong answers):
+
+→ **`docs/moon-and-sky-leaks.md`**
+
 Anything DLSS Ray Reconstruction:
 
 → **`RAYRECONSTRUCTION.md`** (root, ~35 lines — start here, always)
@@ -27,6 +36,89 @@ It carries the working rules and the five faults that cost days. The full histor
 `RAYRECONSTRUCTION.md` points you at it.
 
 Update those when phases complete or facts change. Do not invent parallel trackers.
+
+## A surface looks wrongly lit — do this first
+
+Most of a day was lost on MAP13 skipping these three steps. In order, before
+forming any theory and before touching a texture:
+
+    python tools/scan_light_specials.py 13      # sequence chains + blinks + ACS light calls
+    python tools/scan_fake_lightshafts.py 13    # sectors painted bright with no source
+
+Then ask the running game about the actual surface:
+
+    .\tools\launch-retribution-rt.cmd 13 -- +rt_tex_probe CTEL
+
+`rt_tex_probe <prefix>` prints, once a second per texture name: the **file** the
+texture came from (so you know whether your replacement wad is winning the load
+order at all), the animation **frame** on screen, the **lightlevel in use at
+runtime** (not what the map data says), and the **`sector_emis`** the engine is
+applying. See `docs/rt-lighting-practices.md` §25.
+
+Three rules that came out of that day, all of them in §24:
+
+- The light animating a sector is very often ACS installed by an `OPEN` script.
+  It is invisible in the map geometry — no sector special to find.
+- **Do not hand-roll a parser for a project format.** `acs_call_signature()` in
+  `make_seqlight_fix.py` defines the ACS encoding; a broken five-line scan
+  reported "no ACS on that tag" and sent the work into the texture for three
+  rounds.
+- A negative from a scanner you just wrote is weaker evidence than what the
+  person watching the screen tells you. When they disagree, distrust the tool.
+
+If both scanners come back clean, **widen the test by hand** before suspecting the
+texture — `scan_fake_lightshafts.py` only finds sectors that match their
+neighbour's flats, so it misses every alcove and door recess:
+
+```python
+if lv[i] > threshold and lv[i] - max(lv[n] for n in adj[i]) >= 30: ...
+```
+
+On MAP13 that finds 38 candidates where the two scanners find 4. Then triage each
+one the way the MAP05 pylons were: **is there anything in the room the light could
+be coming from?** A real fixture cannot light a recess and leave its own wall black.
+
+Repairs go in `tools/make_seqlight_fix.py` (six families, one wad) — see
+`docs/sequence-light-chains.md`. To make a fixture cast light, add a light
+**thing** to the map (`LAMPS`); texture metadata cannot do it.
+
+## The moon, and sky light that leaks
+
+**Read `docs/moon-and-sky-leaks.md` before touching `rt_sun_*`, `rt_moon_*` or
+anything sky.** MAP13's painted shafts were replaced by a real moon: a disc in
+the sky texture (`tools/gen_moon_sky.py`) plus `rt_sun`, the directional light,
+aimed alike — the disc alone casts nothing usable, because RT's sky cubemap is
+not importance-sampled. Aim it with the **`moon`** CCMD, never by setting
+`rt_sun_a/b` directly; per-map aim lives in `RT_MOON_PRESETS` (MAP13 = 90).
+
+Three things that will otherwise cost you a day:
+
+- **A shadow ray that hits nothing counts as LIT** (`RtMissShadowCheck.rmiss`).
+  Doom maps are not watertight, so the moon washes sealed rooms. `rt_sun_require_sky 1`
+  makes a ray prove it reached sky. `rt_sun_leak_debug 2` paints it: **RED**
+  reached sky, **GREEN** escaped — and it composes with the fix, so all-red is
+  the confirmation.
+- **There is no single visibility choke point.** The visible shafts are
+  *volumetric*, and `RtVolumetric.rgen` does **not** call
+  `traceDirectIllumination` — it shadow-tests its own light. A fix in the shared
+  path leaves them untouched and looks inert.
+- **Aperture-size gating does not work here** and has been measured, twice. See
+  §4 of the doc before proposing it again.
+
+## Sprites that emit light
+
+`docs/sprite-illumination.md` is the reference: `emissiveMult` is screen glow and
+**cannot light anything**; only `lightIntensity` + `lightColorHEX` cast, and an
+`_e.png` mask must never sample the albedo.
+
+**Flames are a special case — read `docs/flame-lighting.md` before touching any
+torch, fire or candle sprite.** All 84 of them (`TL*` `TS*` `A030` `A031` `A032`
+`GTCH` `?FLM` `CAND`) carry `lightIntensity: 0` on purpose and are lit by
+`RT_UploadFlameLights()` in `rt_main.cpp` instead, because texture meta can express
+neither the GLDEFS offset up onto the flame nor a flicker. Consequences that bite:
+`rt_flame_light_on 0` means those flames cast **nothing** (use
+`rt_flame_light_flicker 0` for a steady light), and `CAND` is intentionally a red
+light on amber art, so it fails a naive art-vs-light hue audit.
 
 ## Workspace layout
 
@@ -64,7 +156,7 @@ Update those when phases complete or facts change. Do not invent parallel tracke
 | `tools/wash-scratch/00-RUN-ORDER.cmd` | **From-scratch wash ladder** (isolated `build/WashScratch`; play build untouched). |
 | `tools/launch-texture-gallery-ce-pbr.cmd` | Same MAP99 with DoomCE Substance PBR overlay (A/B). |
 | `tools/test_gallery_emis_qa.cmd` | Auto QA: emis hygiene + 8-yaw wash score (pass/fail). |
-| `tools/ab-water.cmd` | Stylized vs stock water on the D64 water flats (`stock`/`styl`/`flat`/`mirror`/`noglow`, default MAP10). Tag the flats first: `python tools/set_water_meta.py --apply`. |
+| `tools/ab-water.cmd` | Water A/B: `stock`/`styl`/`flat`/`mirror`/`noglow`/`nocaus`/`debug`, default MAP10. Flats are tagged engine-side (`l_waterflag`), no setup needed. See `docs/rt-water.md`. |
 
 Important cvars on Retribution launch (do not crank blindly):
 

@@ -208,6 +208,18 @@ def main() -> None:
     p.add_argument("--width", type=int, default=SKY_WIDTH,
                    help=f"output width (default: {SKY_WIDTH}; below 1024 the sky "
                         f"tiles and you get one moon per repeat)")
+    p.add_argument("--debug", action="store_true",
+                   help="DIAGNOSTIC SKY: replace the starfield with flat magenta "
+                        "and a green grid. Every sky surface in the game then "
+                        "identifies itself on sight -- ceiling openings, the "
+                        "decorative slots punched in walls, and the invisible "
+                        "sky-hack bands above wall tops all light up in a colour "
+                        "Doom 64 does not otherwise use. Stand in a leaking room "
+                        "and the opening feeding it is the magenta one. The "
+                        "magenta also tints the light the sky DOME casts, so "
+                        "magenta light = sky, blue-white = the moon (rt_sun), "
+                        "which separates the two contributions at a glance. Run "
+                        "without --debug to put the real sky back.")
     p.add_argument("--preview", action="store_true",
                    help="also write MOONSKY_preview.png, brightened, since the "
                         "real thing is nearly black and unreadable on screen")
@@ -215,6 +227,29 @@ def main() -> None:
 
     src = load_source_flat()
     sky = tile_to_width(src, args.width)
+
+    if args.debug:
+        # Flat magenta with a green grid. Magenta because Doom 64's palette
+        # barely uses it, so nothing else on screen can be mistaken for a sky
+        # surface; the grid because a flat colour gives no sense of which way a
+        # surface faces, and telling a ceiling opening from a slot in a wall is
+        # the whole point of looking.
+        sky = Image.new("RGB", sky.size, (255, 0, 200))
+        dr = ImageDraw.Draw(sky)
+        for x in range(0, sky.width, 32):
+            dr.line([(x, 0), (x, sky.height)], fill=(0, 255, 80), width=1)
+        for y in range(0, sky.height, 32):
+            dr.line([(0, y), (sky.width, y)], fill=(0, 255, 80), width=1)
+        OUTPNG.parent.mkdir(parents=True, exist_ok=True)
+        sky.save(OUTPNG)
+        print(f"wrote {OUTPNG} {sky.width}x{sky.height} -- DIAGNOSTIC SKY, not the real one")
+        print("  every sky surface now renders magenta: ceiling openings, the")
+        print("  decorative slots punched in walls, and the sky-hack bands above")
+        print("  wall tops. In a leaking room, the opening feeding it is the one")
+        print("  you can see. Magenta light = the sky dome; blue-white = the moon.")
+        print("  next: python tools/pack_rt_sky.py")
+        print("  restore: python tools/gen_moon_sky.py && python tools/pack_rt_sky.py")
+        return
 
     u = (-args.azimuth / 360.0) % 1.0
     if args.flip_u:
@@ -242,10 +277,11 @@ def main() -> None:
           f"{' [flipped]' if args.flip_u else ''}")
     print(f"  moon altitude {args.altitude:g} deg -> v={v:.4f} (y={cy:.0f}px), "
           f"radius {radius:.1f}px")
-    print(f"  pair with: +rt_sun 1 +rt_sun_b {args.azimuth:g} "
-          f"+rt_sun_a {args.altitude:g} +rt_moon_tex_b {args.azimuth:g}")
-    print("  rt_moon_tex_b MUST match --azimuth: it is the reference the runtime "
-          "sky rotation works from.")
+    print(f"  pair with: +rt_sun 1 +rt_sun_b {args.azimuth:g} +rt_sun_a {args.altitude:g}")
+    print(f"             +rt_moon_tex_b {args.azimuth:g} +rt_moon_tex_a {args.altitude:g}")
+    print("  BOTH tex_ values MUST match the two above them. They are where this")
+    print("  script PUT the moon, and the engine aims the sky away from them --")
+    print("  if they disagree, the disc starts out that far off its own shaft.")
 
     if args.preview:
         from PIL import ImageEnhance
