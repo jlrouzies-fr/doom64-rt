@@ -104,6 +104,14 @@
       "emissiveMult": 0.9
     },
     {
+      "textureName": "SFLATAQ",
+      "emissiveMult": 20.0
+    },
+    {
+      "textureName": "SFLATAS",
+      "emissiveMult": 20.0
+    },
+    {
       "textureName": "SKEYFLBL",
       "emissiveMult": 1.3
     },
@@ -216,6 +224,10 @@
       "emissiveMult": 1.0
     },
     {
+      "textureName": "SMONF5",
+      "emissiveMult": 1.0
+    },
+    {
       "textureName": "SMONLB1",
       "emissiveMult": 1.0
     },
@@ -246,6 +258,10 @@
     {
       "textureName": "SMONLC4",
       "emissiveMult": 2.8
+    },
+    {
+      "textureName": "SPACEAZ",
+      "emissiveMult": 20.0
     },
     {
       "textureName": "SPORT1",
@@ -360,10 +376,6 @@
     {
       "textureName": "SWXSGB",
       "emissiveMult": 0.4
-    },
-    {
-      "textureName": "SMONF5",
-      "emissiveMult": 1.0
     }
   ]
 }

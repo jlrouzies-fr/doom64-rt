@@ -500,14 +500,23 @@ heights** — worse than the bug this replaced. This is trap 5 with a second way
 | `rt_flame_light_on` | `true` | master switch. Off = flames cast **nothing** (meta is zeroed) |
 | `rt_flame_light_scale` | `1.0` | multiplies the whole table; retune the family here, not one row |
 | `rt_flame_light_radius` | `0.09` | metres. Wider softens the shadows a torch throws down a corridor |
-| `rt_flame_light_flicker` | `0.28` | depth, 0..1 of base intensity. `0` = steady |
-| `rt_flame_light_speed` | `0.42` | radians/tic of the base sine (~2.3 Hz); harmonics at 2.37× and 4.11× |
+| `rt_flame_light_flicker` | `0.15` | depth, 0..1 of base intensity. `0` = steady |
+| `rt_flame_light_speed` | `0.25` | radians/tic of the base sine (~1.4 Hz); harmonics at 2.37× and 4.11× |
 | `rt_flame_light_wobble` | `2.0` | map units of drift per axis. Past ~4 the light detaches from its sprite |
 | `rt_flame_light_maxdist` | `3072` | wider than the fist cull: torches are room lighting, and popping one in is visible |
 | `rt_flame_light_max` | `64` | nearest-first budget |
 | `rt_flame_light_debug` | `false` | **`RT_CVAR_NOARCH`** — cyan markers at 350 intensity |
 
-All of these are live at runtime; only the table itself needs a rebuild.
+All of these are live at runtime; only the table itself needs a rebuild. They are also
+pinned in `tools/launch-retribution-rt.cmd` — every `RT_CVAR` is `CVAR_ARCHIVE`, so a
+compiled-default change alone is not enough once the ini has a value.
+
+**First pass shipped at `0.28` / `0.42` and was too strong and too fast.** The reason is
+worth keeping: a torch is not a prop with a light on it, it is *the ambient light of the
+room it stands in*. Depth that looks right on an isolated campfire swings the whole
+room's indirect bounce with it, and under a path tracer the bounce moves too. Halving
+both was the fix. If it still reads as too busy, drop `speed` before `flicker` — the
+4.11× harmonic is what sets the perceived rate.
 
 ---
 

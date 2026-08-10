@@ -156,14 +156,22 @@ SWITCH_ON_EMIS: dict[str, tuple[float, float, tuple[int, int, int] | None]] = {
 # Stock / leftover false emitters — strip unless authored allowlist keeps them.
 # Liquid falls are never lights; always scrub.
 FALSE_PANEL_RE = re.compile(r"^(OUTTEX|SWX|BFALL|SFALL|WFALL|NUKAGE|NUKE)", re.I)
-# Lamp flats/walls that are lit by ANALYTIC lights in the engine
-# (RT_IsCeilingEdgeLampFlat / RT_IsWallStripTexture in rt_main.cpp), never by a
-# texture mask. They must carry NO emissiveMult: their `_e.png` masks were deleted
-# when generic SFLAT* blobs were found to spawn false emitters (open-issues 1.6e),
-# and RsWorld.inl falls back to `ldrEmis = ldrColor.rgb` when a material has an
+# Must carry NO emissiveMult, because there is no `_e.png` mask for it and
+# RsWorld.inl falls back to `ldrEmis = ldrColor.rgb` when a material has an
 # emissiveMult but no emissive texture — i.e. the ENTIRE albedo emits, tan brick
 # and all. That is what baked MAP07's ceiling panel white at mult 3.
-LAMP_FLAT_NO_EMIS = ("SFLATAS", "SFLATAQ", "SFLATAP", "SPACEAZ")
+#
+# This list held SFLATAS/SFLATAQ/SPACEAZ too (open-issues 1.6f) and no longer does.
+# The unmasked-emission diagnosis was right, but stripping the mult was the wrong
+# half of the fix: those three DO have bulbs in the art, and removing the glow left
+# them dead — the engine's analytic lights are a perimeter walk, which on a tiled
+# bulb lattice lights the room edges and nothing under the interior bulbs.
+# `gen_bulb_flat_masks.py` restores their masks; keeping them out of this list is
+# what lets the mult stand. Do NOT re-add them without deleting those masks.
+#
+# SFLATAP stays: recessed grille with slats, no bulbs, and in neither engine
+# classifier — its glow never had a fixture behind it.
+LAMP_FLAT_NO_EMIS = ("SFLATAP",)
 FALL_RE = re.compile(r"^(BFALL|SFALL|WFALL)", re.I)
 GLOW_RE = re.compile(r"GLOW", re.I)
 
