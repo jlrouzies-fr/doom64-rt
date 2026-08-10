@@ -95,6 +95,21 @@ rem  shafts and there is nothing to calibrate. It also has no altitude ceiling: 
 rem  old painted moon could not go above the sky dome's 60 degrees, where Doom draws a
 rem  flat averaged-colour cap with no texture on it, and got sliced by that boundary.
 rem  `moon` alone prints the current aim.
+rem rt_sun_require_sky 1 -- ON, and pinned here as well as compiled on, because a
+rem  launcher pin overrides the compiled default and this line used to say 0.
+rem  A shadow ray that hits nothing is scored LIT (RtMissShadowCheck.rmiss), and
+rem  Doom maps are not watertight, so the moon washed sealed rooms. With this the
+rem  ray must prove it reached SKY geometry, which is the only legitimate way out
+rem  of a Doom map. Costs one extra ray, only on pixels the moon already lit.
+rem  It gates the DIRECTIONAL light, so it covers the lightning strike too -- and
+rem  matters more there: a strike is ~24x the moon's intensity, so a pinhole that
+rem  never showed under moonlight is glaring under a bolt.
+rem  THE REGRESSION TO WATCH is the opposite one: if a courtyard's sky geometry is
+rem  not closed, legitimate light there is now rejected and it goes DARK. If a map
+rem  loses its outdoor lighting, this is the first cvar to flip.
+rem  Verify with +rt_sun_require_sky 1 +rt_sun_leak_debug 2: mode 2 composes with
+rem  the fix, so ALL RED AND NO GREEN is the confirmation. Compare against stock
+rem  with tools\ab-skyleak.cmd noreq. See docs/moon-and-sky-leaks.md.
 rem  PER-MAP aim lives in RT_MOON_PRESETS (rt_main.cpp), applied at RT_OnLevelLoad --
 rem  each map's windows face wherever its author pointed them, so one global bearing
 rem  cannot serve them all. The rt_sun_a/b below is only the FALLBACK for maps with no
@@ -350,7 +365,7 @@ start "" gzdoom.exe ^
   +rt_lightning_alt_min 15 +rt_lightning_alt_max 40 ^
   +rt_lightning_bolt 1 +rt_lightning_bolt_size 55 ^
   +rt_lightning_sectorflash 1 +rt_lightning_debug 0 ^
-  +rt_sun_leak_debug 0 +rt_sun_require_sky 0 ^
+  +rt_sun_leak_debug 0 +rt_sun_require_sky 1 ^
   +rt_classic 0 ^
   +rt_flsh 0 +rt_flsh_intensity 90 +rt_flsh_angle 42 +rt_flsh_pitch 22 ^
   +rt_flsh_battery 1 +rt_flsh_on_secs 30 +rt_flsh_die_secs 4 +rt_flsh_off_secs 5 ^

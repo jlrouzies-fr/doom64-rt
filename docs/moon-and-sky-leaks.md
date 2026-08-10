@@ -105,7 +105,17 @@ Confirmed visually: with `rt_sun_leak_debug 2`, legitimate shafts render **red**
 (the ray reached sky) and leaking ones **green** (it escaped the map). The split
 lands exactly on that distinction.
 
-### The fix — `rt_sun_require_sky 1`
+### The fix — `rt_sun_require_sky 1` (now the default)
+
+**Status: ON by default**, both compiled (`rt_main.cpp`) and pinned in
+`tools/launch-retribution-rt.cmd`. Both were needed — a launcher pin overrides
+the compiled default, and that line said `0` for as long as the fix existed, so
+changing only one of them changes nothing.
+
+It gates the single **directional** light, so since the storm work it also
+covers lightning, and matters more there: a strike is ~24× the moon's intensity,
+so a pinhole that never showed under moonlight is glaring under a bolt.
+
 
 In a Doom map the sky is the only legitimate way out, so a ray that escapes
 without hitting sky escaped through a modelling gap. When the ordinary shadow ray
@@ -123,6 +133,10 @@ Cost is one extra ray, only on points already lit by the moon.
 
 **The failure mode to watch** is the opposite one: if some courtyard's sky
 geometry is not closed, legitimate light there is rejected and it goes dark.
+Now that the fix ships on, that is a *regression* rather than a hypothetical —
+if a map loses its outdoor lighting, this is the first cvar to flip.
+`tools/ab-skyleak.cmd noreq` is the back-to-back against stock behaviour, and
+`proof` is the red/green confirmation.
 
 ### It must be applied in three places
 

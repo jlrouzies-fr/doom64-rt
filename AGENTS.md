@@ -94,10 +94,13 @@ not importance-sampled. Aim it with the **`moon`** CCMD, never by setting
 Three things that will otherwise cost you a day:
 
 - **A shadow ray that hits nothing counts as LIT** (`RtMissShadowCheck.rmiss`).
-  Doom maps are not watertight, so the moon washes sealed rooms. `rt_sun_require_sky 1`
-  makes a ray prove it reached sky. `rt_sun_leak_debug 2` paints it: **RED**
-  reached sky, **GREEN** escaped — and it composes with the fix, so all-red is
-  the confirmation.
+  Doom maps are not watertight, so the moon washes sealed rooms.
+  `rt_sun_require_sky` makes a ray prove it reached sky, and is **on by default**
+  (compiled *and* pinned in the launcher — a pin overrides the compiled default,
+  so both must agree). `rt_sun_leak_debug 2` paints it: **RED** reached sky,
+  **GREEN** escaped — and it composes with the fix, so all-red is the
+  confirmation. The regression it can cause is the opposite one: an unclosed
+  courtyard now goes dark. `tools/ab-skyleak.cmd noreq` compares against stock.
 - **There is no single visibility choke point.** The visible shafts are
   *volumetric*, and `RtVolumetric.rgen` does **not** call
   `traceDirectIllumination` — it shadow-tests its own light. A fix in the shared

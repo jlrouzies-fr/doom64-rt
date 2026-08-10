@@ -16,6 +16,13 @@ rem            two-sided lines is suppressed everywhere (the engine's own
 rem            ML_NOSKYWALLS, applied to every line instead of one). If the leak
 rem            dies here it is wall-class and a targeted per-line fix exists.
 rem   full     everything on, the shipping configuration. Reference shot.
+rem   noreq    full but rt_sun_require_sky 0 -- the STOCK, leaky behaviour. Since
+rem            the fix is now on by default, this is the arm that says whether a
+rem            leak is one require_sky already handles. If `noreq` leaks and
+rem            `full` does not, the fix is working and there is nothing to chase.
+rem   proof    full + rt_sun_leak_debug 2. Mode 2 COMPOSES with the fix -- leaks
+rem            are dropped first, then survivors are painted -- so ALL RED AND NO
+rem            GREEN confirms it. leak_debug is NOARCH, so it cannot stick.
 rem
 rem Reading it:
 rem   only `nosun` fixes it  -> the MOON is finding a pinhole. A directional light
@@ -41,10 +48,13 @@ rem game-wide). Neither explains the reported leaks, which is why there is no
 rem "seal gaps under N units" knob here: there are no small gaps to seal. What is
 rem left is sub-unit cracks at T-junctions, which no threshold can select.
 rem
-rem Every arm sets both sky cvars and rt_sky_nowalls explicitly -- RT_CVARs are
-rem CVAR_ARCHIVE, so an unset one carries over from the previous arm.
+rem Every arm sets both sky cvars, rt_sky_nowalls AND rt_sun_require_sky
+rem explicitly -- RT_CVARs are CVAR_ARCHIVE, so an unset one carries over from the
+rem previous arm. require_sky was implicit here until it acquired a non-default
+rem value worth comparing against; leaving it implicit would have made `noreq`
+rem contaminate every arm run after it.
 rem
-rem Usage: ab-skyleak.cmd <nosun|nosky|dark|nowalls|full> [1-32, default 13]
+rem Usage: ab-skyleak.cmd <nosun|nosky|dark|nowalls|full|noreq|proof> [1-32, default 13]
 rem ---------------------------------------------------------------------------
 
 set "ARM=%~1"
@@ -57,14 +67,16 @@ rem (tools\scan_sky_apertures.py 13). Big, real openings, so `nowalls` will
 rem visibly change its outdoor areas; that is the arm doing its job, not a leak.
 if "%MAP%"==""  set "MAP=13"
 
-if /i "%ARM%"=="nosun"   set "ARGS=+rt_sun 0 +rt_sky 25 +rt_sky_nowalls 0"
-if /i "%ARM%"=="nosky"   set "ARGS=+rt_sun 1 +rt_sky 0  +rt_sky_nowalls 0"
-if /i "%ARM%"=="dark"    set "ARGS=+rt_sun 0 +rt_sky 0  +rt_sky_nowalls 0"
-if /i "%ARM%"=="nowalls" set "ARGS=+rt_sun 1 +rt_sky 25 +rt_sky_nowalls 1"
-if /i "%ARM%"=="full"    set "ARGS=+rt_sun 1 +rt_sky 25 +rt_sky_nowalls 0"
+if /i "%ARM%"=="nosun"   set "ARGS=+rt_sun 0 +rt_sky 25 +rt_sky_nowalls 0 +rt_sun_require_sky 1"
+if /i "%ARM%"=="nosky"   set "ARGS=+rt_sun 1 +rt_sky 0  +rt_sky_nowalls 0 +rt_sun_require_sky 1"
+if /i "%ARM%"=="dark"    set "ARGS=+rt_sun 0 +rt_sky 0  +rt_sky_nowalls 0 +rt_sun_require_sky 1"
+if /i "%ARM%"=="nowalls" set "ARGS=+rt_sun 1 +rt_sky 25 +rt_sky_nowalls 1 +rt_sun_require_sky 1"
+if /i "%ARM%"=="full"    set "ARGS=+rt_sun 1 +rt_sky 25 +rt_sky_nowalls 0 +rt_sun_require_sky 1"
+if /i "%ARM%"=="noreq"   set "ARGS=+rt_sun 1 +rt_sky 25 +rt_sky_nowalls 0 +rt_sun_require_sky 0"
+if /i "%ARM%"=="proof"   set "ARGS=+rt_sun 1 +rt_sky 25 +rt_sky_nowalls 0 +rt_sun_require_sky 1 +rt_sun_leak_debug 2"
 
 if not defined ARGS (
-  echo Usage: %~nx0 ^<nosun^|nosky^|dark^|nowalls^|full^> [1-32, default 13]
+  echo Usage: %~nx0 ^<nosun^|nosky^|dark^|nowalls^|full^|noreq^|proof^> [1-32, default 13]
   exit /b 1
 )
 
