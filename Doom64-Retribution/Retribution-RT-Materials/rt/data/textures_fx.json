@@ -5,105 +5,105 @@
       "textureName": "A030A0",
       "emissiveMult": 0.35,
       "lightColorHEX": "eac257",
-      "lightIntensity": 700,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "A030B0",
       "emissiveMult": 0.35,
       "lightColorHEX": "eac457",
-      "lightIntensity": 700,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "A030C0",
       "emissiveMult": 0.35,
       "lightColorHEX": "eac258",
-      "lightIntensity": 700,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "A030D0",
       "emissiveMult": 0.35,
       "lightColorHEX": "eabf5a",
-      "lightIntensity": 700,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "A030E0",
       "emissiveMult": 0.35,
       "lightColorHEX": "eac15b",
-      "lightIntensity": 700,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "A031A0",
       "emissiveMult": 0.35,
       "lightColorHEX": "6a93ea",
-      "lightIntensity": 700,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "A031B0",
       "emissiveMult": 0.35,
       "lightColorHEX": "6993ea",
-      "lightIntensity": 700,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "A031C0",
       "emissiveMult": 0.35,
       "lightColorHEX": "6b93ea",
-      "lightIntensity": 700,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "A031D0",
       "emissiveMult": 0.35,
       "lightColorHEX": "7599ea",
-      "lightIntensity": 700,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "A031E0",
       "emissiveMult": 0.35,
       "lightColorHEX": "769bea",
-      "lightIntensity": 700,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "A032A0",
       "emissiveMult": 0.35,
       "lightColorHEX": "ea655b",
-      "lightIntensity": 700,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "A032B0",
       "emissiveMult": 0.35,
       "lightColorHEX": "ea645c",
-      "lightIntensity": 700,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "A032C0",
       "emissiveMult": 0.35,
       "lightColorHEX": "ea665d",
-      "lightIntensity": 700,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "A032D0",
       "emissiveMult": 0.35,
       "lightColorHEX": "ea6d61",
-      "lightIntensity": 700,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "A032E0",
       "emissiveMult": 0.35,
       "lightColorHEX": "ea7264",
-      "lightIntensity": 700,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
@@ -872,35 +872,35 @@
       "textureName": "BFLMA0",
       "emissiveMult": 0.8,
       "lightColorHEX": "4488ff",
-      "lightIntensity": 650,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "BFLMB0",
       "emissiveMult": 0.8,
       "lightColorHEX": "4488ff",
-      "lightIntensity": 650,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "BFLMC0",
       "emissiveMult": 0.8,
       "lightColorHEX": "4488ff",
-      "lightIntensity": 650,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "BFLMD0",
       "emissiveMult": 0.8,
       "lightColorHEX": "4488ff",
-      "lightIntensity": 650,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "BFLME0",
       "emissiveMult": 0.8,
       "lightColorHEX": "4488ff",
-      "lightIntensity": 650,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
@@ -949,28 +949,28 @@
       "textureName": "CANDA0",
       "emissiveMult": 0.5,
       "lightColorHEX": "ffaa55",
-      "lightIntensity": 280,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "CANDB0",
       "emissiveMult": 0.5,
       "lightColorHEX": "ffaa55",
-      "lightIntensity": 280,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "CANDC0",
       "emissiveMult": 0.5,
       "lightColorHEX": "ffaa55",
-      "lightIntensity": 280,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "CANDD0",
       "emissiveMult": 0.5,
       "lightColorHEX": "ffaa55",
-      "lightIntensity": 280,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
@@ -1271,350 +1271,350 @@
       "textureName": "GFLMA0",
       "emissiveMult": 0.8,
       "lightColorHEX": "44ff66",
-      "lightIntensity": 650,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "GFLMB0",
       "emissiveMult": 0.8,
       "lightColorHEX": "44ff66",
-      "lightIntensity": 650,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "GFLMC0",
       "emissiveMult": 0.8,
       "lightColorHEX": "44ff66",
-      "lightIntensity": 650,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "GFLMD0",
       "emissiveMult": 0.8,
       "lightColorHEX": "44ff66",
-      "lightIntensity": 650,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "GFLME0",
       "emissiveMult": 0.8,
       "lightColorHEX": "44ff66",
-      "lightIntensity": 650,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "GTCHA0",
       "emissiveMult": 0.7,
       "lightColorHEX": "44ff66",
-      "lightIntensity": 500,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "GTCHB0",
       "emissiveMult": 0.7,
       "lightColorHEX": "44ff66",
-      "lightIntensity": 500,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "GTCHC0",
       "emissiveMult": 0.7,
       "lightColorHEX": "44ff66",
-      "lightIntensity": 500,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "GTCHD0",
       "emissiveMult": 0.7,
       "lightColorHEX": "44ff66",
-      "lightIntensity": 500,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "GTCHE0",
       "emissiveMult": 0.7,
       "lightColorHEX": "44ff66",
-      "lightIntensity": 500,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "TLBLA0",
       "emissiveMult": 1.0,
       "lightColorHEX": "4488ff",
-      "lightIntensity": 900,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "TLBLB0",
       "emissiveMult": 1.0,
       "lightColorHEX": "4488ff",
-      "lightIntensity": 900,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "TLBLC0",
       "emissiveMult": 1.0,
       "lightColorHEX": "4488ff",
-      "lightIntensity": 900,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "TLBLD0",
       "emissiveMult": 1.0,
       "lightColorHEX": "4488ff",
-      "lightIntensity": 900,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "TLBLE0",
       "emissiveMult": 1.0,
       "lightColorHEX": "4488ff",
-      "lightIntensity": 900,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "TLGRA0",
       "emissiveMult": 1.0,
       "lightColorHEX": "44ff66",
-      "lightIntensity": 900,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "TLGRB0",
       "emissiveMult": 1.0,
       "lightColorHEX": "44ff66",
-      "lightIntensity": 900,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "TLGRC0",
       "emissiveMult": 1.0,
       "lightColorHEX": "44ff66",
-      "lightIntensity": 900,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "TLGRD0",
       "emissiveMult": 1.0,
       "lightColorHEX": "44ff66",
-      "lightIntensity": 900,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "TLGRE0",
       "emissiveMult": 1.0,
       "lightColorHEX": "44ff66",
-      "lightIntensity": 900,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "TLRDA0",
       "emissiveMult": 1.0,
       "lightColorHEX": "ff4020",
-      "lightIntensity": 900,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "TLRDB0",
       "emissiveMult": 1.0,
       "lightColorHEX": "ff4020",
-      "lightIntensity": 900,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "TLRDC0",
       "emissiveMult": 1.0,
       "lightColorHEX": "ff4020",
-      "lightIntensity": 900,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "TLRDD0",
       "emissiveMult": 1.0,
       "lightColorHEX": "ff4020",
-      "lightIntensity": 900,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "TLRDE0",
       "emissiveMult": 1.0,
       "lightColorHEX": "ff4020",
-      "lightIntensity": 900,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "TLYLA0",
       "emissiveMult": 1.0,
       "lightColorHEX": "ffcc33",
-      "lightIntensity": 900,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "TLYLB0",
       "emissiveMult": 1.0,
       "lightColorHEX": "ffcc33",
-      "lightIntensity": 900,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "TLYLC0",
       "emissiveMult": 1.0,
       "lightColorHEX": "ffcc33",
-      "lightIntensity": 900,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "TLYLD0",
       "emissiveMult": 1.0,
       "lightColorHEX": "ffcc33",
-      "lightIntensity": 900,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "TLYLE0",
       "emissiveMult": 1.0,
       "lightColorHEX": "ffcc33",
-      "lightIntensity": 900,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "TSBLA0",
       "emissiveMult": 1.0,
       "lightColorHEX": "4488ff",
-      "lightIntensity": 900,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "TSBLB0",
       "emissiveMult": 1.0,
       "lightColorHEX": "4488ff",
-      "lightIntensity": 900,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "TSBLC0",
       "emissiveMult": 1.0,
       "lightColorHEX": "4488ff",
-      "lightIntensity": 900,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "TSBLD0",
       "emissiveMult": 1.0,
       "lightColorHEX": "4488ff",
-      "lightIntensity": 900,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "TSBLE0",
       "emissiveMult": 1.0,
       "lightColorHEX": "4488ff",
-      "lightIntensity": 900,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "TSGRA0",
       "emissiveMult": 1.0,
       "lightColorHEX": "44ff66",
-      "lightIntensity": 900,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "TSGRB0",
       "emissiveMult": 1.0,
       "lightColorHEX": "44ff66",
-      "lightIntensity": 900,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "TSGRC0",
       "emissiveMult": 1.0,
       "lightColorHEX": "44ff66",
-      "lightIntensity": 900,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "TSGRD0",
       "emissiveMult": 1.0,
       "lightColorHEX": "44ff66",
-      "lightIntensity": 900,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "TSGRE0",
       "emissiveMult": 1.0,
       "lightColorHEX": "44ff66",
-      "lightIntensity": 900,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "TSRDA0",
       "emissiveMult": 1.0,
       "lightColorHEX": "ff4020",
-      "lightIntensity": 900,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "TSRDB0",
       "emissiveMult": 1.0,
       "lightColorHEX": "ff4020",
-      "lightIntensity": 900,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "TSRDC0",
       "emissiveMult": 1.0,
       "lightColorHEX": "ff4020",
-      "lightIntensity": 900,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "TSRDD0",
       "emissiveMult": 1.0,
       "lightColorHEX": "ff4020",
-      "lightIntensity": 900,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "TSRDE0",
       "emissiveMult": 1.0,
       "lightColorHEX": "ff4020",
-      "lightIntensity": 900,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "TSYLA0",
       "emissiveMult": 1.0,
       "lightColorHEX": "ffcc33",
-      "lightIntensity": 900,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "TSYLB0",
       "emissiveMult": 1.0,
       "lightColorHEX": "ffcc33",
-      "lightIntensity": 900,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "TSYLC0",
       "emissiveMult": 1.0,
       "lightColorHEX": "ffcc33",
-      "lightIntensity": 900,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "TSYLD0",
       "emissiveMult": 1.0,
       "lightColorHEX": "ffcc33",
-      "lightIntensity": 900,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "TSYLE0",
       "emissiveMult": 1.0,
       "lightColorHEX": "ffcc33",
-      "lightIntensity": 900,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
@@ -2767,35 +2767,35 @@
       "textureName": "RFLMA0",
       "emissiveMult": 0.8,
       "lightColorHEX": "ff4020",
-      "lightIntensity": 650,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "RFLMB0",
       "emissiveMult": 0.8,
       "lightColorHEX": "ff4020",
-      "lightIntensity": 650,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "RFLMC0",
       "emissiveMult": 0.8,
       "lightColorHEX": "ff4020",
-      "lightIntensity": 650,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "RFLMD0",
       "emissiveMult": 0.8,
       "lightColorHEX": "ff4020",
-      "lightIntensity": 650,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "RFLME0",
       "emissiveMult": 0.8,
       "lightColorHEX": "ff4020",
-      "lightIntensity": 650,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
@@ -3193,35 +3193,35 @@
       "textureName": "YFLMA0",
       "emissiveMult": 0.8,
       "lightColorHEX": "ffcc33",
-      "lightIntensity": 650,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "YFLMB0",
       "emissiveMult": 0.8,
       "lightColorHEX": "ffcc33",
-      "lightIntensity": 650,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "YFLMC0",
       "emissiveMult": 0.8,
       "lightColorHEX": "ffcc33",
-      "lightIntensity": 650,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "YFLMD0",
       "emissiveMult": 0.8,
       "lightColorHEX": "ffcc33",
-      "lightIntensity": 650,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "YFLME0",
       "emissiveMult": 0.8,
       "lightColorHEX": "ffcc33",
-      "lightIntensity": 650,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {

@@ -64,10 +64,18 @@ FLAME_GREEN = "44ff66"
 FLAME_RED = "ff4020"
 FLAME_YELLOW = "ffcc33"
 
-# GLDEFS gives TL* and TS* an identical size 40 / secondarySize 48 (the wall torches are
-# 28/32 at intensity 700), so both get the same intensity here; only the GLDEFS offset
-# differs (80 vs 64 units up) and RT texture meta has no offset field to express it.
-INTENSITY = 900
+# No attached light. These are lit by the engine instead — RT_UploadFlameLights in
+# rt_main.cpp, table RT_FLAME_KINDS, cvar rt_flame_light_on — because texture meta cannot
+# express either thing a torch needs:
+#   * the GLDEFS offset (80u for TL*, 64u for TS*). RTGL1 pins a sprite light to the
+#     CENTRE of the billboard quad, so a 100-unit torch lit itself from the midriff.
+#   * flicker. Meta is static per frame, and every torch spawns at map load, so driving
+#     intensity off the A..E animation would pulse the whole level in lockstep.
+# emissiveMult stays at 1.0: the flame still has to glow on screen, and the mask below is
+# what makes that safe on a sprite that is 82% grey stone.
+# Keep INTENSITY = 0 unless you also delete the TL*/TS* rows from RT_FLAME_KINDS — two
+# lights on one flame, at two different heights, is worse than the bug this replaced.
+INTENSITY = 0  # was 900, matching the GLDEFS size 40/48 vs the wall torches' 28/32
 EMISSIVE_MULT = 1.0
 
 FAMILIES = {

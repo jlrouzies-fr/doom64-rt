@@ -177,21 +177,40 @@ PREFIX_RULES: list[tuple[str, float, float, str | None]] = [
     # degenerate single-channel source.
     ("UNMF", 0.35, 900, UNMAKER_RED),
     ("UNML", 0.3, 800, UNMAKER_RED),
-    ("A030", 0.35, 700, None),
-    ("A031", 0.35, 700, None),
-    ("A032", 0.35, 700, None),
+    # --- OPEN FLAMES: emissive only, intensity 0 on purpose ------------------------
+    # Everything from here to CAND is a real fire, and every one of them is lit by the
+    # engine now, by RT_UploadFlameLights in rt_main.cpp (cvar rt_flame_light_on), NOT by
+    # the attached light below. Two things texture meta cannot express:
+    #   * OFFSET. RTGL1 puts a sprite light at the centre of the billboard quad, so a
+    #     100-unit torch lit itself from the midriff. GLDEFS lifts these 8..80 units up
+    #     onto the flame and there is no offset field here.
+    #   * FLICKER. Meta is static, and the props all spawn at map load, so a per-frame
+    #     intensity ramp would pulse every torch in the level in lockstep.
+    # The intensities are kept in the rows as documentation of the old balance; a 0 in the
+    # intensity column writes `lightIntensity: 0`, which casts nothing (same convention as
+    # the muzzle flashes above). emissiveMult stays: the flame must still glow on screen.
+    # If you ever re-attach a light here, delete the engine entry in RT_FLAME_KINDS in the
+    # same commit or the flame gets lit twice, from two different places.
+    ("A030", 0.35, 0, None),  # was 700 -> engine (RT_FLAME_YELLOW, +24u)
+    ("A031", 0.35, 0, None),  # was 700 -> engine (RT_FLAME_BLUE,   +24u)
+    ("A032", 0.35, 0, None),  # was 700 -> engine (RT_FLAME_RED,    +24u)
     # torches / flames
-    ("FIRE", 0.7, 700, "ff8020"),
-    ("BFLM", 0.8, 650, FLAME_BLUE),
-    ("RFLM", 0.8, 650, FLAME_RED),
-    ("YFLM", 0.8, 650, FLAME_YELLOW),
-    ("GFLM", 0.8, 650, FLAME_GREEN),
+    ("FIRE", 0.7, 700, "ff8020"),  # not a GLDEFS flame prop; keeps its attached light
+    ("BFLM", 0.8, 0, FLAME_BLUE),    # was 650 -> engine, +8u
+    ("RFLM", 0.8, 0, FLAME_RED),     # was 650 -> engine, +8u
+    ("YFLM", 0.8, 0, FLAME_YELLOW),  # was 650 -> engine, +8u
+    ("GFLM", 0.8, 0, FLAME_GREEN),   # was 650 -> engine, +8u
     # Wall torches. These ARE drawn BRIGHT (`GTCH ABCDE 4 BRIGHT`) and are almost all
     # flame, so a blanket emissiveMult is safe. The TL*/TS* standing torches are not —
     # see tools/gen_torch_emissives.py, which owns those 40 sprites. Do not add TL/TS
     # prefixes here.
-    ("GTCH", 0.7, 500, FLAME_GREEN),
-    ("CAND", 0.5, 280, "ffaa55"),
+    ("GTCH", 0.7, 0, FLAME_GREEN),  # was 500 -> engine (RT_FLAME_GREEN, +24u)
+    # The candle's light was ffaa55 @ 280 — a straight amber, the same hue family as a
+    # pitch torch four times its size. A candle is one wick: the engine gives it a warm
+    # red (RT_FLAME_CANDLE ff4a14) at 260, so it reads as a dim ember rather than a small
+    # torch. Art check: CAND?0 is 8x31, brightest texel (232,168,0), but that amber is the
+    # wax body catching the light as much as the flame itself.
+    ("CAND", 0.5, 0, "ffaa55"),  # was 280 -> engine (RT_FLAME_CANDLE, +16u)
     # pickups (soft glow)
     ("ART1", 0.6, 220, "66ffaa"),
     ("ART2", 0.6, 220, "66aaff"),

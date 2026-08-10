@@ -9,9 +9,10 @@ mechanisms that look correct and silently do nothing.
 
 | Sprite | What it needed | State |
 | --- | --- | --- |
-| `A030`/`A031`/`A032` torches | nothing — already correct | verified in the live file |
+| `A030`/`A031`/`A032` torches | nothing — already correct | superseded: now engine-lit, see Case 7 |
 | `LPUF` Unmaker laser puff | wrong light colour (blue on a red sprite) | fixed, live |
-| `TL*` / `TS*` standing torches | **no RT meta at all** — 40 sprites, no light | flame-masked emissive + light, live |
+| `TL*` / `TS*` standing torches | **no RT meta at all** — 40 sprites, no light | flame-masked emissive, live; light moved to the engine (Case 7) |
+| every open flame + `CAND` candle | light stuck at billboard centre, and dead steady | `rt_flame_light_on`: offset onto the flame, flickering, built |
 | `BOS2` Hell Knight fists | glow + per-fist analytic lights | implemented, built, verified in-engine |
 | `BOSS` Baron of Hell fists | same treatment, red | implemented, built, verified in-engine |
 | `BAL2` / `BAL8` projectiles | wrong light colour (violet & green on red sprites) | fixed in every `textures.json` + the generator |
@@ -401,6 +402,9 @@ restores the saturation.
 
 ### The limitation you cannot fix in texture meta
 
+> **Resolved by Case 7 (2026-08-10).** These sprites now carry `lightIntensity: 0` and are
+> lit by the engine. The paragraph below is kept because it is *why* Case 7 exists.
+
 GLDEFS lifts these lights `80` (long) / `64` (short) units up, onto the flame. RTGL1
 attaches a sprite light at the **centre of the billboard quad** and texture meta has no
 offset field — the same wall the `BOS2` fists hit. So the light sits mid-pole, roughly
@@ -410,8 +414,108 @@ visible than it was on moving fists, so it is logged, not built.
 
 ---
 
+## Case 7 — the candle, and making fire behave like fire (`rt_flame_light_on`)
+
+Two requests, one answer: give `CAND` a light of its own, and make the torches *flicker
+and move* instead of sitting there like a fluorescent tube. Both land in the same place,
+because a candle is just the smallest flame in a family that all had the same two defects.
+
+### The two things texture meta cannot do
+
+1. **Offset.** Case 6's logged limitation, above. RTGL1 anchors a sprite light to the
+   centre of the billboard quad, so a 100-unit standing torch lit the room from its own
+   midriff, ~30 units under the flame. GLDEFS wants these lights `8`–`80` units up.
+2. **Flicker.** Texture meta is static per sprite frame. The only data-only way to vary it
+   is a per-frame intensity ramp across the `A`–`E` animation — and **every one of these
+   props spawns at map load, so their frame counters are in lockstep.** A whole room of
+   torches pulsing in perfect unison reads as an electrical fault, not as fire. That is
+   the trap to remember: the data-only version is not merely worse, it is actively wrong.
+
+So the lights moved into the engine, exactly as the `BOS2` fists did:
+`RT_UploadFlameLights()` in `rt_main.cpp`, table `RT_FLAME_KINDS`, master switch
+`rt_flame_light_on` (default **true**).
+
+### The table is the mod's own GLDEFS
+
+`up` and the relative intensities are read straight out of the mod's `flickerlight`
+blocks — nothing invented:
+
+| GLDEFS block | sprites | `size` | `offset` | RT intensity |
+| --- | --- | --- | --- | --- |
+| `TORCHLONG*` | `TLBL` `TLGR` `TLRD` `TLYL` | 40 | 80 | 900 |
+| `TORCHSHORT*` | `TSBL` `TSGR` `TSRD` `TSYL` | 40 | 64 | 900 |
+| `*TORCH` (wall) | `A030` `A031` `A032` `GTCH` | 28 | 24 | 700 |
+| `*FIRE` (loose) | `BFLM` `GFLM` `RFLM` `YFLM` | 32 | 8 | 650 |
+| `CANDLE` | `CAND` | 16 | 16 | 260 |
+
+Colours do **not** come from GLDEFS, which asks for fully-primary hues (`0.0 1.0 0.0`
+green, `1.0 0.1 0.1` red) — those bleach to white under path tracing, per Case 5. They
+are the same four `FLAME_*` hexes the mask generators tint with, so cast light and
+on-screen glow stay on one palette.
+
+The candle is the one exception, and it is deliberate: it takes `RT_FLAME_CANDLE`
+`ff4a14`, a warm **red**, not `FLAME_YELLOW`. Its old attached light was `ffaa55` @ 280 —
+straight amber, the same hue family as a pitch torch four times its size. A candle is one
+wick; it should read as a dim ember at the edge of a dark room. (The art *is* amber:
+`CAND?0` is 8×31 with a brightest texel of `(232,168,0)`. But on a sprite that small the
+amber is the wax body catching its own light as much as the flame, so the art average is
+not the authority here that it was for the projectiles.)
+
+### The flicker
+
+Three incommensurate sines per actor, summed at weights `0.55 / 0.30 / 0.15` and
+normalised, so the pattern has no short period — stand next to a torch for a minute and it
+never visibly loops. Each actor gets a **phase derived from its own pointer**, which is
+what stops the lockstep problem; the same phase drives a second set of sines at different
+frequencies that *moves* the light a couple of units on each axis (half that vertically —
+a flame licks upward far more than it slides). Pulsing alone reads as a fault; pulsing
+plus wander reads as combustion.
+
+Timebase is `primaryLevel->maptime`, not wall clock, so a paused game freezes the fire
+with everything else. 35 Hz stepping is not a compromise: GLDEFS' own `flickerlight` is a
+hard two-state switch re-rolled once per tic (`size` ↔ `secondarySize` at `chance 0.5`),
+which strobes under a path tracer where every flicker also moves the indirect bounce. Same
+depth, delivered smoothly.
+
+### The data half — and the double-light trap
+
+Every sprite in `RT_FLAME_KINDS` now carries `lightIntensity: 0` (the muzzle-flash
+convention: a 0 casts nothing) and keeps its `emissiveMult`, because the flame must still
+glow on screen. Applied by `tools/strip_flame_sprite_lights.py`, which is idempotent.
+
+**Three places must agree**, and the generators own two of them:
+
+- `RT_FLAME_KINDS` in `rt_main.cpp` — the engine light
+- `PREFIX_RULES` in `gen_fx_emissives.py` — the wall torches, fires and `CAND`
+- `INTENSITY` in `gen_torch_emissives.py` — the 40 `TL*`/`TS*`
+
+Both generators were set to `0` in the same commit. Re-attaching a light in either without
+deleting the matching `RT_FLAME_KINDS` row lights the flame **twice, from two different
+heights** — worse than the bug this replaced. This is trap 5 with a second way to bite.
+
+### Cvars
+
+| Cvar | Default | Notes |
+| --- | --- | --- |
+| `rt_flame_light_on` | `true` | master switch. Off = flames cast **nothing** (meta is zeroed) |
+| `rt_flame_light_scale` | `1.0` | multiplies the whole table; retune the family here, not one row |
+| `rt_flame_light_radius` | `0.09` | metres. Wider softens the shadows a torch throws down a corridor |
+| `rt_flame_light_flicker` | `0.28` | depth, 0..1 of base intensity. `0` = steady |
+| `rt_flame_light_speed` | `0.42` | radians/tic of the base sine (~2.3 Hz); harmonics at 2.37× and 4.11× |
+| `rt_flame_light_wobble` | `2.0` | map units of drift per axis. Past ~4 the light detaches from its sprite |
+| `rt_flame_light_maxdist` | `3072` | wider than the fist cull: torches are room lighting, and popping one in is visible |
+| `rt_flame_light_max` | `64` | nearest-first budget |
+| `rt_flame_light_debug` | `false` | **`RT_CVAR_NOARCH`** — cyan markers at 350 intensity |
+
+All of these are live at runtime; only the table itself needs a rebuild.
+
+---
+
 ## Tuning
 
+- **Fire too bright / too dim, too twitchy, too still** → the `rt_flame_light_*` cvars in
+  Case 7. All live, no rebuild. `rt_flame_light_flicker 0` gives back a steady light
+  without giving back the wrong position.
 - **Fists too bright / too dim on screen** → `EMISSIVE_MULT` in
   `gen_hand_glow_emissives.py` (currently 4.0; the enemy-glow house value is 2.0), then
   re-run it. No rebuild.
