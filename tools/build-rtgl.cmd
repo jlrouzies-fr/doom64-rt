@@ -47,7 +47,16 @@ echo === Staging into gzdoom RelWithDebInfo ===
 if not exist "%OUT%\rt\bin" mkdir "%OUT%\rt\bin"
 if not exist "%OUT%\rt\shaders" mkdir "%OUT%\rt\shaders"
 
+rem The DLL is LOCKED while gzdoom is running, and `copy` failing here is
+rem SILENT: the script still reaches BUILD_OK, so fresh shaders get playtested
+rem against a stale DLL. That exact trap is documented in compat-patches.md and
+rem it bit again on 2026-08-10. Check the copy.
 copy /Y "%RTGL%\Build\bin\RTGL1.dll" "%OUT%\rt\bin\" >nul
+if errorlevel 1 (
+  echo ERROR: could not stage RTGL1.dll -- is gzdoom.exe still running?
+  echo        The BUILD succeeded but the engine tree still holds the OLD dll.
+  exit /b 1
+)
 if exist "%RTGL%\Build\bin\RTGL1.pdb" copy /Y "%RTGL%\Build\bin\RTGL1.pdb" "%OUT%\rt\bin\" >nul
 
 rem Prefer release NGX snippets from SDK (includes Ray Reconstruction)

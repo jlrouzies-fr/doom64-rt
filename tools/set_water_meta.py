@@ -23,27 +23,81 @@ JSON value is what reflections OF the water use.
 
 Usage:
     python tools/set_water_meta.py           # show current state
-    python tools/set_water_meta.py --apply   # write the tags
-    python tools/set_water_meta.py --revert  # remove them (back to plain PBR)
+    python tools/set_water_meta.py --apply   # tag + quarantine frame-01 mats
+    python tools/set_water_meta.py --revert  # undo both
 """
 
 import json
+import shutil
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 TARGET = ROOT / "sourcecode/gzdoom-rt/build/RelWithDebInfo/rt/data/textures.json"
 
-# The composites the maps actually place (MAP10, MAP11, MAP34 for D64W2_01;
-# MAP08/14/15/16/22/23/30/34 for D64W1_01), plus the source patches they are
-# built from, so a direct placement is covered too.
-WATER = ("D64W2_01", "D64W1_01", "D64WATR1", "D64WATR2")
+# EVERY frame of both sequences, not just the one the map names.
+#
+# D64W2_01 is frame 1 of a 64-frame ANIMDEFS animation (D64W2_01..D64W2_64, 2
+# tics each); the map's sector names frame 1 but GZDoom swaps in a different
+# frame every 2 tics, so tagging only "D64W2_01" makes the surface water for
+# 2 tics out of ~128 -- a bright flash once per ~3.7s cycle, then nothing.
+# D64W1_* is the same, 64 frames. D64WATR1/2 are the source patches (warp2).
+WATER = (
+    tuple(f"D64W1_{i:02d}" for i in range(1, 65))
+    + tuple(f"D64W2_{i:02d}" for i in range(1, 65))
+    + ("D64WATR1", "D64WATR2")
+)
 
 META = {
     "isWater": True,
     "roughnessDefault": 0.1,
     "metallicDefault": 0.0,
 }
+
+# Material overlays that exist for FRAME 01 ONLY.
+#
+# The PBR tooling generated D64W1_01_n/_orm/_h and D64W2_01_n/_orm/_h because
+# frame 01 is the name the maps reference -- but frames 02..64 got nothing. So
+# once per ~3.7s animation cycle the surface gains an authored normal map and a
+# heightmap (parallax shifts the UVs), then snaps back 2 tics later: the water's
+# reflections and waves visibly JUMP on a regular beat.
+#
+# A 64-frame animation must be materially uniform. The stylized water builds its
+# own wave normal (getWaterNormal) and the shader writes roughness/metallic
+# explicitly, so these overlays are unwanted regardless -- quarantine, not
+# regenerate-for-128-frames.
+#
+# D64WATR1/2 are NOT part of either sequence (separate 192x192 warp textures),
+# so their overlays are consistent and are left alone.
+FRAME1_ONLY_MATS = ("D64W1_01", "D64W2_01")
+MAT_SUFFIXES = ("_n.png", "_orm.png", "_h.png")
+
+MAT_DIRS = [
+    ROOT / "sourcecode/gzdoom-rt/build/RelWithDebInfo/rt/mat",
+    ROOT / "sourcecode/gzdoom-rt/build/RelWithDebInfo/rt/mat_dev",
+    ROOT / "Doom64-Retribution/Retribution-RT-Materials/rt/mat",
+    ROOT / "Doom64-Retribution/Retribution-RT-Materials/rt/mat_dev",
+]
+
+
+def quarantine_frame1_mats(restore: bool = False) -> int:
+    """Move (or restore) the frame-01-only overlays. Returns files moved."""
+    moved = 0
+    for d in MAT_DIRS:
+        if not d.exists():
+            continue
+        q = d.parent / (d.name + "_quarantine_water")
+        src_dir, dst_dir = (q, d) if restore else (d, q)
+        for base in FRAME1_ONLY_MATS:
+            for suf in MAT_SUFFIXES:
+                src = src_dir / (base + suf)
+                if not src.exists():
+                    continue
+                dst_dir.mkdir(parents=True, exist_ok=True)
+                shutil.move(str(src), str(dst_dir / src.name))
+                print(f"  {'restored' if restore else 'quarantined'}: {src}")
+                moved += 1
+    return moved
 
 
 def load(path: Path):
@@ -104,8 +158,11 @@ def main() -> int:
     TARGET.write_text(json.dumps(data, indent=2), encoding="utf-8")
     for name, what in changed:
         print(f"  {name:10} {what}")
-    print(f"\n{len(changed)} entr(ies) written to {TARGET.name}. Relaunch to see it.")
-    show(*load(TARGET)[1:])
+    print(f"\n{len(changed)} entr(ies) written to {TARGET.name}.")
+
+    n = quarantine_frame1_mats(restore=(mode == "--revert"))
+    print(f"{n} frame-01-only material overlay(s) moved.")
+    print("Relaunch to see it.")
     return 0
 
 

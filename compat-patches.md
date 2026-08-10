@@ -644,15 +644,139 @@ and casts no light, so it cannot wash GI (see the emissive wash log above).
   `1.0f`) as `rt_water_wavespeed` / `rt_water_areascale`. At 0.05 the wave field
   scrolls one texture cycle every few minutes — the caustics would not have
   shimmered at all. Both still also drive the partial-invisibility warp.
-- `tools/set_water_meta.py` — tags the four flats `isWater` in the **global**
-  `rt/data/textures.json`. That file is gitignored and rewritten by the PBR
-  tooling, so re-run after `apply_all_category_pbr.py` and after a clean build.
-  Without the tag none of the above runs: `isWater` in the JSON meta is the only
-  route to `RG_MESH_PRIMITIVE_WATER` for world geometry.
+- `rt_main.cpp` `l_waterflag()` — **the flats are tagged engine-side**, by
+  full texture-name match, ORed straight into `RgMeshPrimitiveInfo::flags`.
+  It prints one unmuted `RT water: tagging "<name>"` line per distinct water
+  texture per session.
+
+  This started as the JSON route (`isWater` in `rt/data/textures.json`, via
+  `tools/set_water_meta.py`) and that route could not be made to work or even to
+  falsify: no water flag ever reached the shader, and RTGL's own diagnostics are
+  gated behind **both** `-rtdebug` and its private `g_printSeverity`, so "the
+  meta silently failed to apply" and "the meta applied and did nothing" produce
+  byte-identical evidence. Tagging in the engine also survives the PBR tooling,
+  which rewrites the gitignored `rt/data/textures.json` wholesale — the JSON tag
+  had to be re-applied by hand after every regen. `set_water_meta.py` is kept
+  (harmless, and still correct if the JSON route is ever wanted) but is no
+  longer required.
 - `tools/launch-retribution-rt.cmd` — all water cvars pinned explicitly.
-- `tools/ab-water.cmd` — arms `stock` / `styl` / `flat` / `mirror` / `noglow`,
-  default MAP10. Every arm sets every water cvar, so nothing leaks via the ini.
+- `tools/ab-water.cmd` — arms `stock` / `styl` / `flat` / `mirror` / `noglow` /
+  `debug`, default MAP10. Every arm sets every water cvar, so nothing leaks via
+  the ini. The `debug` arm paints water magenta (stylized branch running) or
+  green (RTGL sees water, stylized gate rejected), and turns on `rt_prim_debug`.
 
 Rebuild: `tools/build-rtgl.cmd` **and** `tools/build-gzdoom-rt.cmd` (new uniform
 fields mean the generated `ShaderCommonC.h` changes, so the engine must be
 rebuilt too, not just the shaders).
+
+### Water tag was inert: D64W2_01 is one frame of a 64-frame animation (2026-08-10)
+
+The stylized water above looked completely dead for several test runs, then
+"flashed bright" on a regular cycle. Cause: **`D64W2_01` is not a texture.**
+`ANIMDEFS` defines `texture D64W1_01` / `D64W2_01` as 64-frame sequences at 2
+tics per frame, and `TEXTURES` defines all 128 composites. The map's sector
+names frame 1, but GZDoom swaps the frame every 2 tics, so the name that
+reaches RTGL is almost never `D64W2_01`.
+
+Both tagging routes matched the exact name, so the surface was water for **2
+tics out of ~128** — one frame per ~3.7s cycle. The shader was working the
+whole time; it was switching off again immediately. RTGL's own
+`GeomInfoManager` carries the warning: *"can't use texture / mesh name, as
+texture can be just 1 frame of animation sequence"*.
+
+**Rule for anything keyed on a Doom 64 texture name** (emissive meta, faux/solo
+lamps, material overlays, this): check `ANIMDEFS` first and prefix-match the
+sequence. An exact-name match on an animated flat produces a periodic flicker,
+not a clean null — which is far harder to read as "the match is wrong".
+
+Two instrumentation traps found on the way, both worth remembering:
+
+- `RT_Print` in `rt_main.cpp` turns any RTGL **ERROR** into a modal
+  `MessageBoxA` whose default action is `exit(-1)`. An ERROR-severity probe
+  therefore kills the game at the first matching primitive. Use **WARNING**,
+  which goes through `Printf`; `DPrintf( DMSG_ERROR, ... )` does not reach the
+  log at all unless developer mode is on.
+- RTGL's `debug::Info` is gated behind **both** `-rtdebug` and its private
+  `g_printSeverity`, so "the meta silently failed" and "the meta applied and did
+  nothing" produce byte-identical evidence. Any check that has to distinguish
+  those needs a gzdoom-side `Printf`, not an RTGL message.
+
+### Reflection strength is deliberately not physical
+
+Water's F0 is ~0.02, so a correct Schlick term makes the reflection invisible
+from anything but a grazing angle — the first version reflected sprites and
+geometry perfectly, at a strength nobody could see. The shader keeps the SHAPE
+of the Schlick curve and remaps its range onto `[rt_water_reflmin,
+rt_water_reflmax]` (0.35 → 0.75 by default): visible looking straight down,
+strong at the horizon. `tools/ab-water.cmd mirror` pushes it to 0.8 → 1.0 and
+also drops `rt_water_wavestren` to 1.2, since the wave normal at 3.0 shatters
+the reflected image.
+
+### The other periodic jump: material overlays on frame 01 only (2026-08-10)
+
+After the prefix fix stopped the water flashing in and out, the reflections and
+waves still **jumped on a regular beat**. Same root cause family, different
+mechanism: the PBR tooling had generated `_n` / `_orm` / `_h` for `D64W1_01` and
+`D64W2_01` — the names the maps reference — and nothing for frames 02..64. So
+once per animation cycle the surface gained an authored normal map and a
+heightmap (parallax shifts the UVs), then snapped back two tics later.
+
+A 64-frame sequence has to be materially uniform. `tools/set_water_meta.py
+--apply` now also quarantines those 24 files (live build tree + repo tree, both
+`mat` and `mat_dev`) into `mat_quarantine_water/`; `--revert` puts them back.
+They are unwanted anyway — the stylized path builds its own wave normal in
+`getWaterNormal` and writes roughness/metallic explicitly.
+
+**Generalisation:** any per-texture asset generated for an animated flat must
+cover every frame or none. `D64WATR1/2` are left alone: they are separate
+192x192 warp textures, not members of either sequence.
+
+### Tuned defaults (2026-08-10)
+
+`rt_water_wavespeed 0.2`, `rt_water_wavestren 0.4`, `rt_water_veinref 0.1`,
+`rt_water_reflmin 0.1`. Note `rt_water_wavestren` also drives the
+partial-invisibility warp; it was 3.0, which shattered the reflected image into
+sparkle.
+
+## Projected water caustics (2026-08-10)
+
+Caustics cast **by** the water **onto** the walls and floors around it. A 1-spp
+path tracer will never find these: a caustic is a specular-to-diffuse path, and
+the chance of a random diffuse bounce landing on the water surface and then
+scattering into a light is effectively zero, so no amount of denoiser tuning
+makes them appear.
+
+So they are projected. In `RtRaygenDirect.rgen`, each shading point fires **one
+probe ray straight down** (`isOverWater`), offset along the surface normal so a
+point on a wall probes the floor in front of it rather than grazing the wall's
+own base. If the hit's geometry instance carries
+`GEOM_INST_FLAG_MEDIA_TYPE_WATER` within `rt_water_caustic_dist`, the point's
+direct lighting is modulated by an animated caustic field sampled from the same
+`WaterNormal_n` texture the surface waves use, so the two agree.
+
+Two deliberate choices:
+
+- **Multiplicative on direct lighting, never additive.** Caustics are focused
+  light, not a light source. An additive term would make water light a
+  pitch-black room and wash GI — the exact failure logged for world emissives
+  above.
+- **Applied to the noisy direct term**, before the denoisers, so it is present
+  in the DLSS-RR albedo guides. A post-denoise multiply is absent from the
+  guides RR demodulates by, which is what makes such terms shimmer.
+
+The field is two wave layers scrolling against each other, with the filaments
+where they **converge** (`pow(1 - length(n0+n1), 8)`) — convergence is what
+focuses light, so this gives thin bright lines over a dark field rather than a
+plain texture lookup.
+
+Cvars: `rt_water_caustics` (gain, 0 = off **and no probe ray traced** — this is
+the perf switch, it costs one ray per pixel), `rt_water_caustic_scale`,
+`rt_water_caustic_speed`, `rt_water_caustic_dist` (192 map units).
+A/B: `tools/ab-water.cmd nocaus`.
+
+### build-rtgl.cmd staged a stale DLL silently
+
+While building the above: `copy /Y` of `RTGL1.dll` fails when gzdoom is running
+(file locked), the failure is swallowed by `>nul`, and the script still prints
+BUILD_OK — so fresh shaders get playtested against an old DLL. The copy is now
+error-checked and the script aborts with a message naming the cause.
