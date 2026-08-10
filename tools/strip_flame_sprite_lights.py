@@ -28,12 +28,23 @@ from pathlib import Path
 ROOT = Path(r"G:\ai\Doom64-RT")
 
 # Must match RT_FLAME_KINDS in src/common/rendering/rt/rt_main.cpp, one for one.
+# (label, name regex). The label is only for the report; the regex is what matches a
+# textureName. Default form is prefix + [A-Z0-9]* — anything sharing the four characters.
 FLAME_PREFIXES = [
     "TLBL", "TLGR", "TLRD", "TLYL",   # standing torches, long
     "TSBL", "TSGR", "TSRD", "TSYL",   # standing torches, short
     "A030", "A031", "A032", "GTCH",   # wall sconces
     "BFLM", "GFLM", "RFLM", "YFLM",   # loose fires
     "CAND",                           # candle
+]
+
+# FIRE cannot use the blanket form. Doom II's world fire/lava WALL textures are FIRELAVA,
+# FIRELAV2/3, FIREWALL, FIREWALA/B, FIREMAG1-3, FIREBLU1/2 — all of which start with FIRE
+# and none of which is the 64BigFire sprite. gen_fx_emissives.py needs a WORLD_TEX_RE
+# guard for the same reason. The sprite lumps are exactly FIREA0..FIREH0, so pin the
+# shape: four letters, one frame letter, one rotation digit.
+FLAME_EXACT = [
+    ("FIRE", r"FIRE[A-Z]0"),          # 64BigFire / 64MotherFire / 64MotherFireTrail
 ]
 
 # Every file RTGL1 might read, plus the mod's source-of-record overlays. The vendor copies
@@ -52,13 +63,15 @@ FILES = [
 # lightIntensity — an entry that simply has no light must not steal the following entry's.
 PATTERNS = [
     (
-        p,
+        label,
         re.compile(
-            r'("textureName"\s*:\s*"' + p + r'[A-Z0-9]*"[^}]{0,300}?"lightIntensity"\s*:\s*)'
+            r'("textureName"\s*:\s*"' + body + r'"[^}]{0,300}?"lightIntensity"\s*:\s*)'
             r'(?!0\s*[,}])[0-9.]+'
         ),
     )
-    for p in FLAME_PREFIXES
+    for label, body in (
+        [ (p, p + r"[A-Z0-9]*") for p in FLAME_PREFIXES ] + FLAME_EXACT
+    )
 ]
 
 

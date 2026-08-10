@@ -1,6 +1,6 @@
 # Flame lighting — torches, fires and the candle (`rt_flame_light_*`)
 
-Every open flame in Doom 64 Retribution — 84 sprites across 17 families — is lit by an
+Every open flame in Doom 64 Retribution — 89 sprites across 18 families — is lit by an
 **engine light**, not by RTGL1's sprite-attached light. This file is the whole story:
 what changed, why texture meta could not do it, and the invariants that will break it.
 
@@ -33,11 +33,42 @@ general RT lighting rules, `docs/sequence-light-chains.md` for map-side light an
 | `TSBL` `TSGR` `TSRD` `TSYL` | 20 | `64TorchShort{…}` | A–E |
 | `A030` `A031` `A032` `GTCH` | 20 | `64WallTorch{Yellow,Blue,Red,Green}` | A–E |
 | `BFLM` `GFLM` `RFLM` `YFLM` | 20 | `64SingleFire{Blue,Green,Red,Yellow}` | A–E |
+| `FIRE` | 5 | `64BigFire`, `64MotherFire`, `64MotherFireTrail` | A–E |
 | `CAND` | 4 | `64Candle` | A–D |
 
-**Not covered, deliberately:** `FIRE` (not a GLDEFS flame prop — keeps its attached
-light), the barrels `BAR1`/`BEXP`, `TFOG`/`IFOG` teleport fog, and every projectile. Those
-are sprite-attached lights and Case 5 of `sprite-illumination.md` owns their colours.
+`FIRE` carries **8** `textures.json` entries, not 5: `FIREA0`–`FIREH0`. Only `A0`–`E0`
+exist as lumps in the WAD; `F0`–`H0` are phantom rows the generator emitted. Harmless, but
+the 84→92 entry count across a strip run is not a miscount.
+
+**Not covered, deliberately:** the barrels `BAR1`/`BEXP`, `TFOG`/`IFOG` teleport fog, and
+every projectile. Those are sprite-attached lights and Case 5 of `sprite-illumination.md`
+owns their colours.
+
+### `FIRE` was wrongly excluded — the 2026-08-10 correction
+
+The original pass left `FIRE` out with the note *"not a GLDEFS flame prop — keeps its
+attached light."* **That premise is false.** The WAD's GLDEFS has:
+
+```
+flickerlight BIGFIRE { color 1.0 0.9 0.0  size 32  secondarySize 38  chance 0.5  offset 0 32 0 }
+object 64BigFire         { frame FIRE { light BIGFIRE } }
+object 64MotherFire      { frame FIRE { light BIGFIRE } }
+object 64MotherFireTrail { frame FIRE { light BIGFIRE } }
+```
+
+It is a GLDEFS flame prop, with an offset like every other one, and it was the single
+biggest hole in this work — by placement count it is the fire in this game. Census of
+all 71 UDMF maps in `D64RTR_v15.WAD`, by thing type:
+
+| doomednum | actor | sprite | placements | maps |
+| --- | --- | --- | --- | --- |
+| 2051 | `64BigFire` | `FIRE` | **117** | 11, 12, 13, 18 (64 of them), 20, 21, 22, 24, 34 |
+| 1033 / 1034 / 1035 / 899 | `64SingleFire{Blue,Red,Yellow,Green}` | `BFLM` `RFLM` `YFLM` `GFLM` | **1 each** | **MAP34 only** |
+
+**The second row is the thing to know before you go looking for a `?FLM` fire.** All four
+sit clustered around `(600…664, −552…−616)` in MAP34 and nowhere else in the game. A
+report that "the loose fires do not light" is far more likely to mean "I was not standing
+in MAP34" than a defect — check the torches first, they share the identical code path.
 
 ---
 
@@ -81,7 +112,14 @@ blocks. Nothing here is invented:
 | `TORCHSHORT*` | `TSBL` `TSGR` `TSRD` `TSYL` | 40 | 64 | 900 |
 | `*TORCH` (wall) | `A030` `A031` `A032` `GTCH` | 28 | 24 | 700 |
 | `*FIRE` (loose) | `BFLM` `GFLM` `RFLM` `YFLM` | 32 | 8 | 650 |
+| `BIGFIRE` | `FIRE` | 32 | 32 | 650 |
 | `CANDLE` | `CAND` | 16 | 16 | 260 |
+
+`BIGFIRE` is the one row whose offset lands **above** the sprite's own midpoint: `FIREA0`
+is 32×50, so RTGL1's billboard-centre anchor put the old attached light at ~25u against
+GLDEFS' 32. That error alone was small — the reason the row matters is that the light also
+could not flicker, and 117 static bonfires lighting a room like fluorescent tubes is
+exactly the failure this whole file exists to describe.
 
 To re-read them yourself, the GLDEFS lump is inside `D64RTR_v15.WAD` (standard WAD
 directory at offset 4, `<II8s` entries) — there is no loose copy on disk.
@@ -97,6 +135,12 @@ instead, the same four hexes the `_e.png` mask generators tint with:
 FLAME_BLUE   4488ff      FLAME_RED     ff4020
 FLAME_GREEN  44ff66      FLAME_YELLOW  ffcc33
 ```
+
+`FIRE` takes a fifth, `RT_FLAME_BIGFIRE` `ff8020`, which lives only in the engine and in
+`gen_fx_emissives.py`'s forced hex for the `FIRE` rule. GLDEFS asks for `1.0 0.9 0.0`;
+this is orange instead because `ff8020` is what the `_e` mask is already tinted with, and
+the mask is what the player sees. Same rule as everywhere else here: cast light follows
+the mask.
 
 Keeping cast light and on-screen glow on one palette is the point. They drifted apart once
 already (the `LPUF` regression) and a literal in the engine would let it happen again.
@@ -169,11 +213,18 @@ gets lit twice from two different heights — worse than the bug this replaced.
 | Place | What it holds |
 | --- | --- |
 | `RT_FLAME_KINDS` in `rt_main.cpp` | sprite → colour, up-offset, intensity. **The light.** |
-| `PREFIX_RULES` in `tools/gen_fx_emissives.py` | `A030`/`A031`/`A032`, `?FLM`, `GTCH`, `CAND` — all at intensity `0` |
+| `PREFIX_RULES` in `tools/gen_fx_emissives.py` | `A030`/`A031`/`A032`, `?FLM`, `FIRE`, `GTCH`, `CAND` — all at intensity `0` |
 | `INTENSITY` in `tools/gen_torch_emissives.py` | the 40 `TL*`/`TS*` — set to `0` |
 
 `tools/strip_flame_sprite_lights.py` applies the data half to every `textures.json` and is
-idempotent. It exists so the state can be re-asserted after someone re-runs a generator;
+idempotent. Its `FIRE` rule is the one that is **not** a blanket four-character prefix: it
+matches `FIRE[A-Z]0` exactly, because Doom II's world fire/lava *wall* textures
+(`FIRELAVA`, `FIRELAV2/3`, `FIREWALL`, `FIREWALA/B`, `FIREMAG1-3`, `FIREBLU1/2`) share the
+same four characters and are not flames. `gen_fx_emissives.py` carries a `WORLD_TEX_RE`
+guard for exactly this; the guard postdates some of the scene files, which is why
+`scenes/d64rtr_v15_map01/textures.json` still has those eleven wall textures sitting on
+`lightIntensity: 700` + `noShadow`. Inert as a light (meta lights are sprite-only) but
+`noShadow` on a wall is not, and it is a separate thing to clean up. It exists so the state can be re-asserted after someone re-runs a generator;
 it is **not** the source of truth — the generators are.
 
 `emissiveMult` is untouched everywhere. The flame must still glow on screen; only the cast
@@ -197,6 +248,11 @@ All live at runtime. Only the table itself needs a rebuild.
 | `rt_flame_light_maxdist` | `3072` | wider than the fist cull: torches are room lighting, and popping one in is visible |
 | `rt_flame_light_max` | `64` | nearest-first budget |
 | `rt_flame_light_debug` | `false` | **`RT_CVAR_NOARCH`** — cyan markers at 350 intensity + a per-60-frame count |
+
+`tools/ab-flame.cmd <on|debug|steady|calm|off> [1-34]` sets all nine explicitly per arm.
+`ab-flame.cmd debug 18` is the one to run first — 64 bonfires and cyan markers, so it
+answers both "is the system running" and "does the budget hold" at once.
+`ab-flame.cmd debug 34` is the only way to see the four `?FLM` fires.
 
 All nine are **pinned in `tools/launch-retribution-rt.cmd`**. Every `RT_CVAR` is
 `CVAR_ARCHIVE`, so changing a compiled default alone does nothing once the ini holds a
@@ -248,7 +304,20 @@ Committed as `f190969 flames: drop the sprite-attached light, the engine lights 
   hand-stripped files — proof the generator and the data agree.
 - The four `FLAME_*` hexes agree across both generators and the engine table.
 
-**Not verified in-engine.** Nobody has looked at this running. There is no screenshot, no
+### 2026-08-10, the `FIRE` pass
+
+- User confirms the torches (`TL*`/`TS*`/`A03x`/`GTCH`) **do** cast light in-game. That is
+  the first in-engine confirmation this system has ever had, and it is what made moving
+  `FIRE` onto the same path safe rather than a gamble against trap 1.
+- Builds clean (`EXITCODE=0`); the new `rt_flame_light_on` help text is present in
+  `gzdoom.exe`, so the rebuilt binary really does carry the new table row.
+- 8 `FIRE?0` entries zeroed in each of five files (`WashScratch/rt/data/textures.json` had
+  no `lightIntensity` key on them to begin with); all six re-parse as valid JSON; the
+  eleven `FIRE*` **wall** textures were left untouched in every file — the regex guard
+  holds.
+- **`FIRE` itself is not verified in-engine.** Same standing instruction as below.
+
+**The original pass was never verified in-engine.** There is no screenshot, no
 `rt_flame_light: uploaded=N` log line. Verify with `rt_flame_light_debug 1` — cyan markers
 should sit **on the flames**, not at pole height, and the count should match the torches in
 the room.
@@ -282,3 +351,13 @@ the room.
    sitting there at intensity 0 with nothing lighting it.
 5. **Colours live in three files.** Change the palette in one and the cast light drifts
    away from the on-screen glow.
+6. **`FIRE` is three actors, not one.** The row lights `64BigFire`, and also the Mother
+   Demon's `64MotherFire` fireball and its `64MotherFireTrail` — GLDEFS binds all three to
+   `BIGFIRE`. So the projectile now flickers and wobbles like a prop fire. At `wobble 2.0`
+   that is 2 map units on a thing moving at speed 15; not visible, but it is the first
+   time this table has touched something that moves, and raising `rt_flame_light_wobble`
+   affects it too.
+7. **Do not give the strip tool or a generator a bare `FIRE` prefix.** It swallows eleven
+   world wall textures. See the note under the three-way invariant.
+8. **Four of the sprites in the inventory exist once each, in MAP34.** Do not conclude the
+   system is broken from `?FLM` alone. See the placement census.

@@ -19,8 +19,8 @@ rem whitelisted to run at GS_STARTUP (c_dispatch.cpp), so it captures
 rem everything from boot, including RTGL -rtdebug output.
 set "LOGF=G:\AI\Doom64-RT\rt-console.log"
 
-rem Usage: launch-retribution-rt.cmd [1-32] [debug] [-- +cvar val ...]
-rem   Optional map number (default 1) → +map map01 … map32
+rem Usage: launch-retribution-rt.cmd [1-34] [debug] [-- +cvar val ...]
+rem   Optional map number (default 1) → +map map01 … map34
 rem   Second arg "debug" → -rtdebug (RTGL messages to console: DLSS-RR init
 rem     success/failure, shader load errors. Muted by default; rt_main.cpp
 rem     sets allowedMessages=0 without it, so RR failing is otherwise silent.)
@@ -47,7 +47,10 @@ if "%MAPNUM%"=="" set "MAPNUM=1"
 set /a "N=MAPNUM" 2>nul
 if errorlevel 1 goto :badmap
 if %N% LSS 1 goto :badmap
-if %N% GTR 32 goto :badmap
+rem 34, not 32: the WAD holds MAP00..MAP34. 33/34 are the two beyond the main
+rem run, and MAP34 is the ONLY place in the game the BFLM/RFLM/YFLM/GFLM loose
+rem fires are placed (one of each), so the cap used to make them unreachable.
+if %N% GTR 34 goto :badmap
 if %N% LSS 10 (set "MAPLUMP=map0%N%") else (set "MAPLUMP=map%N%")
 
 cd /d "%ENGINE%" || exit /b 1
@@ -320,7 +323,8 @@ rem pattern still reads in near-black rooms -- it casts no light. A/B the whole
 rem thing against stock physical water with tools\ab-water.cmd.
 rem
 rem rt_flame_light_*: every open flame in the game -- standing torches (TL*/TS*), wall
-rem sconces (A030/A031/A032/GTCH), loose fires (BFLM/GFLM/RFLM/YFLM) and the candle
+rem sconces (A030/A031/A032/GTCH), loose fires (BFLM/GFLM/RFLM/YFLM), the bonfire (FIRE)
+rem and the candle
 rem (CAND) -- is lit by an engine light, NOT by the sprite's attached light. Those sprites
 rem carry lightIntensity 0 in textures.json on purpose, so rt_flame_light_on 0 means the
 rem flames cast NOTHING; it is not a fallback to the old behaviour. Two reasons it had to
@@ -333,6 +337,12 @@ rem flicker/speed were halved from the first pass at 0.28/0.42 (2026-08-10): a t
 rem the ambient light of its room, so depth that looks right on an isolated campfire
 rem swings the entire indirect bounce with it. rt_flame_light_flicker 0 gives a steady
 rem light while KEEPING the corrected position -- that is the knob to reach for, not _on 0.
+rem FIRE (64BigFire, 117 placements over nine maps -- by far the most common fire in the
+rem game, plus the Mother Demon's fireball, which shares the sprite) was WRONGLY left out
+rem of the table until 2026-08-10 on the claim that it is not a GLDEFS flame prop; the WAD
+rem has flickerlight BIGFIRE at offset 0 32 0 bound to frame FIRE. The four ?FLM loose
+rem fires exist exactly once each and only in MAP34, so MAP11/12/13/18/21/22 are where the
+rem flame work is actually visible. See docs/flame-lighting.md for the placement census.
 rem
 rem d64r-seqlight-fix.wad replaces maps to clear LightSequence chains -- phased
 rem waves of light that travel along a run of sectors with no fixture casting
@@ -428,6 +438,6 @@ start "" gzdoom.exe ^
 exit /b 0
 
 :badmap
-echo Usage: %~nx0 [1-32]
+echo Usage: %~nx0 [1-34]
 echo   Optional map number (default 1^). Example: %~nx0 5  -^> +map map05
 exit /b 1

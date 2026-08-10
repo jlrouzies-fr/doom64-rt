@@ -195,7 +195,12 @@ PREFIX_RULES: list[tuple[str, float, float, str | None]] = [
     ("A031", 0.35, 0, None),  # was 700 -> engine (RT_FLAME_BLUE,   +24u)
     ("A032", 0.35, 0, None),  # was 700 -> engine (RT_FLAME_RED,    +24u)
     # torches / flames
-    ("FIRE", 0.7, 700, "ff8020"),  # not a GLDEFS flame prop; keeps its attached light
+    # 64BigFire, and the Mother Demon's fireball + trail, which share the sprite. This DID
+    # carry its attached light on the grounds that it "is not a GLDEFS flame prop" — wrong:
+    # the WAD has `flickerlight BIGFIRE { size 32 offset 0 32 0 }` bound to frame FIRE on
+    # all three actors. 117 placements across nine maps, so this was the biggest hole in
+    # the flame work. The mask keeps ff8020 and RT_FLAME_BIGFIRE matches it.
+    ("FIRE", 0.7, 0, "ff8020"),  # was 700 -> engine (RT_FLAME_BIGFIRE, +32u)
     ("BFLM", 0.8, 0, FLAME_BLUE),    # was 650 -> engine, +8u
     ("RFLM", 0.8, 0, FLAME_RED),     # was 650 -> engine, +8u
     ("YFLM", 0.8, 0, FLAME_YELLOW),  # was 650 -> engine, +8u

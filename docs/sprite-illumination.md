@@ -450,7 +450,12 @@ blocks — nothing invented:
 | `TORCHSHORT*` | `TSBL` `TSGR` `TSRD` `TSYL` | 40 | 64 | 900 |
 | `*TORCH` (wall) | `A030` `A031` `A032` `GTCH` | 28 | 24 | 700 |
 | `*FIRE` (loose) | `BFLM` `GFLM` `RFLM` `YFLM` | 32 | 8 | 650 |
+| `BIGFIRE` | `FIRE` | 32 | 32 | 650 |
 | `CANDLE` | `CAND` | 16 | 16 | 260 |
+
+`FIRE` was **missing from this table until 2026-08-10**, excluded on the written grounds
+that it "is not a GLDEFS flame prop". The WAD says otherwise, and it is the most-placed
+fire in the game by 30×. See the placement census in `docs/flame-lighting.md`.
 
 Colours do **not** come from GLDEFS, which asks for fully-primary hues (`0.0 1.0 0.0`
 green, `1.0 0.1 0.1` red) — those bleach to white under path tracing, per Case 5. They

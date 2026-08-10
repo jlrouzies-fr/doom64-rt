@@ -1236,35 +1236,35 @@
       "textureName": "FIREA0",
       "emissiveMult": 0.7,
       "lightColorHEX": "ff8020",
-      "lightIntensity": 700,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "FIREB0",
       "emissiveMult": 0.7,
       "lightColorHEX": "ff8020",
-      "lightIntensity": 700,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "FIREC0",
       "emissiveMult": 0.7,
       "lightColorHEX": "ff8020",
-      "lightIntensity": 700,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "FIRED0",
       "emissiveMult": 0.7,
       "lightColorHEX": "ff8020",
-      "lightIntensity": 700,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
       "textureName": "FIREE0",
       "emissiveMult": 0.7,
       "lightColorHEX": "ff8020",
-      "lightIntensity": 700,
+      "lightIntensity": 0,
       "noShadow": true
     },
     {
