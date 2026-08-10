@@ -1,4 +1,9 @@
-"""Tag the Doom 64 water flats as water for RTGL1.
+"""Tag the Doom 64 LIQUID flats as water for RTGL1.
+
+Covers all four liquids -- water, nukage, sludge, blood -- plus the WFALL /
+SFALL / BFALL wall sheets. They are one flat design in four palettes and share
+the stylized surface shader; the engine picks the body colour per liquid from
+the texture name (rt_main.cpp l_waterflag), this script only says "liquid".
 
 Why this exists as a script rather than an edit: rt/data/textures.json under
 build/ is gitignored and rewritten by the PBR tooling (apply_all_category_pbr.py
@@ -42,11 +47,20 @@ TARGET = ROOT / "sourcecode/gzdoom-rt/build/RelWithDebInfo/rt/data/textures.json
 # frame every 2 tics, so tagging only "D64W2_01" makes the surface water for
 # 2 tics out of ~128 -- a bright flash once per ~3.7s cycle, then nothing.
 # D64W1_* is the same, 64 frames. D64WATR1/2 are the source patches (warp2).
-WATER = (
-    tuple(f"D64W1_{i:02d}" for i in range(1, 65))
-    + tuple(f"D64W2_{i:02d}" for i in range(1, 65))
-    + ("D64WATR1", "D64WATR2")
-)
+#
+# All FOUR liquids, not just water: nukage (D64N*), sludge (D64S*) and blood
+# (D64B*) are the same 64-frame flat design in a different palette, and the
+# WFALL/SFALL/BFALL wall sheets likewise. The engine tells them apart by name
+# and picks a body/crest colour per liquid; here they are all just "water".
+_SEQ = ("D64W1_", "D64W2_", "D64N1_", "D64N2_",
+        "D64S1_", "D64S2_", "D64B1_", "D64B2_",
+        "WFALL", "SFALL", "BFALL")
+_PATCHES = ("D64WATR1", "D64WATR2", "D64NUKG1", "D64NUKG2",
+            "D64SLDG1", "D64SLDG2", "D64BLOD1", "D64BLOD2")
+
+WATER = tuple(
+    f"{p}{i:02d}" for p in _SEQ for i in range(1, 65)
+) + _PATCHES
 
 META = {
     "isWater": True,
@@ -67,9 +81,12 @@ META = {
 # explicitly, so these overlays are unwanted regardless -- quarantine, not
 # regenerate-for-128-frames.
 #
-# D64WATR1/2 are NOT part of either sequence (separate 192x192 warp textures),
-# so their overlays are consistent and are left alone.
-FRAME1_ONLY_MATS = ("D64W1_01", "D64W2_01")
+# D64WATR1/2 and the other warp2 patches are NOT part of any sequence (separate
+# 192x192 textures), so their overlays are consistent and are left alone.
+#
+# Every liquid family has the same frame-01-only overlays, for the same reason:
+# the PBR tooling worked from the names the maps reference.
+FRAME1_ONLY_MATS = tuple(f"{p}01" for p in _SEQ)
 MAT_SUFFIXES = ("_n.png", "_orm.png", "_h.png")
 
 MAT_DIRS = [
@@ -109,15 +126,19 @@ def load(path: Path):
 
 
 def show(entries) -> None:
+    """One line per FAMILY: 712 frame names is not a report anyone can read."""
     print(f"{TARGET}")
-    for name in WATER:
-        # first textureName wins in RTGL1's lookup, so only the first matters
-        hit = next((e for e in entries if e.get("textureName") == name), None)
-        if hit is None:
-            print(f"  {name:10} (no entry)")
-        else:
-            print(f"  {name:10} isWater={hit.get('isWater')} "
-                  f"rough={hit.get('roughnessDefault')} metal={hit.get('metallicDefault')}")
+    # first textureName wins in RTGL1's lookup, so only the first matters
+    by_name = {}
+    for e in entries:
+        by_name.setdefault(e.get("textureName"), e)
+
+    for family in _SEQ + _PATCHES:
+        names = [n for n in WATER if n.startswith(family)]
+        present = [n for n in names if n in by_name]
+        tagged = [n for n in present if by_name[n].get("isWater")]
+        print(f"  {family:9} {len(tagged):3}/{len(names):3} tagged isWater"
+              f"   ({len(names) - len(present)} missing entries)")
 
 
 def main() -> int:

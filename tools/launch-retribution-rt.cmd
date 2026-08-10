@@ -342,8 +342,10 @@ rem brightmap marks six pixels, three pairs of dark red demon eyes, and gen_worl
 rem was painting 613 pixels of mortar highlight amber on top of them. The fixture was ours,
 rem not the artist's; the mask is fixed at the source and no light is invented for it.
 rem
-rem rt_water_style: Doom 64 water flats (D64W2_01 in MAP10/11/34, D64W1_01 in
-rem MAP08/14/15/16/22/23/30/34) are tagged RG_MESH_PRIMITIVE_WATER engine-side by
+rem rt_water_style: Doom 64's LIQUID flats -- water (D64W1_/D64W2_), nukage
+rem (D64N1_/D64N2_), sludge (D64S1_/D64S2_, e.g. the brown pools in MAP12) and
+rem blood (D64B1_/D64B2_), plus the WFALL/SFALL/BFALL wall sheets -- are tagged
+rem RG_MESH_PRIMITIVE_WATER engine-side by
 rem a texture-name match in rt_main.cpp (l_waterflag), which hands them to RTGL's
 rem refl/refr pass -- watch for the "RT water: tagging" line at map load. RTGL's
 rem stock water there is physical -- refract into the media, absorb, mirror the
@@ -351,12 +353,22 @@ rem rest -- which reads far too real for this art AND is wrong for these maps:
 rem they are opaque FLOOR flats, nothing exists under them to refract into.
 rem Stylized mode keeps the surface opaque and spends the checkerboard split on
 rem "lit water surface" vs "mirror reflection" instead of "refraction" vs
-rem "reflection": deep blue body (rt_water_tint_*) carrying the flat's own
+rem "reflection": a deep body colour carrying the flat's own
 rem caustic veins, shimmering with the animated wave normal (rt_water_caustic,
 rem rt_water_wavestren), under a Fresnel-weighted reflection capped by
 rem rt_water_reflmax. rt_water_glow is a small unlit on-screen sheen so the
 rem pattern still reads in near-black rooms -- it casts no light. A/B the whole
 rem thing against stock physical water with tools\ab-water.cmd.
+rem
+rem All four liquids run the SAME shader and differ only in colour: each has a
+rem body tint (rt_{water,nukage,sludge,blood}_tint_*) for where the flat is
+rem black and a crest colour (..._crest_*) for its caustic veins. The crest is
+rem not the body brightened -- water's body is deep blue but its crests are pale
+rem cyan, which is what the source art's brightest texels are. rt_water_liquids 0
+rem restricts the shader to water again; rt_water_falls 0 drops the WFALL/SFALL/
+rem BFALL WALL sheets, which is the knob to reach for if a waterfall starts
+rem leaking light -- tagging a wall as water strips its INSTANCE_MASK_WORLD_*
+rem bits, so it stops blocking shadow rays.
 rem
 rem rt_flame_light_*: every open flame in the game -- standing torches (TL*/TS*), wall
 rem sconces (A030/A031/A032/GTCH), loose fires (BFLM/GFLM/RFLM/YFLM), the bonfire (FIRE)
@@ -463,7 +475,15 @@ start "" gzdoom.exe ^
   +rt_rr_reset_on_lightcut 1 +rt_rr_reset_on_dynlight 1 +rt_rr_reset_delta 0.5 +rt_rr_reset_min_ms 250 ^
   +rt_rr_reset_hold 0 +rt_rr_reset_now 0 +rt_rr_reset_debug 0 ^
   +rt_restir_initial 32 ^
-  +rt_water_style 1 +rt_water_tint_r 1 +rt_water_tint_g 1 +rt_water_tint_b 15 ^
+  +rt_water_style 1 +rt_water_liquids 1 +rt_water_falls 1 ^
+  +rt_water_tint_r 1 +rt_water_tint_g 1 +rt_water_tint_b 15 ^
+  +rt_water_crest_r 140 +rt_water_crest_g 204 +rt_water_crest_b 255 ^
+  +rt_nukage_tint_r 2 +rt_nukage_tint_g 15 +rt_nukage_tint_b 4 ^
+  +rt_nukage_crest_r 153 +rt_nukage_crest_g 255 +rt_nukage_crest_b 115 ^
+  +rt_sludge_tint_r 15 +rt_sludge_tint_g 9 +rt_sludge_tint_b 2 ^
+  +rt_sludge_crest_r 255 +rt_sludge_crest_g 204 +rt_sludge_crest_b 115 ^
+  +rt_blood_tint_r 15 +rt_blood_tint_g 2 +rt_blood_tint_b 2 ^
+  +rt_blood_crest_r 255 +rt_blood_crest_g 115 +rt_blood_crest_b 102 ^
   +rt_water_caustic 1.5 +rt_water_reflmin 0.1 +rt_water_reflmax 0.75 +rt_water_rough 0.1 ^
   +rt_water_glow 0.15 +rt_water_veinref 0.1 ^
   +rt_water_wavestren 0.4 +rt_water_wavespeed 0.2 +rt_water_areascale 0.35 ^
