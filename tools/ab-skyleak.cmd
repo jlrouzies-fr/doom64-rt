@@ -44,13 +44,18 @@ rem
 rem Every arm sets both sky cvars and rt_sky_nowalls explicitly -- RT_CVARs are
 rem CVAR_ARCHIVE, so an unset one carries over from the previous arm.
 rem
-rem Usage: ab-skyleak.cmd <nosun|nosky|dark|nowalls|full> [1-32]
+rem Usage: ab-skyleak.cmd <nosun|nosky|dark|nowalls|full> [1-32, default 13]
 rem ---------------------------------------------------------------------------
 
 set "ARM=%~1"
 set "MAP=%~2"
 if "%ARM%"=="" set "ARM=full"
-if "%MAP%"==""  set "MAP=1"
+rem MAP13 is the default because it is the map most likely to show the answer:
+rem it is the one carrying the moon (RT_MOON_PRESETS, azimuth 90) and it has 46
+rem sky-hack gaps of its own -- min 96, median 288, max 416 units
+rem (tools\scan_sky_apertures.py 13). Big, real openings, so `nowalls` will
+rem visibly change its outdoor areas; that is the arm doing its job, not a leak.
+if "%MAP%"==""  set "MAP=13"
 
 if /i "%ARM%"=="nosun"   set "ARGS=+rt_sun 0 +rt_sky 25 +rt_sky_nowalls 0"
 if /i "%ARM%"=="nosky"   set "ARGS=+rt_sun 1 +rt_sky 0  +rt_sky_nowalls 0"
@@ -59,11 +64,15 @@ if /i "%ARM%"=="nowalls" set "ARGS=+rt_sun 1 +rt_sky 25 +rt_sky_nowalls 1"
 if /i "%ARM%"=="full"    set "ARGS=+rt_sun 1 +rt_sky 25 +rt_sky_nowalls 0"
 
 if not defined ARGS (
-  echo Usage: %~nx0 ^<nosun^|nosky^|dark^|nowalls^|full^> [1-32]
+  echo Usage: %~nx0 ^<nosun^|nosky^|dark^|nowalls^|full^> [1-32, default 13]
   exit /b 1
 )
 
 echo === sky-leak arm "%ARM%", MAP%MAP% ===
 echo     %ARGS%
 echo     Stand in the SAME spot for every arm - these are compared by eye.
+echo     MAP13 rooms worth standing in: the west hall around (-1900, -500) and
+echo     the north colonnade around (300, 770). Both take real moonlight through
+echo     real windows, so a leak there is the hard case - light arriving from a
+echo     direction the windows cannot explain.
 call "%~dp0launch-retribution-rt.cmd" %MAP% -- %ARGS%
