@@ -151,6 +151,14 @@ SWITCH_ON_EMIS: dict[str, tuple[float, float, tuple[int, int, int] | None]] = {
 # Stock / leftover false emitters — strip unless authored allowlist keeps them.
 # Liquid falls are never lights; always scrub.
 FALSE_PANEL_RE = re.compile(r"^(OUTTEX|SWX|BFALL|SFALL|WFALL|NUKAGE|NUKE)", re.I)
+# Lamp flats/walls that are lit by ANALYTIC lights in the engine
+# (RT_IsCeilingEdgeLampFlat / RT_IsWallStripTexture in rt_main.cpp), never by a
+# texture mask. They must carry NO emissiveMult: their `_e.png` masks were deleted
+# when generic SFLAT* blobs were found to spawn false emitters (open-issues 1.6e),
+# and RsWorld.inl falls back to `ldrEmis = ldrColor.rgb` when a material has an
+# emissiveMult but no emissive texture — i.e. the ENTIRE albedo emits, tan brick
+# and all. That is what baked MAP07's ceiling panel white at mult 3.
+LAMP_FLAT_NO_EMIS = ("SFLATAS", "SFLATAQ", "SFLATAP", "SPACEAZ")
 FALL_RE = re.compile(r"^(BFALL|SFALL|WFALL)", re.I)
 GLOW_RE = re.compile(r"GLOW", re.I)
 
@@ -1171,6 +1179,30 @@ def scrub_stock_world_emis(path: Path, allow: set[str]) -> int:
     return n
 
 
+def strip_lamp_flat_emis(path: Path) -> int:
+    """Remove emissiveMult/lightIntensity from the analytic lamp flats.
+
+    Cheap and idempotent, and deliberately independent of the allowlist plumbing:
+    this exact regression already shipped once, because the names were dropped from
+    the authored set but the already-written global JSON was never regenerated.
+    """
+    if not path.exists():
+        return 0
+    data = json.loads(path.read_text(encoding="utf-8"))
+    targets = {n.upper() for n in LAMP_FLAT_NO_EMIS}
+    n = 0
+    for e in data.get("array", []):
+        if str(e.get("textureName", "")).upper() not in targets:
+            continue
+        for key in ("emissiveMult", "lightIntensity", "lightColor", "lightColorHEX"):
+            if key in e:
+                del e[key]
+                n += 1
+    if n:
+        path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    return n
+
+
 def upsert_json(path: Path, entries: dict[str, dict], replace: bool = False) -> None:
     if path.exists() and not replace:
         try:
@@ -1307,15 +1339,24 @@ def main() -> None:
                         src = "brightmap+albedoRGB+sparse"
                     else:
                         src = "brightmap+albedoRGB"
-                elif (
-                    albedo is not None
-                    and u.startswith(("C22", "C23"))
-                    and e_max(eimg) > 0
-                ):
-                    extra_img = make_e_from_albedo(albedo, tint, loose=True)
-                    eimg = Image.alpha_composite(extra_img, eimg)
-                    eimg = _boost_e(eimg, 1.5)
-                    src = "brightmap+albedo"
+                # C22/C23 used to composite a loose albedo mask on top of the brightmap
+                # here, and it was pure fabrication (2026-08-10). The mod authors marked
+                # exactly what glows on these two panels:
+                #
+                #   C22  2 lit pixels of 4096
+                #   C23  6 lit pixels of 4096   (the demon eyes, albedo 112,0,0)
+                #
+                # make_e_from_albedo(loose=True) thresholds albedo LUMA, and on a stone
+                # panel that catches every mortar highlight: the generated masks came out
+                # at 388 and 613 lit pixels, 194x and 102x what the brightmap marks. In
+                # game that is not a fixture with a glow, it is the whole tile covered in
+                # amber speckle -- a yellow panel that does not exist in the artwork, on a
+                # texture whose only saturated pixels are six dark red dots.
+                #
+                # It also cost a wrong fix: the speckle field reads as a lamp, so the
+                # obvious next question is "why does that lamp not light the room", and
+                # the answer is that there was never a lamp. Trust the brightmap; it is
+                # the authored answer to "what on this texture emits".
         elif albedo is not None:
             u = name.upper()
             if u in SWITCH_ON_EMIS:
@@ -1344,10 +1385,14 @@ def main() -> None:
                 by_src["smon_no_brightmap_skip"] += 1
                 continue
             else:
+                # C22/C23 are not in the loose set any more -- see the brightmap branch
+                # above for the 194x/102x over-painting it caused. They always ship a
+                # GLDEFS brightmap, so they never reach this branch anyway; leaving them
+                # listed here would only re-teach the mistake to the next reader.
                 eimg = make_e_from_albedo(
                     albedo,
                     tint,
-                    loose=u.startswith(("CRT", "C22", "C23")),
+                    loose=u.startswith("CRT"),
                 )
                 src = "albedo"
         else:
@@ -1423,7 +1468,7 @@ def main() -> None:
     for d in (MAT, MAT_DEV, OMAT):
         if not d.exists():
             continue
-        for stem in ("SFLATAS", "SFLATAQ", "SFLATAP"):
+        for stem in LAMP_FLAT_NO_EMIS:
             p = d / f"{stem}_e.png"
             if p.exists():
                 p.unlink()
@@ -1465,7 +1510,7 @@ def main() -> None:
         for e in arr:
             name = str(e.get("textureName", ""))
             u = name.upper()
-            if (FALL_RE.match(u) or GLOW_RE.search(u) or u in {"SFLATAS", "SFLATAQ", "SFLATAP"}) and u not in keep_u:
+            if (FALL_RE.match(u) or GLOW_RE.search(u) or u in set(LAMP_FLAT_NO_EMIS)) and u not in keep_u:
                 n += 1
                 continue
             new.append(e)
@@ -1490,6 +1535,12 @@ def main() -> None:
         if cleared:
             print(f"cleared false-panel stock emis in global: {cleared}")
         patch_global_inline(GLOBAL_JSON, entries)
+        # Unconditional — NOT gated behind --no-scrub. These four are lit by
+        # analytic lights; an emissiveMult with no _e mask makes the whole flat
+        # self-emit (see LAMP_FLAT_NO_EMIS).
+        dropped = strip_lamp_flat_emis(GLOBAL_JSON)
+        if dropped:
+            print(f"dropped analytic-lamp emissiveMult in global: {dropped}")
         # Full stock scrub is DEFAULT (wash-qa root cause: stock high-mult
         # meta e.g. PLAY* @4.25 floods GI via albedo*mult*mapboost).
         # --no-scrub escapes for debugging only. --scrub is accepted as a no-op

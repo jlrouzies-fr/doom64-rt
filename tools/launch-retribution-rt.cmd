@@ -178,17 +178,13 @@ rem it can never crowd rt_faux_lamps or the real ceiling-edge walk. Found in MAP
 rem stepped-shaft room (sectors 24-30/43, tags 6-11) and reused in MAP08. Set
 rem rt_solo_lamps 0 to see those ceilings as authored.
 rem
-rem rt_eye_panels: C23, the gothic wall panel on MAP09's courtyard, carries three pairs of
-rem lit demon eyes in its art that the base game never wired a light to -- the same "fixture
-rem is real, light is missing" case as rt_solo_lamps, on a wall instead of a ceiling. It rides
-rem the wall-strip walk with its own colour, intensity and budget.
-rem
-rem It is NOT a textures.json lightIntensity, which was tried first and does nothing at all:
-rem RTGL1 puts an attached light at the exact centre of the primitive's quad with no normal
-rem offset, which on a wall face is coplanar with the wall and therefore buried in solid
-rem geometry. That failure looks identical to the light never being uploaded, which is why
-rem gen_world_emissives.py refuses lightIntensity on wall textures. Set rt_eye_panels 0 to
-rem see the panels as authored.
+rem C23 (MAP09's courtyard panel) has NO light pinned here, and that is the conclusion of a
+rem false trail worth not repeating. It looked like an unwired lamp -- a yellow speckled
+rem panel that lit nothing -- and got both a textures.json attached light and its own engine
+rem light family before anyone opened the texture. There is no yellow in it. The mod's GLDEFS
+rem brightmap marks six pixels, three pairs of dark red demon eyes, and gen_world_emissives.py
+rem was painting 613 pixels of mortar highlight amber on top of them. The fixture was ours,
+rem not the artist's; the mask is fixed at the source and no light is invented for it.
 rem
 rem d64r-seqlight-fix.wad replaces maps to clear LightSequence chains -- phased
 rem waves of light that travel along a run of sectors with no fixture casting
@@ -216,9 +212,11 @@ start "" gzdoom.exe ^
   +rt_flsh_color ffbe82 ^
   +rt_gunglow 1 +rt_gunglow_intensity 150 +rt_gunglow_color 3355FF ^
   +rt_gunglow_radius 0.05 +rt_gunglow_f 0.7 +rt_gunglow_u -0.35 ^
+  +rt_gunglow_bob 0.012 +rt_gunglow_flicker 0.22 +rt_gunglow_fire_boost 2.2 ^
   +rt_wpn_solid_bright 1 +rt_wpn_debug 0 ^
   +rt_mzlflsh_perweapon 1 +rt_mzlflsh_color_plasma 3355FF +rt_mzlflsh_color_bfg A0FFA0 ^
   +rt_mzlflsh_color_unmaker FF1111 +rt_mzlflsh_color_chaingun 9677FF ^
+  +rt_mzlflsh_luma_compensate 1 ^
   +rt_tnmp_ev100_min 2 +rt_tnmp_ev100_max 7.7 ^
   +rt_lightlevel_min 80 +rt_lightlevel_max 230 +rt_lightlevel_exp 2 ^
   +rt_illum_sens_direct 1 +rt_illum_sens_indirect 0.75 +rt_illum_sens_spec 1 ^
@@ -241,7 +239,6 @@ start "" gzdoom.exe ^
   +rt_ceiling_edge_debug 0 +rt_ceiling_edge_debug_marks 0 ^
   +rt_faux_lamps 1 +rt_faux_lamp_color 3C5078 +rt_faux_lamp_intensity 500 ^
   +rt_faux_lamp_max 256 +rt_faux_lamp_stride 2 ^
-  +rt_eye_panels 1 +rt_eye_panel_color FFB43C +rt_eye_panel_intensity 80 +rt_eye_panel_max 192 ^
   +rt_solo_lamps 1 +rt_solo_lamp_color FFFFFF +rt_solo_lamp_intensity 45 ^
   +rt_solo_lamp_radius 0.06 +rt_solo_lamp_zofs 8 +rt_solo_lamp_max 384 +rt_solo_lamp_stride 1 ^
   +rt_light_mark_intensity 25 +rt_light_mark_max 24 ^

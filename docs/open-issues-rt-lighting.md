@@ -94,6 +94,22 @@ Do not treat this as a progress cheer sheet — only unresolved / partially reso
 | **Fix** | `gen_world_emissives.py`: `SFLATAS`/`SFLATAQ`/`SFLATAP`/`SPORT*` `emissiveMult` **1.0** so INDIR GI casts from blob `_e`. No floor analytic lights. |
 | **Confirm** | Dark room panels light nearby walls via texture GI only. |
 
+> **Superseded 2026-08-10 — see 1.6f.** That `emissiveMult 1.0` was only ever safe
+> *while the `_e` masks existed*. They were deleted later (generic `SFLAT*` blobs
+> spawned false emitters), and the mult was left behind — and then raised to 3.
+
+### 1.6f MAP07 ceiling panel baked white — **DATA FIX 2026-08-10** (needs confirm)
+
+| | |
+|---|---|
+| **Symptom** | `screen/level7fakelightsnoshadowscast.png` — the `SFLATAS` ceiling panel over the cage reads as a uniform blown-white slab: the tan brick *between* the lamp blobs glows as hard as the blobs. |
+| **Cause** | `rt/data/textures.json` still carried `SFLATAS`/`SFLATAQ` `emissiveMult 3`, `SFLATAP` `1`, `SPACEAZ` `3` — with **no `_e.png` mask on disk** for any of them (`gen_world_emissives.py` deletes them, see 1.6e). `RsWorld.inl` falls back to `ldrEmis = ldrColor.rgb` when `emissiveTextureIndex == MATERIAL_NO_TEXTURE`, so the **whole albedo** emits at ×3, clamped to `rt_emis_maxscrcolor 3` on the primary and fed to GI at `rt_emis_mapboost 200`. Not a mask being too bright — a mask that isn't there. |
+| **Why it survived** | The names were dropped from the authored allowlist, but the already-written global JSON was never regenerated, and `scrub_array_stale` only walks **scene** arrays, never `rt/data/textures.json`. |
+| **Why removal is safe** | These four are exactly the engine's **analytic** lamp set — `RT_IsCeilingEdgeLampFlat` (`SFLATAS`/`SFLATAQ`, `rt_main.cpp:5417`) and `RT_IsWallStripTexture` (`SPACEAZ`/`SFLATAQ`/`SFLATAS`, `:5886`). The launcher runs `rt_ceiling_edge_lamps 1 @ 180` and `rt_wall_strips 1 @ 180`, so the fixtures keep real perimeter lights that cast. The emission was double-counting them. `SFLATAP` is in **neither** engine list (recessed grille, `:5872`) — its glow had no fixture at all. |
+| **Fix** | Stripped `emissiveMult` from those four in the live `rt/data/textures.json` (backup `.pre_sflat_emis`). `gen_world_emissives.py` gains `LAMP_FLAT_NO_EMIS` + `strip_lamp_flat_emis()`, applied to the global JSON **unconditionally** — not behind `--no-scrub`, since this regression already shipped once. |
+| **Confirm** | Panel resolves into brick + distinct bright blobs; room still lit from the panel perimeter. If it now reads dead, the answer is `rt_ceiling_edge_intensity` / `rt_wall_strip_intensity` above 180 — **not** putting the mult back. |
+| **Not addressed** | 411 further `emissiveMult>0` entries have no `_e` mask, so they self-emit whole-albedo too. Most are sprites where that is intended (`FIRE*`, `TFOG*`, `BFLM*` — they pair it with `lightIntensity`). The suspicious ones are the flat-mult-1 world panels: `SMONF*`, `SMONLB*`. Unreviewed. |
+
 ### 1.6c MAP02 yellow door jamb lamps nuclear — **ENGINE FIX 2026-08-05** (needs confirm)
 
 | | |
