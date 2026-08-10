@@ -290,15 +290,48 @@ Neutral art means any tint reproduces cleanly — including the old blue, which 
 now just the cvar's default (`B4C0DC`).
 
 The tint reaches the **light**, not only the picture. `rt_clouds_transmit` (0.22)
-is what a fully covered patch still passes, coloured by the tint, so the
-per-channel transmittance is
+is what a fully covered patch still passes, coloured by the tint. The deck is
+treated as one slab: the shells accumulate how much of the moon's ray is still
+**clear**, and the tint and `transmit` are applied once, at the end, to the
+covered fraction.
 
 ```
-T_c = Π_shells [ (1 - a) + a · tint_c · transmit ]
+clear = Π_shells (1 - a)
+T_c   = clear + (1 - clear) · tint_c · transmit
 ```
 
 Clear sky passes everything; solid cloud passes a dim tinted remainder. Moonlight
 under a purple deck arrives purple, and the shafts it throws are purple with it.
+
+**This is a fix, and it is worth knowing what it replaced.** The tint and
+`transmit` used to be folded in *per shell*, which raises `transmit` to the power
+of the shell count: at the shipping 0.22 over 6 shells, a fully covered ray
+transmitted 1e-4. That is not "a dim tinted remainder", it is nothing — so every
+covered ray hit the floor below, and because that floor was a **per-channel
+clamp** it landed on `(0.02, 0.02, 0.02)`, which is grey. The headline behaviour
+of this whole section, moonlight under a coloured deck arriving coloured, did not
+happen at all under real cover: the deck went opaque and the clamp scrubbed the
+tint back out. It only ever showed in a narrow partial-cover band.
+
+Two changes fixed it. The slab form above, so `transmit` means what its
+description says — what a fully covered patch passes — *independently of how many
+shells are stacked to build that patch*, which is what makes `rt_clouds_shells`
+safe to raise. And a floor on **luminance**, applied as a scale rather than a
+per-channel clamp, so lifting a dark transmittance to the floor keeps the ratio
+between the channels instead of flattening it to grey.
+
+The effect on the shipping maps, moon at `rt_sun_intensity 90` under 80% cover:
+
+| map | before | after |
+|---|---|---|
+| MAP11 storm | `#B4C8FF`, I 1.8 | `#A7C8FF`, I 12.9 |
+| MAP14 purple | `#B4C8FF`, I 1.8 | `#C1BBFF`, I 10.2 |
+| MAP10 orange | `#B4C8FF`, I 1.8 | `#F9B998`, I 10.9 |
+| MAP09 red-pink | `#B4C8FF`, I 1.8 | `#FF8DDC`, I 8.9 |
+
+So outdoor areas on every deck map are both **brighter and coloured** now where
+they used to be a uniform 2% grey. If a deck map looks washed out, that is this
+change, and `rt_clouds_occlude` or the map's `transmit` is the knob.
 In `rt_main` the luminance of `T` scales `rt_sun_intensity` and the hue (`T`
 divided by that luminance) multiplies `rt_sun_color` — split that way because
 `RgLightDirectionalEXT` keeps intensity and colour separate, and folding both
@@ -324,12 +357,15 @@ scenery — it changes what the moon does — so it opts in rather than out.
 | MAP11 | on, `9AA6C8` | The storm. The map the deck exists for. Desaturated cool grey rather than the default blue — the level is lit green-grey and a strongly blue sky reads as a separate scene behind it. |
 | MAP14 | on, `8C7AB4` | Purple. Thinner and slower than MAP11: weather, not a storm. |
 | MAP10, MAP16 | on, `C28153` | Burnt orange. Their rooms are a `CLOUDBRN` overcast over a `MOUNTB` ridge; the tint is that flat's own hue lifted to the luminance the other presets sit at. |
-| MAP12, MAP30 | on, `795EA4` | Dark purple. Same `CLOUDPRP` room as MAP14 but deliberately dimmer — MAP14 is thin daylight weather, these two are the heavy overcast the level is lit under. |
+| MAP30 | on, `795EA4` | Dark purple. Same `CLOUDPRP` room as MAP14 but deliberately dimmer — MAP14 is thin daylight weather, this is the heavy overcast the level is lit under. |
+| MAP12 | on, `7B4FC0`, **maxed** | The one map that uses the deck as a *light* rather than as scenery: full alpha, all 8 shells, double thickness, so the sky is solid cloud with no clear patches. A more saturated purple than MAP30 because under total cover the tint is the only colour the outdoors gets, and `transmit 0.45` against the global 0.22 is what keeps a deck that thick from being a lid — about a sixth of the moon's luminance arrives, strongly violet. |
 | MAP09, MAP15, MAP18, MAP19, MAP20 | on, `E85062` | Red-pink. `CLOUDPNK` is a lurid magenta-crimson; this is that hue pushed off magenta towards red. MAP09 gets wind `0.014` rather than `0.010` because its ACS scrolls the authored ceiling at 4, the storm's rate, not 3. |
 | MAP17, MAP27 | on, `A67454` | Brown, duller and dimmer than MAP10/16's orange — those two are a lit overcast over a ridge, these two are a flat brown sky with no ridge in the room at all. |
 
-Each row carries `clouds`, `tint`, `alpha` and `wind`; 0 / negative means "keep
-the global". Every wind value is the map's own authored `Scroll_Ceiling` rate
+Each row carries `clouds`, `tint`, `alpha`, `wind`, `shells`, `thick` and
+`transmit`; 0 / negative means "keep the global", which is what all but MAP12
+want for the last three. Every wind value is the map's own authored
+`Scroll_Ceiling` rate
 read back out of its ACS: rate 3 → `0.010`, rate 4 → `0.014`.
 
 **Every cloud map in the game is now on the deck** — twelve of them. That is
@@ -369,8 +405,10 @@ full 1024² image: it runs once per frame and the moon is a half-degree disc, so
 per-texel precision would be measuring nothing. Bilinear, so the moon's
 brightness never steps as the wind crosses a texel boundary.
 
-Two deliberate limits. It is **floored at 0.12** — taking a moon-lit map to zero
-is a worse failure than blocking too little. And it is **not** a light cut:
+Two deliberate limits. It is **floored at 0.02 of luminance**, scaled rather than
+clamped per channel so the hue survives the floor (see above) — taking a moon-lit
+map to zero is a worse failure than blocking too little. And it is **not** a
+light cut:
 cover changes at wind speed, over seconds, so it must not flush the denoiser,
 which is for lights that switch.
 
