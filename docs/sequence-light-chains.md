@@ -329,15 +329,46 @@ gives both, at a 45° rake each. Due west (`ab-moon.cmd west`) serves the west
 hall alone at full rake and abandons the colonnade — the two fans were painted
 implying two different suns, which is itself a tell that neither was real.
 
-**The one thing that may be wrong.** The moon's texture column comes from a
-derivation off `SkyVertexDoom` + `SetupMatrices` — a dome column at texture `u`
-sits at world azimuth `−360·u`. The dome mirrors in `x` *and* negates `u`, so a
-sign error there would cancel and go unnoticed. If in play the shafts arrive from
-a bearing the moon plainly is not at, that is this, and the fix is one rebuild:
+### Aiming it from the console — the `moon` CCMD
 
-    python tools/gen_moon_sky.py --flip-u && python tools/pack_rt_sky.py
+    moon                    print the current aim
+    moon <az>               swing both halves to that bearing
+    moon <az> <alt>         ...and altitude
+    moon <az> <alt> <int>   ...and intensity
+    moon flip               disc travelling the wrong way? reverse it
+    moon nudge <deg>        walk the disc alone, for calibration
 
-Intensity, altitude and bearing are all pre-set as arms of `tools/ab-moon.cmd`
+`rt_sun_b` on its own would swing the *shafts* and leave the painted disc where
+it was. The engine closes that gap: `R_UpdateSky` adds
+`(rt_sun_b − rt_moon_tex_b) · rt_moon_yawsign + rt_sky_yaw` to
+`LevelLocals::hw_sky1pos`, which `SetupMatrices` feeds straight into
+`modelMatrix.rotate(-180 + x_offset, 0,1,0)` — so the whole dome turns and
+carries the moon with it. Rotating the entire sky rather than the disc alone is
+deliberate: the starfield is uniform, so nothing else reads as having moved, and
+under RT the dome is rasterised into the sky cubemap, so the disc lands at the
+new bearing in the *environment map* too, not merely on screen.
+
+Applied in `R_UpdateSky` rather than at the draw site because that is the one
+place the value is produced each frame, so a scrolling sky and the moon compose
+instead of one clobbering the other.
+
+| cvar | default | what it is |
+|---|---|---|
+| `rt_moon_track` | `1` | rotate the sky so the disc follows `rt_sun_b`. Off = shafts move alone, which is what you want while A/B-ing direction only |
+| `rt_moon_tex_b` | `135` | the azimuth the moon is **painted** at. Must match `gen_moon_sky.py --azimuth` — it is the reference the tracking rotates *away from* |
+| `rt_moon_yawsign` | `+1` | which way the sky turns per degree of `rt_sun_b` |
+| `rt_sky_yaw` | `0` | extra rotation; the one-time calibration constant |
+
+**The one thing that may be wrong, and how it is now settled.** The moon's
+texture column comes from a derivation off `SkyVertexDoom` + `SetupMatrices` — a
+dome column at texture `u` sits at world azimuth `−360·u`. The dome mirrors in
+`x` *and* negates `u`, so a sign error there cancels and goes unnoticed. That
+used to mean a texture rebuild (`gen_moon_sky.py --flip-u`, still there). It is
+now a console round trip instead: `moon flip` if the disc travels the wrong way,
+`moon nudge <deg>` until it sits over the shafts, then pin the resulting
+`rt_sky_yaw` in the launcher. Nothing has to be regenerated.
+
+Intensity, altitude and bearing are also pre-set as arms of `tools/ab-moon.cmd`
 (`off | dim | moon | bright | noon | west`), including a deliberately
 over-lit `noon` arm whose only job is to make the shaft geometry unmistakable
 when you cannot tell a bad azimuth from a light that is merely too dim to see.

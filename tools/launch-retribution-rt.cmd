@@ -87,6 +87,13 @@ rem  window walls at once (west-facing slots need light travelling +x, the north
 rem  colonnade needs it travelling -y; north-west gives both a 45-degree rake).
 rem  This replaces the painted shafts d64r-seqlight-fix.wad removes from MAP13 --
 rem  see docs/sequence-light-chains.md, "The fourth family". Tune with tools\ab-moon.cmd.
+rem  In game, aim it with the `moon` CCMD: `moon 90`, `moon 90 35`, `moon 90 35 140`.
+rem  It moves the light AND the disc together -- rt_moon_track rotates the sky dome by
+rem  (rt_sun_b - rt_moon_tex_b), so the painted moon follows instead of standing still
+rem  while the shafts swing off it. rt_moon_tex_b MUST match gen_moon_sky.py --azimuth.
+rem  `moon` alone prints the current aim; `moon flip` reverses rt_moon_yawsign if the
+rem  disc travels the wrong way; `moon nudge <deg>` walks rt_sky_yaw for the one-time
+rem  calibration. Pin whatever you settle on back into the two lines below.
 rem d64r-lostsoul-rt.pk3: yellow SKUL sprites + LSGL offset-glow EventHandler.
 rem d64r-rt-flashlight.pk3: stylized 5-cell battery HUD (rt_flsh_charge / battstate; F toggles)
 rem  + battery sound cues (rt_flsh_flicker counter; d64rt_flsh_sound / _vol to mute or tune).
@@ -239,6 +246,7 @@ start "" gzdoom.exe ^
   +gl_noskyboxes false ^
   +rt_sky 25 +rt_sky_always true ^
   +rt_sun 1 +rt_sun_intensity 90 +rt_sun_a 25 +rt_sun_b 135 +rt_sun_color B4C8FF ^
+  +rt_moon_track 1 +rt_moon_tex_b 135 +rt_moon_yawsign 1 +rt_sky_yaw 0 ^
   +rt_classic 0 ^
   +rt_flsh 0 +rt_flsh_intensity 90 +rt_flsh_angle 42 +rt_flsh_pitch 22 ^
   +rt_flsh_battery 1 +rt_flsh_on_secs 30 +rt_flsh_die_secs 4 +rt_flsh_off_secs 5 ^
@@ -285,7 +293,7 @@ start "" gzdoom.exe ^
   +rt_restir_initial 32 ^
   +rt_water_style 1 +rt_water_tint_r 5 +rt_water_tint_g 23 +rt_water_tint_b 61 ^
   +rt_water_caustic 1.5 +rt_water_reflmax 0.75 +rt_water_rough 0.1 ^
-  +rt_water_glow 0.15 +rt_water_veinref 0.03 ^
+  +rt_water_glow 0.15 +rt_water_veinref 0.016 ^
   +rt_water_wavestren 3 +rt_water_wavespeed 1 +rt_water_areascale 0.35 ^
   +rt_water_debug 0 ^
   +rt_normalmap_stren 1 +rt_heightmap_stren 1 %EXTRA%

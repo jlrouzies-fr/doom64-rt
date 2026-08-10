@@ -46,9 +46,18 @@ Horizontal, from SkyVertexDoom + SetupMatrices: a dome column at texture u sits
 at world azimuth `-360 * u` degrees, so `u = -azimuth / 360` (mod 1). That is a
 derivation off the vertex/matrix code, not something measured in game, and the
 one thing it can plausibly get wrong is the *sign* -- the dome mirrors in x and
-negates u, and two sign errors would cancel. `--flip-u` is the whole fix if the
-moon turns up mirrored about north; the shafts are unaffected either way,
-because they come from rt_sun_b.
+negates u, and two sign errors would cancel.
+
+That is no longer a reason to rebuild anything, though. The engine can rotate
+the sky dome at runtime (rt_moon_track / rt_moon_yawsign / rt_sky_yaw, applied
+in R_UpdateSky), so the bearing is settled from the console with the `moon`
+CCMD -- `moon flip` for the sign, `moon nudge <deg>` to walk the disc onto the
+shafts -- and the answer pinned in the launcher. `--flip-u` still exists to bake
+a mirrored texture, but it is not how you find the answer any more.
+
+**Whatever --azimuth is set to here, rt_moon_tex_b must equal it.** That cvar is
+the reference point the runtime tracking rotates away from; if the two disagree
+the moon starts out that many degrees off its light.
 
 Vertical is cruder still. The dome spans +/-60 degrees of altitude over the
 texture's height, but SetupMatrices then translates and scales v by
@@ -234,7 +243,9 @@ def main() -> None:
     print(f"  moon altitude {args.altitude:g} deg -> v={v:.4f} (y={cy:.0f}px), "
           f"radius {radius:.1f}px")
     print(f"  pair with: +rt_sun 1 +rt_sun_b {args.azimuth:g} "
-          f"+rt_sun_a {args.altitude:g}")
+          f"+rt_sun_a {args.altitude:g} +rt_moon_tex_b {args.azimuth:g}")
+    print("  rt_moon_tex_b MUST match --azimuth: it is the reference the runtime "
+          "sky rotation works from.")
 
     if args.preview:
         from PIL import ImageEnhance
