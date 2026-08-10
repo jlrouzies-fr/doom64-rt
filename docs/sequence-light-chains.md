@@ -358,6 +358,40 @@ instead of one clobbering the other.
 | `rt_moon_tex_b` | `135` | the azimuth the moon is **painted** at. Must match `gen_moon_sky.py --azimuth` — it is the reference the tracking rotates *away from* |
 | `rt_moon_yawsign` | `+1` | which way the sky turns per degree of `rt_sun_b` |
 | `rt_sky_yaw` | `0` | extra rotation; the one-time calibration constant |
+| `rt_moon_presets` | `1` | apply the per-map aim table below |
+
+### Per-map aim — `RT_MOON_PRESETS`
+
+One moon, many maps, and each map's windows face wherever its author pointed
+them — so a bearing that lights one level rakes uselessly across the next.
+`RT_MOON_PRESETS` in `rt_main.cpp` is a small table applied at `RT_OnLevelLoad`:
+
+| map | azimuth | altitude | why |
+|---|---|---|---|
+| MAP13 | **90** | 25 | Due north, settled in play. The painted shafts implied *two* suns — the west hall wants light travelling `+x`, the north colonnade `−y` — and 135 was the geometric compromise. 90 reads better: it rakes hard through the colonnade and still catches the west windows obliquely. |
+
+Maps with no entry fall back to the launcher's `rt_sun_a/b`, **captured on the
+first level load** — without that snapshot the fallback would quietly become
+"whatever the last map with a preset set", and the table would be sticky in one
+direction only.
+
+The table is engine-side rather than in the sky pk3 for a hard reason:
+**ZScript cannot set these cvars.** `_CVar.SetFloat` throws *"Attempt to change
+CVAR outside of menu code"* for anything without `CVAR_MOD`, and every `RT_CVAR`
+is `CVAR_GLOBALCONFIG|CVAR_ARCHIVE`. A `WorldLoaded` handler was the obvious
+place for this and it does not work.
+
+Adding a map is a console round trip, no rebuild needed to *find* the answer:
+
+1. `rt_moon_presets 0` (so the table stops overriding you), or just play a map
+   that has no entry.
+2. `moon <az> [alt]` until it looks right.
+3. Bare `moon` — it prints the ready-to-paste row for the current map.
+4. Paste into `RT_MOON_PRESETS` with a note saying *which windows* it serves, and
+   rebuild.
+
+`intensity` is `-1.f` in a row that only wants to turn the moon and not rebalance
+the level's brightness, which is most of them.
 
 **The one thing that may be wrong, and how it is now settled.** The moon's
 texture column comes from a derivation off `SkyVertexDoom` + `SetupMatrices` — a

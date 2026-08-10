@@ -94,6 +94,13 @@ rem  while the shafts swing off it. rt_moon_tex_b MUST match gen_moon_sky.py --a
 rem  `moon` alone prints the current aim; `moon flip` reverses rt_moon_yawsign if the
 rem  disc travels the wrong way; `moon nudge <deg>` walks rt_sky_yaw for the one-time
 rem  calibration. Pin whatever you settle on back into the two lines below.
+rem  PER-MAP aim lives in RT_MOON_PRESETS (rt_main.cpp), applied at RT_OnLevelLoad --
+rem  each map's windows face wherever its author pointed them, so one global bearing
+rem  cannot serve them all. The rt_sun_a/b below is only the FALLBACK for maps with no
+rem  entry; it is captured on the first level load so a preset cannot leak forward into
+rem  the next map. MAP13 is set to 90. To add a map: aim it with `moon`, then type bare
+rem  `moon` and paste the row it prints into the table. +rt_moon_presets 0 disables the
+rem  whole table, which is what you want while hunting a bearing for a new map.
 rem d64r-lostsoul-rt.pk3: yellow SKUL sprites + LSGL offset-glow EventHandler.
 rem d64r-rt-flashlight.pk3: stylized 5-cell battery HUD (rt_flsh_charge / battstate; F toggles)
 rem  + battery sound cues (rt_flsh_flicker counter; d64rt_flsh_sound / _vol to mute or tune).
@@ -211,8 +218,9 @@ rem was painting 613 pixels of mortar highlight amber on top of them. The fixtur
 rem not the artist's; the mask is fixed at the source and no light is invented for it.
 rem
 rem rt_water_style: Doom 64 water flats (D64W2_01 in MAP10/11/34, D64W1_01 in
-rem MAP08/14/15/16/22/23/30/34) are tagged isWater in rt/data/textures.json by
-rem tools\set_water_meta.py, which hands them to RTGL's refl/refr pass. RTGL's
+rem MAP08/14/15/16/22/23/30/34) are tagged RG_MESH_PRIMITIVE_WATER engine-side by
+rem a texture-name match in rt_main.cpp (l_waterflag), which hands them to RTGL's
+rem refl/refr pass -- watch for the "RT water: tagging" line at map load. RTGL's
 rem stock water there is physical -- refract into the media, absorb, mirror the
 rem rest -- which reads far too real for this art AND is wrong for these maps:
 rem they are opaque FLOOR flats, nothing exists under them to refract into.
@@ -246,7 +254,7 @@ start "" gzdoom.exe ^
   +gl_noskyboxes false ^
   +rt_sky 25 +rt_sky_always true ^
   +rt_sun 1 +rt_sun_intensity 90 +rt_sun_a 25 +rt_sun_b 135 +rt_sun_color B4C8FF ^
-  +rt_moon_track 1 +rt_moon_tex_b 135 +rt_moon_yawsign 1 +rt_sky_yaw 0 ^
+  +rt_moon_track 1 +rt_moon_tex_b 135 +rt_moon_yawsign 1 +rt_sky_yaw 0 +rt_moon_presets 1 ^
   +rt_classic 0 ^
   +rt_flsh 0 +rt_flsh_intensity 90 +rt_flsh_angle 42 +rt_flsh_pitch 22 ^
   +rt_flsh_battery 1 +rt_flsh_on_secs 30 +rt_flsh_die_secs 4 +rt_flsh_off_secs 5 ^

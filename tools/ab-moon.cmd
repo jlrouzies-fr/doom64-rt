@@ -24,9 +24,13 @@ rem            diagnostic. If the shafts do not land where you expect, this
 rem            makes the geometry unmistakable so you can tell a bad azimuth
 rem            from a light that is merely too weak to see.
 rem   west     the default brightness aimed due west (azimuth 180) instead of
-rem            north-west. Serves MAP13's west hall alone, at full rake, and
-rem            gives the north colonnade nothing. Worth a look if 135 turns out
-rem            to split the difference badly rather than serving both.
+rem            north. Serves MAP13's west hall at full rake and gives the north
+rem            colonnade nothing -- the opposite trade to the shipped 90, and
+rem            the arm to reach for if a later map wants the west wall favoured.
+rem
+rem All arms except `west` use azimuth 90, MAP13's settled bearing, so they
+rem compare BRIGHTNESS at the aim that ships rather than at the old 135
+rem compromise. Change these if you rebaseline MAP13 in RT_MOON_PRESETS.
 rem
 rem You do not need an arm to try a bearing -- the `moon` CCMD moves the light
 rem AND the painted disc together, live:
@@ -50,6 +54,12 @@ rem Every arm sets every rt_sun cvar explicitly. RT_CVARs are CVAR_ARCHIVE, so a
 rem arm that left one unset would inherit the previous arm's value out of the ini
 rem and quietly invalidate the comparison.
 rem
+rem All arms also set +rt_moon_presets 0. The per-map table (RT_MOON_PRESETS in
+rem rt_main.cpp) is applied at level load and would otherwise overwrite the arm's
+rem azimuth the moment the map came up -- every arm would silently become the
+rem preset, and `west` in particular would compare 90 against 90. Aim found here
+rem goes INTO the table afterwards; it is not read from it.
+rem
 rem Usage: ab-moon.cmd <off|dim|moon|bright|noon|west> [1-32]
 rem ---------------------------------------------------------------------------
 
@@ -60,13 +70,13 @@ if "%MAP%"==""  set "MAP=13"
 
 rem Tracking is pinned on in every arm so the disc follows whatever bearing the
 rem arm sets; rt_moon_tex_b must stay equal to gen_moon_sky.py --azimuth.
-set "COLD=+rt_sun_color B4C8FF +rt_moon_track 1 +rt_moon_tex_b 135 +rt_moon_yawsign 1 +rt_sky_yaw 0"
+set "COLD=+rt_sun_color B4C8FF +rt_moon_track 1 +rt_moon_tex_b 135 +rt_moon_yawsign 1 +rt_sky_yaw 0 +rt_moon_presets 0"
 
-if /i "%ARM%"=="off"    set "ARGS=+rt_sun 0 +rt_sun_intensity 90  +rt_sun_a 25 +rt_sun_b 135 %COLD%"
-if /i "%ARM%"=="dim"    set "ARGS=+rt_sun 1 +rt_sun_intensity 45  +rt_sun_a 25 +rt_sun_b 135 %COLD%"
-if /i "%ARM%"=="moon"   set "ARGS=+rt_sun 1 +rt_sun_intensity 90  +rt_sun_a 25 +rt_sun_b 135 %COLD%"
-if /i "%ARM%"=="bright" set "ARGS=+rt_sun 1 +rt_sun_intensity 180 +rt_sun_a 25 +rt_sun_b 135 %COLD%"
-if /i "%ARM%"=="noon"   set "ARGS=+rt_sun 1 +rt_sun_intensity 400 +rt_sun_a 60 +rt_sun_b 135 +rt_sun_color FFFFFF +rt_moon_track 1 +rt_moon_tex_b 135 +rt_moon_yawsign 1 +rt_sky_yaw 0"
+if /i "%ARM%"=="off"    set "ARGS=+rt_sun 0 +rt_sun_intensity 90  +rt_sun_a 25 +rt_sun_b 90 %COLD%"
+if /i "%ARM%"=="dim"    set "ARGS=+rt_sun 1 +rt_sun_intensity 45  +rt_sun_a 25 +rt_sun_b 90 %COLD%"
+if /i "%ARM%"=="moon"   set "ARGS=+rt_sun 1 +rt_sun_intensity 90  +rt_sun_a 25 +rt_sun_b 90 %COLD%"
+if /i "%ARM%"=="bright" set "ARGS=+rt_sun 1 +rt_sun_intensity 180 +rt_sun_a 25 +rt_sun_b 90 %COLD%"
+if /i "%ARM%"=="noon"   set "ARGS=+rt_sun 1 +rt_sun_intensity 400 +rt_sun_a 60 +rt_sun_b 90 +rt_sun_color FFFFFF +rt_moon_track 1 +rt_moon_tex_b 135 +rt_moon_yawsign 1 +rt_sky_yaw 0 +rt_moon_presets 0"
 if /i "%ARM%"=="west"   set "ARGS=+rt_sun 1 +rt_sun_intensity 90  +rt_sun_a 25 +rt_sun_b 180 %COLD%"
 
 if not defined ARGS (
