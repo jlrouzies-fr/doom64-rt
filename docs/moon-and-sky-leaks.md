@@ -39,36 +39,37 @@ still applies and the vertical mapping is unchanged.
 
 ### Keeping the disc on its own light
 
-Aiming them separately was a real bug: the moon would sit somewhere the shafts
-plainly did not come from. Both axes are now derived from `rt_sun_a/b`:
+**The disc is geometry, not paint.** `RT_DrawMoonQuad` (`hw_skyportal.cpp`) draws
+a quad after the dome, along the `rt_sun` direction:
 
-- **azimuth** — `R_UpdateSky` adds `(rt_sun_b − rt_moon_tex_b)·rt_moon_yawsign +
-  rt_sky_yaw` to `LevelLocals::hw_sky1pos`, which `SetupMatrices` feeds into
-  `modelMatrix.rotate(-180 + x_offset, 0,1,0)`. The whole dome turns and carries
-  the moon. Rotating the entire sky is deliberate: the starfield is uniform, so
-  nothing else reads as having moved, and the disc lands at the new bearing in
-  the **cubemap** too, not just on screen.
-- **altitude** — cannot be solved by rotating about the up axis, so
-  `RT_MoonSkyPitchOffset()` rides `hw_skydome`'s existing vertical dome translate
-  (the `skyoffset` knob), derived from `rt_sun_a`.
+    dir = (sin t · cos b, cos t, sin t · sin b)      t = 90 − rt_sun_a, b = rt_sun_b
 
-`rt_moon_tex_a` / `rt_moon_tex_b` are **where the texture put the moon** and must
-match `gen_moon_sky.py --altitude/--azimuth`. They are references the sky is
-aimed *away from*, not positions. If they disagree with the generator, the disc
-starts out that far off its own shaft.
+The sky renders with the viewpoint at the origin, so placing the quad at
+`dir × 9000` puts the moon at the light's own bearing **by construction**. There
+is no tracking, no sign to settle, no calibration constant, and the two cannot
+drift apart. `MOONDISC` is the texture; `MOONSKY` is now just the starfield.
 
-**Use the `moon` CCMD.** It is the single entry point, and `rt_moon_track` makes
-drift impossible:
+That replaced a painted moon which needed `rt_moon_track`, `rt_moon_tex_a/b`,
+`rt_moon_yawsign`, `rt_moon_pitch_scale` and a sky rotation *and still* could not
+be aimed above 60°. All of that is deleted.
 
-    moon                    print the aim, and the disc's drift from the light
-    moon <az> [alt] [int]   swing both halves together
-    moon flip               reverse rt_moon_yawsign
-    moon nudge <deg>        walk the disc alone, for one-time calibration
+Two things the geometry version fixes outright:
 
-Two constants exist because the mapping cannot be derived reliably: the dome
-mirrors in `x` *and* negates `u`, so a sign error cancels and reads as plausible.
-`rt_moon_yawsign` and `rt_moon_pitch_scale` are settled by looking once, then
-pinned in the launcher.
+- **No altitude ceiling.** A Doom sky dome spans 60° and puts a flat
+  averaged-colour cap above it (§8). A painted moon could not be placed there and
+  got sliced by the cap boundary when pushed near it. A quad draws over both.
+- **No mirror bug.** Vertices here are `(doom_x, doom_z, doom_y)` — see
+  `hw_decal.cpp`, `Set(dv.x, dv.z, dv.y)`. The third component is **not** negated.
+  Getting that wrong mirrors the moon east–west, which reads exactly like a
+  misaligned disc: moon upper-left, light arriving from the right.
+
+**Use the `moon` CCMD** — `moon <az> [alt] [intensity]`, or bare `moon` to report.
+
+    rt_moon_geo       1   draw the disc as geometry (0 = no disc)
+    rt_moon_geo_size  12  apparent diameter in degrees
+
+`rt_moon_geo_size` is *not* `rt_sun_angdiam`: that one is the light's angular
+size (shadow softness), this is only how big the disc looks.
 
 ### Per-map aim
 
@@ -245,10 +246,12 @@ it again, and the code being in a shader the effect does not use. Verify the
 strings are in `gzdoom.exe`, the `.spv` timestamp is after your edit, and `moon`
 reports the mode you asked for.
 
-**Moon disc not where its shaft comes from.** `moon` reports the drift. With
-`rt_moon_track 1` it should be zero; if the disc still looks wrong, the
-calibration is off — `moon flip`, then `moon nudge`, then pin `rt_sky_yaw`.
-Vertical drift is `rt_moon_pitch_scale`.
+**Moon disc not where its shaft comes from.** It cannot be, unless the direction
+expression in `RT_DrawMoonQuad` is wrong — the disc's position is `dir × R` with
+`dir` built from the same `rt_sun_a/rt_sun_b` the light uses. There is no offset
+to tune. Check the coordinate order first: vertices are
+`(doom_x, doom_z, doom_y)` and the last component is **not** negated; negating it
+mirrors the moon east–west, which is how this last failed.
 
 **Shafts vanished entirely.** `require_sky` is over-killing: sky geometry is not
 closed there. Turn it off and check with `rt_sky_here`.
@@ -260,3 +263,53 @@ legitimately reaching sky; the problem is *which* opening is in reach. Use
 **Two builds at once.** RTGL and gzdoom share build state; concurrent builds
 produce a storm of `C1041: cannot open program database`. Kill `MSBuild` /
 `mspdbsrv`, delete `deps/RTGL/BuildCMake`, rebuild.
+
+---
+
+## 8. The moon can only go 55 degrees up
+
+`hw_skydome.cpp`: `maxSideAngle = 60`. The sky dome spans **60 degrees of
+altitude**, and above that Doom draws a flat circular **cap** (`r_skycap_mult`,
+`r_skycap_thresh`) because it has no 3D skybox. No texture detail lives up there.
+
+So an altitude above 60 aims the **light** overhead while the **disc** stays
+where the texture put it. That reads as a tracking failure and is not one — it is
+a request the sky geometry cannot represent. `moon 180 180` (altitude clamps to
+90) is how this was found.
+
+Two guards:
+
+- `moon <az> <alt>` **warns** when `|alt| > 60` instead of silently clamping.
+- `RT_MoonSkyPitchOffset()` clamps the request to the dome's range and the result
+  to ±90 units. Unclamped, altitude 90 against a texture painted at 25 gives
+  `(90−25)×3 = 195` units × 57 = **11,115 world units** of translate on a
+  10,000-radius dome — the sky comes off its hinges.
+
+**Keep altitude at 55 or below** if you want the disc to sit where its own shafts
+come from.
+
+**MAP01 deliberately does not.** It is set to 180/90 — straight overhead — because
+the vertical fall of the light is what makes it read like the original game, and
+at altitude 90 the direction code clamps theta to 0 so the shafts drop straight
+through the roof slots. The disc rides as high as the dome allows and is *not*
+where the light originates. That trade was made on purpose, look over realism;
+drop it to 55 to reverse it.
+
+## 9. The painted moon art
+
+`moontexture.png` at the repo root is composited by `gen_moon_sky.py`. Its
+**alpha channel is the disc mask** (opaque to ~r=476 of a 1536×1024 canvas,
+feathered out by r=500) and its RGB carries a halo beyond that — so the disc
+pastes through alpha and the halo screens on, each doing the job it was drawn
+for. The disc radius is detected from the alpha falloff, not hardcoded, so
+replacing the art with a differently framed moon still works. `--no-art` falls
+back to the procedural disc, and a missing file does the same rather than
+failing the build.
+
+**The moon is drawn as an ellipse on purpose.** The sky texture is anisotropic in
+angle: 360° across its width, only 60° down its height. At 1024×128 that is
+2.84 px/deg horizontally against 2.13 vertically, so a circular moon in texture
+space renders as a stretched one in the sky. `gen_moon_sky.py` corrects for it
+(12° → 34×26 px); `--aspect` is the residual fudge if it still reads as an
+ellipse in game, because `SetupMatrices` rescales `v` again for short tiled
+textures.

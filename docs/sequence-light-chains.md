@@ -440,32 +440,20 @@ implying two different suns, which is itself a tell that neither was real.
 ### Aiming it from the console — the `moon` CCMD
 
     moon                    print the current aim
-    moon <az>               swing both halves to that bearing
-    moon <az> <alt>         ...and altitude
-    moon <az> <alt> <int>   ...and intensity
-    moon flip               disc travelling the wrong way? reverse it
-    moon nudge <deg>        walk the disc alone, for calibration
+    moon <az> [alt] [int]   swing both halves together
 
-`rt_sun_b` on its own would swing the *shafts* and leave the painted disc where
-it was. The engine closes that gap: `R_UpdateSky` adds
-`(rt_sun_b − rt_moon_tex_b) · rt_moon_yawsign + rt_sky_yaw` to
-`LevelLocals::hw_sky1pos`, which `SetupMatrices` feeds straight into
-`modelMatrix.rotate(-180 + x_offset, 0,1,0)` — so the whole dome turns and
-carries the moon with it. Rotating the entire sky rather than the disc alone is
-deliberate: the starfield is uniform, so nothing else reads as having moved, and
-under RT the dome is rasterised into the sky cubemap, so the disc lands at the
-new bearing in the *environment map* too, not merely on screen.
+The disc is **geometry**, not paint: `RT_DrawMoonQuad` (`hw_skyportal.cpp`) draws
+a quad after the dome along the `rt_sun` direction, so it sits at the light's own
+bearing by construction and the two cannot drift apart. Nothing to calibrate.
 
-Applied in `R_UpdateSky` rather than at the draw site because that is the one
-place the value is produced each frame, so a scrolling sky and the moon compose
-instead of one clobbering the other.
+Full detail, including the two failure modes that got there — the sky dome's 60°
+altitude ceiling and the `(doom_x, doom_z, doom_y)` vertex order — is in
+`docs/moon-and-sky-leaks.md`.
 
 | cvar | default | what it is |
 |---|---|---|
-| `rt_moon_track` | `1` | rotate the sky so the disc follows `rt_sun_b`. Off = shafts move alone, which is what you want while A/B-ing direction only |
-| `rt_moon_tex_b` | `135` | the azimuth the moon is **painted** at. Must match `gen_moon_sky.py --azimuth` — it is the reference the tracking rotates *away from* |
-| `rt_moon_yawsign` | `+1` | which way the sky turns per degree of `rt_sun_b` |
-| `rt_sky_yaw` | `0` | extra rotation; the one-time calibration constant |
+| `rt_moon_geo` | `1` | draw the disc as geometry (0 = no disc) |
+| `rt_moon_geo_size` | `12` | apparent diameter in degrees |
 | `rt_moon_presets` | `1` | apply the per-map aim table below |
 
 ### Per-map aim — `RT_MOON_PRESETS`
@@ -501,14 +489,11 @@ Adding a map is a console round trip, no rebuild needed to *find* the answer:
 `intensity` is `-1.f` in a row that only wants to turn the moon and not rebalance
 the level's brightness, which is most of them.
 
-**The one thing that may be wrong, and how it is now settled.** The moon's
-texture column comes from a derivation off `SkyVertexDoom` + `SetupMatrices` — a
-dome column at texture `u` sits at world azimuth `−360·u`. The dome mirrors in
-`x` *and* negates `u`, so a sign error there cancels and goes unnoticed. That
-used to mean a texture rebuild (`gen_moon_sky.py --flip-u`, still there). It is
-now a console round trip instead: `moon flip` if the disc travels the wrong way,
-`moon nudge <deg>` until it sits over the shafts, then pin the resulting
-`rt_sky_yaw` in the launcher. Nothing has to be regenerated.
+**The disc can no longer be aimed apart from its light.** It is a quad placed at
+`dir × R`, with `dir` built from the same `rt_sun_a/rt_sun_b` the light uses, so
+there is no offset, no sign to settle and no calibration to pin. The painted moon
+this replaced needed four cvars and a sky rotation and still could not go above
+60° — see `docs/moon-and-sky-leaks.md` §8/§9.
 
 Intensity, altitude and bearing are also pre-set as arms of `tools/ab-moon.cmd`
 (`off | dim | moon | bright | noon | west`), including a deliberately

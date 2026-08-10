@@ -24,6 +24,12 @@ class D64RtSkyFix : EventHandler
 		// bright Doom II fallback washed indoor sky seams like daylight.
 		// Sector skybox rooms (SPACE* mural boxes) are Ignored under RT
 		// (white/black bug); rt_sky_always fills outdoor F_SKY1 with this flat.
+		// The moon is GEOMETRY now (rt_moon_geo, RT_DrawMoonQuad in
+		// hw_skyportal.cpp), drawn along the rt_sun direction and over the dome's
+		// cap, so it has no altitude ceiling and MOONSKY carries no moon at all --
+		// this is just the starfield. The old code here hid a PAINTED moon when it
+		// was asked to go above the dome's 60 degrees, where it would have been
+		// sliced by the cap; none of that applies any more.
 		TextureID sky = TexMan.CheckForTexture("MOONSKY", TexMan.Type_Any);
 		if (!sky.IsValid())
 			sky = TexMan.CheckForTexture("SPACE", TexMan.Type_Any);

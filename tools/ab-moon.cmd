@@ -39,16 +39,9 @@ rem   moon              print the current aim
 rem   moon 90           swing both halves to azimuth 90
 rem   moon 90 35 140    ...with altitude and intensity too
 rem
-rem If the DISC and the SHAFTS disagree -- the shafts arrive from a bearing the
-rem moon plainly is not at -- that is the sky-rotation sign, which cancels out of
-rem any derivation off the dome vertices and has to be settled by looking:
-rem
-rem   moon flip         reverse it
-rem   moon nudge 15     then walk the disc until they line up
-rem
-rem and pin the resulting rt_sky_yaw in launch-retribution-rt.cmd. The old
-rem texture-rebuild route (gen_moon_sky.py --flip-u) still works but is no longer
-rem the way to find the answer, only to bake one in.
+rem The DISC cannot disagree with the SHAFTS any more: it is geometry drawn along
+rem the same rt_sun direction (rt_moon_geo), not pixels in the sky texture, so
+rem there is no sign to settle and no calibration to pin.
 rem
 rem Every arm sets every rt_sun cvar explicitly. RT_CVARs are CVAR_ARCHIVE, so an
 rem arm that left one unset would inherit the previous arm's value out of the ini
@@ -68,15 +61,13 @@ set "MAP=%~2"
 if "%ARM%"=="" set "ARM=moon"
 if "%MAP%"==""  set "MAP=13"
 
-rem Tracking is pinned on in every arm so the disc follows whatever bearing the
-rem arm sets; rt_moon_tex_b must stay equal to gen_moon_sky.py --azimuth.
-set "COLD=+rt_sun_color B4C8FF +rt_moon_track 1 +rt_moon_tex_b 135 +rt_moon_yawsign 1 +rt_sky_yaw 0 +rt_moon_presets 0"
+set "COLD=+rt_sun_color B4C8FF +rt_moon_presets 0"
 
 if /i "%ARM%"=="off"    set "ARGS=+rt_sun 0 +rt_sun_intensity 90  +rt_sun_a 25 +rt_sun_b 90 %COLD%"
 if /i "%ARM%"=="dim"    set "ARGS=+rt_sun 1 +rt_sun_intensity 45  +rt_sun_a 25 +rt_sun_b 90 %COLD%"
 if /i "%ARM%"=="moon"   set "ARGS=+rt_sun 1 +rt_sun_intensity 90  +rt_sun_a 25 +rt_sun_b 90 %COLD%"
 if /i "%ARM%"=="bright" set "ARGS=+rt_sun 1 +rt_sun_intensity 180 +rt_sun_a 25 +rt_sun_b 90 %COLD%"
-if /i "%ARM%"=="noon"   set "ARGS=+rt_sun 1 +rt_sun_intensity 400 +rt_sun_a 60 +rt_sun_b 90 +rt_sun_color FFFFFF +rt_moon_track 1 +rt_moon_tex_b 135 +rt_moon_yawsign 1 +rt_sky_yaw 0 +rt_moon_presets 0"
+if /i "%ARM%"=="noon"   set "ARGS=+rt_sun 1 +rt_sun_intensity 400 +rt_sun_a 60 +rt_sun_b 90 +rt_sun_color FFFFFF +rt_moon_presets 0"
 if /i "%ARM%"=="west"   set "ARGS=+rt_sun 1 +rt_sun_intensity 90  +rt_sun_a 25 +rt_sun_b 180 %COLD%"
 
 if not defined ARGS (

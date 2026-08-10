@@ -48,16 +48,10 @@ derivation off the vertex/matrix code, not something measured in game, and the
 one thing it can plausibly get wrong is the *sign* -- the dome mirrors in x and
 negates u, and two sign errors would cancel.
 
-That is no longer a reason to rebuild anything, though. The engine can rotate
-the sky dome at runtime (rt_moon_track / rt_moon_yawsign / rt_sky_yaw, applied
-in R_UpdateSky), so the bearing is settled from the console with the `moon`
-CCMD -- `moon flip` for the sign, `moon nudge <deg>` to walk the disc onto the
-shafts -- and the answer pinned in the launcher. `--flip-u` still exists to bake
-a mirrored texture, but it is not how you find the answer any more.
-
-**Whatever --azimuth is set to here, rt_moon_tex_b must equal it.** That cvar is
-the reference point the runtime tracking rotates away from; if the two disagree
-the moon starts out that many degrees off its light.
+That only matters with --bake-disc now. The shipping moon is MOONDISC, drawn as
+GEOMETRY along the rt_sun direction (RT_DrawMoonQuad, hw_skyportal.cpp), so it is
+placed by the light itself: no texture column to derive, no sign to settle, and
+no altitude ceiling from the sky dome's 60 degrees.
 
 Vertical is cruder still. The dome spans +/-60 degrees of altitude over the
 texture's height, but SetupMatrices then translates and scales v by
@@ -104,6 +98,37 @@ DOME_MAX_ALTITUDE = 60.0
 # stays recognisably a disc.
 DEFAULT_DIAMETER_DEG = 12.0
 
+# Painted moon art, if present. Its ALPHA channel is the disc mask (opaque to
+# about r=476 in a 1536x1024 image, feathered to nothing by r=500), and its RGB
+# carries a halo out beyond that -- so the disc composites through alpha and the
+# halo screens on, each doing the job it was drawn for. Falls back to the
+# procedural disc below if the file is missing, so the sky always builds.
+MOON_ART = Path(r"G:\AI\Doom64-RT\moontexture.png")
+
+
+def load_moon_art() -> tuple[Image.Image, Image.Image, float] | None:
+    """(rgb, alpha, disc radius in px) for the painted moon, or None."""
+    if not MOON_ART.is_file():
+        return None
+    im = Image.open(MOON_ART)
+    if im.mode != "RGBA":
+        im = im.convert("RGBA")
+    rgb = im.convert("RGB")
+    alpha = im.getchannel("A")
+
+    # Disc radius straight off the alpha falloff rather than a hardcoded number,
+    # so replacing the art with a differently framed moon still works.
+    import numpy as np
+
+    a = np.asarray(alpha).astype(float)
+    cy, cx = a.shape[0] / 2.0, a.shape[1] / 2.0
+    yy, xx = np.mgrid[0:a.shape[0], 0:a.shape[1]]
+    r = np.hypot(xx - cx, yy - cy).astype(int)
+    prof = np.bincount(r.ravel(), a.ravel()) / np.maximum(np.bincount(r.ravel()), 1)
+    peak = prof[: max(4, len(prof) // 8)].mean()
+    radius = next((i for i, v in enumerate(prof) if v < peak * 0.5), len(prof) // 2)
+    return rgb, alpha, float(radius)
+
 
 def load_source_flat() -> Image.Image:
     for name, blob in read_wad_lumps(WAD):
@@ -133,6 +158,44 @@ def _wrapped(layer: Image.Image, width: int) -> list[Image.Image]:
         shifted.paste(layer, (dx, 0))
         out.append(shifted)
     return out
+
+
+def paste_moon_art(sky: Image.Image, art: tuple[Image.Image, Image.Image, float],
+                   cx: float, cy: float, rx: float, ry: float, halo: float) -> None:
+    """Composite the painted moon: screen its halo, then paste its disc.
+
+    Scaled so the art's DISC (not its canvas, which is mostly halo and black)
+    lands on rx by ry. Two passes for the same reason the procedural moon uses
+    two: the halo has to let stars through, the disc has to occlude them.
+    """
+    from PIL import ImageChops
+
+    rgb, alpha, disc_r = art
+    # Scale the whole canvas by the ratio the disc needs, so the halo scales with it.
+    sx, sy = rx / disc_r, ry / disc_r
+    w = max(4, int(round(rgb.width * sx)))
+    h = max(4, int(round(rgb.height * sy)))
+    rgb_s = rgb.resize((w, h), Image.LANCZOS)
+    a_s = alpha.resize((w, h), Image.LANCZOS)
+
+    ox, oy = int(round(cx - w / 2)), int(round(cy - h / 2))
+
+    # 1. halo: the art's RGB screened on, so the starfield shows through it.
+    if halo > 0:
+        glow = Image.new("RGB", sky.size, (0, 0, 0))
+        glow.paste(rgb_s, (ox, oy))
+        if halo != 1.0:
+            glow = glow.point(lambda v: min(255, int(v * halo)))
+        for layer in _wrapped(glow, sky.width):
+            sky.paste(ImageChops.screen(sky, layer), (0, 0))
+
+    # 2. disc: pasted through the art's own alpha, so the moon is solid.
+    disc = Image.new("RGB", sky.size, (0, 0, 0))
+    disc.paste(rgb_s, (ox, oy))
+    mask = Image.new("L", sky.size, 0)
+    mask.paste(a_s, (ox, oy))
+    for layer, m in zip(_wrapped(disc, sky.width), _wrapped(mask, sky.width)):
+        sky.paste(layer, (0, 0), m)
 
 
 def draw_moon(sky: Image.Image, cx: float, cy: float, radius: float,
@@ -208,6 +271,20 @@ def main() -> None:
     p.add_argument("--width", type=int, default=SKY_WIDTH,
                    help=f"output width (default: {SKY_WIDTH}; below 1024 the sky "
                         f"tiles and you get one moon per repeat)")
+    p.add_argument("--aspect", type=float, default=1.0,
+                   help="extra vertical squash on top of the automatic dome "
+                        "correction. The texture is anisotropic in angle (360 deg "
+                        "across its width, 60 down its height), which is corrected "
+                        "for; this is the residual fudge if the moon still reads "
+                        "as an ellipse in game, because SetupMatrices rescales v "
+                        "again for short tiled textures (default: 1.0)")
+    p.add_argument("--bake-disc", action="store_true",
+                   help="ALSO paint the moon into the sky texture. Off by default: "
+                        "the moon is drawn as geometry now, and baking it too would "
+                        "put two moons in the sky. Only for falling back to the old "
+                        "texture-only moon, which cannot go above the dome's 60 deg.")
+    p.add_argument("--no-art", action="store_true",
+                   help=f"ignore {MOON_ART.name} and draw the procedural disc instead")
     p.add_argument("--debug", action="store_true",
                    help="DIAGNOSTIC SKY: replace the starfield with flat magenta "
                         "and a green grid. Every sky surface in the game then "
@@ -263,11 +340,40 @@ def main() -> None:
 
     cx = u * sky.width
     cy = v * sky.height
-    # The dome wraps 360 degrees over the full width, so a degree is width/360 px.
-    radius = 0.5 * args.diameter * sky.width / 360.0
+
+    # The sky texture is ANISOTROPIC in angle: width covers 360 degrees, height
+    # covers only the dome's 60. So a degree is width/360 px across and
+    # height/60 px down, and a moon drawn with one radius comes out an ellipse
+    # in the sky. rx/ry below is that correction -- for 1024x128 it makes the
+    # moon 0.75x as tall as it is wide, which is round once the dome maps it.
+    rx = 0.5 * args.diameter * sky.width / 360.0
+    ry = 0.5 * args.diameter * sky.height / DOME_MAX_ALTITUDE * args.aspect
     color = tuple(int(args.color.lstrip("#")[i:i + 2], 16) for i in (0, 2, 4))
 
-    draw_moon(sky, cx, cy, radius, color, args.halo)
+    art = None if args.no_art else load_moon_art()
+
+    # The moon is GEOMETRY now, not paint. rt_main submits a quad along the
+    # rt_sun direction and textures it with MOONDISC, which is drawn over the
+    # dome and its cap -- so it can sit anywhere, including straight overhead,
+    # where the sky texture simply has no pixels (see the 60-degree dome limit).
+    # Baking it into the sky as well would show TWO moons, so --bake-disc is off
+    # by default and exists only to fall back to the old behaviour.
+    if art is not None:
+        rgba = Image.merge("RGBA", (*art[0].split(), art[1]))
+        side = int(round(art[2] * 2.4))  # disc plus a little halo
+        cx0, cy0 = rgba.width // 2, rgba.height // 2
+        disc = rgba.crop((cx0 - side // 2, cy0 - side // 2,
+                          cx0 + side // 2, cy0 + side // 2))
+        disc = disc.resize((256, 256), Image.LANCZOS)
+        discout = OUTPNG.with_name("MOONDISC.png")
+        disc.save(discout)
+        print(f"wrote {discout} 256x256 (disc crop of {MOON_ART.name}, alpha kept)")
+
+    if args.bake_disc:
+        if art is not None:
+            paste_moon_art(sky, art, cx, cy, rx, ry, args.halo)
+        else:
+            draw_moon(sky, cx, cy, rx, color, args.halo)
 
     OUTPNG.parent.mkdir(parents=True, exist_ok=True)
     sky.save(OUTPNG)
@@ -275,13 +381,15 @@ def main() -> None:
           f"(from {SOURCE_FLAT} {src.width}x{src.height} x{sky.width // src.width})")
     print(f"  moon azimuth {args.azimuth:g} deg -> u={u:.4f} (x={cx:.0f}px)"
           f"{' [flipped]' if args.flip_u else ''}")
-    print(f"  moon altitude {args.altitude:g} deg -> v={v:.4f} (y={cy:.0f}px), "
-          f"radius {radius:.1f}px")
-    print(f"  pair with: +rt_sun 1 +rt_sun_b {args.azimuth:g} +rt_sun_a {args.altitude:g}")
-    print(f"             +rt_moon_tex_b {args.azimuth:g} +rt_moon_tex_a {args.altitude:g}")
-    print("  BOTH tex_ values MUST match the two above them. They are where this")
-    print("  script PUT the moon, and the engine aims the sky away from them --")
-    print("  if they disagree, the disc starts out that far off its own shaft.")
+    print(f"  moon altitude {args.altitude:g} deg -> v={v:.4f} (y={cy:.0f}px)")
+    print(f"  disc {args.diameter:g} deg -> {rx * 2:.0f} x {ry * 2:.0f} px "
+          f"({'painted art ' + MOON_ART.name if art is not None else 'procedural disc'})"
+          f" -- not square on purpose: the texture spans 360 deg across and only "
+          f"{DOME_MAX_ALTITUDE:g} down")
+    print(f"  aim in game with: moon {args.azimuth:g} {args.altitude:g}")
+    print("  --azimuth/--altitude only matter with --bake-disc. The shipping moon")
+    print("  is MOONDISC drawn as geometry along the rt_sun direction, so it is")
+    print("  placed by the light itself and needs no reference values here.")
 
     if args.preview:
         from PIL import ImageEnhance

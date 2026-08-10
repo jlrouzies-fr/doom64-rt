@@ -686,6 +686,25 @@ TINT_FIELDS = ("lightcolor", "color1", "color2", "color3", "color4", "color5")
 
 TINTS = [
     Tint(
+        "MAP13",
+        [47, 48, 49, 50, 51, 52, 61, 62, 63, 64, 65, 66, 67, 68, 69, 93],
+        donor=46, from_lightcolor=0xFEE16D,
+        enabled=True,
+        note="THE REPORTED ONE (screen/level13fakelitblinkpillars.png). The H119 "
+             "pillars in the outdoor courtyard -- fifteen 64x64 and 64x512 sectors "
+             "plus one C77 -- painted warm yellow rgb(254,225,109) inside sector 46, "
+             "a 2944x2944 open courtyard at cold blue rgb(146,194,254) under the "
+             "moon.\n"
+             "\n"
+             "H119 itself is dull mottled brown-purple stone. The gold-brass look is "
+             "ENTIRELY the sector colour: pillars lit warm, by nothing, in a night "
+             "courtyard whose only real light is a cool moon. Their lightlevel is "
+             "200, which is not above MAP13's threshold, so no amount of brightness "
+             "work would ever have touched them -- this one is purely the colour "
+             "half of the painted-light problem, and the reason TINTS exists as its "
+             "own family.",
+    ),
+    Tint(
         "MAP13", [32, 35], donor=15, from_lightcolor=0xFE9276,
         enabled=True,
         note="THE REPORTED ONE (screen/fakelittexturearounddoorlevel13.png, the "

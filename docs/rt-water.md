@@ -193,7 +193,7 @@ All pinned explicitly in `tools/launch-retribution-rt.cmd`.
 | cvar | default | meaning |
 |---|---|---|
 | `rt_water_style` | 1 | stylized water; 0 = stock RTGL physical water |
-| `rt_water_tint_r/g/b` | 5 / 23 / 61 | deep blue body colour |
+| `rt_water_tint_r/g/b` | 1 / 1 / 15 | deep blue body colour |
 | `rt_water_caustic` | 1.5 | how hard wave crests brighten the flat's own veins |
 | `rt_water_veinref` | 0.1 | linear luminance that saturates the vein mask |
 | `rt_water_reflmin` | 0.1 | reflection looking straight **down** (physical = 0.02) |

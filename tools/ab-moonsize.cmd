@@ -63,7 +63,7 @@ if "%ARM%"=="" set "ARM=real"
 if "%MAP%"==""  set "MAP=13"
 
 set "BASE=+rt_sun 1 +rt_sun_intensity 90 +rt_sun_a 25 +rt_sun_b 90 +rt_sun_color B4C8FF"
-set "BASE=%BASE% +rt_moon_track 1 +rt_moon_tex_b 135 +rt_moon_yawsign 1 +rt_sky_yaw 0"
+set "BASE=%BASE%"
 set "BASE=%BASE% +rt_moon_presets 0 +rt_sky 25 +rt_sky_nowalls 0 +rt_shadowrays 4"
 
 if /i "%ARM%"=="real"   set "ARGS=%BASE% +rt_sun_angdiam 0.5"

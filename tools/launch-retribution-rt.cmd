@@ -89,12 +89,12 @@ rem  colonnade needs it travelling -y; north-west gives both a 45-degree rake).
 rem  This replaces the painted shafts d64r-seqlight-fix.wad removes from MAP13 --
 rem  see docs/sequence-light-chains.md, "The fourth family". Tune with tools\ab-moon.cmd.
 rem  In game, aim it with the `moon` CCMD: `moon 90`, `moon 90 35`, `moon 90 35 140`.
-rem  It moves the light AND the disc together -- rt_moon_track rotates the sky dome by
-rem  (rt_sun_b - rt_moon_tex_b), so the painted moon follows instead of standing still
-rem  while the shafts swing off it. rt_moon_tex_b MUST match gen_moon_sky.py --azimuth.
-rem  `moon` alone prints the current aim; `moon flip` reverses rt_moon_yawsign if the
-rem  disc travels the wrong way; `moon nudge <deg>` walks rt_sky_yaw for the one-time
-rem  calibration. Pin whatever you settle on back into the two lines below.
+rem  The DISC is GEOMETRY drawn along the same rt_sun direction (rt_moon_geo, MOONDISC
+rem  texture, RT_DrawMoonQuad in hw_skyportal.cpp), so it cannot drift from its own
+rem  shafts and there is nothing to calibrate. It also has no altitude ceiling: the
+rem  old painted moon could not go above the sky dome's 60 degrees, where Doom draws a
+rem  flat averaged-colour cap with no texture on it, and got sliced by that boundary.
+rem  `moon` alone prints the current aim.
 rem  PER-MAP aim lives in RT_MOON_PRESETS (rt_main.cpp), applied at RT_OnLevelLoad --
 rem  each map's windows face wherever its author pointed them, so one global bearing
 rem  cannot serve them all. The rt_sun_a/b below is only the FALLBACK for maps with no
@@ -102,6 +102,58 @@ rem  entry; it is captured on the first level load so a preset cannot leak forwa
 rem  the next map. MAP13 is set to 90. To add a map: aim it with `moon`, then type bare
 rem  `moon` and paste the row it prints into the table. +rt_moon_presets 0 disables the
 rem  whole table, which is what you want while hunting a bearing for a new map.
+rem Clouds + lightning (rt_clouds_*, rt_lightning_*): the storm. MAP11 is the game's
+rem  one `lightning` map (MAPINFO keyword -> DLightningThinker), and it is authored
+rem  WITH clouds -- a CLOUDPRP skybox room scrolled by ACS script 670 -- that RT
+rem  never draws, because sector skybox rooms are ignored. Both halves are rebuilt
+rem  as sky GEOMETRY instead.
+rem  Clouds are a VOLUME, not a backdrop: rt_clouds_shells horizontal discs stacked
+rem  over the player, each drawing a different horizontal CUT (CLOUDV1..CLOUDV8 in
+rem  d64r-rt-sky.pk3, 1 = cloud base) through one 3D density field baked by
+rem  tools\gen_clouds.py. They are at genuinely different heights, so they parallax
+rem  and occlude each other. A DECK rather than dome layers because a dome layer
+rem  rotates about the viewer -- clouds orbit and come round again, identically
+rem  wherever you stand; a deck translates along rt_clouds_wind_dir, linear and
+rem  unbounded, and perspective crowds the far clouds to the horizon by itself.
+rem  rt_clouds_shells is the cost knob (each shell is re-rasterised into all six
+rem  cubemap faces every frame) AND the quality knob (at 1 there is no volume).
+rem  PER-MAP and OPT-IN. rt_clouds is pinned 0 here; RT_CLOUD_PRESETS (rt_main.cpp)
+rem  turns it on at level load for the maps that want it -- MAP11 and MAP14 do,
+rem  MAP01 is listed explicitly OFF because its moon is straight overhead and a
+rem  deck would attenuate the vertical roof-slot shafts the map is built around.
+rem  A cloud layer is not neutral scenery: it changes what the moon does, so it is
+rem  opt-in rather than global. The table also carries per-map TINT, alpha and
+rem  wind. Authoring loop, same as `moon`: +rt_clouds_presets 0, tune with the
+rem  `clouds` CCMD (`clouds on B4C0DC 0.9 0.014`), then type bare `clouds` and
+rem  paste the row it prints. NOTE the table writes rt_clouds/_tint/_alpha/_wind
+rem  at level load, so it overrides command-line pins on a listed map -- that is
+rem  why every tools\ab-storm.cmd arm except `preset` sets rt_clouds_presets 0.
+rem  rt_clouds_tint is the CLOUD COLOUR and also the colour moonlight takes on
+rem  coming through them (rt_clouds_transmit is how much a solid patch still
+rem  passes). The slice art is deliberately near-achromatic so the tint owns the
+rem  hue outright -- a blue-baked texture cannot be tinted purple, only muddied,
+rem  and several levels have a dark purple skybox.
+rem  rt_clouds_occlude: the deck DIMS THE MOON. Sky geometry is never in the
+rem  acceleration structure, so the clouds cannot cast a shadow on their own and the
+rem  moon would pour through a solid overcast at full strength. Instead the moon's
+rem  own ray is walked up through the shells and each slice's alpha sampled where it
+rem  crosses (CPU, on a cached 64x64 reduction), and the product scales
+rem  rt_sun_intensity -- so cloud drifting over the moon really does fade the shafts,
+rem  and it moves with the wind. Floored at 0.12: taking a moon-lit map to zero is a
+rem  worse failure than blocking too little.
+rem  Lightning: on each strike, a BOLT quad plus an analytic DIRECTIONAL light down
+rem  the same bearing. The bolt is scenery and the directional is the source --
+rem  exactly the moon's arrangement, for exactly the moon's reason: RT's sky is a
+rem  rasterised cubemap sampled on ray miss and is not importance-sampled, so
+rem  painting something bright in it lights nothing at 1 spp. The strike TAKES OVER
+rem  rt_sun's light rather than adding one: RTGL1 allows exactly one directional
+rem  light and answers a second with a FATAL debug::Error. Test without waiting for
+rem  the storm: the `thunder` CCMD forces a strike on any map. rt_lightning_debug 1
+rem  prints bearing/strokes per strike.
+rem  rt_lightning_sectorflash 1 keeps the stock F_SKY1 lightlevel flash (106 sectors
+rem  on MAP11) -- under RT that is also rt_sector_emis surface emission, so it is
+rem  the one knob to reach for if a strike washes the outdoors. See
+rem  docs/rt-clouds-and-lightning.md and tools\ab-storm.cmd.
 rem d64r-lostsoul-rt.pk3: yellow SKUL sprites + LSGL offset-glow EventHandler.
 rem d64r-rt-flashlight.pk3: stylized 5-cell battery HUD (rt_flsh_charge / battstate; F toggles)
 rem  + battery sound cues (rt_flsh_flicker counter; d64rt_flsh_sound / _vol to mute or tune).
@@ -288,7 +340,16 @@ start "" gzdoom.exe ^
   +gl_noskyboxes false ^
   +rt_sky 25 +rt_sky_always true +rt_sky_nowalls 0 ^
   +rt_sun 1 +rt_sun_intensity 90 +rt_sun_a 25 +rt_sun_b 135 +rt_sun_color B4C8FF +rt_sun_angdiam 0.5 ^
-  +rt_moon_track 1 +rt_moon_tex_b 135 +rt_moon_tex_a 25 +rt_moon_yawsign 1 +rt_moon_pitch_scale 3 +rt_sky_yaw 0 +rt_moon_presets 1 ^
+  +rt_moon_geo 1 +rt_moon_geo_size 12 ^
+  +rt_moon_presets 1 ^
+  +rt_clouds 0 +rt_clouds_presets 1 +rt_clouds_shells 6 +rt_clouds_horizon 9 +rt_clouds_curve 0.55 ^
+  +rt_clouds_thick 0.7 +rt_clouds_tiles 6 +rt_clouds_alpha 0.9 +rt_clouds_dark 0.45 ^
+  +rt_clouds_wind 0.014 +rt_clouds_wind_dir 30 +rt_clouds_shear 0.09 +rt_clouds_occlude 1 +rt_clouds_transmit 0.22 +rt_clouds_tint B4C0DC +rt_clouds_flash 2.2 ^
+  +rt_lightning 1 +rt_lightning_intensity 2200 +rt_lightning_color C8D8FF ^
+  +rt_lightning_decay 0.18 +rt_lightning_strokes 3 +rt_lightning_angdiam 6 ^
+  +rt_lightning_alt_min 15 +rt_lightning_alt_max 40 ^
+  +rt_lightning_bolt 1 +rt_lightning_bolt_size 55 ^
+  +rt_lightning_sectorflash 1 +rt_lightning_debug 0 ^
   +rt_sun_leak_debug 0 +rt_sun_require_sky 0 ^
   +rt_classic 0 ^
   +rt_flsh 0 +rt_flsh_intensity 90 +rt_flsh_angle 42 +rt_flsh_pitch 22 ^
@@ -341,7 +402,7 @@ start "" gzdoom.exe ^
   +rt_rr_reset_on_lightcut 1 +rt_rr_reset_on_dynlight 1 +rt_rr_reset_delta 0.5 +rt_rr_reset_min_ms 250 ^
   +rt_rr_reset_hold 0 +rt_rr_reset_now 0 +rt_rr_reset_debug 0 ^
   +rt_restir_initial 32 ^
-  +rt_water_style 1 +rt_water_tint_r 5 +rt_water_tint_g 23 +rt_water_tint_b 61 ^
+  +rt_water_style 1 +rt_water_tint_r 1 +rt_water_tint_g 1 +rt_water_tint_b 15 ^
   +rt_water_caustic 1.5 +rt_water_reflmin 0.1 +rt_water_reflmax 0.75 +rt_water_rough 0.1 ^
   +rt_water_glow 0.15 +rt_water_veinref 0.1 ^
   +rt_water_wavestren 0.4 +rt_water_wavespeed 0.2 +rt_water_areascale 0.35 ^

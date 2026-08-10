@@ -22,10 +22,6 @@
       "emissiveMult": 1.0
     },
     {
-      "textureName": "CRTRAKA",
-      "emissiveMult": 1.0
-    },
-    {
       "textureName": "D64LAVA1",
       "emissiveMult": 1.5,
       "lightIntensity": 140,

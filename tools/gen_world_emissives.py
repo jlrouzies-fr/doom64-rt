@@ -114,7 +114,18 @@ NAME_RULES: list[tuple[str, float, float, tuple[int, int, int] | None]] = [
 # Always include these even if heuristics miss them
 FORCE: dict[str, tuple[float, float, tuple[int, int, int] | None]] = {
     "D64LOGO": (1.0, 0.0, None),
-    "CRTRAKA": (1.0, 0.0, (80, 220, 120)),
+    # CRTRAKA is NOT here any more, and the removal is the finding (2026-08-10).
+    # It is a 16x128 strip of dark red demon skulls. It has no brightmap in
+    # D64RTR_BRIGHTMAPS.PK3 and no GLDEFS entry -- the mod never says any part of it
+    # emits. It got a mask anyway because its name starts with "CRT", so the green
+    # CRT-monitor rule below matched it and painted 340 of its 2048 pixels
+    # (80,220,120) green. In game that is a red demon strip with glowing green
+    # glyphs on it (screen/brokenemissivelevel13.png), a computer screen invented
+    # out of a name prefix.
+    #
+    # Exactly the C22/C23 mistake and exactly the SPACEAR mistake recorded in
+    # rt_main.cpp: a rule right by association rather than by what is in the art.
+    # See CRT_NAME_FALSE_POSITIVES.
     "C22": (1.0, 0.0, (255, 180, 60)),
     "C23": (1.0, 0.0, (255, 180, 60)),
     "SKEYFLYL": (1.2, 0.0, (255, 200, 40)),
@@ -130,6 +141,17 @@ FORCE: dict[str, tuple[float, float, tuple[int, int, int] | None]] = {
 
 # Skip non-emitters. OUTTEX classic brightmaps are NOT RT emitters.
 # SWX* idle frames stay dark; ON frames (GLDEFS brightmaps) are allowlisted below.
+# Names that a texture-name prefix rule matches but the ARTWORK does not support.
+# Checked before every heuristic. The test that put CRTRAKA here is the one to reuse:
+# does the mod ship a brightmap or a GLDEFS entry for it? If neither, nothing about the
+# texture is authored as emitting and any mask is our invention.
+CRT_NAME_FALSE_POSITIVES = {"CRTRAKA"}
+
+
+def is_name_false_positive(name: str) -> bool:
+    return name.upper() in CRT_NAME_FALSE_POSITIVES
+
+
 SKIP_RE = re.compile(
     r"^(SPACE|METAL|STEEL|DOOR|GATE|FRSKY|FIRE[A-Z]|PLAY|POSS|TROO|CLOUD|"
     r"OUTTEX|SWX)",
@@ -325,6 +347,8 @@ def is_skipped(name: str) -> bool:
     u = name.upper()
     if u in SWITCH_ON_EMIS:
         return False
+    if is_name_false_positive(u):
+        return True
     return bool(SKIP_RE.match(u))
 
 
