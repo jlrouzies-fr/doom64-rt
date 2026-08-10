@@ -51,7 +51,56 @@ Do not treat this as a progress cheer sheet — only unresolved / partially reso
 | **Confirm** | `tools\ab-moon.cmd moon 13` — halls lit by shafts raking in from the north-west windows, moon visible in the sky on the same bearing. `tools\ab-moon.cmd off 13` is the control (paint gone, nothing given back). If the shafts and the disc disagree on bearing, the sky's `u` sign is wrong: `python tools\gen_moon_sky.py --flip-u && python tools\pack_rt_sky.py`. |
 | **Detail** | `docs/sequence-light-chains.md`, "The fourth family". |
 
-### 1.2c Sky leaks — **NOT small gaps. Bisect before fixing** (2026-08-10)
+### 1.2d Sky leaks — **CAUSE FOUND: the moon is a point light** (2026-08-10)
+
+Supersedes the framing in §1.2c below. Bisect done (`ab-skyleak nosun` fixes it),
+symptom shot `screen/level13skyleak.png`: a cold blue-white wash over a ceiling,
+brightest at the wall/ceiling junction and fading across the ceiling — light
+entering through a band at the **top of a wall**, not a floor crack or a doorway.
+
+**Two facts, both from source, that together are the whole thing:**
+
+1. RTGL1 excludes sky geometry from shadow rays outright —
+   `VulkanDevice.cpp:514`, `rayCullMaskWorld_Shadow = INSTANCE_MASK_WORLD_0`,
+   commented *"skip shadows for … WORLD_2 - 'sky' geometry"*. Doom's sky-hack
+   bands (the strip at a wall top where GZDoom draws sky instead of an upper
+   texture) are flagged as sky, so the moon passes straight through them. 916
+   game-wide, **46 in MAP13**, 96–416 units.
+2. `rt_sun_angdiam` was hardcoded **0.5°** — the real moon, i.e. a *point*. Its
+   shadow test is one ray, yes or no, so a crack admits exactly as much light as
+   a doorway.
+
+**Why no per-surface rule can fix it.** MAP13's *wanted* moonlight also comes
+through holes in walls — the `F_SKY1` window slots. Wanted and unwanted openings
+are the same kind of geometry. "Sky walls occlude, sky flats don't" would have
+killed the west hall's shafts, which are the thing the moon was built for.
+
+**The fix is to stop treating the moon as a point.** `rt_sun_angdiam` is now a
+cvar. Widen the disc and RTGL1's `sampleDirectionalLight` → `sampleDisk` samples
+a point on it per shadow ray, so an opening admits light **in proportion to how
+much of the disc it reveals**: a doorway reveals all of it and is unchanged, a
+narrow band reveals a sliver and dims smoothly. And because an opening of size
+`d` seen from `L` away subtends `d/L`, it falls off with **distance** — the band
+still lights what is beside it and stops washing a ceiling 2000 units off, which
+is exactly the wash in the screenshot.
+
+Soft rolloff, **not** a cutoff. "Too small a hole" is only meaningful relative to
+how far away you are standing, which is why a hard unit threshold could not have
+been right at any value, and why this is an angle.
+
+**Cost:** one knob, both effects — it softens the wanted shafts by the same
+amount. The answer is the largest value whose shafts still look good.
+
+**Tune:** `tools\ab-moonsize.cmd <real|soft|wide|huge|absurd>` (0.5 / 3 / 8 / 16
+/ 40°), or live: `rt_sun_angdiam 8`. Launcher pins 0.5 for now — **unset until
+tested**. The `absurd` arm is the falsifier: if the leak survives 40°, the light
+is not squeezing through a small opening and this theory is wrong.
+
+**Noise:** a wider disc makes shadow rays disagree more, so the penumbra is
+noisier at 1 spp. Judge after the denoiser settles; if it stays grainy, raise
+`rt_shadowrays` (launcher pins 4) rather than abandoning the angle.
+
+### 1.2c Sky leaks — **superseded by 1.2d**, kept for the measurements
 
 Reported: light arriving in rooms that look sealed, "maps are clearly not fully
 well set". The natural request was a size gate — *only let gaps over N units in*.
@@ -172,6 +221,24 @@ crack into a visible shaft. Run `nosun` first.
 | **Fix** | Stripped `emissiveMult` from those four in the live `rt/data/textures.json` (backup `.pre_sflat_emis`). `gen_world_emissives.py` gains `LAMP_FLAT_NO_EMIS` + `strip_lamp_flat_emis()`, applied to the global JSON **unconditionally** — not behind `--no-scrub`, since this regression already shipped once. |
 | **Confirm** | Panel resolves into brick + distinct bright blobs; room still lit from the panel perimeter. If it now reads dead, the answer is `rt_ceiling_edge_intensity` / `rt_wall_strip_intensity` above 180 — **not** putting the mult back. |
 | **Not addressed** | 411 further `emissiveMult>0` entries have no `_e` mask, so they self-emit whole-albedo too. Most are sprites where that is intended (`FIRE*`, `TFOG*`, `BFLM*` — they pair it with `lightIntensity`). The suspicious ones are the flat-mult-1 world panels: `SMONF*`, `SMONLB*`. Unreviewed. |
+
+> **Half-superseded 2026-08-10 — see 1.6g.** The unmasked-emission diagnosis stands.
+> Stripping the mult and stopping there did not: it left the bulbs emitting nothing,
+> and the "keeps real perimeter lights that cast" assurance does not hold for a tiled
+> bulb lattice. `SFLATAP` stays stripped.
+
+### 1.6g Bulb arrays dead after 1.6f — **DATA FIX 2026-08-10** (needs confirm)
+
+| | |
+|---|---|
+| **Symptom** | Reported against `SFLATAS` (the 2×2 bulb ceiling): "doesn't emit light anymore, or ever so faintly." |
+| **Cause A — no glow** | Two edits stacked. `e0fe5ef` deleted `SFLATAS_e.png`/`SFLATAQ_e.png`/`SFLATAP_e.png` as collateral in a generic `SFLAT*` blob cleanup — the only files that RR commit touched outside its own work. 1.6f then removed the dangling mult. Correct individually, dead in combination: no mask **and** no mult is zero emission. The deleted masks were *good* — I recovered `SFLATAS_e.png` from `e0fe5ef^` and it is four clean bulbs at (15.5,15.5) (47.5,15.5) (15.5,47.5) (47.5,47.5), 140px each. |
+| **Cause B — barely any cast light** | 1.6f's "the fixtures keep real perimeter lights" is wrong for these textures. `RT_IsCeilingInsetLampTexture` (`rt_main.cpp:5775`) routes `SFLATAS`/`SFLATAQ` to the **perimeter walk** — a light every `rt_ceiling_edge_seglen` around the sector's linedefs. The `isFaux` branch immediately above it argues against exactly this: *"the perimeter walk … has no relation to where the art puts its bulbs … perimeter lights land between bulbs, in the middle of blank plate, and read as light coming from nowhere."* SFLATC/SPACECE were given `addLattice` for that reason; the real bulb arrays never were. Every bulb in a panel's interior casts nothing. Compounding it, the launcher pins `rt_ceiling_lamps 0 +rt_ceiling_lamp_intensity 0`, so the centre-sphere path is off too. |
+| **Fix (glow)** | `tools/gen_bulb_flat_masks.py` — recovers the `SFLATAS`/`SFLATAQ` masks from `e0fe5ef^`, generates one for `SPACEAZ`, writes all three to `rt/mat`, `rt/mat_dev` and `Retribution-RT-Materials/rt/mat`. Then `set_bulb_emissive.py 30`. `LAMP_FLAT_NO_EMIS` drops to `("SFLATAP",)` and the three names go into `textures_world_emis.json` at mult 30, so `_authored_emis_keep` protects them from the scrubs and a regeneration reproduces the state instead of undoing it. |
+| **SPACEAZ needed a new mask** | It has never had an `_e.png` in any commit. `_e_ceiling_blobs_from_albedo`'s absolute threshold (130) cannot make one: SFLATAS/SFLATAQ bulbs are near-white, SPACEAZ's are dull grey — peak luma **184**, socket body at 128, on brick running 96–136. At 130 it selected brick speckle and hit **no** socket (3.1% of pixels lit, scattered). `_bulb_lattice_mask()` works per 16-unit tile relative to that tile's own peak, and paints **full white** rather than sampling the albedo — the shader already multiplies emission by baseColor, so an albedo-sampled mask squares it and dull sockets stay dull. |
+| **Despeckled** | The recovered masks carried ~45px of stray single-pixel brick hits each. Invisible at the mult they shipped with (3); at 30 each speck is its own emitter smeared over the brick — a diffuse version of the same bug. `despeckle()` drops components under 12px, wrapping at the edges since flats tile. Final coverage: SFLATAS 13.7%, SFLATAQ 9.4%, SPACEAZ 9.4%. The generator refuses to write any mask over 35%. |
+| **Confirm** | Bulbs read as bright fixtures against dark brick, brick itself stays dark. If the *brick* glows, the mask is not being loaded (check `rt/mat_dev/` — developerMode loads PNG from there first). |
+| **Still open** | Cause B is unfixed — it needs `SFLATAS`/`SFLATAQ` moved onto `addLattice` with per-tile bulb offsets (SFLATAS `{15.5, 47.5}²`, SFLATAQ a 4×4 at 16-unit spacing) instead of the perimeter walk. That is an engine change and a rebuild. Mult 30 makes the bulbs *look* lit and feeds GI; per §12 emission is collected only on indirect bounces, so **it cannot cast a pool of light or a shadow at any strength**. Do not read a bright panel as this being solved. |
 
 ### 1.6c MAP02 yellow door jamb lamps nuclear — **ENGINE FIX 2026-08-05** (needs confirm)
 

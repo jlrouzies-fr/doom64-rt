@@ -233,6 +233,21 @@ rem rt_water_reflmax. rt_water_glow is a small unlit on-screen sheen so the
 rem pattern still reads in near-black rooms -- it casts no light. A/B the whole
 rem thing against stock physical water with tools\ab-water.cmd.
 rem
+rem rt_flame_light_*: every open flame in the game -- standing torches (TL*/TS*), wall
+rem sconces (A030/A031/A032/GTCH), loose fires (BFLM/GFLM/RFLM/YFLM) and the candle
+rem (CAND) -- is lit by an engine light, NOT by the sprite's attached light. Those sprites
+rem carry lightIntensity 0 in textures.json on purpose, so rt_flame_light_on 0 means the
+rem flames cast NOTHING; it is not a fallback to the old behaviour. Two reasons it had to
+rem leave texture meta: RTGL1 anchors a sprite light to the CENTRE of the billboard quad
+rem (a 100-unit torch lit the room from its own midriff, ~30 units under the flame, where
+rem the mod's GLDEFS asks for +80), and meta is static, so the only data-only flicker is a
+rem per-frame ramp across the A-E animation -- and every torch spawns at map load, so the
+rem whole level would pulse in lockstep. See docs/sprite-illumination.md, Case 7.
+rem flicker/speed were halved from the first pass at 0.28/0.42 (2026-08-10): a torch is
+rem the ambient light of its room, so depth that looks right on an isolated campfire
+rem swings the entire indirect bounce with it. rt_flame_light_flicker 0 gives a steady
+rem light while KEEPING the corrected position -- that is the knob to reach for, not _on 0.
+rem
 rem d64r-seqlight-fix.wad replaces maps to clear LightSequence chains -- phased
 rem waves of light that travel along a run of sectors with no fixture casting
 rem them. Under RT they are worse than in the original renderer: rt_sector_emis
@@ -253,7 +268,7 @@ start "" gzdoom.exe ^
   +rt_upscale_dlss 2 +rt_upscale_fsr2 0 +rt_rayreconstr 0 +rt_framegen 0 ^
   +gl_noskyboxes false ^
   +rt_sky 25 +rt_sky_always true +rt_sky_nowalls 0 ^
-  +rt_sun 1 +rt_sun_intensity 90 +rt_sun_a 25 +rt_sun_b 135 +rt_sun_color B4C8FF ^
+  +rt_sun 1 +rt_sun_intensity 90 +rt_sun_a 25 +rt_sun_b 135 +rt_sun_color B4C8FF +rt_sun_angdiam 0.5 ^
   +rt_moon_track 1 +rt_moon_tex_b 135 +rt_moon_yawsign 1 +rt_sky_yaw 0 +rt_moon_presets 1 ^
   +rt_classic 0 ^
   +rt_flsh 0 +rt_flsh_intensity 90 +rt_flsh_angle 42 +rt_flsh_pitch 22 ^
@@ -291,6 +306,9 @@ start "" gzdoom.exe ^
   +rt_faux_lamp_max 256 +rt_faux_lamp_stride 2 ^
   +rt_solo_lamps 1 +rt_solo_lamp_color FFFFFF +rt_solo_lamp_intensity 45 ^
   +rt_solo_lamp_radius 0.06 +rt_solo_lamp_zofs 8 +rt_solo_lamp_max 384 +rt_solo_lamp_stride 1 ^
+  +rt_flame_light_on 1 +rt_flame_light_scale 1.0 +rt_flame_light_radius 0.09 ^
+  +rt_flame_light_flicker 0.15 +rt_flame_light_speed 0.25 +rt_flame_light_wobble 2.0 ^
+  +rt_flame_light_maxdist 3072 +rt_flame_light_max 64 +rt_flame_light_debug 0 ^
   +rt_light_mark_intensity 25 +rt_light_mark_max 24 ^
   +rt_translucent_minalpha 0.72 ^
   +rt_spectre_alpha 0.20 +rt_nightmareimp_alpha 0.35 +rt_spectre_corpse_solid 1 +rt_ghost_solid 0 +rt_illum_volume 0 +rt_ghost_lightscale 1 ^
@@ -300,9 +318,11 @@ start "" gzdoom.exe ^
   +rt_rr_reset_hold 0 +rt_rr_reset_now 0 +rt_rr_reset_debug 0 ^
   +rt_restir_initial 32 ^
   +rt_water_style 1 +rt_water_tint_r 5 +rt_water_tint_g 23 +rt_water_tint_b 61 ^
-  +rt_water_caustic 1.5 +rt_water_reflmax 0.75 +rt_water_rough 0.1 ^
-  +rt_water_glow 0.15 +rt_water_veinref 0.016 ^
-  +rt_water_wavestren 3 +rt_water_wavespeed 1 +rt_water_areascale 0.35 ^
+  +rt_water_caustic 1.5 +rt_water_reflmin 0.1 +rt_water_reflmax 0.75 +rt_water_rough 0.1 ^
+  +rt_water_glow 0.15 +rt_water_veinref 0.1 ^
+  +rt_water_wavestren 0.4 +rt_water_wavespeed 0.2 +rt_water_areascale 0.35 ^
+  +rt_water_caustics 1.2 +rt_water_caustic_scale 0.09 +rt_water_caustic_speed 0.35 ^
+  +rt_water_caustic_dist 192 ^
   +rt_water_debug 0 ^
   +rt_normalmap_stren 1 +rt_heightmap_stren 1 %EXTRA%
 exit /b 0
