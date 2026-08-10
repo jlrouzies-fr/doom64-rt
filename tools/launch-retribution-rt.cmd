@@ -178,6 +178,18 @@ rem it can never crowd rt_faux_lamps or the real ceiling-edge walk. Found in MAP
 rem stepped-shaft room (sectors 24-30/43, tags 6-11) and reused in MAP08. Set
 rem rt_solo_lamps 0 to see those ceilings as authored.
 rem
+rem rt_eye_panels: C23, the gothic wall panel on MAP09's courtyard, carries three pairs of
+rem lit demon eyes in its art that the base game never wired a light to -- the same "fixture
+rem is real, light is missing" case as rt_solo_lamps, on a wall instead of a ceiling. It rides
+rem the wall-strip walk with its own colour, intensity and budget.
+rem
+rem It is NOT a textures.json lightIntensity, which was tried first and does nothing at all:
+rem RTGL1 puts an attached light at the exact centre of the primitive's quad with no normal
+rem offset, which on a wall face is coplanar with the wall and therefore buried in solid
+rem geometry. That failure looks identical to the light never being uploaded, which is why
+rem gen_world_emissives.py refuses lightIntensity on wall textures. Set rt_eye_panels 0 to
+rem see the panels as authored.
+rem
 rem d64r-seqlight-fix.wad replaces maps to clear LightSequence chains -- phased
 rem waves of light that travel along a run of sectors with no fixture casting
 rem them. Under RT they are worse than in the original renderer: rt_sector_emis
@@ -229,6 +241,7 @@ start "" gzdoom.exe ^
   +rt_ceiling_edge_debug 0 +rt_ceiling_edge_debug_marks 0 ^
   +rt_faux_lamps 1 +rt_faux_lamp_color 3C5078 +rt_faux_lamp_intensity 500 ^
   +rt_faux_lamp_max 256 +rt_faux_lamp_stride 2 ^
+  +rt_eye_panels 1 +rt_eye_panel_color FFB43C +rt_eye_panel_intensity 80 +rt_eye_panel_max 192 ^
   +rt_solo_lamps 1 +rt_solo_lamp_color FFFFFF +rt_solo_lamp_intensity 45 ^
   +rt_solo_lamp_radius 0.06 +rt_solo_lamp_zofs 8 +rt_solo_lamp_max 384 +rt_solo_lamp_stride 1 ^
   +rt_light_mark_intensity 25 +rt_light_mark_max 24 ^

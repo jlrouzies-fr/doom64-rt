@@ -90,14 +90,17 @@ NAME_RULES: list[tuple[str, float, float, tuple[int, int, int] | None]] = [
     ("SKEYFLBL", 1.3, 0, (60, 160, 255)),
     ("SKEYFL", 1.2, 0, None),
     ("C22", 1.0, 0, (255, 180, 60)),
-    # C23 is a wall panel, so the "no lightIntensity on walls" policy above would
-    # normally apply — but it was the one case where the policy produced a visible
-    # wrong: on MAP09 the panel glowed and lit nothing, so it read as a decal rather
-    # than a fixture (2026-08-09). 80 is deliberately well under the wall strips' 180;
-    # the panel repeats on 24 sidedefs of MAP09 alone, so anything stronger stacks into
-    # a courtyard-wide wash. RTGL glues the light to the prim centre, which for a
-    # 32x128 tile lands on the middle eye pair — close enough to the art to read right.
-    ("C23", 1.0, 80, (255, 180, 60)),
+    # The 0 here is not "we did not get round to it" — an attached light on a WALL
+    # texture cannot work at all, and the reason is worth recording because it was
+    # tried and reverted (2026-08-09). RTGL1 places a texture's attached light at the
+    # exact centre of the primitive's quad with no normal offset
+    # (VulkanDevice.cpp: center = average of the 4 quad verts, radius 0.1). On a sprite
+    # billboard that lands in open air and works. On a wall face it lands COPLANAR with
+    # the wall, i.e. buried in solid geometry, fully occluded — indistinguishable from
+    # the light never being uploaded. rt_wall_strips exists precisely because of this:
+    # it nudges its emitters 2 units off the wall first. C23 is lit there instead, via
+    # rt_eye_panels.
+    ("C23", 1.0, 0, (255, 180, 60)),
     ("D64LOGO", 1.0, 0, None),
     # Teleporter pads (MAP03 SPORT*) — cyan cast; mild floor lightIntensity OK.
     ("SPORT", 2.2, 110, (70, 190, 255)),
@@ -108,7 +111,7 @@ FORCE: dict[str, tuple[float, float, tuple[int, int, int] | None]] = {
     "D64LOGO": (1.0, 0.0, None),
     "CRTRAKA": (1.0, 0.0, (80, 220, 120)),
     "C22": (1.0, 0.0, (255, 180, 60)),
-    "C23": (1.0, 80.0, (255, 180, 60)),
+    "C23": (1.0, 0.0, (255, 180, 60)),
     "SKEYFLYL": (1.2, 0.0, (255, 200, 40)),
     "SKEYFLRD": (1.2, 0.0, (255, 50, 40)),
     "SKEYFLBL": (1.3, 0.0, (60, 160, 255)),

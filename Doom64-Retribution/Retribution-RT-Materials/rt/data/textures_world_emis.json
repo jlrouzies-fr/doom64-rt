@@ -7,9 +7,7 @@
     },
     {
       "textureName": "C23",
-      "emissiveMult": 1.0,
-      "lightColorHEX": "ffb43c",
-      "lightIntensity": 80.0
+      "emissiveMult": 1.0
     },
     {
       "textureName": "CFACEA",
