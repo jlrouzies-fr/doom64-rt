@@ -130,3 +130,9 @@ tools/_switch_qa/
 # A/B snapshots of built RTGL runtimes (DLL + SPIR-V). Reproducible from
 # git history via tools/build-rtgl.cmd; never commit the binaries.
 tools/rtgl-variants/
+
+# Brightened debug copy of the moon sky, written by tools/gen_moon_sky.py
+# --preview. The real texture is near-black and unreadable on a monitor; this
+# one is only for looking at. pack_rt_sky.py deliberately does not ship it --
+# it would put a second, wrong sky in the pk3 under a name GZDoom resolves.
+tools/d64r-rt-sky/textures/MOONSKY_preview.png
