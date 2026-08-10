@@ -5413,6 +5413,14 @@
       "emissiveMult": 0.3,
       "lightColorHEX": "3355ff",
       "noShadow": true
+    },
+    {
+      "emissiveMult": 2.0,
+      "textureName": "A028A0"
+    },
+    {
+      "emissiveMult": 2.0,
+      "textureName": "A029A0"
     }
   ]
 }

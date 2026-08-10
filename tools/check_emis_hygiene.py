@@ -37,6 +37,7 @@ OVERLAY_KEEPS = (
     "textures_pinky_eyes.json",
     "textures_fx.json",
     "textures_explosions.json",
+    "textures_statue_eyes.json",
 )
 
 # Sprite _e / scene-meta exemptions. Fire-frame coverage is SUFFIX-based on
@@ -45,6 +46,11 @@ OVERLAY_KEEPS = (
 KEEP_E_RE = re.compile(
     r"^(POSS|SPOS|CPOS|SSWV|TROO|TRO2|SARG|SAR2|SKUL|HEAD|BOSS|PAIN|"
     r"PLAYF|BFGF|FIRE[A-E]0|"
+    # The two gargoyle statues, red eyes only (tools/gen_statue_eye_emissives.py).
+    # Anchored to the single frame each actually has: A028A0/A029A0 and nothing else,
+    # so this cannot grow into a bare A02 prefix that would swallow the other seven
+    # A02x decorations.
+    r"A028A0|A029A0|"
     r"BAR1|BEXP|MISL|MISF|BAL|RBAL|TRCR|RECT|MANF|APLS|APBX|PLSS|PLSE|"
     r"PUFF|BLUD|TFOG|IFOG|FCAN|RT_|MZL)",
     re.I,

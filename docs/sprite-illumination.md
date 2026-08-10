@@ -16,6 +16,8 @@ mechanisms that look correct and silently do nothing.
 | `BOS2` Hell Knight fists | glow + per-fist analytic lights | implemented, built, verified in-engine |
 | `BOSS` Baron of Hell fists | same treatment, red | implemented, built, verified in-engine |
 | `BAL2` / `BAL8` projectiles | wrong light colour (violet & green on red sprites) | fixed in every `textures.json` + the generator |
+| `FIRE` bonfire | **missing from `RT_FLAME_KINDS` entirely** — 117 placements | added, built; see Case 7 and `docs/flame-lighting.md` |
+| `A028` / `A029` gargoyle statues | red eyes painted in the art, never emissive | `_e` masks + `emissiveMult`, live; see Case 8 |
 
 Verified running: `rt_hand_light: uploaded=10 of 10 wanted (cap 48, within 2048u) I=45`
 in MAP05 (5 knights × 2 fists), and `uploaded=14 of 14` in MAP13 (Barons + Hell Knights
@@ -526,6 +528,57 @@ room it stands in*. Depth that looks right on an isolated campfire swings the wh
 room's indirect bounce with it, and under a path tracer the bounce moves too. Halving
 both was the fix. If it still reads as too busy, drop `speed` before `flicker` — the
 4.11× harmonic is what sets the perceived rate.
+
+---
+
+## Case 8 — the gargoyle statues (`A028`, `A029`) — when auto-detect *is* the right tool
+
+`tools/gen_statue_eye_emissives.py`. Two decorations, one frame each: `64StatueDragon`
+(`A028A0`, 64×72) and `64StatueDemon` (`A029A0`, 64×64). Both are painted with red eyes
+that had no `_e` mask and no meta, so under RT they were dead pixels on a stone face.
+
+The interesting part is the mask source. Neither of the enemy pipeline's two sources
+exists here — `D64RTR_BRIGHTMAPS.PK3` has nothing for `A02*`, and with one frame apiece
+there is no donor to clone from. Which leaves the red-pixel auto-detect that
+`gen_enemy_eye_emissives.py` explicitly disables (`AUTO_EYES = False`) because it painted
+armour, blood and soldiers' backs.
+
+**Here it is exactly right, and the reason generalises.** On the monsters the detector was
+matching a hue *range* over sprites that contain plenty of legitimate red. On these two the
+red is a single exact palette entry that appears nowhere else on the sprite:
+
+| sprite | art colour | texels | positions |
+| --- | --- | --- | --- |
+| `A028A0` | `(128, 32, 0)` | 4 | `y39: x24,25 ǀ x31,32` |
+| `A029A0` | `(104, 0, 0)` | 6 | `y43: x23 ǀ x29` · `y44: x24,25 ǀ x27,28` |
+
+Symmetric pairs, in the head, and a measured **zero** other pixels above saturation 0.45 in
+the red hues anywhere on either sprite. So the rule is a lookup, not a threshold. The tool
+also pins the expected texel coordinates and **aborts** if the art ever stops matching,
+rather than quietly inventing eyes on a sprite it no longer understands — the trap from
+"check the source art before lighting a fixture".
+
+**Colours differ on purpose.** The enemy eyes all share `ff0a00`; these two do not agree
+with each other in the art — the dragon's are orange (`128,32,0` is 4:1 red:green), the
+demon's are pure blood red — and they stand in the same rooms in MAP23 and MAP34. Each
+keeps its own hue at full saturation: `ff4000` and `ff0a00`. Full saturation is Mechanism 3,
+not taste: the shader multiplies by baseColor, so a mask painted at the art's own dim value
+gets the darkness applied twice.
+
+`emissiveMult 2.0`, the enemy-eye house value. **No cast light** — a 4-pixel eye on a lump
+of stone is not a lamp, and `lightIntensity` here would anchor at the billboard centre
+anyway (Mechanism 2). If a room later wants a red pool at a statue's feet, that is an
+engine-side light on the `RT_FLAME_KINDS` pattern, not a number in `textures.json`.
+
+Placement, all 71 UDMF maps: `A028` ×62 (MAP13 ×17, 15 ×12, 17 ×8, 23 ×9, 21 ×6, plus 22,
+24, 30, 34), `A029` ×26 (**MAP23 ×24**, 22 ×1, 34 ×1). MAP23 is the room to check.
+
+Registered in `check_emis_hygiene.py` — `textures_statue_eyes.json` in `OVERLAY_KEEPS` and
+`A028A0|A029A0` in `KEEP_E_RE`, both anchored to the exact frame names so they can never
+widen into a bare `A02` prefix and swallow the other seven `A02x` decorations. Without that
+registration a later `gen_world_emissives.py` scrub would treat them as strays.
+
+**Not verified in-engine.**
 
 ---
 
