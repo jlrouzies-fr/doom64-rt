@@ -1,9 +1,17 @@
 # Fake sector lights — survey and playtest list
 
-Animated sector light with nothing in the world casting it: travelling waves
-(sequence chains), per-sector blinks, and effects a map's own ACS installs at
-load. Found by `tools/scan_light_specials.py`, stripped by
-`tools/make_seqlight_fix.py`.
+Sector light with nothing in the world casting it: travelling waves (sequence
+chains), per-sector blinks, effects a map's own ACS installs at load, and
+painted light shafts that never animate at all. The first three are found by
+`tools/scan_light_specials.py` and the fourth by
+`tools/scan_fake_lightshafts.py`; all four are repaired by
+`tools/make_seqlight_fix.py` into one wad.
+
+Three of the four are *animation* with no source. The fourth is not animated,
+and is the only one where the repair has a second half: where the paint was
+imitating light from a real window, removing it leaves a real window with
+nothing coming through, so the light gets given back for real. See
+[The fourth family](#the-fourth-family-painted-light-shafts).
 
 ## The mechanism
 
@@ -96,15 +104,23 @@ sloppy lighting. If it stays, it stays on purpose.
 
 Flip `enabled=True` on the entry in `tools/make_seqlight_fix.py` — the `CHAINS`
 table for a sequence chain, `BLINKS` for a per-sector blink, `SCRIPTED` for an
-ACS call — then:
+ACS call, `SHAFTS` for a painted light shaft — then:
 
     python tools/make_seqlight_fix.py           # build
     python tools/make_seqlight_fix.py --list    # show all three tables, build nothing
 
 The launcher already loads `d64r-seqlight-fix.wad`. The builder asserts what it
 finds everywhere it touches — the 1/2/3/4 family for a chain member, the exact
-value for a blink, the exact byte signature for an ACS call — and aborts rather
-than patching blind if the map data ever changes.
+value for a blink, the exact byte signature for an ACS call, the exact current
+`lightlevel` for a painted shaft — and aborts rather than patching blind if the
+map data ever changes. Sector indices are positional, so an edit that inserts one
+sector shifts every entry below it; asserting the value we expect to find is what
+turns that into a build failure instead of a silently mis-patched room.
+
+A painted shaft also needs its sky pk3 rebuilt if the moon moved:
+
+    python tools/gen_moon_sky.py --azimuth 135 --altitude 25
+    python tools/pack_rt_sky.py
 
 ## The other family: per-sector blinks
 
@@ -235,6 +251,124 @@ one** match inside the script's own address range and aborts otherwise, which is
 the whole safety story: if the map is ever recompiled and a call moves or its
 arguments change, the build fails rather than NOP-ing some unrelated instruction.
 The format marker is checked too, so a map in any other ACS format refuses.
+
+## The fourth family: painted light shafts
+
+The first three families all *animate*, which is what made them findable — a
+survey of specials or of ACS calls turns them up. This one does not move at all,
+carries no special and no script, and every scanner above reports the map clean.
+
+A map author cut wedge-shaped sectors out of a room's floorplan, gave them a
+higher `lightlevel` than the room, and left everything else identical: same
+floor height, same ceiling height, same floor flat, same ceiling flat. In the
+software renderer that reads as light slanting in through a window. It is the
+light drawn on by hand.
+
+Under RT it stops being a drawing. `rt_sector_emis` makes any sector at or above
+the per-map threshold a **surface emitter**, so a wedge at 255 inside a room at
+170 does not merely look brighter — it radiates, throws GI onto the pillars
+beside it, and (because the wedge spans the room's full height) emits from the
+**ceiling as well as the floor**.
+
+    python tools/scan_fake_lightshafts.py 13
+
+The signature the scanner looks for is exactly "identical but brighter":
+`S.lightlevel − N.lightlevel >= 48` across a two-sided line, with floor height,
+ceiling height and both flats equal, and no special on `S`. A real fixture
+almost never looks like this — a lamp recess changes the ceiling height, a light
+panel changes the flat. When nothing changes but the number, the brightness is
+not describing anything that is there. Sky-ceilinged sectors are skipped: those
+are open to a sky that is a genuine RT light, so bright is correct.
+
+### DONE — MAP13, four fans in two halls
+
+Reported from play as `screen/level13fakeoutside light streaks.png`: bands
+across floor and ceiling of a large dark hall, reading as moonlight through a
+window, with no moon anywhere.
+
+| sectors | host room | fans | from | to |
+|---|---|---|---|---|
+| 136, 137 | 75 (L170) | 5 wedges each, west hall | 255 | 170 |
+| 134, 135 | 14 (L180) | 5 wedges each, north colonnade | 255 | 180 |
+
+Two sectors per hall, and **each one is the whole fan** — Doom sectors need not
+be contiguous, so sector 136 is all five of its wedges at once, the same trick as
+MAP03's twin staircases. MAP13's threshold is 200, so 255 emits and the host
+rooms at 170/180 do not: the contrast in the screenshot is the whole mechanism.
+
+The west fans splay east out of two **real** `F_SKY1` window slots in the west
+wall (sectors 54/55, 15 units deep at `x −2063…−2048`, `z 40…160`). The north
+fans splay south off a colonnade open to the sky. That is what makes this family
+different from the other three: the paint was imitating something that could
+actually exist.
+
+### The other half of the repair — an actual moon
+
+Dropping the wedges alone would leave both halls with real windows and nothing
+coming through them. So the light is given back for real:
+
+- **The disc you see.** `MOONSKY`, built by `tools/gen_moon_sky.py` and packed by
+  `tools/pack_rt_sky.py` into `d64r-rt-sky.pk3`. It is the WAD's own `SPACE`
+  starfield tiled to **1024 wide** with one moon painted in. The width is not
+  cosmetic: `hw_skydome.cpp` uses `xscale = texw < 1024 ? floor(1024/texw) : 1`,
+  so the 256-wide `SPACE` wraps **four times** around the horizon — painting a
+  moon into it at 256 would put four moons in the sky. At 1024 (four copies of
+  `SPACE`, so the starfield is pixel-identical to before) it wraps once.
+- **The light you feel.** `rt_sun`, RTGL1's analytic directional light, pinned in
+  the launcher at intensity 90, altitude 25°, azimuth 135°, colour `B4C8FF`.
+
+They are two halves of one thing and must be aimed alike. RT's sky is a
+rasterised cubemap sampled on ray miss and is **not** importance-sampled, so the
+painted disc casts nothing usable at 1 spp — it is scenery. `rt_sun` casts the
+shafts but draws nothing. Move one, move the other.
+
+**Why 135°.** `rt_sun_b` is the moon's own compass bearing (the code negates it
+to get the travel direction). The west windows need light travelling `+x`; the
+north colonnade needs it travelling `−y`. North-west is the only bearing that
+gives both, at a 45° rake each. Due west (`ab-moon.cmd west`) serves the west
+hall alone at full rake and abandons the colonnade — the two fans were painted
+implying two different suns, which is itself a tell that neither was real.
+
+**The one thing that may be wrong.** The moon's texture column comes from a
+derivation off `SkyVertexDoom` + `SetupMatrices` — a dome column at texture `u`
+sits at world azimuth `−360·u`. The dome mirrors in `x` *and* negates `u`, so a
+sign error there would cancel and go unnoticed. If in play the shafts arrive from
+a bearing the moon plainly is not at, that is this, and the fix is one rebuild:
+
+    python tools/gen_moon_sky.py --flip-u && python tools/pack_rt_sky.py
+
+Intensity, altitude and bearing are all pre-set as arms of `tools/ab-moon.cmd`
+(`off | dim | moon | bright | noon | west`), including a deliberately
+over-lit `noon` arm whose only job is to make the shaft geometry unmistakable
+when you cannot tell a bad azimuth from a light that is merely too dim to see.
+
+`rt_sun` is a **global** cvar, so the moon is up on every map, not only MAP13.
+That is coherent — the sky is a starfield everywhere — but it is also the one
+change here with reach beyond the reported room. Fully enclosed maps get nothing
+(a directional light is occluded by geometry like any other), but any map with a
+geometric **sky leak** will now show a hard-edged directional wash where it
+previously showed only the diffuse `rt_sky` bleed. MAP01 had exactly such a leak
+(§1.2 of `open-issues-rt-lighting.md`, mitigated by dropping to a night sky at
+`rt_sky 25`); it is the first place to look if a room outside MAP13 reads wrong.
+
+### The rest of the game — 149 shafts in 15 maps, unexamined
+
+    python tools/scan_fake_lightshafts.py
+
+| map | emitting | map | emitting | map | emitting |
+|---|---|---|---|---|---|
+| MAP01 | 12 | MAP12 | 10 | MAP20 | 9 |
+| MAP02 | 37 | MAP13 | **4 — done** | MAP21 | 9 |
+| MAP05 | 1 | MAP15 | 10 | MAP22 | 10 |
+| MAP08 | 8 | MAP16 | 10 | MAP24 | 1 |
+| MAP10 | 10 | MAP18 | 11 | MAP34 | 7 |
+
+None of these have been looked at in play, and the count is **not** a to-do
+list. The geometric test is deliberately loose, and a bright sector that happens
+to match its neighbour's flats can still be perfectly well motivated — a bay
+under a lamp fixture, a floor around a glowing pool. Judge them the way the
+blinks are judged: **is there something in the room the light could be coming
+from**, and if the answer is a window, the repair is a moon, not a deletion.
 
 ## Load-order trap: maps that are also in the 3D-floor wad
 

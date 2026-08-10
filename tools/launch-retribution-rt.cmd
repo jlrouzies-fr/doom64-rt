@@ -72,7 +72,21 @@ rem Measured ~20% improvement at 8, which is a poor trade -- and that result als
 rem shows the residual motion noise is NOT Monte Carlo variance.
 rem Requires tools\build-rtgl.cmd (RTGL1.dll + nvngx_dlssd.dll in rt\bin\).
 rem All maps: d64r-3dfloor-rtfix.wad strips hangy Sector_Set3dFloor (special 160).
-rem Sky: sector skyboxes ignored under RT (white/black fix); d64r-rt-sky forces SPACE night flat + rt_sky_always.
+rem Sky: sector skyboxes ignored under RT (white/black fix); d64r-rt-sky forces the
+rem  MOONSKY night flat + rt_sky_always. MOONSKY is the WAD's SPACE starfield tiled to
+rem  1024 wide (hw_skydome tiles anything narrower, so 256-wide SPACE wraps 4x and a
+rem  painted moon would appear four times) with one moon in it -- tools\gen_moon_sky.py.
+rem The moon is a PAIR, and the two halves have to agree:
+rem  - the disc you see is painted in MOONSKY at azimuth 135 (north-west);
+rem  - the light you feel is rt_sun, an analytic directional light down the same
+rem    bearing. RT's sky is a rasterised cubemap sampled on ray miss and is NOT
+rem    importance-sampled, so the painted disc alone is far too noisy at 1 spp to
+rem    light a room -- it is scenery, not a source. Move one, move the other.
+rem  135/25 is not arbitrary: it is the one bearing that serves both of MAP13's
+rem  window walls at once (west-facing slots need light travelling +x, the north
+rem  colonnade needs it travelling -y; north-west gives both a 45-degree rake).
+rem  This replaces the painted shafts d64r-seqlight-fix.wad removes from MAP13 --
+rem  see docs/sequence-light-chains.md, "The fourth family". Tune with tools\ab-moon.cmd.
 rem d64r-lostsoul-rt.pk3: yellow SKUL sprites + LSGL offset-glow EventHandler.
 rem d64r-rt-flashlight.pk3: stylized 5-cell battery HUD (rt_flsh_charge / battstate; F toggles)
 rem  + battery sound cues (rt_flsh_flicker counter; d64rt_flsh_sound / _vol to mute or tune).
@@ -189,6 +203,21 @@ rem brightmap marks six pixels, three pairs of dark red demon eyes, and gen_worl
 rem was painting 613 pixels of mortar highlight amber on top of them. The fixture was ours,
 rem not the artist's; the mask is fixed at the source and no light is invented for it.
 rem
+rem rt_water_style: Doom 64 water flats (D64W2_01 in MAP10/11/34, D64W1_01 in
+rem MAP08/14/15/16/22/23/30/34) are tagged isWater in rt/data/textures.json by
+rem tools\set_water_meta.py, which hands them to RTGL's refl/refr pass. RTGL's
+rem stock water there is physical -- refract into the media, absorb, mirror the
+rem rest -- which reads far too real for this art AND is wrong for these maps:
+rem they are opaque FLOOR flats, nothing exists under them to refract into.
+rem Stylized mode keeps the surface opaque and spends the checkerboard split on
+rem "lit water surface" vs "mirror reflection" instead of "refraction" vs
+rem "reflection": deep blue body (rt_water_tint_*) carrying the flat's own
+rem caustic veins, shimmering with the animated wave normal (rt_water_caustic,
+rem rt_water_wavestren), under a Fresnel-weighted reflection capped by
+rem rt_water_reflmax. rt_water_glow is a small unlit on-screen sheen so the
+rem pattern still reads in near-black rooms -- it casts no light. A/B the whole
+rem thing against stock physical water with tools\ab-water.cmd.
+rem
 rem d64r-seqlight-fix.wad replaces maps to clear LightSequence chains -- phased
 rem waves of light that travel along a run of sectors with no fixture casting
 rem them. Under RT they are worse than in the original renderer: rt_sector_emis
@@ -209,6 +238,7 @@ start "" gzdoom.exe ^
   +rt_upscale_dlss 2 +rt_upscale_fsr2 0 +rt_rayreconstr 0 +rt_framegen 0 ^
   +gl_noskyboxes false ^
   +rt_sky 25 +rt_sky_always true ^
+  +rt_sun 1 +rt_sun_intensity 90 +rt_sun_a 25 +rt_sun_b 135 +rt_sun_color B4C8FF ^
   +rt_classic 0 ^
   +rt_flsh 0 +rt_flsh_intensity 90 +rt_flsh_angle 42 +rt_flsh_pitch 22 ^
   +rt_flsh_battery 1 +rt_flsh_on_secs 30 +rt_flsh_die_secs 4 +rt_flsh_off_secs 5 ^
@@ -253,6 +283,11 @@ start "" gzdoom.exe ^
   +rt_rr_reset_on_lightcut 1 +rt_rr_reset_on_dynlight 1 +rt_rr_reset_delta 0.5 +rt_rr_reset_min_ms 250 ^
   +rt_rr_reset_hold 0 +rt_rr_reset_now 0 +rt_rr_reset_debug 0 ^
   +rt_restir_initial 32 ^
+  +rt_water_style 1 +rt_water_tint_r 5 +rt_water_tint_g 23 +rt_water_tint_b 61 ^
+  +rt_water_caustic 1.5 +rt_water_reflmax 0.75 +rt_water_rough 0.1 ^
+  +rt_water_glow 0.15 +rt_water_veinref 0.03 ^
+  +rt_water_wavestren 3 +rt_water_wavespeed 1 +rt_water_areascale 0.35 ^
+  +rt_water_debug 0 ^
   +rt_normalmap_stren 1 +rt_heightmap_stren 1 %EXTRA%
 exit /b 0
 

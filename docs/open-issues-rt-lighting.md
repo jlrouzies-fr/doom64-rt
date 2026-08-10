@@ -38,6 +38,19 @@ Do not treat this as a progress cheer sheet — only unresolved / partially reso
 | **Confirmed cause** | **`rt_sky`** through an aperture (not emis GI / dynlights). Amplified by bright `RSKY1` @ `rt_sky 200`. |
 | **Fix landed** | `d64r-rt-sky.pk3` → **`SPACE`** night flat (not RSKY1); play launcher `+rt_sky 25`; sector skybox rooms **Ignored** under RT (`hw_walls`/`hw_flats` when `portalState.inskybox`) + `rt_sky_always` fills outdoor sky; `gl_noskyboxes false`. User: sky looks good. Residual geometric seams may still need hunting at very high sky intensity. |
 
+### 1.2b MAP13 painted moonlight → a real moon — **LANDED 2026-08-10** (needs visual confirm)
+
+| | |
+|---|---|
+| **Symptom** | `screen/level13fakeoutside light streaks.png` — parallel bands across the floor **and ceiling** of a large dark hall, reading as moonlight through a window, with no moon and nothing else casting them. |
+| **Cause** | A fourth family of fake light, invisible to `scan_light_specials.py` because it never animates: **painted shafts**. MAP13 sectors 136/137 (west hall) and 134/135 (north colonnade) are wedge fans at `lightlevel 255` inside rooms at 170/180, identical to those rooms in floor height, ceiling height and both flats. MAP13's `rt_sector_emis` threshold is 200, so the wedges emit and the rooms do not. Each sector is the *whole* fan — non-contiguous, like MAP03's stairs — and spans the room's full height, which is why the ceiling streaks too. |
+| **Found by** | `tools/scan_fake_lightshafts.py 13` — new; the geometric "identical but brighter" test. Whole game: 149 emitting shafts across 15 maps, only MAP13 acted on. |
+| **Fix — half 1** | `tools/make_seqlight_fix.py` gained a `SHAFTS` table; the four sectors drop to their host rooms' lightlevel. MAP13 also gets 2 `Sector_Set3dFloor` linedefs re-stripped, since this wad now replaces MAP13 and loads after `d64r-3dfloor-rtfix.wad` (the load-order trap, and it bit here — MAP13 *is* in that wad). |
+| **Fix — half 2** | The windows are **real** `F_SKY1`, so the light is given back rather than deleted: `MOONSKY` (`tools/gen_moon_sky.py` → `tools/pack_rt_sky.py`) paints a moon into the `SPACE` starfield tiled to 1024 wide, and the launcher pins `rt_sun 1 / 90 / a 25 / b 135 / B4C8FF` to cast the actual shafts. Disc and light must stay aimed alike — the RT sky cubemap is not importance-sampled, so the disc casts nothing usable at 1 spp. |
+| **Watch** | `rt_sun` is **global**. Enclosed maps are unaffected (a directional light is occluded like any other), but any map with a geometric **sky leak** now gets a hard-edged directional wash where §1.2 previously left only diffuse `rt_sky` bleed. MAP01 is the first place to check. |
+| **Confirm** | `tools\ab-moon.cmd moon 13` — halls lit by shafts raking in from the north-west windows, moon visible in the sky on the same bearing. `tools\ab-moon.cmd off 13` is the control (paint gone, nothing given back). If the shafts and the disc disagree on bearing, the sky's `u` sign is wrong: `python tools\gen_moon_sky.py --flip-u && python tools\pack_rt_sky.py`. |
+| **Detail** | `docs/sequence-light-chains.md`, "The fourth family". |
+
 ### 1.3 Map PointLightFlicker (9802) / wall SMON — gated off
 
 9802s by wall terminals are **not** the desired spawn blink. Play launcher sets `rt_dynlight_flicker 0` so those Flicker lights are not uploaded; ceiling lamps handle §1.1.

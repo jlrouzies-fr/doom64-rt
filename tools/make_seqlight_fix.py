@@ -1,13 +1,16 @@
 """
-Build d64r-seqlight-fix.wad: strip chosen animated sector-light specials.
+Build d64r-seqlight-fix.wad: strip chosen sources of sourceless sector light.
 
-Three families, three tables. CHAINS holds LightSequence chains, described below.
+Four families, four tables. CHAINS holds LightSequence chains, described below.
 BLINKS holds per-sector blink specials (dLight_Flicker and friends), which need
 no walk to resolve -- one special animates one sector, so the sector list is the
 effect. SCRIPTED holds Light_Glow/Flicker/Strobe calls the map's own ACS makes at
 runtime, which carry no sector special at all and so are invisible to any survey
-of the map geometry -- see the Scripted class. All three end up in the same
-output wad, which may cover several maps.
+of the map geometry -- see the Scripted class. SHAFTS holds painted light shafts,
+which carry no special and never animate at all: wedge sectors given a higher
+lightlevel than the room they sit in, identical to it in every other respect --
+see the Shaft class. All four end up in the same output wad, which may cover
+several maps.
 
 A LightSequenceStart (special 2) sector anchors a chain of alternating
 LightSequenceSpecial1/2 (3/4) sectors. GZDoom walks it once at map load
@@ -42,6 +45,11 @@ Chain membership comes from tools/scan_light_specials.py, which mirrors
 PhaseHelper's walk. Re-run it after any map data change:
 
   python tools/scan_light_specials.py 3 12 --chains
+
+Painted shafts come from tools/scan_fake_lightshafts.py, which has to be a
+separate survey because nothing about them is a special:
+
+  python tools/scan_fake_lightshafts.py 13
 """
 
 from __future__ import annotations
@@ -159,6 +167,72 @@ BLINKS = [
              "monitors set into walls. Each holds its own 9802 FlickerLight thing "
              "at height 32, so the blink is authored deliberately and has a "
              "source. A flickering CRT is not a fake light.",
+    ),
+]
+
+
+class Shaft:
+    """A painted light shaft: sectors whose only claim to being lit is a number.
+
+    The fourth family, and the only one that never animates -- which is why the
+    first three surveys all missed it. There is no special and no script. The
+    author cut wedge-shaped sectors out of a room's floorplan and gave them a
+    higher lightlevel than the room, leaving floor height, ceiling height and
+    both flats identical. In the software renderer that is sunlight slanting
+    through a window, drawn by hand.
+
+    Under RT it stops being a drawing. rt_sector_emis makes any sector at or
+    above the per-map threshold a surface emitter, so a wedge at 255 inside a
+    room at 170 radiates, casts GI on the pillars beside it and lights the
+    ceiling as well as the floor, with nothing in the world casting it.
+
+    The repair is not to delete a special -- there is none -- but to rewrite the
+    lightlevel down to the host room's, which is what the room would have been
+    if the shaft had never been painted. `to_light` is therefore normally the
+    neighbouring sector's own value. `from_light` is asserted before the write,
+    the same way the other three families assert their specials: if the map data
+    ever changes the build fails rather than rewriting the wrong sector.
+
+    Where the shaft was painted under a real F_SKY1 aperture, dropping it is only
+    half the job -- the room then has a window and no light through it. That half
+    is the moon: see rt_sun_* in tools/launch-retribution-rt.cmd.
+    """
+
+    def __init__(self, mapname: str, sectors: list[int], from_light: int,
+                 to_light: int, enabled: bool, note: str):
+        self.mapname = mapname
+        self.sectors = sectors
+        self.from_light = from_light
+        self.to_light = to_light
+        self.enabled = enabled
+        self.note = note
+
+
+SHAFTS = [
+    Shaft(
+        "MAP13", [136, 137], from_light=255, to_light=170,
+        enabled=True,
+        note="THE REPORTED ONE (screen/level13fakeoutside light streaks.png). "
+             "The west hall, room sector 75 at L170, x -2016..-1024. Two sectors, "
+             "each one a FAN of five disjoint wedges -- Doom sectors need not be "
+             "contiguous -- splaying east out of the two real F_SKY1 window slots "
+             "in the west wall (sectors 54/55, 15 units deep at x -2063..-2048, "
+             "z 40..160). The wedges span the room's full height (floor -24, "
+             "ceiling 192) and share its CASFL4 floor and HFL15 ceiling exactly, "
+             "so at L255 against MAP13's threshold of 200 they emit from BOTH "
+             "surfaces -- which is why the streaks appear on the ceiling as well "
+             "as the floor. Dropped to 170 to match sector 75; the light comes "
+             "back through the windows for real, from the moon.",
+    ),
+    Shaft(
+        "MAP13", [134, 135], from_light=255, to_light=180,
+        enabled=True,
+        note="The north hall, room sector 14 at L180, the same defect twice more: "
+             "two five-wedge fans at (216..688, 664..872) and (-488..-16, "
+             "664..872), splaying south off the north wall, floor 0 / ceiling 192 "
+             "and CASFL27/HFL15 on both sides of the boundary. Fixed with the "
+             "west pair rather than left to be re-reported -- it is one room away "
+             "and the same shot would have caught it next.",
     ),
 ]
 
@@ -416,6 +490,47 @@ def clear_specials(
     return re.sub(r"(?ms)^sector\s*\{(.*?)\}", scrub, text), cleared
 
 
+def set_lightlevels(
+    text: str, wanted: dict[int, tuple[int, int]], mapname: str
+) -> tuple[str, int]:
+    """wanted maps sector index -> (expected lightlevel, new lightlevel).
+
+    The expected value is asserted before the write for the same reason
+    clear_specials asserts the special: sector indices are positional, so a map
+    edit that inserts one sector silently shifts every entry below it. Checking
+    the value we think is there turns that into a build failure.
+
+    A sector with no lightlevel= line at all is at the UDMF default of 160, and
+    is written out with the field added rather than skipped.
+    """
+    index = -1
+    changed = 0
+
+    def rewrite(m: re.Match[str]) -> str:
+        nonlocal index, changed
+        index += 1
+        if index not in wanted:
+            return m.group(0)
+        body = m.group(1)
+        expect, new = wanted[index]
+        found = re.search(r"lightlevel\s*=\s*(\d+)\s*;", body)
+        got = int(found.group(1)) if found else 160
+        if got != expect:
+            raise SystemExit(
+                f"{mapname} sector {index}: expected lightlevel {expect}, found "
+                f"{got} — map data changed, refusing to patch blind. Re-run "
+                f"tools/scan_fake_lightshafts.py."
+            )
+        changed += 1
+        if found:
+            body = re.sub(r"lightlevel\s*=\s*\d+\s*;", f"lightlevel = {new};", body)
+        else:
+            body = body.rstrip() + f"\nlightlevel = {new};\n"
+        return "sector\n{" + body + "}"
+
+    return re.sub(r"(?ms)^sector\s*\{(.*?)\}", rewrite, text), changed
+
+
 def show_table() -> None:
     for c in CHAINS:
         state = "STRIP" if c.enabled else "keep "
@@ -431,6 +546,11 @@ def show_table() -> None:
         state = "STRIP" if s.enabled else "keep "
         print(f"[{state}] {s.mapname} acs script {s.script} {s.label}")
         print(f"          {s.note}")
+    for h in SHAFTS:
+        state = "STRIP" if h.enabled else "keep "
+        print(f"[{state}] {h.mapname} painted shaft sectors={h.sectors} "
+              f"L{h.from_light} -> L{h.to_light}")
+        print(f"          {h.note}")
 
 
 def main() -> None:
@@ -441,7 +561,8 @@ def main() -> None:
     active = [c for c in CHAINS if c.enabled]
     activeBlinks = [b for b in BLINKS if b.enabled]
     activeScripted = [s for s in SCRIPTED if s.enabled]
-    if not active and not activeBlinks and not activeScripted:
+    activeShafts = [h for h in SHAFTS if h.enabled]
+    if not active and not activeBlinks and not activeScripted and not activeShafts:
         raise SystemExit("nothing enabled — nothing to build")
 
     # sector index -> the specials it may currently carry, per map
@@ -467,9 +588,20 @@ def main() -> None:
         acs_by_map.setdefault(s.mapname, []).append(s)
         labels.setdefault(s.mapname, []).append(f"acs {s.label}")
 
+    # Painted shafts rewrite a value rather than removing a special, so they get
+    # their own per-map dict: sector index -> (expected, new) lightlevel. A map
+    # can appear here with no special work at all, which is MAP13's case.
+    light_by_map: dict[str, dict[int, tuple[int, int]]] = {}
+    for h in activeShafts:
+        m = light_by_map.setdefault(h.mapname, {})
+        for i in h.sectors:
+            m[i] = (h.from_light, h.to_light)
+        labels.setdefault(h.mapname, []).append(
+            f"shaft {h.sectors} L{h.from_light}->L{h.to_light}")
+
     lumps = read_wad_lumps(WAD)
     items: list[tuple[str, bytes]] = []
-    for mapname in dict.fromkeys([*by_map, *acs_by_map]):
+    for mapname in dict.fromkeys([*by_map, *acs_by_map, *light_by_map]):
         wanted = by_map.get(mapname, {})
         start, end = map_lump_range(lumps, mapname)
         members = {nm.upper(): blob for nm, blob in lumps[start:end]}
@@ -479,6 +611,11 @@ def main() -> None:
         fixed, n = clear_specials(decode_textmap(members["TEXTMAP"]), wanted, mapname)
         if n != len(wanted):
             raise SystemExit(f"{mapname}: cleared {n} of {len(wanted)} sectors")
+
+        lights = light_by_map.get(mapname, {})
+        fixed, nlight = set_lightlevels(fixed, lights, mapname)
+        if nlight != len(lights):
+            raise SystemExit(f"{mapname}: relit {nlight} of {len(lights)} sectors")
 
         behavior, nacs = (
             strip_acs_lights(members["BEHAVIOR"], acs_by_map[mapname], mapname)
@@ -510,12 +647,12 @@ def main() -> None:
                 items.append((nm, blob))
         if items[-1][0].upper() != "ENDMAP":
             items.append(("ENDMAP", b""))
-        print(f"{mapname}: cleared {n} sectors, {nacs} acs call(s) "
-              f"({', '.join(labels[mapname])})"
+        print(f"{mapname}: cleared {n} sectors, relit {nlight} sectors, "
+              f"{nacs} acs call(s) ({', '.join(labels[mapname])})"
               f"{f', re-stripped {n3d} 3D-floor linedef(s)' if n3d else ''}")
 
     write_wad(OUTWAD, items)
-    maps = len({*by_map, *acs_by_map})
+    maps = len({*by_map, *acs_by_map, *light_by_map})
     print(f"wrote {OUTWAD} maps={maps} lumps={[nm for nm, _ in items]}")
 
 

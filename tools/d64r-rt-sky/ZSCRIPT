@@ -5,11 +5,28 @@ class D64RtSkyFix : EventHandler
 	override void WorldLoaded(WorldEvent e)
 	{
 		// Retribution night/star sky flat for the raster sky path.
-		// Prefer SPACE (near-black starfield in the WAD). Never RSKY1 — that
+		//
+		// MOONSKY is the WAD's own SPACE starfield tiled to 1024 wide with a
+		// moon painted into it (tools/gen_moon_sky.py). The width matters:
+		// hw_skydome picks xscale = texw < 1024 ? floor(1024/texw) : 1, so the
+		// 256-wide SPACE wraps FOUR times around the horizon. At 1024 it wraps
+		// once, which is the difference between one moon and four. The starfield
+		// itself is unchanged -- MOONSKY is literally four copies of SPACE.
+		//
+		// The moon is the visible half of a pair. It does not light anything on
+		// its own: RT's sky is a rasterised cubemap sampled on ray miss and is
+		// not importance-sampled, so a small bright disc in it is far too noisy
+		// to carry a room at 1 spp. The shafts come from the analytic
+		// directional light, rt_sun_* in tools/launch-retribution-rt.cmd, aimed
+		// down the same bearing the disc is painted at. Change one, change both.
+		//
+		// Fall back to plain SPACE, then SPACEAA, then ISUCK. Never RSKY1 -- that
 		// bright Doom II fallback washed indoor sky seams like daylight.
 		// Sector skybox rooms (SPACE* mural boxes) are Ignored under RT
 		// (white/black bug); rt_sky_always fills outdoor F_SKY1 with this flat.
-		TextureID sky = TexMan.CheckForTexture("SPACE", TexMan.Type_Any);
+		TextureID sky = TexMan.CheckForTexture("MOONSKY", TexMan.Type_Any);
+		if (!sky.IsValid())
+			sky = TexMan.CheckForTexture("SPACE", TexMan.Type_Any);
 		if (!sky.IsValid())
 			sky = TexMan.CheckForTexture("SPACEAA", TexMan.Type_Any);
 		if (!sky.IsValid())
