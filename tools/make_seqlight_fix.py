@@ -490,6 +490,142 @@ def clear_specials(
     return re.sub(r"(?ms)^sector\s*\{(.*?)\}", scrub, text), cleared
 
 
+class Lamp:
+    """A light THING to add to a map, for a fixture the art draws but nobody wired.
+
+    The fifth family, and the only one that ADDS rather than strips. It exists
+    because the other four all answer "this light has no source" by removing the
+    light; sometimes the right answer is to give it the source.
+
+    This is how Retribution itself does it. MAP02's red corridor elements are lit
+    by 48 PointLight (9800) and 35 PointLightFlicker (9802) things placed in the
+    map, with the red ones at arg0=255, arg3=32 -- not by anything on the texture.
+    A texture cannot cast light here: RTGL1's attached lights only exist for
+    sprites and simple flats, and rt_sector_emis makes the SURFACE glow without
+    illuminating anything. A thing in the map is the mechanism that works, and it
+    is the one the mod already uses.
+
+    9801 (PointLightPulse) rather than 9800/9802: the CTEL panel's gems ramp up
+    and down over its 8-frame ANIMDEFS loop, so the light wants a smooth cycle,
+    not a constant or a random flicker. GZDoom reads the pulse period off the
+    thing's ANGLE -- specialf1/TICRATE seconds (a_dynlight.cpp Activate) -- and
+    sine-cycles the radius between arg3 and arg4.
+
+    `lo` must stay above rt_dynlight_minradius (16 in the launcher) or the light
+    is culled outright at the bottom of the cycle and the fixture blinks OFF
+    instead of dimming.
+    """
+
+    def __init__(self, mapname: str, sectors: list[int], flat: str,
+                 heights: list[int], color: tuple[int, int, int],
+                 hi: int, lo: int, period_tics: int, enabled: bool, note: str):
+        self.mapname = mapname
+        self.sectors = sectors
+        self.flat = flat
+        self.heights = heights
+        self.color = color
+        self.hi = hi
+        self.lo = lo
+        self.period_tics = period_tics
+        self.enabled = enabled
+        self.note = note
+
+
+LAMPS = [
+    Lamp(
+        "MAP13", [126], flat="CTEL",
+        heights=[16, 96], color=(255, 0, 0), hi=48, lo=20, period_tics=140,
+        enabled=True,
+        note="THE REPORTED ONE. CTEL1 is an 8-frame telemetry panel whose small "
+             "red gems ramp up and down; the panel is on BOTH the floor and the "
+             "ceiling of sector 126, a 64x64 alcove (floor 8, ceiling 120). Two "
+             "lights, one 16 above the floor panel and one 16 under the ceiling "
+             "one, so each reads as coming off its own fixture rather than one "
+             "light floating in the middle of the shaft. period 140 tics = 4.0s, "
+             "matching 'slow'. Everything tried on the TEXTURE side -- _e mask, "
+             "emissiveMult, attached lightIntensity -- made it glow and never lit "
+             "the alcove; see the Lamp docstring for why that cannot work.",
+    ),
+]
+
+
+def add_light_things(
+    text: str, lamps: list[Lamp], mapname: str
+) -> tuple[str, int]:
+    """Append PointLightPulse things at the centre of each listed sector.
+
+    The sector centre is derived from the vertices of the linedefs that touch it,
+    the same way tools/scan_light_specials.py does it -- UDMF stores no centre.
+
+    The flat name is asserted before anything is written, for the reason
+    set_lightlevels asserts lightlevel: sector indices are positional, so a map
+    edit that inserts a sector silently shifts every entry below it.
+    """
+    def flds(b: str) -> dict[str, str]:
+        return {k: v.strip() for k, v in re.findall(r"(\w+)\s*=\s*([^;]+);", b)}
+
+    verts = [
+        (float(d["x"]), float(d["y"]))
+        for d in (flds(b) for b in re.findall(r"(?ms)^vertex\s*\{(.*?)\}", text))
+    ]
+    sides = [flds(b) for b in re.findall(r"(?ms)^sidedef\s*\{(.*?)\}", text)]
+    secs = [flds(b) for b in re.findall(r"(?ms)^sector\s*\{(.*?)\}", text)]
+
+    pts: dict[int, list[tuple[float, float]]] = {}
+    for b in re.findall(r"(?ms)^linedef\s*\{(.*?)\}", text):
+        d = flds(b)
+        for key in ("sidefront", "sideback"):
+            if key not in d:
+                continue
+            s = int(sides[int(d[key])].get("sector", -1))
+            pts.setdefault(s, []).extend(
+                [verts[int(d["v1"])], verts[int(d["v2"])]]
+            )
+
+    added = 0
+    out = [text.rstrip("\n")]
+    for lamp in lamps:
+        for si in lamp.sectors:
+            sec = secs[si]
+            flats = {
+                sec.get("texturefloor", '"-"').strip('"').upper(),
+                sec.get("textureceiling", '"-"').strip('"').upper(),
+            }
+            if not any(f.startswith(lamp.flat) for f in flats):
+                raise SystemExit(
+                    f"{mapname} sector {si}: expected flat {lamp.flat}*, found "
+                    f"{sorted(flats)} — map data changed, refusing to patch blind."
+                )
+            p = pts.get(si, [])
+            if not p:
+                raise SystemExit(f"{mapname} sector {si}: no linedefs found")
+            cx = sum(a for a, _ in p) / len(p)
+            cy = sum(b for _, b in p) / len(p)
+            r, g, b = lamp.color
+            for h in lamp.heights:
+                out.append(
+                    "thing\n{\n"
+                    f"x = {cx:.3f};\n"
+                    f"y = {cy:.3f};\n"
+                    f"height = {h:.3f};\n"
+                    f"angle = {lamp.period_tics};\n"
+                    "type = 9801;\n"
+                    f"arg0 = {r};\n"
+                    f"arg1 = {g};\n"
+                    f"arg2 = {b};\n"
+                    f"arg3 = {lamp.hi};\n"
+                    f"arg4 = {lamp.lo};\n"
+                    "skill1 = true;\nskill2 = true;\nskill3 = true;\n"
+                    "skill4 = true;\nskill5 = true;\n"
+                    "single = true;\ncoop = true;\ndeathmatch = true;\n"
+                    "class1 = true;\nclass2 = true;\nclass3 = true;\n"
+                    "class4 = true;\nclass5 = true;\n"
+                    "}\n"
+                )
+                added += 1
+    return "\n".join(out) + "\n", added
+
+
 def set_lightlevels(
     text: str, wanted: dict[int, tuple[int, int]], mapname: str
 ) -> tuple[str, int]:
@@ -562,7 +698,9 @@ def main() -> None:
     activeBlinks = [b for b in BLINKS if b.enabled]
     activeScripted = [s for s in SCRIPTED if s.enabled]
     activeShafts = [h for h in SHAFTS if h.enabled]
-    if not active and not activeBlinks and not activeScripted and not activeShafts:
+    activeLamps = [l for l in LAMPS if l.enabled]
+    if (not active and not activeBlinks and not activeScripted
+            and not activeShafts and not activeLamps):
         raise SystemExit("nothing enabled — nothing to build")
 
     # sector index -> the specials it may currently carry, per map
@@ -592,6 +730,12 @@ def main() -> None:
     # their own per-map dict: sector index -> (expected, new) lightlevel. A map
     # can appear here with no special work at all, which is MAP13's case.
     light_by_map: dict[str, dict[int, tuple[int, int]]] = {}
+    lamp_by_map: dict[str, list] = {}
+    for l in activeLamps:
+        lamp_by_map.setdefault(l.mapname, []).append(l)
+        labels.setdefault(l.mapname, []).append(
+            f"lamp {l.sectors} {l.flat}* x{len(l.heights)}")
+
     for h in activeShafts:
         m = light_by_map.setdefault(h.mapname, {})
         for i in h.sectors:
@@ -601,7 +745,7 @@ def main() -> None:
 
     lumps = read_wad_lumps(WAD)
     items: list[tuple[str, bytes]] = []
-    for mapname in dict.fromkeys([*by_map, *acs_by_map, *light_by_map]):
+    for mapname in dict.fromkeys([*by_map, *acs_by_map, *light_by_map, *lamp_by_map]):
         wanted = by_map.get(mapname, {})
         start, end = map_lump_range(lumps, mapname)
         members = {nm.upper(): blob for nm, blob in lumps[start:end]}
@@ -616,6 +760,11 @@ def main() -> None:
         fixed, nlight = set_lightlevels(fixed, lights, mapname)
         if nlight != len(lights):
             raise SystemExit(f"{mapname}: relit {nlight} of {len(lights)} sectors")
+
+        lamps = lamp_by_map.get(mapname, [])
+        fixed, nlamp = add_light_things(fixed, lamps, mapname)
+        if nlamp != sum(len(l.heights) * len(l.sectors) for l in lamps):
+            raise SystemExit(f"{mapname}: added {nlamp} light things, expected more")
 
         behavior, nacs = (
             strip_acs_lights(members["BEHAVIOR"], acs_by_map[mapname], mapname)
@@ -648,11 +797,12 @@ def main() -> None:
         if items[-1][0].upper() != "ENDMAP":
             items.append(("ENDMAP", b""))
         print(f"{mapname}: cleared {n} sectors, relit {nlight} sectors, "
+              f"added {nlamp} light thing(s), "
               f"{nacs} acs call(s) ({', '.join(labels[mapname])})"
               f"{f', re-stripped {n3d} 3D-floor linedef(s)' if n3d else ''}")
 
     write_wad(OUTWAD, items)
-    maps = len({*by_map, *acs_by_map, *light_by_map})
+    maps = len({*by_map, *acs_by_map, *light_by_map, *lamp_by_map})
     print(f"wrote {OUTWAD} maps={maps} lumps={[nm for nm, _ in items]}")
 
 

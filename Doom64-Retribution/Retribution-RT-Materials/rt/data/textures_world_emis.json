@@ -364,38 +364,6 @@
     {
       "textureName": "SMONF5",
       "emissiveMult": 1.0
-    },
-    {
-      "textureName": "CTEL1",
-      "emissiveMult": 0.71
-    },
-    {
-      "textureName": "CTEL2",
-      "emissiveMult": 0.67
-    },
-    {
-      "textureName": "CTEL3",
-      "emissiveMult": 0.55
-    },
-    {
-      "textureName": "CTEL4",
-      "emissiveMult": 0.55
-    },
-    {
-      "textureName": "CTEL5",
-      "emissiveMult": 0.48
-    },
-    {
-      "textureName": "CTEL6",
-      "emissiveMult": 0.47
-    },
-    {
-      "textureName": "CTEL7",
-      "emissiveMult": 0.45
-    },
-    {
-      "textureName": "CTEL8",
-      "emissiveMult": 1.0
     }
   ]
 }

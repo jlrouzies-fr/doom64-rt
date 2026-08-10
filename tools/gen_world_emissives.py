@@ -98,8 +98,13 @@ NAME_RULES: list[tuple[str, float, float, tuple[int, int, int] | None]] = [
     # billboard that lands in open air and works. On a wall face it lands COPLANAR with
     # the wall, i.e. buried in solid geometry, fully occluded — indistinguishable from
     # the light never being uploaded. rt_wall_strips exists precisely because of this:
-    # it nudges its emitters 2 units off the wall first. C23 is lit there instead, via
-    # rt_eye_panels.
+    # it nudges its emitters 2 units off the wall first.
+    #
+    # C23 is not lit at all in the end: its "fixture" turned out to be this generator's
+    # own over-painting, not artwork. If a panel ever does need real light, the mechanism
+    # the mod itself uses is a light THING in the map -- MAP02 lights its red corridor
+    # elements with 48 PointLight and 35 PointLightFlicker things, none of it on the
+    # texture. See the Lamp family in tools/make_seqlight_fix.py.
     ("C23", 1.0, 0, (255, 180, 60)),
     ("D64LOGO", 1.0, 0, None),
     # Teleporter pads (MAP03 SPORT*) — cyan cast; mild floor lightIntensity OK.
@@ -116,60 +121,12 @@ FORCE: dict[str, tuple[float, float, tuple[int, int, int] | None]] = {
     "SKEYFLRD": (1.2, 0.0, (255, 50, 40)),
     "SKEYFLBL": (1.3, 0.0, (60, 160, 255)),
     "SEXIT": (0.9, 0.0, (255, 40, 40)),
-    # CTEL1..8 — ANIMDEFS loop (8 frames, 4 tics each) of a telemetry panel whose red
-    # gems pulse. Glow only, no attached light. Used as a FLAT on 15 maps.
-    #
-    # emissiveMult IS the animation, and it has to be, because there is nothing else left
-    # to carry it. RsWorld.inl builds screen emission as
-    #
-    #     ldrEmis = baseColor().rgb * emisTex.rgb * emissiveMult
-    #
-    # and under rt_mod_compat baseColor is forced to hue-only (forceWorldWhiteRgb), so
-    # the ALBEDO IS NOT A FACTOR. A constant mask with a constant mult therefore gives a
-    # constant glow: the first pass assumed the authored per-frame albedo would supply
-    # the pulse, and the pulse simply vanished in game (2026-08-10). The frames are
-    # separate texture names, so the per-frame value belongs here.
-    #
-    # Values are the measured relative gem luminance per frame, peak CTEL8 = 1.0.
-    #
-    # Peak 1.0 is a CEILING, not a taste call. emisTex is the saturated gem red
-    # (255,65,28) = (1.0, 0.25, 0.11), so mult 1.0 puts the red channel exactly at full
-    # and keeps the hue. The first pass used 2.5 -- the sparse-SMON value -- which drove
-    # red to 2.5 and green to 0.64: red clipped, green and blue did not, and the gems
-    # washed out to near-white. Above ~1.0 this texture desaturates instead of
-    # brightening.
-    "CTEL1": (0.71, 0.0, (255, 65, 28)),
-    "CTEL2": (0.67, 0.0, (255, 65, 28)),
-    "CTEL3": (0.55, 0.0, (255, 65, 28)),
-    "CTEL4": (0.55, 0.0, (255, 65, 28)),
-    "CTEL5": (0.48, 0.0, (255, 65, 28)),
-    "CTEL6": (0.47, 0.0, (255, 65, 28)),
-    "CTEL7": (0.45, 0.0, (255, 65, 28)),
-    "CTEL8": (1.00, 0.0, (255, 65, 28)),
     "SPORT1": (2.2, 110.0, (70, 190, 255)),
     "SPORT2": (2.2, 110.0, (70, 190, 255)),
     "SPORT3": (2.2, 110.0, (70, 190, 255)),
     "SPORT4": (2.2, 110.0, (70, 190, 255)),
     "SPORT5": (2.2, 110.0, (70, 190, 255)),
 }
-
-# Textures whose attached light must survive a NON-QUAD primitive.
-#
-# VulkanDevice.cpp only builds an attached light when `evenOnDynamic || quad`, and its
-# quad test is strict: indexCount 6 + vertexCount 4, or indexCount 0 + vertexCount 6. A
-# flat drawn over a simple rectangular sector satisfies that, but the moment the sector
-# is split into more subsector points it does not, and the light silently never exists.
-#
-# Empty on purpose. CTEL was in here and the flag did not produce a light either, so the
-# gate is not the only thing in the way and nothing is served by carrying a setting that
-# was never shown to do anything (2026-08-10). CTEL is glow-only now, like the monitors
-# and EXIT signs, which is the policy at the top of this file for panels anyway.
-EVEN_ON_DYNAMIC: set[str] = set()
-
-# Flat saturated hue for the CTEL gems' _e mask. The gems' own peak texel is (222,57,24);
-# this is that hue pushed to full range. Constant, never sampled per-texel from the
-# albedo -- see _e_ctel_gems_from_albedo.
-CTEL_GEM_RGB = (255, 65, 28)
 
 # Skip non-emitters. OUTTEX classic brightmaps are NOT RT emitters.
 # SWX* idle frames stay dark; ON frames (GLDEFS brightmaps) are allowlisted below.
@@ -566,46 +523,6 @@ def _e_teleporter_from_albedo(
                 min(255, int(tb * w)),
                 255,
             )
-    return out
-
-
-def _e_ctel_gems_from_albedo(img: Image.Image) -> Image.Image:
-    """CTEL1..CTEL8 — the red gems on the telemetry panel, and nothing else.
-
-    Selected by RED DOMINANCE (r - max(g,b) > 15), not by luma. The generic luma
-    path is wrong for this texture in the way that produced the C22/C23 mess: the
-    panel is dark cracked stone whose brightest pixels are grey mortar, so a luma
-    threshold picks the stone and misses the gems, which are dark-ish but strongly
-    red (peak 222,57,24).
-
-    The threshold is deliberately low enough that the SAME 45 pixels are selected
-    in all 8 frames. That is the point: this is an 8-frame ANIMDEFS loop where the
-    gems pulse, and the mask must not pulse with them. RsWorld.inl multiplies the
-    mask by baseColor, so a constant full-strength mask lets the AUTHORED per-frame
-    albedo produce the pulse by itself -- painting the mask per-frame instead would
-    square the animation and blink far harder than the artist drew.
-
-    The mask carries a flat SATURATED RED, the same construction
-    gen_enemy_eye_emissives.py uses (hue from a constant, never from the albedo).
-
-    It must not be painted white. "The shader multiplies by baseColor so paint the mask
-    at full saturation" means saturate the HUE, not drop to white -- and under
-    rt_mod_compat the world's baseColor is forced to hue-only (forceWorldWhiteRgb in
-    rt_main.cpp), so there is no albedo red left in that factor to colour a white mask.
-    A white mask therefore renders white: the gems came out as white dots on the first
-    pass (2026-08-10).
-    """
-    out = Image.new("RGBA", img.size, (0, 0, 0, 0))
-    ip = img.load()
-    op = out.load()
-    for y in range(img.size[1]):
-        for x in range(img.size[0]):
-            px = ip[x, y]
-            r, g, b = px[0], px[1], px[2]
-            if len(px) > 3 and px[3] < 40:
-                continue
-            if r - max(g, b) > 15:
-                op[x, y] = (*CTEL_GEM_RGB, 255)
     return out
 
 
@@ -1451,13 +1368,6 @@ def main() -> None:
                 # Missing BMTX* brightmaps — green LED strip only, never metal luma.
                 eimg = _e_switch_led_from_albedo(albedo, tint)
                 src = "switch-led"
-            elif u.startswith("CTEL"):
-                # Red gems on the telemetry panel. Must come BEFORE the generic
-                # albedo-luma path: this texture is dark cracked stone whose
-                # brightest pixels are grey mortar, so luma picks the stone and
-                # misses the gems entirely. Red dominance picks the gems.
-                eimg = _e_ctel_gems_from_albedo(albedo)
-                src = "ctel-gems"
             elif u.startswith("SPORT"):
                 # Teleporter pads — cyan-tinted mask (not grey ceiling-blob luma).
                 eimg = _e_teleporter_from_albedo(albedo, tint)
@@ -1504,8 +1414,6 @@ def main() -> None:
         if li > 0:
             meta["lightIntensity"] = li
             meta["lightColor"] = list(tint)
-            if name.upper() in EVEN_ON_DYNAMIC:
-                meta["lightEvenOnDynamic"] = True
         entries[name] = meta
         by_src[src] += 1
 
