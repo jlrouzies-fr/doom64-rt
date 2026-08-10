@@ -76,10 +76,30 @@ rem Measured ~20% improvement at 8, which is a poor trade -- and that result als
 rem shows the residual motion noise is NOT Monte Carlo variance.
 rem Requires tools\build-rtgl.cmd (RTGL1.dll + nvngx_dlssd.dll in rt\bin\).
 rem All maps: d64r-3dfloor-rtfix.wad strips hangy Sector_Set3dFloor (special 160).
-rem Sky: sector skyboxes ignored under RT (white/black fix); d64r-rt-sky forces the
-rem  MOONSKY night flat + rt_sky_always. MOONSKY is the WAD's SPACE starfield tiled to
-rem  1024 wide (hw_skydome tiles anything narrower, so 256-wide SPACE wraps 4x and a
-rem  painted moon would appear four times) with one moon in it -- tools\gen_moon_sky.py.
+rem Sky: sector skyboxes ignored under RT (white/black fix), so rt_sky_always fills
+rem  every F_SKY1 opening with the flat sky DOME and d64r-rt-sky's ZSCRIPT picks the
+rem  dome texture PER MAP at WorldLoaded. Retribution sets no sky in MAPINFO at all --
+rem  every map says sky1 = "ISUCK", a 64x64 dummy, and the real sky is the skybox room
+rem  the engine now refuses to draw. The handler reads that room's intent back out:
+rem   - fire maps (22/24/28, 23/32) -> FRSKYNRM / FRSKYGRN, the WAD's own 100-frame
+rem     ANIMDEFS fire skies, which animate on the dome because hw_sky.cpp fetches the
+rem     sky with GetGameTexture(tex, true);
+rem   - void maps (25/26/31) -> VOIDSKY;
+rem   - mountain and overcast maps -> SKYMTNA/B/C/CD, SKYCLDPK/BR, SKYSTORM, baked by
+rem     tools\gen_d64_skies.py from each room's own geometry (the cloud flat projected
+rem     as the plane it is, the MOUNT* ring composited at the altitude that room's
+rem     radius and ceiling put it at -- `--report` prints the survey);
+rem   - everything else is a SPACE starfield room and stays on MOONSKY.
+rem  MAP11 and MAP14 are the RT_CLOUD_PRESETS maps, so their dome textures carry a
+rem  flat backdrop and NO painted cloud -- their weather is the deck below.
+rem  Every one of these is 1024x128 like MOONSKY, so they all take the same branch of
+rem  SetupMatrices and the horizon does not move from map to map.
+rem  MOONSKY itself is the WAD's SPACE starfield tiled to 1024 wide (hw_skydome tiles
+rem  anything narrower, so 256-wide SPACE wraps 4x and a painted moon would appear
+rem  four times) -- tools\gen_moon_sky.py.
+rem  NOT per-map yet: the moon disc. rt_moon_geo is global, so it is drawn on the
+rem  hell maps too, now in front of a fire sky. That needs an entry in the engine's
+rem  RT_MOON_PRESETS table, not a change here.
 rem The moon is a PAIR, and the two halves have to agree:
 rem  - the disc you see is painted in MOONSKY at azimuth 135 (north-west);
 rem  - the light you feel is rt_sun, an analytic directional light down the same

@@ -105,8 +105,13 @@ parallax, viewed through a `SkyViewpoint` (thing type 9080 at `2688,-192`).
 
 Sector skybox rooms are **ignored** by the RT path — the white/black box bug;
 see `hw_walls.cpp:354` and the comment in `tools/d64r-rt-sky/ZSCRIPT`. Instead
-`rt_sky_always` fills every `F_SKY1` opening with the flat night sky, and
-`D64RtSkyFix` forces that flat to `MOONSKY` on every map.
+`rt_sky_always` fills every `F_SKY1` opening with the flat sky dome, and
+`D64RtSkyFix` chooses that dome's texture. It used to force `MOONSKY` on every
+map; it now picks per map from what each skybox room actually contains
+(`tools/gen_d64_skies.py`). MAP11's pick is **`SKYSTORM`** — a flat dark purple
+backdrop with *no painted cloud at all*, precisely because the cloud on this map
+is the deck described below. Painting the room's `CLOUDPRP` into the dome as
+well would put two unrelated cloud layers on screen at once.
 
 So on MAP11 today:
 
