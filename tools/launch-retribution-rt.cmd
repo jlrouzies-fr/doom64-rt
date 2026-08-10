@@ -301,6 +301,7 @@ start "" gzdoom.exe ^
   +rt_ceiling_edge_lamps 1 +rt_ceiling_edge_intensity 180 +rt_ceiling_edge_seglen 64 ^
   +rt_ceiling_edge_radius 0.35 +rt_ceiling_edge_zofs 10 +rt_ceiling_edge_inset 10 ^
   +rt_ceiling_edge_max 320 +rt_ceiling_edge_maxdist 3072 ^
+  +rt_ceiling_edge_lattice 1 ^
   +rt_ceiling_edge_debug 0 +rt_ceiling_edge_debug_marks 0 ^
   +rt_faux_lamps 1 +rt_faux_lamp_color 3C5078 +rt_faux_lamp_intensity 500 ^
   +rt_faux_lamp_max 256 +rt_faux_lamp_stride 2 ^
@@ -321,7 +322,7 @@ start "" gzdoom.exe ^
   +rt_water_caustic 1.5 +rt_water_reflmin 0.1 +rt_water_reflmax 0.75 +rt_water_rough 0.1 ^
   +rt_water_glow 0.15 +rt_water_veinref 0.1 ^
   +rt_water_wavestren 0.4 +rt_water_wavespeed 0.2 +rt_water_areascale 0.35 ^
-  +rt_water_caustics 1.2 +rt_water_caustic_scale 0.09 +rt_water_caustic_speed 0.35 ^
+  +rt_water_caustics 1.2 +rt_water_caustic_scale 0.8 +rt_water_caustic_speed 0.35 ^
   +rt_water_caustic_dist 192 ^
   +rt_water_debug 0 ^
   +rt_normalmap_stren 1 +rt_heightmap_stren 1 %EXTRA%

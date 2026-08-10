@@ -47,7 +47,7 @@ if "%MAP%"==""  set "MAP=10"
 
 set "TINT=+rt_water_tint_r 5 +rt_water_tint_g 23 +rt_water_tint_b 61"
 set "BASE=+rt_water_caustic 1.5 +rt_water_rough 0.1 +rt_water_veinref 0.1"
-set "CAUS=+rt_water_caustics 1.2 +rt_water_caustic_scale 0.09 +rt_water_caustic_speed 0.35 +rt_water_caustic_dist 192"
+set "CAUS=+rt_water_caustics 1.2 +rt_water_caustic_scale 0.8 +rt_water_caustic_speed 0.35 +rt_water_caustic_dist 192"
 set "WAVE=+rt_water_wavestren 0.4 +rt_water_wavespeed 0.2 +rt_water_areascale 0.35"
 
 if /i "%ARM%"=="stock"  set "ARGS=+rt_water_style 0 %TINT% %BASE% %WAVE% %CAUS% +rt_water_reflmin 0.1 +rt_water_reflmax 0.75 +rt_water_glow 0.15"
