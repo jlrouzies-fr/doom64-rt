@@ -369,49 +369,57 @@
       "textureName": "CTEL1",
       "emissiveMult": 2.5,
       "lightColorHEX": "ff411c",
-      "lightIntensity": 71.0
+      "lightIntensity": 71.0,
+      "lightEvenOnDynamic": true
     },
     {
       "textureName": "CTEL2",
       "emissiveMult": 2.5,
       "lightColorHEX": "ff411c",
-      "lightIntensity": 67.0
+      "lightIntensity": 67.0,
+      "lightEvenOnDynamic": true
     },
     {
       "textureName": "CTEL3",
       "emissiveMult": 2.5,
       "lightColorHEX": "ff411c",
-      "lightIntensity": 55.0
+      "lightIntensity": 55.0,
+      "lightEvenOnDynamic": true
     },
     {
       "textureName": "CTEL4",
       "emissiveMult": 2.5,
       "lightColorHEX": "ff411c",
-      "lightIntensity": 55.0
+      "lightIntensity": 55.0,
+      "lightEvenOnDynamic": true
     },
     {
       "textureName": "CTEL5",
       "emissiveMult": 2.5,
       "lightColorHEX": "ff411c",
-      "lightIntensity": 48.0
+      "lightIntensity": 48.0,
+      "lightEvenOnDynamic": true
     },
     {
       "textureName": "CTEL6",
       "emissiveMult": 2.5,
       "lightColorHEX": "ff411c",
-      "lightIntensity": 47.0
+      "lightIntensity": 47.0,
+      "lightEvenOnDynamic": true
     },
     {
       "textureName": "CTEL7",
       "emissiveMult": 2.5,
       "lightColorHEX": "ff411c",
-      "lightIntensity": 45.0
+      "lightIntensity": 45.0,
+      "lightEvenOnDynamic": true
     },
     {
       "textureName": "CTEL8",
       "emissiveMult": 2.5,
       "lightColorHEX": "ff411c",
-      "lightIntensity": 100.0
+      "lightIntensity": 100.0,
+      "lightEvenOnDynamic": true
     }
   ]
 }

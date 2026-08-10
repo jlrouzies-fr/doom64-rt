@@ -151,6 +151,24 @@ FORCE: dict[str, tuple[float, float, tuple[int, int, int] | None]] = {
     "SPORT5": (2.2, 110.0, (70, 190, 255)),
 }
 
+# Textures whose attached light must survive a NON-QUAD primitive.
+#
+# VulkanDevice.cpp only builds an attached light when `evenOnDynamic || quad`, and its
+# quad test is strict: indexCount 6 + vertexCount 4, or indexCount 0 + vertexCount 6. A
+# flat drawn over a simple rectangular sector satisfies that, but the moment the sector
+# is split into more subsector points it does not, and the light silently never exists.
+#
+# With this flag set, the non-quad path runs instead, and it is actually the BETTER one
+# for a flat: MakeLightsForPrimitive merges coplanar triangles and emits spot lights at
+# `position + normal * offset`, i.e. lifted OFF the surface and aimed away from it,
+# rather than a sphere sitting in the floor plane.
+EVEN_ON_DYNAMIC = {f"CTEL{i}" for i in range(1, 9)}
+
+# Flat saturated hue for the CTEL gems' _e mask. The gems' own peak texel is (222,57,24);
+# this is that hue pushed to full range. Constant, never sampled per-texel from the
+# albedo -- see _e_ctel_gems_from_albedo.
+CTEL_GEM_RGB = (255, 65, 28)
+
 # Skip non-emitters. OUTTEX classic brightmaps are NOT RT emitters.
 # SWX* idle frames stay dark; ON frames (GLDEFS brightmaps) are allowlisted below.
 SKIP_RE = re.compile(
@@ -565,8 +583,15 @@ def _e_ctel_gems_from_albedo(img: Image.Image) -> Image.Image:
     albedo produce the pulse by itself -- painting the mask per-frame instead would
     square the animation and blink far harder than the artist drew.
 
-    Full saturation, not the albedo colour, for the same reason: baseColor already
-    supplies the red.
+    The mask carries a flat SATURATED RED, the same construction
+    gen_enemy_eye_emissives.py uses (hue from a constant, never from the albedo).
+
+    It must not be painted white. "The shader multiplies by baseColor so paint the mask
+    at full saturation" means saturate the HUE, not drop to white -- and under
+    rt_mod_compat the world's baseColor is forced to hue-only (forceWorldWhiteRgb in
+    rt_main.cpp), so there is no albedo red left in that factor to colour a white mask.
+    A white mask therefore renders white: the gems came out as white dots on the first
+    pass (2026-08-10).
     """
     out = Image.new("RGBA", img.size, (0, 0, 0, 0))
     ip = img.load()
@@ -578,7 +603,7 @@ def _e_ctel_gems_from_albedo(img: Image.Image) -> Image.Image:
             if len(px) > 3 and px[3] < 40:
                 continue
             if r - max(g, b) > 15:
-                op[x, y] = (255, 255, 255, 255)
+                op[x, y] = (*CTEL_GEM_RGB, 255)
     return out
 
 
@@ -1477,6 +1502,8 @@ def main() -> None:
         if li > 0:
             meta["lightIntensity"] = li
             meta["lightColor"] = list(tint)
+            if name.upper() in EVEN_ON_DYNAMIC:
+                meta["lightEvenOnDynamic"] = True
         entries[name] = meta
         by_src[src] += 1
 
