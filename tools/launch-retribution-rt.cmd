@@ -252,7 +252,7 @@ start "" gzdoom.exe ^
   +rt_fluid false +rt_autoexport false ^
   +rt_upscale_dlss 2 +rt_upscale_fsr2 0 +rt_rayreconstr 0 +rt_framegen 0 ^
   +gl_noskyboxes false ^
-  +rt_sky 25 +rt_sky_always true ^
+  +rt_sky 25 +rt_sky_always true +rt_sky_nowalls 0 ^
   +rt_sun 1 +rt_sun_intensity 90 +rt_sun_a 25 +rt_sun_b 135 +rt_sun_color B4C8FF ^
   +rt_moon_track 1 +rt_moon_tex_b 135 +rt_moon_yawsign 1 +rt_sky_yaw 0 +rt_moon_presets 1 ^
   +rt_classic 0 ^

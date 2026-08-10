@@ -51,6 +51,56 @@ Do not treat this as a progress cheer sheet — only unresolved / partially reso
 | **Confirm** | `tools\ab-moon.cmd moon 13` — halls lit by shafts raking in from the north-west windows, moon visible in the sky on the same bearing. `tools\ab-moon.cmd off 13` is the control (paint gone, nothing given back). If the shafts and the disc disagree on bearing, the sky's `u` sign is wrong: `python tools\gen_moon_sky.py --flip-u && python tools\pack_rt_sky.py`. |
 | **Detail** | `docs/sequence-light-chains.md`, "The fourth family". |
 
+### 1.2c Sky leaks — **NOT small gaps. Bisect before fixing** (2026-08-10)
+
+Reported: light arriving in rooms that look sealed, "maps are clearly not fully
+well set". The natural request was a size gate — *only let gaps over N units in*.
+**That does not work here, and the measurements say why.**
+
+**How sky light physically enters.** GZDoom hands RTGL1 the sky portal's geometry
+flagged `RG_MESH_PRIMITIVE_SKY_VISIBILITY`; RTGL1 puts it in the BLAS with
+`INSTANCE_CUSTOM_INDEX_FLAG_SKY` (`ASManager.cpp`, `PV_WORLD_2`). Any ray that
+hits it returns sky radiance. It is not a backdrop — it is an emitting surface.
+
+**Why a size gate has nothing to bite on.** `HWWall::SkyTop` builds sky *walls*
+spanning from the neighbouring ceiling to **z = 32768**, so gating on the sky
+polygon's own size is meaningless — every one of them is enormous. The gate would
+have to act on the *aperture*, and `tools/scan_sky_apertures.py` measured both
+apertures that the map format can actually express:
+
+| class | game-wide | MAP01 | small ones |
+|---|---|---|---|
+| Doom sky-hack ceiling steps (both sectors sky, upper left open) | 916 | **0** | only **4** are ≤32 units; median 128–384 |
+| Missing upper texture facing a sky sector | **0** | 0 | — |
+
+MAP01 — the map with the *documented* leak (§1.2) — has **zero** of either. A
+`rt_sky_wallgap` threshold would close nothing small and would start destroying
+genuine openings around 96 units. It was not shipped, deliberately.
+
+What that leaves is sub-unit cracks at T-junctions and sector seams, which no
+threshold can select because they are not in the map data at all — they are
+floating-point gaps between polygons that a rasteriser never had to care about.
+
+**So bisect instead.** `tools/ab-skyleak.cmd <nosun|nosky|dark|nowalls|full>`,
+run from the same spot in the leaking room:
+
+| result | meaning | cheapest fix |
+|---|---|---|
+| only `nosun` fixes it | the **moon** is finding a pinhole — a directional light needs one unblocked shadow ray, so it exposes cracks the dim dome never showed | give that map a `RT_MOON_PRESETS` row with **intensity 0** — no moon on that map, nothing else affected |
+| only `nosky` fixes it | the **dome**, through a genuine opening | lower `rt_sky`, or close the aperture in the map |
+| `nowalls` fixes it | **wall-class**: the sideways sky band at wall tops | `ML_NOSKYWALLS` on the offending linedefs, patched in like `make_seqlight_fix.py` does |
+| nothing fixes it | not the sky | `rt_sector_emis` or an attached sprite light — `tools/scan_fake_lightshafts.py` |
+
+`rt_sky_nowalls` (new, default **0**) is the `nowalls` arm: it applies GZDoom's
+own `ML_NOSKYWALLS` to *every* two-sided line at once. Sky ceilings and one-sided
+sky curtains are untouched, so you still see sky by looking up and outdoor areas
+stay enclosed. It is blunt — it removes good bands with the bad — and exists to
+answer *whether* a leak is wall-class before anyone spends time on a targeted fix.
+
+**Most likely, given timing:** the moon (§1.2b) went in globally the same day this
+was reported, and a directional light is exactly the thing that turns a tolerable
+crack into a visible shaft. Run `nosun` first.
+
 ### 1.3 Map PointLightFlicker (9802) / wall SMON — gated off
 
 9802s by wall terminals are **not** the desired spawn blink. Play launcher sets `rt_dynlight_flicker 0` so those Flicker lights are not uploaded; ceiling lamps handle §1.1.
