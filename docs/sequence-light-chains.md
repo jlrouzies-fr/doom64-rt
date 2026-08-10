@@ -292,6 +292,79 @@ What finally found it was instrumentation rather than reasoning: `rt_tex_probe`
 tracking it 0.013 → 0.350. That is a runtime animation and nothing else, and it
 ruled out every texture-side explanation in a single line of output.
 
+### The half the scanners could not see: COMPUTED arguments
+
+**This cost the better part of a day, twice, after the user had correctly named ACS as
+the cause in the first message about it.** Read this before writing another scan.
+
+`scan_light_specials.py` and the `Scripted` family both identify a call by its **byte
+signature** — `PUSHnBYTES`, the literal arguments, `LSPECn`, the special. That only
+exists when the compiler could fold every argument into a byte. A call like
+
+```c
+Light_Fade(tag, random(220, 255), tics)
+```
+
+pushes its arguments with preceding instructions, so **there is no literal run to
+match** and a signature scan cannot see it *at all*. It is not a near miss; it is
+structurally invisible. Two such calls on MAP13 survived four separate scans of the
+same 1889-byte lump, including one that decoded the 4-byte `LSPECnDIRECT` form — every
+one of them keyed on the arguments.
+
+**Scan for the opcode pair instead.** `LSPECn` is `3 + argc`, and the special number is
+the byte after it, both present regardless of where the arguments came from:
+
+```python
+if blob[i] in (4, 5, 6, 7, 8) and blob[i+1] in LIGHT_SPECIALS:
+    argc   = blob[i] - 3
+    packed = blob[i-1-argc] == 174 + argc     # literal, the old scan finds it
+    #  not packed  ->  COMPUTED, only this scan finds it
+```
+
+Game-wide that turns up **147 computed calls** against 488 literal ones.
+
+Two further things made it look impossible, both worth knowing:
+
+- **`rt_dump_lightthinkers` reported 0 thinkers at level load.** `Light_Fade` creates
+  its thinker *per call* from the loop, not at load, so a dump at load is silent while
+  the effect is running. A thinker census is only evidence at the moment you take it.
+- **The repair has to differ.** NOPing a computed-arg call leaves its `argc` values on
+  the VM stack, and in a looping script that grows without bound. Overwrite the
+  **special number with 0** instead: `LSPECn` still executes and still pops exactly
+  `argc` arguments, `P_ExecuteSpecial` gets special 0 and does nothing. One byte per
+  call, stack balanced, lump length unchanged.
+
+### DONE — `Light_Fade` in script 669, fourteen maps
+
+The same fixture across the game. Script 669 is type **OPEN** on every one of them, so
+it runs at map load, unconditionally, forever.
+
+| map | calls | | map | calls |
+|---|---|---|---|---|
+| MAP10 | 3 | | MAP21 | 3 |
+| MAP12 | **10** | | MAP22 | 1 |
+| MAP13 | 2 | | MAP23 | 2 |
+| MAP15 | 2 | | MAP24 | 1 |
+| MAP17 | 1 | | MAP33 | 2 |
+| MAP18 | 2 | | MAP34 | 4 |
+| MAP19 | 1 | | | |
+| MAP20 | 1 | | **total** | **35** |
+
+On MAP13 these drove tags 29 and 10 — sectors 0, 43, 94, 179, 210, 211, 243 — sweeping
+221↔255 continuously and in lockstep. The pillar sides and walls carry tag 29 and the
+ground does not, which is exactly why some surfaces in that courtyard pulsed and others
+did not.
+
+**Scoped tightly, and the scoping matters more than the strip:**
+
+- **`Light_Stop` is 67 of the 147 computed calls and must never be stripped.** It is
+  the opposite operation — it turns an effect *off*. Removing it leaves that effect
+  running forever.
+- `Light_Fade` / `Light_ChangeToValue` in scripts 2–30 are triggered by gameplay —
+  doors, switches, events — not installed at load. Those are authored moments.
+- Other argument counts inside 669 are a different call shape and are not assumed to be
+  the same fixture without looking at one.
+
 ## How the ACS patch works
 
 There is no ACS compiler in this tree, so `make_seqlight_fix.py` does not edit
@@ -599,6 +672,45 @@ Two rules fall out of that:
 - A single-frame ANIMDEFS animation **aborts startup** — `animations.cpp:480`,
   *"Animation needs at least 2 frames"*, thrown inside `Texman.Init`. Emit the
   same pic twice.
+
+## The seventh family: sectors painted a different COLOUR
+
+The painted-light problem has two halves, and only one of them is brightness.
+
+Lightlevel is dropped and re-derived by RT, which is why a painted shaft shows up as
+self-emission. **Colour is not dropped** — `rt_sector_tint_albedo` carries the Doom 64
+sector colormap into albedo at full strength *on purpose*, so a red corridor stays red.
+The consequence is that a sector painted unlike its room puts a **hard-edged colour
+change across a continuous floor**, at the sector boundary, with no gradient and nothing
+casting it.
+
+`TINTS` copies every colour field — `lightcolor` plus `color1`..`color5`, all six
+together, or the floor and the walls end up disagreeing — from a donor sector, normally
+the room the element sits in.
+
+**Never run this over a colour globally.** Doom 64's per-sector colour is real art
+direction and most of it is deliberate: MAP13 has 15 sectors sharing the door's warm
+salmon and only the two door recesses are wrong — the rest are rooms that are simply
+warm.
+
+### DONE — MAP13, the door floor and the courtyard pillars
+
+| sectors | what | from | to |
+|---|---|---|---|
+| 32, 35 | HDOR10 door recesses, painted warm salmon `(254,146,118)` inside halls at cold blue `(89,164,255)` | donor 15 | the hall's blue |
+| 47–52, 61–69, 93 | the H119 courtyard pillars, warm yellow `(254,225,109)` inside a 2944×2944 courtyard at `(146,194,254)` | donor 46 | the courtyard's blue |
+
+The door was reported as *"that door floor texture still has a harsh split of colour —
+is it the texture colour that was changed to simulate light in front of the door?"* Yes,
+exactly that: the floor texture is `CASFL27` on both sides of the line, and the torches
+flanking the door are real lights that already warm that floor themselves, so the paint
+was both hard-edged and double-counted.
+
+The pillars are the more instructive case. **Their lightlevel is 200, which is not above
+MAP13's threshold**, so they never self-emitted and no amount of brightness work would
+ever have touched them. H119 itself is dull mottled brown-purple stone — the gold-brass
+look was *entirely* the sector colour, pillars lit warm by nothing in a night courtyard
+whose only real light is a cool moon.
 
 ## Load-order trap: maps that are also in the 3D-floor wad
 

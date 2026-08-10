@@ -261,6 +261,86 @@ SHAFTS = [
     # fixture set is derived from the mod's own GLDEFS+DECORATE (39 placeable actors
     # that carry lights), not guessed. Nothing within a thousand units can light a
     # 64-unit element and leave the wall beside it black.
+    # MAP11 (screen/map11_stillfakelight.png). Reported as "still fake light", assumed
+    # to be another ACS call -- it is not. MAP11's five ACS light calls are four literal
+    # Light_Fade in script 671, whose TYPE IS 12 = the lightning script, i.e. the storm
+    # flashing tags 1 and 2 to 255 and back on each strike. That is the map's authored
+    # weather and stays. The panel in the screenshot is the static kind: a HELLA* face
+    # recess painted bright, its jambs lit, the wall around it black.
+    #
+    # Enabled where the nearest light-bearing thing is 279u or further. Held back:
+    # sector 210 (fixture 40u) and 152 (133u), close enough that the paint may be
+    # reinforcing a real fixture, and 96 (160u) for the same reason.
+    Shaft(
+        "MAP18", [2, 258, 110, 259], from_light=255, to_light=220,
+        enabled=True,
+        note="THE REPORTED ONE (screen/level18_stillfakelight.png): 'floor still fake "
+             "lit, the borders around it also, and the borders above'. All three are "
+             "ONE sector's lightlevel. The sky courtyards are painted 255 inside "
+             "sector 1, the walkway that surrounds them, at 220 -- and MAP18's "
+             "threshold is 250, so the courtyard emits and the walkway does not.\n"
+             "\n"
+             "Sector 2 carries C10 and C19 on its sidedefs, which is why one number "
+             "produced three complaints: CASF106 is the mossy floor, C10 the tiled "
+             "band on the 8-unit step around it ('the borders around it'), and C19 "
+             "the frieze of winged figures on the 64-unit band above the walkway "
+             "roof ('the borders above'). A lower and an upper texture on the same "
+             "two-sided lines, both drawn at the courtyard's light.\n"
+             "\n"
+             "Listed as FOUR sectors because each courtyard is a nested pair -- 2 is a "
+             "one-unit ring around 258, 110 around 259, same flats and heights "
+             "throughout. The inner sector's only neighbour is its own ring, so it "
+             "looks like it has no darker host and a neighbour test alone skips it. "
+             "Nested same-flat sectors are one element and move together.",
+    ),
+    Shaft(
+        "MAP11", [152], from_light=255, to_light=160,
+        enabled=True,
+        note="THE REPORTED ONE (screen/map11_stillfakelight.png). H66, the demon face "
+             "panel -- 160x64 at (0,672), painted 255 while sector 151, the frame it "
+             "is set INTO and its only neighbour, sits at 160. MAP11's threshold is "
+             "220, so the face emits and its own frame does not.\n"
+             "\n"
+             "Held back on the first pass because a light-bearing thing stands 133u "
+             "away, and that was the wrong test: the other three H66 panels on this "
+             "map (180, 181, 182) sit at 160/180 and do not emit, so 255 here is not "
+             "how this fixture is lit anywhere else. THE FRAME IS THE TEST -- a real "
+             "light cannot brighten a recess and leave the surface it is cut into "
+             "dark, whatever its distance.",
+    ),
+    Shaft(
+        "MAP11", [123], from_light=255, to_light=200,
+        enabled=True,
+        note="C53 recess. Nearest fixture 279u.",
+    ),
+    Shaft(
+        "MAP11", [148], from_light=255, to_light=180,
+        enabled=True,
+        note="HELLAE face panel. Nearest fixture 336u.",
+    ),
+    Shaft(
+        "MAP11", [190], from_light=255, to_light=200,
+        enabled=True,
+        note="HELLAB face panel -- the one most likely in the screenshot, 672u from "
+             "any fixture at all.",
+    ),
+    # The arrow-shooter walls, reported from play. Both were in the survey's
+    # left-alone column because a fixture stands 230-313 units away, close enough that
+    # the paint might have been reinforcing something real. It is not: these are the
+    # faces the darts come out of, and the face is lit while the wall it is set into
+    # is dark.
+    Shaft(
+        "MAP13", [89], from_light=220, to_light=180,
+        enabled=True,
+        note="C77 -- the dart ports, a grid of star-shaped holes. Nearest fixture "
+             "313u.",
+    ),
+    Shaft(
+        "MAP13", [124, 125], from_light=255, to_light=180,
+        enabled=True,
+        note="H90 -- the bladed relief face on the same trap walls, 192x20 and "
+             "20x192 runs. Nearest fixture 230u.",
+    ),
     Shaft(
         "MAP13", [57, 59], from_light=255, to_light=180,
         enabled=True,
@@ -570,6 +650,161 @@ def _acs_script_range(behavior: bytes, script: int, mapname: str) -> tuple[int, 
             if addr > here:
                 later.append(addr)
     return here, min(later) if later else chunk_start
+
+
+class ScriptedComputed:
+    """An ACS Light_* call whose ARGUMENTS ARE COMPUTED, not literal.
+
+    The Scripted family matches a call by its exact byte signature -- PUSHnBYTES, the
+    literal args, LSPECn, the special. That only works when the compiler could fold
+    every argument into a byte. A call like
+
+        Light_Fade(tag, random(220, 255), tics)
+
+    pushes its arguments with preceding instructions instead, so there is no literal
+    run to match and signature matching cannot see it AT ALL. Two of these on MAP13
+    survived four separate scans of the same lump, including one that decoded the
+    4-byte LSPECnDIRECT form, because every one of them keyed on the arguments.
+
+    They are found by scanning for the OPCODE PAIR instead -- LSPECn (3+n) followed by
+    the special number -- which is present regardless of where the arguments came from.
+
+    The repair cannot be the Scripted family's either. NOPing the two-byte call would
+    leave its n arguments on the VM stack, and in a looping script that grows without
+    bound. Instead the SPECIAL NUMBER is overwritten with 0: LSPECn still executes and
+    still pops exactly n arguments, P_ExecuteSpecial gets special 0 and does nothing.
+    One byte per call, stack balanced, lump length unchanged.
+    """
+
+    def __init__(self, mapname: str, script: int, special: int, argc: int,
+                 count: int, enabled: bool, note: str):
+        self.mapname = mapname
+        self.script = script
+        self.special = special
+        self.argc = argc
+        self.count = count      # how many such calls the script is expected to contain
+        self.enabled = enabled
+        self.note = note
+
+
+SCRIPTED_COMPUTED = [
+    # The same fixture, in the same OPEN script, on thirteen more maps. Found by the
+    # opcode-pair scan once MAP13 showed what to look for: 14 maps carry
+    # Light_Fade(argc=3) inside script 669, 35 calls in total, and script 669 is type
+    # OPEN on every single one of them -- it runs at map load, unconditionally, forever.
+    #
+    # Scoped tightly on purpose, to Light_Fade with THREE arguments inside script 669:
+    #
+    #   - Light_Stop (67 of the 147 computed calls game-wide) is the OPPOSITE operation.
+    #     It turns an effect off, and stripping it would leave that effect running.
+    #     Never touch it.
+    #   - Light_Fade / Light_ChangeToValue elsewhere (scripts 2-30) are triggered by
+    #     gameplay -- doors, switches, events -- not installed at load. Those are
+    #     authored moments and are left alone.
+    #   - Other argument counts in 669 are a different call shape and are not assumed
+    #     to be the same fixture without looking.
+    #
+    # The builder asserts the exact count per map, so if any of these is wrong the
+    # build fails instead of zeroing an unrelated special.
+    ScriptedComputed(
+        "MAP10", 669, 113, 3, 3, enabled=True,
+        note="Light_Fade x3 in the OPEN script — same sourceless sweep as MAP13.",
+    ),
+    ScriptedComputed(
+        "MAP12", 669, 113, 3, 10, enabled=True,
+        note="Light_Fade x10 in the OPEN script — the heaviest in the game. MAP12 also "
+             "carries the 20-wedge sequence ring (CHAINS, still disabled pending "
+             "playtest), so expect this map to change noticeably.",
+    ),
+    ScriptedComputed(
+        "MAP15", 669, 113, 3, 2, enabled=True,
+        note="Light_Fade x2 in the OPEN script — same sourceless sweep as MAP13.",
+    ),
+    ScriptedComputed(
+        "MAP17", 669, 113, 3, 1, enabled=True,
+        note="Light_Fade x1 in the OPEN script — same sourceless sweep as MAP13.",
+    ),
+    ScriptedComputed(
+        "MAP18", 669, 113, 3, 2, enabled=True,
+        note="Light_Fade x2 in the OPEN script — same sourceless sweep as MAP13.",
+    ),
+    ScriptedComputed(
+        "MAP19", 669, 113, 3, 1, enabled=True,
+        note="Light_Fade x1 in the OPEN script — same sourceless sweep as MAP13.",
+    ),
+    ScriptedComputed(
+        "MAP20", 669, 113, 3, 1, enabled=True,
+        note="Light_Fade x1 in the OPEN script — same sourceless sweep as MAP13.",
+    ),
+    ScriptedComputed(
+        "MAP21", 669, 113, 3, 3, enabled=True,
+        note="Light_Fade x3 in the OPEN script — same sourceless sweep as MAP13.",
+    ),
+    ScriptedComputed(
+        "MAP22", 669, 113, 3, 1, enabled=True,
+        note="Light_Fade x1 in the OPEN script — same sourceless sweep as MAP13.",
+    ),
+    ScriptedComputed(
+        "MAP23", 669, 113, 3, 2, enabled=True,
+        note="Light_Fade x2 in the OPEN script — same sourceless sweep as MAP13.",
+    ),
+    ScriptedComputed(
+        "MAP24", 669, 113, 3, 1, enabled=True,
+        note="Light_Fade x1 in the OPEN script — same sourceless sweep as MAP13.",
+    ),
+    ScriptedComputed(
+        "MAP33", 669, 113, 3, 2, enabled=True,
+        note="Light_Fade x2 in the OPEN script — same sourceless sweep as MAP13.",
+    ),
+    ScriptedComputed(
+        "MAP34", 669, 113, 3, 4, enabled=True,
+        note="Light_Fade x4 in the OPEN script — same sourceless sweep as MAP13.",
+    ),
+    ScriptedComputed(
+        "MAP13", 669, 113, 3, 2,
+        enabled=True,
+        note="THE REPORTED ONE (screen/level13fakelitblinkpillars.png, and the wider "
+             "'multiple textures in that area' report). Two Light_Fade calls in the "
+             "OPEN script, arguments computed, driving tags 29 and 10 -- seven "
+             "sectors: 0, 43, 94, 179, 210, 211, 243. rt_lightlevel_watch caught them "
+             "sweeping 221..255 continuously, in lockstep, forever.\n"
+             "\n"
+             "Nothing in the map file explains them: no sector special, no linedef "
+             "Light_*, no ACS call on tag 29 or 10 findable by signature, and zero "
+             "light THINKERS running at level load (Light_Fade's thinker is created "
+             "per call by the loop, so a dump at load sees none). The pillar sides and "
+             "walls carry tag 29 and the ground does not, which is exactly why some "
+             "surfaces in that courtyard pulsed and others did not.",
+    ),
+]
+
+
+def strip_acs_computed_lights(
+    behavior: bytes, wanted: list, mapname: str
+) -> tuple[bytes, int]:
+    """Neutralise Light_* calls with computed args by zeroing the special number."""
+    if not wanted:
+        return behavior, 0
+    out = bytearray(behavior)
+    done = 0
+    for w in wanted:
+        lo, hi = _acs_script_range(behavior, w.script, mapname)
+        op = 3 + w.argc
+        found = [
+            i
+            for i in range(lo, min(hi, len(out)) - 1)
+            if out[i] == op and out[i + 1] == w.special
+        ]
+        if len(found) != w.count:
+            raise SystemExit(
+                f"{mapname} script {w.script}: expected {w.count} LSPEC{w.argc} -> "
+                f"special {w.special} call(s), found {len(found)} — map data changed, "
+                f"refusing to patch blind."
+            )
+        for i in found:
+            out[i + 1] = 0      # special 0: pops the args, does nothing
+            done += 1
+    return bytes(out), done
 
 
 def acs_call_signature(special: int, args: tuple[int, ...]) -> bytes:
@@ -1135,6 +1370,7 @@ def main() -> None:
     activeLamps = [l for l in LAMPS if l.enabled]
     activeAnims = [a for a in STATIC_ANIMS if a.enabled]
     activeTints = [t for t in TINTS if t.enabled]
+    activeComputed = [c for c in SCRIPTED_COMPUTED if c.enabled]
     if (not active and not activeBlinks and not activeScripted
             and not activeShafts and not activeLamps and not activeAnims
             and not activeTints):
@@ -1144,6 +1380,13 @@ def main() -> None:
     SEQ_FAMILY = ( 1, 2, 3, 4 )
     by_map: dict[str, dict[int, tuple[int, ...]]] = {}
     labels: dict[str, list[str]] = {}
+
+    # After `labels` exists — this list feeds the per-map report line.
+    comp_by_map: dict[str, list] = {}
+    for c in activeComputed:
+        comp_by_map.setdefault(c.mapname, []).append(c)
+        labels.setdefault(c.mapname, []).append(
+            f"acs-computed script {c.script} special {c.special} x{c.count}")
     for c in active:
         m = by_map.setdefault(c.mapname, {})
         for i in c.sectors:
@@ -1189,7 +1432,7 @@ def main() -> None:
     lumps = read_wad_lumps(WAD)
     items: list[tuple[str, bytes]] = []
     for mapname in dict.fromkeys(
-        [*by_map, *acs_by_map, *light_by_map, *lamp_by_map, *tint_by_map]
+        [*by_map, *acs_by_map, *light_by_map, *lamp_by_map, *tint_by_map, *comp_by_map]
     ):
         wanted = by_map.get(mapname, {})
         start, end = map_lump_range(lumps, mapname)
@@ -1221,6 +1464,10 @@ def main() -> None:
             if mapname in acs_by_map
             else (members["BEHAVIOR"], 0)
         )
+        behavior, ncomp = strip_acs_computed_lights(
+            behavior, comp_by_map.get(mapname, []), mapname
+        )
+        nacs += ncomp
 
         # Carry the 3D-floor strip forward on any map that needs it.
         #
@@ -1258,7 +1505,8 @@ def main() -> None:
                   f"({a.base} animation frozen)")
 
     write_wad(OUTWAD, items)
-    maps = len({*by_map, *acs_by_map, *light_by_map, *lamp_by_map, *tint_by_map})
+    maps = len({*by_map, *acs_by_map, *light_by_map, *lamp_by_map, *tint_by_map,
+                *comp_by_map})
     print(f"wrote {OUTWAD} maps={maps} lumps={[nm for nm, _ in items]}")
 
 

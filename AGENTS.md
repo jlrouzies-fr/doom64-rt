@@ -39,6 +39,26 @@ Update those when phases complete or facts change. Do not invent parallel tracke
 
 ## A surface looks wrongly lit — do this first
 
+**If it BLINKS, PULSES or SWEEPS, go straight to `rt_lightlevel_watch`.** It prints
+every sector whose lightlevel moves, as it moves, needing no texture or tag to aim it:
+
+    .\tools\launch-retribution-rt.cmd 13 -- +rt_lightlevel_watch 1
+
+    rt_lightlevel_watch: sector 126   200 -> 255      <- names the sector outright
+    rt_lightlevel_watch: thinker DGlow sector 0 tag=29   (dumped at level load)
+
+Lines appear → a sector is being animated, and you now know which. Nothing appears →
+no sector is changing, so it is a light or the denoiser. Either way it is one run.
+
+**A quarter of this game's ACS light calls are invisible to signature scanning.** A call
+with computed arguments — `Light_Fade(tag, random(220,255), tics)` — has no literal
+argument run in the lump, so `scan_light_specials.py` and `acs_call_signature()` cannot
+see it *at all*. Scan the opcode pair instead (`LSPECn` = `3+argc`, special is the next
+byte). Game-wide: 147 computed vs 488 literal. This cost most of a day on MAP13 and is
+written up in `docs/sequence-light-chains.md` and `rt-lighting-practices.md` §27.
+
+## A surface looks wrongly lit — the static checklist
+
 Most of a day was lost on MAP13 skipping these three steps. In order, before
 forming any theory and before touching a texture:
 
@@ -78,9 +98,33 @@ On MAP13 that finds 38 candidates where the two scanners find 4. Then triage eac
 one the way the MAP05 pylons were: **is there anything in the room the light could
 be coming from?** A real fixture cannot light a recess and leave its own wall black.
 
-Repairs go in `tools/make_seqlight_fix.py` (six families, one wad) — see
-`docs/sequence-light-chains.md`. To make a fixture cast light, add a light
-**thing** to the map (`LAMPS`); texture metadata cannot do it.
+And for the static half, the full survey rather than one map at a time:
+
+    python tools/scan_painted_light.py 13 --entries   # painted brightness + painted colour
+
+It reports what the other two scanners miss — alcoves and door recesses (which never
+match their neighbour's flats) and sectors painted a different **colour** from their
+room — with a **fixture-distance** column derived from GLDEFS+DECORATE (39 placeable
+light-bearing actors), so "is there anything in the room the light could come from"
+is a number. Game-wide it finds 1128 candidates.
+
+Repairs go in `tools/make_seqlight_fix.py` — **seven families, one wad** — see
+`docs/sequence-light-chains.md`:
+
+| family | what it does |
+|---|---|
+| `CHAINS` | sequence chains (travelling waves) |
+| `BLINKS` | per-sector blink specials |
+| `SCRIPTED` | ACS light calls with **literal** args |
+| `SCRIPTED_COMPUTED` | ACS light calls with **computed** args — the invisible class |
+| `SHAFTS` | sectors painted brighter than their room |
+| `TINTS` | sectors painted a different colour from their room |
+| `LAMPS` | the only family that **adds** — a light thing where a fixture is real |
+| `STATIC_ANIMS` | ANIMDEFS animations that paint their own lighting (all disabled) |
+
+To make a fixture cast light, add a light **thing** to the map (`LAMPS`); texture
+metadata cannot do it. **Never strip `Light_Stop`** — it turns effects off, and removing
+it leaves them running.
 
 ## The moon, and sky light that leaks
 

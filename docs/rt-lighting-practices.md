@@ -512,6 +512,96 @@ Measured on MAP13's CTEL alcove:
   than assuming radius behaves like radius. This is §18 again — the cvar descriptions and
   the code encode prior root causes.
 
+## 27. A scan that keys on values cannot see values it does not have
+
+The single most expensive lesson of the MAP13 work, and it generalises well past ACS.
+
+`acs_call_signature()` identifies a light call by matching `PUSHnBYTES`, the **literal
+arguments**, `LSPECn`, the special. That is exact and safe — and it is *blind* to any
+call whose arguments are computed, because there is no literal run in the lump to match.
+`Light_Fade(tag, random(220,255), tics)` is not a near miss for that scan; it is
+invisible to it.
+
+Two such calls drove seven MAP13 sectors in a continuous 221↔255 sweep. They survived
+**four** scans of the same 1889-byte lump — including one that decoded the alternative
+4-byte `LSPECnDIRECT` encoding — because every scan keyed on the arguments. Game-wide
+the class is 147 calls against 488 literal ones, i.e. a quarter of all light calls in
+the game were structurally unfindable.
+
+The fix is to key on the part that is always present. For ACS that is the **opcode
+pair**: `LSPECn` is `3 + argc` and the special is the next byte, whatever the arguments
+were computed from.
+
+**Rules:**
+
+- When a scan returns "none" for something the evidence says exists, ask *what the scan
+  keys on* and whether the thing you are hunting is required to have it. A null from a
+  matcher is only as strong as its key.
+- Prefer keying on structure (opcodes, types, positions) over content (values, names).
+  Content is optional; structure is not.
+- Say which scan produced a null and what it matched on. "There is no ACS on that tag"
+  was reported as fact three times; it was true only of one encoding.
+
+## 27b. `scan_light_specials.py` under-reports ACS — cross-check the compiled lump
+
+Two independent blind spots, both found the hard way, and they compound:
+
+1. **It misses computed arguments** (§27) — a quarter of the game's light calls.
+2. **It disagrees with the compiled `BEHAVIOR`.** On MAP11 it reports
+   `acs light calls=0` while an opcode scan of that map's `BEHAVIOR` finds **five**
+   (four literal `Light_Fade` plus one computed `Light_ChangeToValue`).
+
+So a clean result from it is not evidence that a map has no ACS light. Until it is
+fixed, scan the compiled lump directly:
+
+```python
+if blob[i] in (4,5,6,7,8) and blob[i+1] in LIGHT_SPECIALS: ...   # LSPECn = 3+argc
+```
+
+**And read the script TYPE before stripping anything.** MAP11's four calls live in
+script 671, whose type is **12 — the lightning script**, run on each strike. That is the
+storm map's authored weather, not a fake light. The type byte is in the `SPTR` chunk:
+`struct.unpack_from("<HBBI", sptr, i)` → `(number, type, argc, address)`. Type 1 is
+`OPEN` (installed at load, the suspicious one); 12 is `LIGHTNING`; 0 is a normal
+triggered script.
+
+## 28. Census instruments are evidence only at the instant you take them
+
+`rt_dump_lightthinkers` reported **0 light thinkers running** on MAP13 while seven
+sectors were visibly sweeping. That looked like proof no light effect existed. It was
+not: `Light_Fade` creates its thinker **per call** from a looping script, so a census
+taken at level load is silent while the effect runs continuously.
+
+`rt_lightlevel_watch` — which samples *every frame* and reports change rather than
+presence — found it immediately.
+
+**Rule:** for anything periodic, prefer an instrument that observes over time to one
+that counts once. If you must count once, say when you counted, and treat "none right
+now" as much weaker than "none ever".
+
+## 29. When the user names a cause, that is data — not a hypothesis to be talked down
+
+On MAP13 the user identified the cause as ACS **in the first message about it**, then
+again explicitly (*"you did not remove that lighting ACS script or whatever it is"*),
+and a third time (*"AGAIN I SAID IT ACS"*). Each time it was contradicted on the
+strength of a scan that could not have seen the thing. The intervening work — an
+emissive mask, a `textures.json` attached light, an `rt_eye_panels` engine feature, a
+frozen ANIMDEFS animation, a map light thing, three rounds of radius tuning — was all
+reverted.
+
+The person watching the screen has information the map file does not contain: what the
+effect *looks* like, and how it behaves over time. That is exactly the information a
+static scan lacks.
+
+**Rules:**
+
+- A user's stated cause outranks a null from a tool written in the last ten minutes.
+  When they disagree, distrust the tool first.
+- If a scan contradicts a report, the next step is to test the scan, not to argue the
+  report.
+- Do not answer a repeated report by re-explaining the previous elimination. Build the
+  instrument instead — §25 and §28 both exist because that was learned late.
+
 ## Pending visual confirmation
 
 `RT_UploadCeilingEdgeLamps` (MAP03 ceiling strips) and the map-relative

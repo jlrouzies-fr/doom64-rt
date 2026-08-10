@@ -11,6 +11,36 @@ Do not treat this as a progress cheer sheet — only unresolved / partially reso
 
 ## 1. Unfixed / incomplete
 
+### 1.2f Sourceless `Light_Fade` sweep on 14 maps — **FIXED 2026-08-10** (MAP13 confirmed in play)
+
+Reported on MAP13 as pillars and walls that "get illuminated regularly" — multiple
+surfaces in one area, not all of them.
+
+**Cause:** `Light_Fade` with **computed arguments** inside script **669**, which is type
+`OPEN` on all 14 affected maps, so it runs at load unconditionally. On MAP13 it drove
+tags 29 and 10 — sectors 0, 43, 94, 179, 210, 211, 243 — sweeping 221↔255 in lockstep
+forever. Tag 29 is on the pillar sides and walls and not the ground, which is exactly
+what was described.
+
+**Why it took most of a day, and the user named the cause on day one.** Every scan of
+that lump keyed on the *arguments*, and a computed-arg call has none in the lump — it is
+structurally invisible to signature matching, not a near miss. Four scans missed it,
+including one that decoded the 4-byte `LSPECnDIRECT` form. `rt_dump_lightthinkers` also
+reported **0 thinkers at load**, which looked like proof, but `Light_Fade` builds its
+thinker per call from the loop. `rt_lightlevel_watch` — sampling every frame, reporting
+change rather than presence — found it in one run.
+
+**Fixed:** 35 calls across MAP10/12/13/15/17/18/19/20/21/22/23/24/33/34 via the new
+`SCRIPTED_COMPUTED` family. The special number is zeroed rather than NOPed, so `LSPECn`
+still pops its arguments and the VM stack stays balanced in a looping script. Verified:
+target pattern 80 → 45, every `BEHAVIOR` unchanged in length, `Light_Stop` counts intact.
+
+**Deliberately not touched:** `Light_Stop` (67 of the 147 computed calls — the opposite
+operation), and `Light_Fade`/`Light_ChangeToValue` in scripts 2–30, which are gameplay
+triggered rather than installed at load.
+
+See `rt-lighting-practices.md` §27–§29.
+
 ### 1.2e MAP13 CTEL alcove baked-lit — **FIXED + CONFIRMED IN PLAY 2026-08-10**
 
 The 64×64 alcove at (864, −1312), CTEL telemetry panel on floor and ceiling,
