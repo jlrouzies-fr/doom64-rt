@@ -23,9 +23,23 @@ if not exist "%RTGL%\Include\RTGL1\RTGL1.h" (
 echo DLSS_SDK_PATH=%DLSS_SDK_PATH%
 echo === Generating shaders ===
 pushd "%RTGL%\Source\Shaders"
-python GenerateShaders.py -g
-if errorlevel 1 (
-  echo Shader generation failed
+rem GenerateShaders.py exits 0 even when glslangValidator rejects a shader, so
+rem errorlevel alone is not enough -- a compile error would otherwise sail
+rem through to BUILD_OK and get playtested against the previous SPV.
+set "SHADERLOG=%TEMP%\shadergen.log"
+python GenerateShaders.py -g > "%SHADERLOG%" 2>&1
+set "SHADERGEN_RC=%errorlevel%"
+type "%SHADERLOG%"
+if not "%SHADERGEN_RC%"=="0" (
+  echo Shader generation failed ^(exit %SHADERGEN_RC%^)
+  popd
+  exit /b 1
+)
+findstr /i /c:"error:" "%SHADERLOG%" >nul
+if not errorlevel 1 (
+  echo.
+  echo ERROR: a shader failed to compile ^(see 'error:' lines above^).
+  echo        Aborting so the OLD spv is not silently playtested.
   popd
   exit /b 1
 )
