@@ -117,33 +117,35 @@ FORCE: dict[str, tuple[float, float, tuple[int, int, int] | None]] = {
     "SKEYFLBL": (1.3, 0.0, (60, 160, 255)),
     "SEXIT": (0.9, 0.0, (255, 40, 40)),
     # CTEL1..8 — ANIMDEFS loop (8 frames, 4 tics each) of a telemetry panel whose red
-    # gems pulse. Used as a FLAT (floor/ceiling) on 15 maps, MAP13's being a single
-    # 64x64 alcove with the panel on both floor and ceiling.
+    # gems pulse. Glow only, no attached light. Used as a FLAT on 15 maps.
     #
-    # lightIntensity is per FRAME, and that is the whole feature: the frames are separate
-    # texture names, so scaling each one by its own measured gem luminance makes the CAST
-    # light pulse with the artwork instead of sitting at a constant value while the
-    # surface animates under it. Measured relative luma over the 45 mask pixels, peak
-    # CTEL8 = 100:
+    # emissiveMult IS the animation, and it has to be, because there is nothing else left
+    # to carry it. RsWorld.inl builds screen emission as
     #
-    #   CTEL8 1.00   CTEL1 0.71   CTEL2 0.67   CTEL3 0.55
-    #   CTEL4 0.55   CTEL5 0.48   CTEL6 0.47   CTEL7 0.45
+    #     ldrEmis = baseColor().rgb * emisTex.rgb * emissiveMult
     #
-    # Peak 100 is deliberately near SPORT's 110: both are small floor fixtures, and a
-    # 45-pixel gem cluster should not out-light a teleporter pad. emissiveMult 2.5 is the
-    # sparse-mask value (cf. sparse SMON at 2.8) -- 45 px of 4096 casts nothing at 1.0.
+    # and under rt_mod_compat baseColor is forced to hue-only (forceWorldWhiteRgb), so
+    # the ALBEDO IS NOT A FACTOR. A constant mask with a constant mult therefore gives a
+    # constant glow: the first pass assumed the authored per-frame albedo would supply
+    # the pulse, and the pulse simply vanished in game (2026-08-10). The frames are
+    # separate texture names, so the per-frame value belongs here.
     #
-    # An attached light works here ONLY because these are flats. On MAP31 the same
-    # texture is a wall midtexture on 80 sidedefs and will get glow but no cast light,
-    # which is correct and unavoidable from texture meta -- see the C23 note above.
-    "CTEL1": (2.5, 71.0, (255, 65, 28)),
-    "CTEL2": (2.5, 67.0, (255, 65, 28)),
-    "CTEL3": (2.5, 55.0, (255, 65, 28)),
-    "CTEL4": (2.5, 55.0, (255, 65, 28)),
-    "CTEL5": (2.5, 48.0, (255, 65, 28)),
-    "CTEL6": (2.5, 47.0, (255, 65, 28)),
-    "CTEL7": (2.5, 45.0, (255, 65, 28)),
-    "CTEL8": (2.5, 100.0, (255, 65, 28)),
+    # Values are the measured relative gem luminance per frame, peak CTEL8 = 1.0.
+    #
+    # Peak 1.0 is a CEILING, not a taste call. emisTex is the saturated gem red
+    # (255,65,28) = (1.0, 0.25, 0.11), so mult 1.0 puts the red channel exactly at full
+    # and keeps the hue. The first pass used 2.5 -- the sparse-SMON value -- which drove
+    # red to 2.5 and green to 0.64: red clipped, green and blue did not, and the gems
+    # washed out to near-white. Above ~1.0 this texture desaturates instead of
+    # brightening.
+    "CTEL1": (0.71, 0.0, (255, 65, 28)),
+    "CTEL2": (0.67, 0.0, (255, 65, 28)),
+    "CTEL3": (0.55, 0.0, (255, 65, 28)),
+    "CTEL4": (0.55, 0.0, (255, 65, 28)),
+    "CTEL5": (0.48, 0.0, (255, 65, 28)),
+    "CTEL6": (0.47, 0.0, (255, 65, 28)),
+    "CTEL7": (0.45, 0.0, (255, 65, 28)),
+    "CTEL8": (1.00, 0.0, (255, 65, 28)),
     "SPORT1": (2.2, 110.0, (70, 190, 255)),
     "SPORT2": (2.2, 110.0, (70, 190, 255)),
     "SPORT3": (2.2, 110.0, (70, 190, 255)),
@@ -158,11 +160,11 @@ FORCE: dict[str, tuple[float, float, tuple[int, int, int] | None]] = {
 # flat drawn over a simple rectangular sector satisfies that, but the moment the sector
 # is split into more subsector points it does not, and the light silently never exists.
 #
-# With this flag set, the non-quad path runs instead, and it is actually the BETTER one
-# for a flat: MakeLightsForPrimitive merges coplanar triangles and emits spot lights at
-# `position + normal * offset`, i.e. lifted OFF the surface and aimed away from it,
-# rather than a sphere sitting in the floor plane.
-EVEN_ON_DYNAMIC = {f"CTEL{i}" for i in range(1, 9)}
+# Empty on purpose. CTEL was in here and the flag did not produce a light either, so the
+# gate is not the only thing in the way and nothing is served by carrying a setting that
+# was never shown to do anything (2026-08-10). CTEL is glow-only now, like the monitors
+# and EXIT signs, which is the policy at the top of this file for panels anyway.
+EVEN_ON_DYNAMIC: set[str] = set()
 
 # Flat saturated hue for the CTEL gems' _e mask. The gems' own peak texel is (222,57,24);
 # this is that hue pushed to full range. Constant, never sampled per-texel from the
