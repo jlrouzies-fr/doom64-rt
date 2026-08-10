@@ -64,6 +64,7 @@ Update those when phases complete or facts change. Do not invent parallel tracke
 | `tools/wash-scratch/00-RUN-ORDER.cmd` | **From-scratch wash ladder** (isolated `build/WashScratch`; play build untouched). |
 | `tools/launch-texture-gallery-ce-pbr.cmd` | Same MAP99 with DoomCE Substance PBR overlay (A/B). |
 | `tools/test_gallery_emis_qa.cmd` | Auto QA: emis hygiene + 8-yaw wash score (pass/fail). |
+| `tools/ab-water.cmd` | Stylized vs stock water on the D64 water flats (`stock`/`styl`/`flat`/`mirror`/`noglow`, default MAP10). Tag the flats first: `python tools/set_water_meta.py --apply`. |
 
 Important cvars on Retribution launch (do not crank blindly):
 

@@ -587,3 +587,72 @@ Two implementation notes for anyone touching this shader:
 `docs/rayreconstruction/rr-noise-investigation.md` §10. Short version — with a 1-spp input, anything
 that buys stability pays in blur or lag; A-SVGF is the better denoiser for this
 content, and that is now a choice rather than an accident.
+
+---
+
+## Stylized Doom 64 water (2026-08-10)
+
+**Problem.** `D64W2_01` (MAP10/11/34) and `D64W1_01` (MAP08/14/15/16/22/23/30/34)
+had no water treatment at all: they were plain rough materials, and the flat is
+nearly black (mean luminance 8/255, brightest texel 48/255) so under path
+tracing the water read as a hole in the floor rather than water. Handing them to
+RTGL's existing water path is not the answer either — that path is physical
+(refract into the media, Beer-Lambert absorb, mirror the rest) and reads far too
+real next to Doom 64's art. It is also structurally wrong for these maps: both
+are **opaque FLOOR flats**, there is no sector under them, so the refraction half
+of the checkerboard split has nothing to show.
+
+**Fix — a stylized branch in the refl/refr raygen** (`rt_water_style`, on by
+default). Same entry point as stock water (`GEOM_INST_FLAG_MEDIA_TYPE_WATER`),
+but the split is spent differently:
+
+| | stock physical | stylized |
+|---|---|---|
+| odd checkerboard half | refraction into the media | **keep the lit water surface** in the G-buffer |
+| even half | mirror reflection | mirror reflection (Fresnel clamped) |
+| resolve | `F·refl + (1−F)·refracted` | `F·refl + (1−F)·lit surface` |
+
+The surface half rewrites only the shading inputs and returns early —
+`framebufAlbedo`, `framebufNormal` (the animated wave normal), a low
+`framebufMetallicRoughness`, `framebufThroughput` (`(1−F)·2`, alpha 1 = split)
+and the screen-emission sheen. Position, depth, motion and the visibility buffer
+stay as the primary pass wrote them, because they already describe this exact
+surface — so the direct/indirect passes (which run *after* refl/refr) light the
+water plane like any other opaque surface, and the denoisers see a normal
+primary hit.
+
+The colour is rebuilt from the flat itself rather than invented:
+`getStylizedWaterAlbedo()` takes the texture's own luminance as the caustic vein
+mask (normalized by `rt_water_veinref`), brightens it with the wave-normal tilt
+(`rt_water_caustic`), and mixes a deep blue body (`rt_water_tint_*`) toward a
+pale-cyan crest. `rt_water_glow` adds a small **screen-space** sheen on the veins
+so the pattern still reads in near-black rooms — it is on-screen emission only
+and casts no light, so it cannot wash GI (see the emissive wash log above).
+
+**Files:**
+- `deps/RTGL/Source/Shaders/RaygenPrimary.inl` — `getStylizedWaterAlbedo()` + the
+  `stylizedWater` branch in `RAYGEN_REFL_REFR_SHADER`. Gated to `i == 0` and a
+  vacuum→water crossing; everything else keeps stock behaviour.
+- `deps/RTGL/Source/Generated/GenerateShaderCommon.py` — 8 scalars + one vec4,
+  two full groups so `viewProjCubemap` stays 16-byte aligned.
+- `deps/RTGL/Include/RTGL1/RTGL1.h`, `Source/DrawFrameInfo.h`,
+  `Source/VulkanDevice.cpp` — `RgDrawFrameReflectRefractParams` plumbing.
+- `sourcecode/gzdoom-rt/src/common/rendering/rt/rt_main.cpp` — `rt_water_style`,
+  `rt_water_tint_r/g/b`, `rt_water_caustic`, `rt_water_reflmax`, `rt_water_rough`,
+  `rt_water_glow`, `rt_water_veinref`. Also **un-hardcoded** `waterWaveSpeed`
+  (was `0.05f`, "for partial_invisibility") and `waterTextureAreaScale` (was
+  `1.0f`) as `rt_water_wavespeed` / `rt_water_areascale`. At 0.05 the wave field
+  scrolls one texture cycle every few minutes — the caustics would not have
+  shimmered at all. Both still also drive the partial-invisibility warp.
+- `tools/set_water_meta.py` — tags the four flats `isWater` in the **global**
+  `rt/data/textures.json`. That file is gitignored and rewritten by the PBR
+  tooling, so re-run after `apply_all_category_pbr.py` and after a clean build.
+  Without the tag none of the above runs: `isWater` in the JSON meta is the only
+  route to `RG_MESH_PRIMITIVE_WATER` for world geometry.
+- `tools/launch-retribution-rt.cmd` — all water cvars pinned explicitly.
+- `tools/ab-water.cmd` — arms `stock` / `styl` / `flat` / `mirror` / `noglow`,
+  default MAP10. Every arm sets every water cvar, so nothing leaks via the ini.
+
+Rebuild: `tools/build-rtgl.cmd` **and** `tools/build-gzdoom-rt.cmd` (new uniform
+fields mean the generated `ShaderCommonC.h` changes, so the engine must be
+rebuilt too, not just the shaders).
