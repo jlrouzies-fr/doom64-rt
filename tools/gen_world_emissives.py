@@ -116,6 +116,34 @@ FORCE: dict[str, tuple[float, float, tuple[int, int, int] | None]] = {
     "SKEYFLRD": (1.2, 0.0, (255, 50, 40)),
     "SKEYFLBL": (1.3, 0.0, (60, 160, 255)),
     "SEXIT": (0.9, 0.0, (255, 40, 40)),
+    # CTEL1..8 — ANIMDEFS loop (8 frames, 4 tics each) of a telemetry panel whose red
+    # gems pulse. Used as a FLAT (floor/ceiling) on 15 maps, MAP13's being a single
+    # 64x64 alcove with the panel on both floor and ceiling.
+    #
+    # lightIntensity is per FRAME, and that is the whole feature: the frames are separate
+    # texture names, so scaling each one by its own measured gem luminance makes the CAST
+    # light pulse with the artwork instead of sitting at a constant value while the
+    # surface animates under it. Measured relative luma over the 45 mask pixels, peak
+    # CTEL8 = 100:
+    #
+    #   CTEL8 1.00   CTEL1 0.71   CTEL2 0.67   CTEL3 0.55
+    #   CTEL4 0.55   CTEL5 0.48   CTEL6 0.47   CTEL7 0.45
+    #
+    # Peak 100 is deliberately near SPORT's 110: both are small floor fixtures, and a
+    # 45-pixel gem cluster should not out-light a teleporter pad. emissiveMult 2.5 is the
+    # sparse-mask value (cf. sparse SMON at 2.8) -- 45 px of 4096 casts nothing at 1.0.
+    #
+    # An attached light works here ONLY because these are flats. On MAP31 the same
+    # texture is a wall midtexture on 80 sidedefs and will get glow but no cast light,
+    # which is correct and unavoidable from texture meta -- see the C23 note above.
+    "CTEL1": (2.5, 71.0, (255, 65, 28)),
+    "CTEL2": (2.5, 67.0, (255, 65, 28)),
+    "CTEL3": (2.5, 55.0, (255, 65, 28)),
+    "CTEL4": (2.5, 55.0, (255, 65, 28)),
+    "CTEL5": (2.5, 48.0, (255, 65, 28)),
+    "CTEL6": (2.5, 47.0, (255, 65, 28)),
+    "CTEL7": (2.5, 45.0, (255, 65, 28)),
+    "CTEL8": (2.5, 100.0, (255, 65, 28)),
     "SPORT1": (2.2, 110.0, (70, 190, 255)),
     "SPORT2": (2.2, 110.0, (70, 190, 255)),
     "SPORT3": (2.2, 110.0, (70, 190, 255)),
@@ -518,6 +546,39 @@ def _e_teleporter_from_albedo(
                 min(255, int(tb * w)),
                 255,
             )
+    return out
+
+
+def _e_ctel_gems_from_albedo(img: Image.Image) -> Image.Image:
+    """CTEL1..CTEL8 — the red gems on the telemetry panel, and nothing else.
+
+    Selected by RED DOMINANCE (r - max(g,b) > 15), not by luma. The generic luma
+    path is wrong for this texture in the way that produced the C22/C23 mess: the
+    panel is dark cracked stone whose brightest pixels are grey mortar, so a luma
+    threshold picks the stone and misses the gems, which are dark-ish but strongly
+    red (peak 222,57,24).
+
+    The threshold is deliberately low enough that the SAME 45 pixels are selected
+    in all 8 frames. That is the point: this is an 8-frame ANIMDEFS loop where the
+    gems pulse, and the mask must not pulse with them. RsWorld.inl multiplies the
+    mask by baseColor, so a constant full-strength mask lets the AUTHORED per-frame
+    albedo produce the pulse by itself -- painting the mask per-frame instead would
+    square the animation and blink far harder than the artist drew.
+
+    Full saturation, not the albedo colour, for the same reason: baseColor already
+    supplies the red.
+    """
+    out = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    ip = img.load()
+    op = out.load()
+    for y in range(img.size[1]):
+        for x in range(img.size[0]):
+            px = ip[x, y]
+            r, g, b = px[0], px[1], px[2]
+            if len(px) > 3 and px[3] < 40:
+                continue
+            if r - max(g, b) > 15:
+                op[x, y] = (255, 255, 255, 255)
     return out
 
 
@@ -1363,6 +1424,13 @@ def main() -> None:
                 # Missing BMTX* brightmaps — green LED strip only, never metal luma.
                 eimg = _e_switch_led_from_albedo(albedo, tint)
                 src = "switch-led"
+            elif u.startswith("CTEL"):
+                # Red gems on the telemetry panel. Must come BEFORE the generic
+                # albedo-luma path: this texture is dark cracked stone whose
+                # brightest pixels are grey mortar, so luma picks the stone and
+                # misses the gems entirely. Red dominance picks the gems.
+                eimg = _e_ctel_gems_from_albedo(albedo)
+                src = "ctel-gems"
             elif u.startswith("SPORT"):
                 # Teleporter pads — cyan-tinted mask (not grey ceiling-blob luma).
                 eimg = _e_teleporter_from_albedo(albedo, tint)
