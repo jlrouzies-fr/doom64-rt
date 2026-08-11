@@ -342,6 +342,26 @@ rem brightmap marks six pixels, three pairs of dark red demon eyes, and gen_worl
 rem was painting 613 pixels of mortar highlight amber on top of them. The fixture was ours,
 rem not the artist's; the mask is fixed at the source and no light is invented for it.
 rem
+rem rt_lava_light_*: the lava is a LIGHT, and it has to be an analytic one. All seven
+rem lava entries in textures.json have carried lightIntensity 140 + lightColor since
+rem the lava existed and it never lit anything: that meta only produces a light for
+rem SPRITES. A flat's emissive shades the flat and nothing else, so a lava room
+rem path-traced as a black box with a glowing net on the floor. Same conclusion as
+rem the flames, same shape of fix -- except a flame is a point and a lake is an AREA,
+rem so these are scattered on a WORLD-space grid over each lava sector (BSP-tested
+rem per point, so concave lakes and the walkways beside them come out right) instead
+rem of one per actor. Anchoring the grid to the world rather than to each sector's
+rem own box matters: per-box grids double up along the seam between two sectors of
+rem one lake and draw a bright line across it.
+rem rt_lava_light_intensity is the brightness knob and rt_lava_light_spacing is the
+rem evenness knob -- intensity is scaled by (spacing/96)^2 so changing the density
+rem does not change how bright the room is. Radius is wide on purpose: a lake is an
+rem area source, and a small radius gives every grid point its own hard shadow, which
+rem reads as a row of lamps under the floor. tools\ab-lava.cmd has the arms.
+rem The lava SURFACE is separate and is not a cvar at all -- _e/_n/_h/_orm baked by
+rem tools\gen_lava_material.py (--apply / --revert). Keep the two apart when judging:
+rem "the room is dark" is the light, "the lava looks wrong" is the surface.
+rem
 rem rt_water_style: Doom 64's LIQUID flats -- water (D64W1_/D64W2_), nukage
 rem (D64N1_/D64N2_), sludge (D64S1_/D64S2_, e.g. the brown pools in MAP12) and
 rem blood (D64B1_/D64B2_) -- are tagged
@@ -501,6 +521,9 @@ start "" gzdoom.exe ^
   +rt_rr_reset_on_lightcut 1 +rt_rr_reset_on_dynlight 1 +rt_rr_reset_delta 0.5 +rt_rr_reset_min_ms 250 ^
   +rt_rr_reset_hold 0 +rt_rr_reset_now 0 +rt_rr_reset_debug 0 ^
   +rt_restir_initial 32 ^
+  +rt_lava_light_on 1 +rt_lava_light_intensity 0.9 +rt_lava_light_spacing 96 ^
+  +rt_lava_light_radius 0.6 +rt_lava_light_z 12 +rt_lava_light_max 256 +rt_lava_light_dist 2048 ^
+  +rt_lava_light_r 255 +rt_lava_light_g 90 +rt_lava_light_b 20 +rt_lava_light_debug 0 ^
   +rt_water_style 1 +rt_water_liquids 1 ^
   +rt_water_tint_r 1 +rt_water_tint_g 1 +rt_water_tint_b 15 ^
   +rt_water_crest_r 140 +rt_water_crest_g 204 +rt_water_crest_b 255 ^

@@ -27,7 +27,13 @@ touched. What gets written is:
   _h    the same height, for parallax.
   _orm  rough crust, smoother channels, metallic 0. Lava is not a mirror.
 
-TWO THINGS THAT WILL BREAK THIS IF CHANGED CARELESSLY.
+THREE THINGS THAT WILL BREAK THIS IF CHANGED CARELESSLY.
+
+0. One overlay set per SEQUENCE, built from the mean of its frames -- not one per
+   frame. HLAVA1-5 lights different cracks on different frames; that is the pulse
+   the art is drawn to have, and reproducing it in the emission at this brightness
+   reads as the red parts blinking. Averaging first gives a steady heat field and
+   leaves the animation to the albedo, where it is subtle instead of strobing.
 
 1. Every frame or none. HLAVA1-5 is a 5-frame ANIMDEFS ping-pong and today only
    HLAVA1 has _n/_h/_orm -- so once per cycle the surface gains a normal map and
@@ -96,10 +102,8 @@ SELF_EMIT = 1.5  # the cracks are hot rock, not lit rock
 SELF_EMIT_GAMMA = 1.3
 
 
-def build(name: str):
+def build_from(albedo, m):
     """-> (unnormalised _e as RGB, height, normal_rgb, orm_rgb)"""
-    albedo, _authored_e = load_source(name)
-    m = crack_mask(albedo)
 
     h, nx, ny = relief(m, RELIEF_STRENGTH)
     ndl, glow = lit_by_cracks(m, nx, ny)
@@ -153,16 +157,32 @@ def apply(dry: bool) -> int:
     mults: dict[str, float] = {}
 
     for group in GROUPS:
-        built = {n: build(n) for n in group}
-        # ONE peak for the whole sequence, or the animation flickers.
-        peak = max(float(e.max()) for e, _h, _n, _o in built.values())
+        # ONE overlay set for the whole sequence, built from the MEAN of its frames.
+        #
+        # Not one per frame. HLAVA1-5 is a 5-frame ping-pong in which the artist
+        # lights different cracks on different frames -- that is the pulse the
+        # original art is drawn to have. Deriving _e per frame reproduces it in the
+        # emission, and at this brightness it stopped reading as a pulse and started
+        # reading as the red parts BLINKING, which is what it was reported as.
+        #
+        # Averaging the frames first gives one steady heat field over the whole
+        # cycle, and the albedo still animates underneath. Emission carries the look
+        # now, so the surface is stable and the art keeps its motion where it is
+        # actually visible.
+        sources = [load_source(n)[0] for n in group]
+        albedo = np.mean(sources, axis=0)
+        m = crack_mask(albedo)
+        shared = build_from(albedo, m)
+        built = {n: shared for n in group}
+        peak = float(shared[0].max())
         # emissiveMult is NOT the brightness knob for what you see: primary and
         # reflection use the raw _e sample and ignore it entirely (HitInfo.inl).
         # It scales the INDIRECT contribution only, so it stays at what the lava
         # shipped with; the visible level is set by the peak below.
         mult = 1.5
 
-        print(f"  {'/'.join(group):28} peak _e {peak:5.3f}  (emissiveMult {mult}, indirect only)")
+        print(f"  {'/'.join(group):28} peak _e {peak:5.3f}  "
+              f"(emissiveMult {mult}, indirect only; {len(group)} frame(s) share one set)")
         for name, (e, h, normal, orm) in built.items():
             mults[name] = mult
             if dry:
