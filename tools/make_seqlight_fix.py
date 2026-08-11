@@ -481,6 +481,109 @@ SHAFTS = [
              "panel and not the stone it is bolted to.",
     ),
     Shaft(
+        "MAP10", [4, 5, 186, 187, 212], from_light=255, to_light=220,
+        enabled=True,
+        note="THE REPORTED ONE (screen/map10fakelit.png), and the same area as the very "
+             "first screenshot of this whole effort, level10bakedlighttexture.png. The "
+             "brick tower in the middle of the courtyard: five NESTED sectors all at "
+             "(384,256), floor 0 to ceiling 512, C301/C53 brick, every one painted 255 "
+             "inside a courtyard at 220 -- above MAP10's 220 threshold, so the tower "
+             "self-emits from top to bottom with no falloff anywhere.\n"
+             "\n"
+             "Five sectors rather than one because the tower is built as a stack of "
+             "concentric rings (496, 384, 376 and a 64x64 cap at z=384). Only 212 and 4 "
+             "touch the courtyard; 5, 186 and 187 border nothing but each other, so a "
+             "per-sector 'brighter than every neighbour' test sees two of the five.",
+    ),
+    # "despite the flame, the surround is fake lit" -- and it is. Same finding as the
+    # MAP12 cages: a fixture INSIDE the sector makes the paint redundant, because RT
+    # lights that fire or torch for real (RT_UploadFlameLights: intensity, flicker,
+    # falloff). The painted 255 is a second, flat, sourceless copy laid over it, and it
+    # is what makes the surround read as evenly lit with no falloff while the room
+    # beyond stays dark. The flames and torches are THINGS and are untouched -- this
+    # tool only rewrites sector lightlevel and colour, never the thing list.
+    Shaft(
+        "MAP21", [43, 44, 129], from_light=255, to_light=180,
+        enabled=True,
+        note="C65 alcoves with a 64BigFire in each, host 180. The fire stays and keeps "
+             "lighting them; only the paint goes.",
+    ),
+    Shaft(
+        "MAP21", [45, 46, 195, 251, 252], from_light=255, to_light=200,
+        enabled=True,
+        note="The same C65 fire alcoves whose host room is 200. Split from the group "
+             "above only because to_light differs -- same fixture, and they must not "
+             "end up lit differently from one another.",
+    ),
+    Shaft(
+        "MAP21", [65, 66, 67, 106, 108, 180, 181, 182, 278],
+        from_light=255, to_light=170,
+        enabled=True,
+        note="C53/C56/C57 torch bays, each holding a 64TorchLongYellow, host 170. Three "
+             "connected groups of the same construction.",
+    ),
+    Shaft(
+        "MAP21", [156, 157], from_light=255, to_light=180,
+        enabled=True,
+        note="Two more 64TorchLongYellow bays, C53, host 180.",
+    ),
+    Shaft(
+        "MAP21", [90, 91, 92, 93, 102, 103, 126, 127],
+        from_light=255, to_light=200,
+        enabled=True,
+        note="The C62 demon-relief panels (screen/level21nofix.png), EIGHT of them, all "
+             "16x64 or 64x16, all painted 255 against sector 0 at 200, arranged "
+             "symmetrically around the room at (+/-296,+/-128) and (+/-160,+/-264).\n"
+             "\n"
+             "First pass fixed only sector 93 -- the one `whatsthat` happened to be "
+             "aimed at -- and the very next probe came back as 102, the same fixture "
+             "four feet away, still lit. A repeated fixture has to be repaired as a "
+             "SET: query the texture across the whole map and take every instance that "
+             "shares the relationship, exactly as the C921 alcoves and the C52 cages "
+             "were done. Fixing the instance rather than the set just moves the "
+             "screenshot.",
+    ),
+    Shaft(
+        "MAP21", [216, 217], from_light=255, to_light=200,
+        enabled=True,
+        note="Reported via `whatsthat`, and a good example of why the frame test has to "
+             "run on ELEMENTS rather than sectors: aimed at 216 it reports 'brightest "
+             "neighbour 217 at 255, delta +0', which looks like nothing to fix. 217 is "
+             "its own 64x16 inner sector, also 255, also tag 46. The pair is one "
+             "element, and what the ELEMENT borders is sector 19 at 200.\n"
+             "\n"
+             "Checked before stripping, because the pair carries a CMPSW23B switch and "
+             "tag 46 could plausibly have been driven: MAP21's ACS light calls target "
+             "tags 32, 33, 36, 45, 47, 48, 49, 50 and 51 -- never 46 -- and no linedef "
+             "references it either. The 255 is static paint. The switch keeps its own "
+             "light; that is engine-side now (see the switch-lights work) and nothing "
+             "here touches things.",
+    ),
+    Shaft(
+        "MAP10", [189], from_light=255, to_light=180,
+        enabled=True,
+        note="Reported via `whatsthat`: 48x128 CDOR4 door recess at (1208,256), painted "
+             "255 inside sectors 218/231 at 180. Two 64WallTorchRed stand 89u away and "
+             "KEEP THEIR LIGHT -- they are things, RT lights them for real, and nothing "
+             "here touches them. What goes is the second, flat copy of that light "
+             "painted onto the sector, which is what made the recess read as lit while "
+             "the wall around it stayed dark.",
+    ),
+    Shaft(
+        "MAP10", [78], from_light=255, to_light=140,
+        enabled=True,
+        note="Reported via `whatsthat`: 72x816 C53/C89 run at (-820,256), painted 255 "
+             "against a host of 140 -- the widest gap on this map at +115. Same story "
+             "as 189: two wall torches 80u off, untouched; only the paint goes.",
+    ),
+    Shaft(
+        "MAP10", [18], from_light=255, to_light=200,
+        enabled=True,
+        note="The courtyard floor in the same shot -- CASF106 moss, 1090x1218 under "
+             "F_SKY1, painted 255 inside sectors 2 and 17 at 200. This is the "
+             "star-shaped bright patch visible in both MAP10 screenshots.",
+    ),
+    Shaft(
         "MAP12", [150, 151], from_light=255, to_light=180,
         enabled=True,
         note="THE CAGES (screen/fakelitcage_level12.png), identified by `whatsthat` "
