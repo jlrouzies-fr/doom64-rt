@@ -58,17 +58,46 @@ rem pins at level load -- the trap ab-storm.cmd documents -- which also means ea
 rem arm has to state every value it cares about, since RT_CVARs are CVAR_ARCHIVE
 rem and an unset one carries over from the last arm.
 rem
-rem Usage: ab-clouds.cmd <ship|old|thin|heavy|flat|nodeck> [map, default 12]
+rem TINT, and the ladder to sweep it along. Pass one as the third argument:
+rem   tools\ab-clouds.cmd ship 12 9859D3
+rem
+rem The art is achromatic, so the tint IS the cloud colour and also the colour of
+rem the moonlight coming through -- both ends of the rendered range are
+rem arithmetic. This ladder holds LUMINANCE constant and varies only saturation,
+rem which is the point: "stronger purple" should mean more saturated, not
+rem brighter or darker. G carries most of the luminance, so the cost of
+rem saturation is paid in R and B.
+rem
+rem     tint      sat   bright cloud   dark cloud   moonlight
+rem     6C6C96   0.28      #5B5D86      #0E0E17      #AFC3FF
+rem     7A66AA   0.40      #675898      #100E1A      #C6B8FF
+rem     8660C0   0.50      #7253AC      #110D1E      #D9ADFF   <- matches Doom 64
+rem     9C55DC   0.61      #8449C5      #140B22      #FF9BFF   <- SHIPPING
+rem     A852E9   0.65      #8E47D0      #160B24      #FF94FF
+rem     B44BF5   0.69      #9841DB      #180A26      #FF89FF   near neon, careful
+rem
+rem The moonlight column saturates fast because its hue is the transmittance
+rem DIVIDED by its own luminance and then clamped -- past about 0.6 both R and B
+rem are already pinned at 255 and only G keeps falling, so further saturation
+rem changes the light much less than it changes the picture.
+rem
+rem 8660C0 is what the console game's sky actually measures at (bright #745BAD,
+rem dark #100F1F in screen/doom64clouds.png). It read WEAK in motion, so the
+rem shipping value is deliberately one rung past the reference rather than on it.
+rem
+rem Usage: ab-clouds.cmd <ship|old|thin|heavy|flat|nodeck> [map, default 12] [tint hex]
 rem ---------------------------------------------------------------------------
 
 set "ARM=%~1"
 set "MAP=%~2"
+set "TINTHEX=%~3"
 if "%ARM%"=="" set "ARM=ship"
 rem MAP12 by default: it is the map the deck is a LIGHT source on, so it shows
 rem both halves at once -- the picture and the purple it puts on the level.
 if "%MAP%"==""  set "MAP=12"
+if "%TINTHEX%"=="" set "TINTHEX=9C55DC"
 
-set "TINT=+rt_clouds_tint 8660C0"
+set "TINT=+rt_clouds_tint %TINTHEX%"
 set "BASE=+rt_clouds 1 +rt_clouds_presets 0 %TINT% +rt_clouds_wind 0.010 +rt_clouds_dark 0.45"
 
 if /i "%ARM%"=="ship"   set "ARGS=%BASE% +rt_clouds_alpha 1.0  +rt_clouds_shells 8 +rt_clouds_thick 1.0 +rt_clouds_transmit 0.45"
@@ -79,11 +108,13 @@ if /i "%ARM%"=="flat"   set "ARGS=%BASE% +rt_clouds_alpha 1.0  +rt_clouds_shells
 if /i "%ARM%"=="nodeck" set "ARGS=+rt_clouds 0 +rt_clouds_presets 0"
 
 if not defined ARGS (
-  echo Usage: %~nx0 ^<ship^|old^|thin^|heavy^|flat^|nodeck^> [map, default 12]
+  echo Usage: %~nx0 ^<ship^|old^|thin^|heavy^|flat^|nodeck^> [map, default 12] [tint hex]
+  echo   tint ladder, luminance held, saturation only:
+  echo     6C6C96 0.28 ^| 7A66AA 0.40 ^| 8660C0 0.50 ^| 9C55DC 0.61 ^(ship^) ^| A852E9 0.65
   exit /b 1
 )
 
-echo === cloud arm "%ARM%", MAP%MAP% ===
+echo === cloud arm "%ARM%", MAP%MAP%, tint %TINTHEX% ===
 echo     %ARGS%
 echo.
 echo     LOOK UP, and stand in the same spot for every arm. What to compare

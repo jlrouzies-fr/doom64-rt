@@ -490,8 +490,23 @@ colour, so `SHADOW` sets the dark end and `ambient` sets the contrast, and they
 are independent. `ambient` went **down** (0.10 → 0.06) for contrast while
 `SHADOW` went **up** (32 → 74) so the dark end is dark purple rather than black.
 That is computable exactly, because the art is achromatic: a cloud texel is
-`LIT × tint × shell ramp`. MAP12's `8660C0` puts the bright cloud at `#7153AC`
-against Doom 64's `#745BAD`, and the dark at `#110C1D` against its `#100F1F`.
+`LIT × tint × shell ramp`.
+
+**The tint, and why it does not sit on the reference.** `8660C0` is what Doom
+64's sky measures at — bright `#7253AC` against its `#745BAD`, dark `#110D1E`
+against its `#100F1F`. That matched on paper and read **weak** in motion, so
+MAP12 and MAP30 ship one rung past it at `9C55DC`: same luminance, saturation
+0.50 → 0.61. Holding luminance is the point — "stronger purple" should mean more
+saturated, not brighter — and since G carries most of the luminance, the cost of
+that saturation is paid in R and B rather than by darkening. The full ladder is
+in `tools/ab-clouds.cmd`, which takes a tint as its third argument so it can be
+swept without a rebuild.
+
+One asymmetry worth knowing before turning it further: the **moonlight** hue
+saturates faster than the picture and pins near the top of the ladder. Its colour
+is the transmittance divided by its own luminance and then clamped, so past about
+0.6 both R and B are already at 255 and only G still moves — more saturation
+changes the sky considerably and the light on the level barely at all.
 
 The **shape** is not computable that way. An offline composite of the slices was
 tried as a tuning target and came out 5–15× off the renderer's real contrast — it
