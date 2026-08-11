@@ -78,5 +78,12 @@ if not defined ARGS (
 
 echo === lava arm "%ARM%", MAP%MAP% ===
 echo     %ARGS%
-call "%~dp0launch-retribution-rt.cmd" %MAP% -- %ARGS%
+rem The debug and solo arms also pass "debug" -> -rtdebug, which un-mutes RTGL's
+rem OWN messages. That is what the LAVA PROBE line in LightManager.cpp needs:
+rem rt_main sets allowedMessages=0 without it, so an RTGL-side probe is silent
+rem and looks like it never ran.
+set "DBG="
+if /i "%ARM%"=="debug" set "DBG=debug"
+if /i "%ARM%"=="solo"  set "DBG=debug"
+call "%~dp0launch-retribution-rt.cmd" %MAP% %DBG% -- %ARGS%
 exit /b %ERRORLEVEL%
