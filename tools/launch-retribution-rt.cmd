@@ -576,7 +576,7 @@ start "" gzdoom.exe ^
   +rt_smoke 1 +rt_smoke_density 6 +rt_smoke_color 9E9689 +rt_smoke_count 3 +rt_smoke_budget 24 ^
   +rt_smoke_life 1.6 +rt_smoke_radius 0.35 +rt_smoke_growth 0.7 ^
   +rt_smoke_speed 1.8 +rt_smoke_spread 0.55 +rt_smoke_rise 0.65 +rt_smoke_drag 1.9 ^
-  +rt_smoke_inherit 0.85 +rt_smoke_offset 0.35 +rt_smoke_repeat 5 ^
+  +rt_smoke_inherit 0.85 +rt_smoke_offset 0.7 +rt_smoke_repeat 5 ^
   +rt_smoke_far 14 +rt_smoke_ambient 0.08 +rt_smoke_illum 1 ^
   +rt_smoke_light_near 0 +rt_smoke_illum_blend 0.4 ^
   +rt_sun_leak_debug 0 +rt_sun_require_sky 1 ^

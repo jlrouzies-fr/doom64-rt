@@ -72,6 +72,24 @@ rem   off       rt_smoke 0 -- the before.
 rem   nolight   rt_smoke_illum 0. The puff gets ambient plus whichever single
 rem             light TryGetVolumetricLight picked, i.e. usually nothing: flat
 rem             grey soup. What smoke looks like painted rather than lit.
+rem   probe     rt_smoke_debug 2 -- the SHADER paints magenta in every froxel a
+rem             puff covers, ignoring lighting and density entirely. If this
+rem             shows a magenta blob at the barrel, the uniform is being read and
+rem             the puffs are where they should be, so anything still invisible
+rem             is a lighting or density question. If it shows NOTHING, either
+rem             the shader cannot see the uniform (check probeall) or the puff is
+rem             not where it is believed to be -- inside the wall you are
+rem             shooting at, for instance.
+rem   probeall  rt_smoke_debug 3 -- green over the WHOLE screen whenever the puff
+rem             list is non-empty, with no position test at all. This is the one
+rem             that separates the two: probeall green + probe blank means the
+rem             data arrives and the sphere test fails; both blank means the
+rem             shader is not seeing the uniform.
+rem   novol     the arm's own cvars with rt_smoke 0 -- i.e. everything ab-smoke
+rem             changes EXCEPT the smoke. Compare against plain
+rem             .\tools\launch-retribution-rt.cmd 01 to tell an arm-side
+rem             difference (fog off, logging on, -rtdebug) apart from anything
+rem             smoke is doing. Use it if the lighting looks off in an arm.
 rem   debug     full + rt_smoke_debug 1. Prints once a second: live puff count,
 rem             how many were sent, the nearest puff's position/radius/density in
 rem             metres, the volume's reach and its slice thickness. This is how
@@ -97,7 +115,7 @@ rem
 rem Default map is 01: an unfogged map, where smoke has the volume to itself and
 rem rt_smoke_far decides the resolution. Pass 26 for the fog interaction.
 rem
-rem Usage: ab-smoke.cmd <full|fat|thin|still|drift|walk|glued|edgeonly|nearfade|blendslow|blendraw|reach30|reach8|off|nolight|debug|fogsafe|fogsmoke> [1-32]
+rem Usage: ab-smoke.cmd <full|fat|thin|still|drift|walk|glued|edgeonly|nearfade|blendslow|blendraw|reach30|reach8|off|nolight|debug|probe|probeall|novol|fogsafe|fogsmoke> [1-32]
 rem ---------------------------------------------------------------------------
 
 set "ARM=%~1"
@@ -107,7 +125,7 @@ if "%MAP%"==""  set "MAP=01"
 
 rem The shipping values, spelled out once. Later +cvar wins, so an arm names only
 rem what it changes.
-set "SMOKE=+rt_smoke 1 +rt_smoke_density 6 +rt_smoke_color 9E9689 +rt_smoke_count 3 +rt_smoke_budget 24 +rt_smoke_life 1.6 +rt_smoke_radius 0.35 +rt_smoke_growth 0.7 +rt_smoke_speed 1.8 +rt_smoke_spread 0.55 +rt_smoke_rise 0.65 +rt_smoke_drag 1.9 +rt_smoke_inherit 0.85 +rt_smoke_offset 0.35 +rt_smoke_repeat 5 +rt_smoke_far 14 +rt_smoke_ambient 0.08 +rt_smoke_illum 1 +rt_smoke_light_near 0 +rt_smoke_illum_blend 0.4 +rt_smoke_debug 1"
+set "SMOKE=+rt_smoke 1 +rt_smoke_density 6 +rt_smoke_color 9E9689 +rt_smoke_count 3 +rt_smoke_budget 24 +rt_smoke_life 1.6 +rt_smoke_radius 0.35 +rt_smoke_growth 0.7 +rt_smoke_speed 1.8 +rt_smoke_spread 0.55 +rt_smoke_rise 0.65 +rt_smoke_drag 1.9 +rt_smoke_inherit 0.85 +rt_smoke_offset 0.7 +rt_smoke_repeat 5 +rt_smoke_far 14 +rt_smoke_ambient 0.08 +rt_smoke_illum 1 +rt_smoke_light_near 0 +rt_smoke_illum_blend 0.4 +rt_smoke_debug 1"
 
 rem Fog OFF by default, and the preset table with it, so an unfogged map stays
 rem unfogged and the smoke is the only thing in the volume. The fog arms below
@@ -143,6 +161,9 @@ rem Isolation.
 if /i "%ARM%"=="off"       set "ARGS=%NOFOG% %SMOKE% +rt_smoke 0"
 if /i "%ARM%"=="nolight"   set "ARGS=%NOFOG% %SMOKE% +rt_smoke_illum 0"
 if /i "%ARM%"=="debug"     set "ARGS=%NOFOG% %SMOKE% +rt_smoke_debug 1"
+if /i "%ARM%"=="probe"     set "ARGS=%NOFOG% %SMOKE% +rt_smoke_debug 2"
+if /i "%ARM%"=="probeall"  set "ARGS=%NOFOG% %SMOKE% +rt_smoke_debug 3"
+if /i "%ARM%"=="novol"     set "ARGS=+rt_fog 0 +rt_fog_presets 0 +rt_volume_type 1 %SMOKE% +rt_smoke 0"
 
 rem The fog regression. fogsafe defaults to MAP26 because that is the map with a
 rem measured transmittance ladder to be identical to.
@@ -150,7 +171,7 @@ if /i "%ARM%"=="fogsafe"   set "ARGS=%FOG26% %SMOKE%" & if "%~2"=="" set "MAP=26
 if /i "%ARM%"=="fogsmoke"  set "ARGS=%FOG26% %SMOKE%" & if "%~2"=="" set "MAP=26"
 
 if not defined ARGS (
-  echo Usage: %~nx0 full^|fat^|thin^|still^|drift^|walk^|glued^|edgeonly^|nearfade^|blendslow^|blendraw^|reach30^|reach8^|off^|nolight^|debug^|fogsafe^|fogsmoke  [1-32]
+  echo Usage: %~nx0 full^|fat^|thin^|still^|drift^|walk^|glued^|edgeonly^|nearfade^|blendslow^|blendraw^|reach30^|reach8^|off^|nolight^|debug^|probe^|probeall^|novol^|fogsafe^|fogsmoke  [1-32]
   exit /b 1
 )
 
