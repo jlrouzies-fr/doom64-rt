@@ -895,3 +895,40 @@ meaning when the volume's reach does. `rt_mzlflsh` is now pinned in the launcher
 it gates the smoke spawn as well as the flash, and was `CVAR_ARCHIVE` and
 unpinned, so an ini value could have disabled smoke with no `rt_smoke_*` cvar
 saying so.
+
+### What the first playtest found (same day)
+
+Three bugs, and the second is the one worth remembering.
+
+**No smoke at all — the density arrived 1000x too thin.** `rt_smoke_density` is
+optical depth per metre and the shader applies a flat `0.001` per cell, so the
+conversion is `k * sliceThickness / 0.001`. The first version sent `k * slice`,
+dropping the division: tau across an entire puff came to 0.002, transmittance
+0.998. Mathematically invisible, which is exactly how it looked.
+
+**Firing deleted the moon's light shafts.** Two independent causes, both from
+smoke taking over settings that were not its own:
+
+- The smoke-only branch tested `!fog.on` alone. `rt_volume_type` defaults to 1,
+  so on any unfogged map firing set the global medium's density to **0** and its
+  reach from 30 m to 14 — and the shafts *are* that medium being scattered. The
+  predicate is now `!fog.on && rt_volume_type == 0`: smoke may only take the
+  volume over when nothing else is in it. **Smoke adds, it does not replace** —
+  which the shader always did, via the density-weighted blend, and which the
+  engine side had quietly broken.
+- `illuminateFromAllLights` was set per FRAME whenever a puff existed. That flag
+  switches the whole volume off `traceDirectIllumination_SpecificLight`, and that
+  function is the only place the sun's sky-probe test lives (`sunRequireSky`,
+  `traceSunReachesSky`) — i.e. the only thing that makes a shaft. Smoke now
+  carries its own `allLights` in `RgDrawFrameSmokeParams`, read **per froxel**,
+  so a cell outside a puff keeps the single-light path and its shafts. The
+  `g_illuminationVolume` store follows the same per-cell predicate, or a cell
+  that computed the estimate without storing it would read a stale image forever.
+
+That makes three per-froxel decisions where the naive version was per-frame, all
+for the same underlying reason: this volume has other tenants.
+
+**A puff was smaller than a froxel.** With the global medium owning the reach, a
+slice is `rt_volume_far / 64` = 0.47 m, so the 0.18 m default radius was 0.77 of
+a cell across its whole diameter — it fitted inside one froxel. Default is now
+0.35. The froxel grid, not the puff count, is this feature's resolution limit.

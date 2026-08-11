@@ -109,7 +109,7 @@ level, and it is not free. A map gets fog because someone looked at it.
 
 | map | fog | why |
 |---|---|---|
-| MAP26 | on, ramped 0.01 → 10 over 32 m at curve 2.4 | *Hardcore.* The map this was built for, and the one with a reference shot. Colour inherited from its own `fade` `00 56 56`; density, far density and ambient all **inherited from the cvars** — a `-1` in a row means "keep the launcher's", so the shipping medium lives in one place. `illum` forced on — see §5. |
+| MAP26 | on, ramped 0.01 → 10 over 32 m at curve 2.4 | *Hardcore.* The map this was built for, and the one with a reference shot. Colour inherited from its own `fade` `00 56 56`; density, far density, ambient, reach and curve all **stated in the row**, the way `RT_MOON_PRESETS` states MAP13's azimuth. `illum` forced on — see §5. |
 
 ### The MAP26 profile
 
@@ -143,12 +143,21 @@ The heavy profile is one command away and still tuned:
 `ab-fog.cmd ramp2` / `wall` are the occluding versions (transmittance 0.15 and
 0.01 at 768 units), and the arithmetic below sizes any other.
 
-**Curve and reach are what MAP26's row states**, because they are about this map
-rather than about fog in general: reach 32 m is 1024 map units, past which
-everything takes the far slice, so the fog stops deepening at corridor distance;
-curve 2.4 holds the near value out to about half the volume. Everything else in
-the row is `-1`, meaning *keep the cvar* — so "the default" is a real thing that
-can be changed in one place.
+**These numbers are baked into the row, not inherited**, exactly as
+`RT_MOON_PRESETS` bakes MAP13's azimuth 90. This is the map's authored look
+rather than a global that happens to suit it, so it must not depend on a
+launcher pin or on whatever an `ab-fog.cmd` arm last left in the ini: launch the
+game normally on MAP26 and this is what you get.
+
+Reach 32 m is 1024 map units, past which everything takes the far slice, so the
+fog stops deepening at corridor distance; curve 2.4 holds the near value out to
+about half the volume before it climbs.
+
+**Colour is the one thing still inherited** (`0` → the map's own `fade`), because
+that genuinely is authored data living somewhere else, and a copy of it here is
+the copy that goes stale. The cvar defaults and the launcher pins carry the same
+densities, but only as the starting point for a map being tuned with
+`rt_fog_presets 0` — they are not what MAP26 uses.
 
 ### The values come out of the map, on purpose
 

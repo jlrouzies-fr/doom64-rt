@@ -21,9 +21,10 @@ rem is the whole feature; in a bright room the level's lighting hides it.
 rem
 rem PROFILES
 rem   full      the shipping numbers.
-rem   fat       4x density, 2x radius, 4 puffs a shot. Proves the injection is
-rem             live before anything is tuned -- if this shows nothing, the
-rem             problem is plumbing, not values. Use it first.
+rem   fat       4x density, radius 0.8 m (over 3 froxel slices at the shipping
+rem             reach, so it cannot hide inside one cell), 4 puffs a shot.
+rem             Proves the injection is live before anything is tuned -- if this
+rem             shows nothing the problem is plumbing, not values. Use it first.
 rem   thin      a third of the density: where the puff stops occluding and
 rem             becomes a haze you can see the wall through.
 rem   still     no rise, no drag, no growth, 6 s life. The puff hangs exactly
@@ -106,7 +107,7 @@ if "%MAP%"==""  set "MAP=01"
 
 rem The shipping values, spelled out once. Later +cvar wins, so an arm names only
 rem what it changes.
-set "SMOKE=+rt_smoke 1 +rt_smoke_density 6 +rt_smoke_color 9E9689 +rt_smoke_count 3 +rt_smoke_budget 24 +rt_smoke_life 1.6 +rt_smoke_radius 0.18 +rt_smoke_growth 0.55 +rt_smoke_speed 1.8 +rt_smoke_spread 0.55 +rt_smoke_rise 0.65 +rt_smoke_drag 1.9 +rt_smoke_inherit 0.85 +rt_smoke_offset 0.35 +rt_smoke_repeat 5 +rt_smoke_far 14 +rt_smoke_ambient 0.08 +rt_smoke_illum 1 +rt_smoke_light_near 0 +rt_smoke_illum_blend 0.4 +rt_smoke_debug 0"
+set "SMOKE=+rt_smoke 1 +rt_smoke_density 6 +rt_smoke_color 9E9689 +rt_smoke_count 3 +rt_smoke_budget 24 +rt_smoke_life 1.6 +rt_smoke_radius 0.35 +rt_smoke_growth 0.7 +rt_smoke_speed 1.8 +rt_smoke_spread 0.55 +rt_smoke_rise 0.65 +rt_smoke_drag 1.9 +rt_smoke_inherit 0.85 +rt_smoke_offset 0.35 +rt_smoke_repeat 5 +rt_smoke_far 14 +rt_smoke_ambient 0.08 +rt_smoke_illum 1 +rt_smoke_light_near 0 +rt_smoke_illum_blend 0.4 +rt_smoke_debug 0"
 
 rem Fog OFF by default, and the preset table with it, so an unfogged map stays
 rem unfogged and the smoke is the only thing in the volume. The fog arms below
@@ -121,7 +122,7 @@ set "FOG26=+rt_fog 1 +rt_fog_presets 0 +rt_fog_color 000000 +rt_fog_density 0.01
 if /i "%ARM%"=="full"      set "ARGS=%NOFOG% %SMOKE%"
 
 rem Profiles.
-if /i "%ARM%"=="fat"       set "ARGS=%NOFOG% %SMOKE% +rt_smoke_density 24 +rt_smoke_radius 0.36 +rt_smoke_count 4"
+if /i "%ARM%"=="fat"       set "ARGS=%NOFOG% %SMOKE% +rt_smoke_density 24 +rt_smoke_radius 0.8 +rt_smoke_count 4"
 if /i "%ARM%"=="thin"      set "ARGS=%NOFOG% %SMOKE% +rt_smoke_density 2"
 if /i "%ARM%"=="still"     set "ARGS=%NOFOG% %SMOKE% +rt_smoke_rise 0 +rt_smoke_drag 12 +rt_smoke_growth 0 +rt_smoke_speed 0 +rt_smoke_spread 0 +rt_smoke_life 6"
 if /i "%ARM%"=="drift"     set "ARGS=%NOFOG% %SMOKE% +rt_smoke_life 4 +rt_smoke_rise 1.3"

@@ -572,9 +572,9 @@ start "" gzdoom.exe ^
   +rt_fog 1 +rt_fog_presets 1 +rt_fog_color 000000 +rt_fog_density 0.01 +rt_fog_density_mult 0.3 ^
   +rt_fog_density_far 10 +rt_fog_color_far 000000 +rt_fog_curve 1 ^
   +rt_fog_far 45 +rt_fog_ambient 1 +rt_fog_lightmult 1 +rt_fog_light_near 2 +rt_fog_illum 1 ^
-  +rt_mzlflsh 1 ^
+  +rt_mzlflsh 1 +rt_volume_type 1 +rt_volume_far 30 +rt_volume_scatter 1 +rt_volume_ambient 0.2 ^
   +rt_smoke 1 +rt_smoke_density 6 +rt_smoke_color 9E9689 +rt_smoke_count 3 +rt_smoke_budget 24 ^
-  +rt_smoke_life 1.6 +rt_smoke_radius 0.18 +rt_smoke_growth 0.55 ^
+  +rt_smoke_life 1.6 +rt_smoke_radius 0.35 +rt_smoke_growth 0.7 ^
   +rt_smoke_speed 1.8 +rt_smoke_spread 0.55 +rt_smoke_rise 0.65 +rt_smoke_drag 1.9 ^
   +rt_smoke_inherit 0.85 +rt_smoke_offset 0.35 +rt_smoke_repeat 5 ^
   +rt_smoke_far 14 +rt_smoke_ambient 0.08 +rt_smoke_illum 1 ^

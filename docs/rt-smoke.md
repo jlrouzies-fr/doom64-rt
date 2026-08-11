@@ -120,13 +120,24 @@ volume's reach is — including on a fogged map, where the reach is not ours to
 choose. The conversion is one multiply in the packing loop and it is worth the
 line.
 
-**`rt_smoke_far` is a resolution knob, not a reach.** The volume's 64 slices
-spread over it: 14 m gives 0.22 m cells, which resolve a 0.18 m puff; the 30 m
-of `rt_volume_far` gives 0.47 m and the puff collapses into a single slab.
-`ab-smoke.cmd reach30` is that failure. Short costs nothing here because the base
-density is 0 when smoke has the volume to itself, so the far slice — which
-everything beyond the plane is shaded with — is empty rather than a wall of haze.
-**A fogged map always wins this**, so smoke on MAP26 is coarse (45/64 = 0.70 m).
+**`rt_smoke_far` only applies when smoke OWNS the volume**, which means no fog
+*and* `rt_volume_type 0`. It is a resolution knob rather than a reach — the
+volume's 64 slices spread over it, so 14 m gives 0.22 m cells — and short costs
+nothing there because the base density is 0, so the far slice everything beyond
+is shaded with is empty rather than a wall of haze.
+
+**In shipping configuration it therefore does not apply at all.**
+`rt_volume_type` is 1, so the volume already holds the global `rt_volume_*`
+medium, and taking it over would mean deleting that medium — which is exactly
+the bug §4's third trap describes. Smoke gets `rt_volume_far`'s 0.47 m slices
+instead, and on a fogged map `rt_fog_far`'s 0.70 m. **That is what sets the
+radius floor below**, and it is the real resolution limit of the feature today.
+
+**`rt_smoke_radius`'s floor is the froxel slice, and the slice is bigger than it
+looks.** At 0.47 m cells, a 0.18 m puff is 0.77 of a cell across its whole
+*diameter*: it lands inside a single froxel and reads as a flicker. The shipping
+0.35 spans about 1.3 cells at birth and roughly 3 by the end of its life. This
+is the number to raise first if smoke looks like a blink rather than a cloud.
 
 **`rt_smoke_inherit` picks which wrong answer you get.** A puff is born in the
 world, but the gun that made it is moving. At 0 the smoke visibly lags a strafing
@@ -160,6 +171,22 @@ smoke — so at 2 m the puff is fully faded and there is nothing to see.
 2. `ab-smoke.cmd nearfade` applies the fog's value inside the puff and is worth
 looking at once: it is the whole feature disappearing while every cvar still
 says it is on.
+
+### The all-lights switch would delete every light shaft in the level
+
+`volumeAllLights` (`rt_fog_illum`) switches the volume off
+`traceDirectIllumination_SpecificLight` and onto the full estimate. That function
+is not just "the single-light path": it is the **only** place the sun's
+sky-probe test lives (`sunRequireSky`, `sunLeakDebug`, the `traceSunReachesSky`
+call). The visible moon shafts *are* that function's output.
+
+So setting the flag per frame because a puff exists turns every shaft in the map
+off for as long as the player holds the trigger. `RgDrawFrameSmokeParams` carries
+its own `allLights` instead, read **per froxel**: a cell with no smoke keeps the
+single-light path and its shafts, a cell inside a puff gets the full estimate and
+its own muzzle flash. The store to `g_illuminationVolume` follows the same
+predicate, because a cell that computes the estimate and does not store it would
+read a stale image forever and never converge.
 
 ### The 0.05 temporal blend is far too slow for a muzzle flash
 
@@ -200,9 +227,15 @@ rather than taste. Four rules keep smoke out of it:
    floating point — and `fogsafe` asserts a pixel-identical frame, not a close
    one. The reasoning is written out in `Smoke.h` beside the code.
 3. **Both trap fixes are per froxel**, never per frame (§4).
-4. **Smoke never writes a fog value.** Every edit inside the volumetric params is
-   `fog.on ? <the value that shipped> : ...`, so a fogged map takes the branch it
-   has always taken. The smoke-only branch is unreachable when fog is on.
+4. **Smoke never writes another medium's value** — the fog's *or* the global
+   `rt_volume_*` one. It may only take the volume's settings over when nothing
+   else is in it: `!fog.on && rt_volume_type == 0`. The first version tested only
+   `!fog.on`, and the result is worth stating plainly because it is the failure
+   mode to watch for: on any unfogged map, firing set the global density to 0 and
+   the reach from 30 m to 14, and the moon's light shafts — which *are* that
+   medium being scattered — vanished until the trigger was released.
+   **Smoke adds; it does not replace.** That is what the density-weighted blend
+   in `Smoke.h` is for, and the engine has to honour it too.
 
 **The check that makes this real** is `ab-smoke.cmd fogsafe`: MAP26's shipping
 fog with `rt_smoke 1`, standing still. It must be **pixel-identical** to
@@ -265,9 +298,12 @@ otherwise have turned the smoke off with no `rt_smoke_*` cvar saying so.
 - **The volume is camera-fitted.** A puff beyond the far plane is not
   represented at all. For muzzle smoke, which is by definition in front of your
   face, this has not mattered.
-- **Coarse on a fogged map** (§3): the fog owns `volumetricFar`, so the slices
-  are 0.70 m instead of 0.22 m and a puff reads much softer. Judge
-  `rt_smoke_density` on MAP26 as well as on an unfogged map.
+- **Coarse in every shipping configuration** (§3). Whoever else is using the
+  volume owns its reach, so the slices are 0.47 m (global medium) or 0.70 m
+  (fogged map) rather than `rt_smoke_far`'s 0.22 m. A puff is a couple of cells
+  across, and that — not the puff count — is the ceiling on how smoke looks.
+  Fixing it properly means a smoke grid decoupled from `volumetricFar`, which is
+  the same upgrade the buffer limit below points at.
 - **Extinction is monochrome**, inherited from the fog (`rt-fog.md` §2): a puff
   fades what is behind it *toward* its colour rather than filtering by it. For
   grey powder smoke this is invisible; for a strongly coloured puff it would not
