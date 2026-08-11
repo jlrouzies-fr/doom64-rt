@@ -131,8 +131,8 @@ class D64LavaSpark : Actor
         Gravity 0.55;              // heavier than a bubble, lighter than a rock
         RenderStyle "Add";
         Alpha 1.0;
-        +NOBLOCKMAP +NOTELEPORT +MISSILE +NOGRAVITY_NOCLIP
-        +CLIENTSIDEONLY +THRUACTORS +FORCEXYBILLBOARD
+        +NOBLOCKMAP +NOTELEPORT +MISSILE +THRUACTORS
+        +CLIENTSIDEONLY +FORCEXYBILLBOARD +NOTRIGGER
         -SOLID
     }
     States
@@ -228,11 +228,17 @@ class D64LavaFx : EventHandler
             for( int li = 0; li < s.lines.Size(); li++ )
             {
                 let ln = s.lines[ li ];
-                for( int v = 0; v < 2; v++ )
+                Vertex va = ln.v1;
+                Vertex vb = ln.v2;
+                if( va )
                 {
-                    Vertex vt = ( v == 0 ) ? ln.v1 : ln.v2;
-                    minx = min( minx, vt.p.x ); maxx = max( maxx, vt.p.x );
-                    miny = min( miny, vt.p.y ); maxy = max( maxy, vt.p.y );
+                    minx = min( minx, va.p.x ); maxx = max( maxx, va.p.x );
+                    miny = min( miny, va.p.y ); maxy = max( maxy, va.p.y );
+                }
+                if( vb )
+                {
+                    minx = min( minx, vb.p.x ); maxx = max( maxx, vb.p.x );
+                    miny = min( miny, vb.p.y ); maxy = max( maxy, vb.p.y );
                 }
             }
             if( minx > maxx ) { continue; }
