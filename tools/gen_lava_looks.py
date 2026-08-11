@@ -499,6 +499,56 @@ ART_LOOKS = [
 ]
 
 
+# ---------------------------------------------------------------------------
+# the HALO sweep
+#
+# The heat halo won. It has two decisions left in it and they are not
+# independent: how strong, and whether it sits on the flat art or on top of the
+# relief. A halo is a soft wide term, so it fills the space between the cracks
+# and can quietly cancel the very shading the relief adds -- which is why these
+# are swept together rather than one after the other.
+#
+# Rows: halo alone / halo over relief / halo over relief + convection.
+# Columns: 0.35, 0.55, 0.85 strength.
+# ---------------------------------------------------------------------------
+
+
+def make_halo(strength: float, with_relief: bool, with_conv: bool):
+    def fn(src, m, noise):
+        albedo, e = src
+        wide = blur(m, 6)
+        tint = (albedo * m[..., None]).reshape(-1, 3).sum(axis=0)
+        tint = tint / max(float(tint.max()), 1e-4)
+
+        ndl = None
+        if with_relief:
+            _, nx, ny = relief(m, 0.035)
+            ndl, _g = lit_by_cracks(m, nx, ny)
+
+        if with_conv:
+            f = 0.40 + 1.35 * noise**1.6
+            out = _base(albedo, e, m * f, ndl=ndl) * (0.60 + 0.65 * f[..., None])
+            wide = wide * f
+        else:
+            out = _base(albedo, e, m, ndl=ndl)
+
+        return albedo, out + wide[..., None] * tint * strength
+
+    return fn
+
+
+HALO_LOOKS = []
+for _rname, _rel, _conv in (
+    ("halo only", False, False),
+    ("halo + relief", True, False),
+    ("halo + relief + convection", True, True),
+):
+    for _s in (0.35, 0.55, 0.85):
+        HALO_LOOKS.append(
+            (f"{_rname}  —  {_s:.2f}", "sheet 2 panel 7 was 0.55, halo only", make_halo(_s, _rel, _conv), True)
+        )
+
+
 # The first sheet: every panel from 3 on REPLACES the albedo with a heat ramp.
 # Kept because it is the evidence for why the art-preserving set exists.
 RAMP_LOOKS = [
@@ -629,7 +679,7 @@ def main() -> int:
     ap.add_argument(
         "--set",
         dest="which",
-        choices=("art", "ramp"),
+        choices=("art", "ramp", "halo"),
         default="art",
         help="art (default): keep the albedo, add shading on top. "
         "ramp: the first pass, which replaced it with a heat ramp.",
@@ -637,7 +687,7 @@ def main() -> int:
     ap.add_argument("--out", default=None)
     args = ap.parse_args()
 
-    looks = ART_LOOKS if args.which == "art" else RAMP_LOOKS
+    looks = {"art": ART_LOOKS, "ramp": RAMP_LOOKS, "halo": HALO_LOOKS}[args.which]
     if args.out is None:
         args.out = str(ROOT / f"screen/lava_looks_{args.which}.png")
 
@@ -656,6 +706,8 @@ def main() -> int:
         + (
             "   —  ALBEDO KEPT, shading added on top"
             if args.which == "art"
+            else "   —  heat halo sweep: strength across, base down"
+            if args.which == "halo"
             else "   —  albedo REPLACED by a heat ramp"
         )
         + "   (mockup: fixed perspective, painted room light, baked relief)",
