@@ -27,8 +27,9 @@ rem            because the lava is dim, or because nothing emits".
 rem   on       the default: 60 lm per light at 96-unit spacing, ~120 lights in
 rem            the MAP21 hall. Well under a torch (900) on purpose -- there are
 rem            a hundred of them and each sits 0.75 m off the surface.
-rem   dim      20 lm, for a room that blows out.
-rem   bright   180 lm, for a room that stays dark.
+rem   dim      200 lm, for a room that blows out.
+rem   bright   1800 lm, for a room that stays dark. The arms are 3x apart,
+rem            so one run of dim/on/bright brackets the answer.
 rem   fine     48-unit spacing. Four times as many lights, SAME total brightness
 rem            (intensity is scaled by spacing^2), so this isolates evenness from
 rem            brightness -- the one comparison a single knob cannot make.
@@ -79,16 +80,16 @@ rem before it could be read. +logfile comes after the launcher's own, so it wins
 set "LOG=+logfile %~dp0\..\rt-lava.log"
 t-lava.log"
 
-if /i "%ARM%"=="off"    set "ARGS=+rt_lava_light_on 0 +rt_lava_light_intensity 60 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.6 %DEF%"
-if /i "%ARM%"=="on"     set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 60 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.6 %DEF%"
-if /i "%ARM%"=="dim"    set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 20 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.6 %DEF%"
-if /i "%ARM%"=="bright" set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 180 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.6 %DEF%"
-if /i "%ARM%"=="fine"   set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 60 +rt_lava_light_spacing 48 +rt_lava_light_radius 0.6 %COL% %GEO% +rt_lava_light_max 512 +rt_lava_light_debug 0"
-if /i "%ARM%"=="coarse" set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 60 +rt_lava_light_spacing 192 +rt_lava_light_radius 0.6 %DEF%"
-if /i "%ARM%"=="tight"  set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 60 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.08 %DEF%"
-if /i "%ARM%"=="solo"   set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 3000 +rt_lava_light_spacing 4096 +rt_lava_light_radius 0.6 %COL% +rt_lava_light_z 24 +rt_lava_light_max 8 +rt_lava_light_dist 4096 +rt_lava_light_debug 1 +rt_lava_autogoto 1"
-if /i "%ARM%"=="control" set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 60 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.6 %COL% %GEO% +rt_lava_light_debug 2 +rt_lava_autogoto 1"
-if /i "%ARM%"=="debug"  set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 60 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.6 %COL% %GEO% +rt_lava_light_debug 1 +rt_lava_autogoto 1"
+if /i "%ARM%"=="off"    set "ARGS=+rt_lava_light_on 0 +rt_lava_light_intensity 600 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.3 %DEF%"
+if /i "%ARM%"=="on"     set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 600 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.3 %DEF%"
+if /i "%ARM%"=="dim"    set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 200 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.3 %DEF%"
+if /i "%ARM%"=="bright" set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 1800 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.3 %DEF%"
+if /i "%ARM%"=="fine"   set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 600 +rt_lava_light_spacing 48 +rt_lava_light_radius 0.3 %COL% %GEO% +rt_lava_light_max 512 +rt_lava_light_debug 0"
+if /i "%ARM%"=="coarse" set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 600 +rt_lava_light_spacing 192 +rt_lava_light_radius 0.3 %DEF%"
+if /i "%ARM%"=="tight"  set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 600 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.08 %DEF%"
+if /i "%ARM%"=="solo"   set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 3000 +rt_lava_light_spacing 4096 +rt_lava_light_radius 0.3 %COL% +rt_lava_light_z 24 +rt_lava_light_max 8 +rt_lava_light_dist 4096 +rt_lava_light_debug 1 +rt_lava_autogoto 1"
+if /i "%ARM%"=="control" set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 600 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.3 %COL% %GEO% +rt_lava_light_debug 2 +rt_lava_autogoto 1"
+if /i "%ARM%"=="debug"  set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 600 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.3 %COL% %GEO% +rt_lava_light_debug 1 +rt_lava_autogoto 1"
 
 if not defined ARGS (
   echo Usage: %~nx0 ^<off^|on^|dim^|bright^|fine^|coarse^|tight^|solo^|control^|debug^> [1-34]
@@ -102,7 +103,7 @@ rem OWN messages. That is what the LAVA PROBE line in LightManager.cpp needs:
 rem rt_main sets allowedMessages=0 without it, so an RTGL-side probe is silent
 rem and looks like it never ran.
 set "DBG="
-if /i "%ARM%"=="control" set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 60 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.6 %COL% %GEO% +rt_lava_light_debug 2 +rt_lava_autogoto 1"
+if /i "%ARM%"=="control" set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 600 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.3 %COL% %GEO% +rt_lava_light_debug 2 +rt_lava_autogoto 1"
 if /i "%ARM%"=="debug" set "DBG=debug"
 if /i "%ARM%"=="solo"  set "DBG=debug"
 if /i "%ARM%"=="control" set "DBG=debug"

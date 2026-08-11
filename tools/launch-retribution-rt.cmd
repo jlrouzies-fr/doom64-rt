@@ -208,6 +208,31 @@ rem  rt_lightning_sectorflash 1 keeps the stock F_SKY1 lightlevel flash (106 sec
 rem  on MAP11) -- under RT that is also rt_sector_emis surface emission, so it is
 rem  the one knob to reach for if a strike washes the outdoors. See
 rem  docs/rt-clouds-and-lightning.md and tools\ab-storm.cmd.
+rem Fog (rt_fog_*): nine maps ask for fog in their own MAPINFO -- MAP26 wants
+rem  `fade = "00 56 56"` at `fogdensity = 200`, a heavy cyan -- and the RT path never
+rem  read either key, because both belong to the rasterizer's fog. What is built here
+rem  is not that fog: rasterizer fog is a per-pixel lerp toward a colour and cannot be
+rem  lit, so this is the MEDIUM instead, in RTGL1's froxel volume, which the level's
+rem  own lamps and lava scatter through. The map supplies colour and density; the
+rem  renderer supplies what the fog does with light.
+rem  rt_fog_color 000000 and rt_fog_density -1 are SENTINELS meaning "use the map's
+rem  own fade / fogdensity" -- pinned that way on purpose so the authored data stays
+rem  the single source and no copy of it can go stale here.
+rem  OPT-IN per map (RT_FOG_PRESETS in rt_main.cpp, MAP26 only today) for the reason
+rem  the cloud deck is: fog changes every distance judgement in a level, and it costs
+rem  a shadow ray per froxel cell.
+rem  NEAR and DISTANT fog are separate knobs: the medium is a ramp from
+rem  rt_fog_density at the camera to rt_fog_density_far at rt_fog_far, shaped by
+rem  rt_fog_curve (>1 = hold the near value longer, so the room you stand in stays
+rem  clear and only the distance closes). rt_fog_color_far splits the tint the same
+rem  way. Both far values carry the same "same as near" sentinels (-1 / 000000), so
+rem  a map with no opinion gets a uniform medium. Console: `fog near 12`,
+rem  `fog far 90`, `fog curve 2.5`.
+rem  rt_fog_illum 1 is the part that makes it worth doing. RTGL1's froxel pass
+rem  scatters exactly ONE light -- whatever TryGetVolumetricLight picks, in practice
+rem  the sun -- and MAP26's moon is deliberately off, so without this its fog would
+rem  have no source at all and collapse to flat ambient. See docs/rt-fog.md and
+rem  tools\ab-fog.cmd; `fog` in the console reports the medium.
 rem d64r-lostsoul-rt.pk3: yellow SKUL sprites + LSGL offset-glow EventHandler.
 rem d64r-rt-flashlight.pk3: stylized 5-cell battery HUD (rt_flsh_charge / battstate; F toggles)
 rem  + battery sound cues (rt_flsh_flicker counter; d64rt_flsh_sound / _vol to mute or tune).
@@ -468,6 +493,9 @@ start "" gzdoom.exe ^
   +rt_lightning_alt_min 15 +rt_lightning_alt_max 40 ^
   +rt_lightning_bolt 1 +rt_lightning_bolt_size 55 ^
   +rt_lightning_sectorflash 1 +rt_lightning_debug 0 ^
+  +rt_fog 1 +rt_fog_presets 1 +rt_fog_color 000000 +rt_fog_density -1 +rt_fog_density_mult 0.3 ^
+  +rt_fog_density_far -1 +rt_fog_color_far 000000 +rt_fog_curve 1 ^
+  +rt_fog_far 45 +rt_fog_ambient 0.02 +rt_fog_lightmult 1 +rt_fog_illum 1 ^
   +rt_sun_leak_debug 0 +rt_sun_require_sky 1 ^
   +rt_classic 0 ^
   +rt_flsh 0 +rt_flsh_intensity 90 +rt_flsh_angle 42 +rt_flsh_pitch 22 ^
@@ -523,8 +551,8 @@ start "" gzdoom.exe ^
   +rt_rr_reset_on_lightcut 1 +rt_rr_reset_on_dynlight 1 +rt_rr_reset_delta 0.5 +rt_rr_reset_min_ms 250 ^
   +rt_rr_reset_hold 0 +rt_rr_reset_now 0 +rt_rr_reset_debug 0 ^
   +rt_restir_initial 32 ^
-  +rt_lava_light_on 1 +rt_lava_light_intensity 60 +rt_lava_light_spacing 96 ^
-  +rt_lava_light_radius 0.6 +rt_lava_light_z 24 +rt_lava_light_max 256 +rt_lava_light_dist 2048 ^
+  +rt_lava_light_on 1 +rt_lava_light_intensity 600 +rt_lava_light_spacing 96 ^
+  +rt_lava_light_radius 0.3 +rt_lava_light_z 24 +rt_lava_light_max 256 +rt_lava_light_dist 2048 ^
   +rt_lava_light_r 255 +rt_lava_light_g 90 +rt_lava_light_b 20 +rt_lava_light_debug 0 ^
   +rt_water_style 1 +rt_water_liquids 1 ^
   +rt_water_tint_r 1 +rt_water_tint_g 1 +rt_water_tint_b 15 ^
