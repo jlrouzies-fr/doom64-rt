@@ -228,6 +228,12 @@ rem  clear and only the distance closes). rt_fog_color_far splits the tint the s
 rem  way. Both far values carry the same "same as near" sentinels (-1 / 000000), so
 rem  a map with no opinion gets a uniform medium. Console: `fog near 12`,
 rem  `fog far 90`, `fog curve 2.5`.
+rem  rt_fog_light_near 2 is what keeps the FLASHLIGHT usable in fog. A light at
+rem  ~0 m lights the froxels in front of it by inverse square, so switching the
+rem  torch on inside a medium whites out the screen -- physically what a headlight
+rem  in fog does, and unplayable. In-scattering is faded within 2 m OF A LIGHT, so
+rem  glare from a light you are HOLDING goes and the beam's shaft further down the
+rem  corridor stays. 0 restores the physical (blinding) behaviour.
 rem  rt_fog_illum 1 is the part that makes it worth doing. RTGL1's froxel pass
 rem  scatters exactly ONE light -- whatever TryGetVolumetricLight picks, in practice
 rem  the sun -- and MAP26's moon is deliberately off, so without this its fog would
@@ -495,7 +501,7 @@ start "" gzdoom.exe ^
   +rt_lightning_sectorflash 1 +rt_lightning_debug 0 ^
   +rt_fog 1 +rt_fog_presets 1 +rt_fog_color 000000 +rt_fog_density -1 +rt_fog_density_mult 0.3 ^
   +rt_fog_density_far -1 +rt_fog_color_far 000000 +rt_fog_curve 1 ^
-  +rt_fog_far 45 +rt_fog_ambient 0.02 +rt_fog_lightmult 1 +rt_fog_illum 1 ^
+  +rt_fog_far 45 +rt_fog_ambient 0.02 +rt_fog_lightmult 1 +rt_fog_light_near 2 +rt_fog_illum 1 ^
   +rt_sun_leak_debug 0 +rt_sun_require_sky 1 ^
   +rt_classic 0 ^
   +rt_flsh 0 +rt_flsh_intensity 90 +rt_flsh_angle 42 +rt_flsh_pitch 22 ^
@@ -551,6 +557,8 @@ start "" gzdoom.exe ^
   +rt_rr_reset_on_lightcut 1 +rt_rr_reset_on_dynlight 1 +rt_rr_reset_delta 0.5 +rt_rr_reset_min_ms 250 ^
   +rt_rr_reset_hold 0 +rt_rr_reset_now 0 +rt_rr_reset_debug 0 ^
   +rt_restir_initial 32 ^
+  +rt_lava_emis 6 +rt_lava_flow 0.45 +rt_lava_flow_speed 0.03 +rt_lava_flow_scale 0.12 ^
+  +rt_lava_flow_pixel 0.25 +rt_lava_pulse 0.10 +rt_lava_pulse_speed 0.35 ^
   +rt_lava_light_on 1 +rt_lava_light_intensity 1800 +rt_lava_light_spacing 96 ^
   +rt_lava_light_radius 0.3 +rt_lava_light_z 40 +rt_lava_light_max 256 +rt_lava_light_dist 2048 ^
   +rt_lava_light_r 255 +rt_lava_light_g 90 +rt_lava_light_b 20 +rt_lava_light_debug 0 ^

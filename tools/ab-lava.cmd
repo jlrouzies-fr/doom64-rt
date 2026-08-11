@@ -30,6 +30,14 @@ rem            a hundred of them and each sits 0.75 m off the surface.
 rem   dim      600 lm -- what the "some light, underwhelming" shot was.
 rem   bright   5400 lm. The arms are 3x apart,
 rem            so one run of dim/on/bright brackets the answer.
+rem   noshader rt_lava_emis 1 + no flow -- the surface as it was before the RT
+rem            lava shader. The A/B for the bloom and the motion.
+rem   hot      rt_lava_emis 14: well over rt_bloom_threshold, so the cracks
+rem            bloom hard. Use it to find where the bloom starts.
+rem   smooth   flow_pixel 0 -- the heat field NOT quantized. Shows why it is:
+rem            a smooth gradient over 64x64 pixel art looks like a modern
+rem            shader bolted onto the wrong texture.
+rem   churn    faster, deeper, larger-scale flow. Too much on purpose.
 rem   fine     48-unit spacing. Four times as many lights, SAME total brightness
 rem            (intensity is scaled by spacing^2), so this isolates evenness from
 rem            brightness -- the one comparison a single knob cannot make.
@@ -64,7 +72,7 @@ rem
 rem Every arm sets every lava cvar explicitly, so a value left in the ini from a
 rem previous arm can never leak into the next one.
 rem
-rem Usage: ab-lava.cmd <off|on|dim|bright|fine|coarse|tight|solo|control|debug> [1-34]
+rem Usage: ab-lava.cmd <off|on|dim|bright|noshader|hot|smooth|churn|fine|coarse|tight|solo|control|debug> [1-34]
 rem ---------------------------------------------------------------------------
 
 set "ARM=%~1"
@@ -73,8 +81,10 @@ if "%ARM%"=="" set "ARM=on"
 if "%MAP%"==""  set "MAP=21"
 
 set "COL=+rt_lava_light_r 255 +rt_lava_light_g 90 +rt_lava_light_b 20"
+rem The SURFACE half, set explicitly in every arm so it cannot drift between them.
+set "SURF=+rt_lava_emis 6 +rt_lava_flow 0.45 +rt_lava_flow_speed 0.03 +rt_lava_flow_scale 0.12 +rt_lava_flow_pixel 0.25 +rt_lava_pulse 0.10 +rt_lava_pulse_speed 0.35"
 set "GEO=+rt_lava_light_z 40 +rt_lava_light_max 256 +rt_lava_light_dist 2048"
-set "DEF=%COL% %GEO% +rt_lava_light_debug 0 +rt_lava_autogoto 1"
+set "DEF=%COL% %SURF% %GEO% +rt_lava_light_debug 0 +rt_lava_autogoto 1"
 rem A LOG OF ITS OWN. rt-console.log is one file that every launch overwrites, so
 rem the evidence from a lava run was twice destroyed by the next unrelated launch
 rem before it could be read. +logfile comes after the launcher's own, so it wins.
@@ -85,6 +95,10 @@ if /i "%ARM%"=="off"    set "ARGS=+rt_lava_light_on 0 +rt_lava_light_intensity 1
 if /i "%ARM%"=="on"     set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 1800 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.3 %DEF%"
 if /i "%ARM%"=="dim"    set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 600 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.3 %DEF%"
 if /i "%ARM%"=="bright" set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 5400 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.3 %DEF%"
+if /i "%ARM%"=="noshader" set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 1800 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.3 %COL% %GEO% +rt_lava_light_debug 0 +rt_lava_autogoto 1 +rt_lava_emis 1 +rt_lava_flow 0 +rt_lava_pulse 0"
+if /i "%ARM%"=="hot"      set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 1800 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.3 %COL% %GEO% +rt_lava_light_debug 0 +rt_lava_autogoto 1 +rt_lava_emis 14 +rt_lava_flow 0.45 +rt_lava_flow_speed 0.03 +rt_lava_flow_scale 0.12 +rt_lava_flow_pixel 0.25 +rt_lava_pulse 0.10 +rt_lava_pulse_speed 0.35"
+if /i "%ARM%"=="smooth"   set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 1800 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.3 %COL% %GEO% +rt_lava_light_debug 0 +rt_lava_autogoto 1 +rt_lava_emis 6 +rt_lava_flow 0.45 +rt_lava_flow_speed 0.03 +rt_lava_flow_scale 0.12 +rt_lava_flow_pixel 0 +rt_lava_pulse 0.10 +rt_lava_pulse_speed 0.35"
+if /i "%ARM%"=="churn"    set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 1800 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.3 %COL% %GEO% +rt_lava_light_debug 0 +rt_lava_autogoto 1 +rt_lava_emis 6 +rt_lava_flow 0.8 +rt_lava_flow_speed 0.12 +rt_lava_flow_scale 0.2 +rt_lava_flow_pixel 0.25 +rt_lava_pulse 0.2 +rt_lava_pulse_speed 0.6"
 if /i "%ARM%"=="fine"   set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 1800 +rt_lava_light_spacing 48 +rt_lava_light_radius 0.3 %COL% %GEO% +rt_lava_light_max 512 +rt_lava_light_debug 0"
 if /i "%ARM%"=="coarse" set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 1800 +rt_lava_light_spacing 192 +rt_lava_light_radius 0.3 %DEF%"
 if /i "%ARM%"=="tight"  set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 1800 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.08 %DEF%"
@@ -93,7 +107,7 @@ if /i "%ARM%"=="control" set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 
 if /i "%ARM%"=="debug"  set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 1800 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.3 %COL% %GEO% +rt_lava_light_debug 1 +rt_lava_autogoto 1"
 
 if not defined ARGS (
-  echo Usage: %~nx0 ^<off^|on^|dim^|bright^|fine^|coarse^|tight^|solo^|control^|debug^> [1-34]
+  echo Usage: %~nx0 ^<off^|on^|dim^|bright^|noshader^|hot^|smooth^|churn^|fine^|coarse^|tight^|solo^|control^|debug^> [1-34]
   exit /b 1
 )
 
