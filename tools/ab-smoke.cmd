@@ -107,7 +107,7 @@ if "%MAP%"==""  set "MAP=01"
 
 rem The shipping values, spelled out once. Later +cvar wins, so an arm names only
 rem what it changes.
-set "SMOKE=+rt_smoke 1 +rt_smoke_density 6 +rt_smoke_color 9E9689 +rt_smoke_count 3 +rt_smoke_budget 24 +rt_smoke_life 1.6 +rt_smoke_radius 0.35 +rt_smoke_growth 0.7 +rt_smoke_speed 1.8 +rt_smoke_spread 0.55 +rt_smoke_rise 0.65 +rt_smoke_drag 1.9 +rt_smoke_inherit 0.85 +rt_smoke_offset 0.35 +rt_smoke_repeat 5 +rt_smoke_far 14 +rt_smoke_ambient 0.08 +rt_smoke_illum 1 +rt_smoke_light_near 0 +rt_smoke_illum_blend 0.4 +rt_smoke_debug 0"
+set "SMOKE=+rt_smoke 1 +rt_smoke_density 6 +rt_smoke_color 9E9689 +rt_smoke_count 3 +rt_smoke_budget 24 +rt_smoke_life 1.6 +rt_smoke_radius 0.35 +rt_smoke_growth 0.7 +rt_smoke_speed 1.8 +rt_smoke_spread 0.55 +rt_smoke_rise 0.65 +rt_smoke_drag 1.9 +rt_smoke_inherit 0.85 +rt_smoke_offset 0.35 +rt_smoke_repeat 5 +rt_smoke_far 14 +rt_smoke_ambient 0.08 +rt_smoke_illum 1 +rt_smoke_light_near 0 +rt_smoke_illum_blend 0.4 +rt_smoke_debug 1"
 
 rem Fog OFF by default, and the preset table with it, so an unfogged map stays
 rem unfogged and the smoke is the only thing in the volume. The fog arms below
@@ -158,5 +158,18 @@ echo === smoke arm "%ARM%", MAP%MAP% ===
 echo     %ARGS%
 if /i "%ARM%"=="fogsafe" echo     COMPARE AGAINST: .\tools\ab-fog.cmd ramp 26  -- must be pixel-identical while not firing
 echo     (fire at a wall in a DARK room; the tell is the puff being brighter while its own flash is lit)
-call "%~dp0launch-retribution-rt.cmd" %MAP% -- %ARGS%
+echo.
+echo     DIAGNOSTICS ARE ON (rt_smoke_debug 1). Four probes, in order -- the first
+echo     one that goes missing is where the chain breaks:
+echo       A0/gate     did extralight rise at all, and did the flash gates pass
+echo       A/trigger   the shot was seen; shows the edge/repeat decision
+echo       B/spawn     a puff was created, with its position and radius
+echo       C/sent      what was packed for RTGL: count, density, distance from eye
+echo       D/received  what RTGL1.dll actually got (proves the pNext link)
+echo     Full transcript: rt-console.log
+rem "debug" is the launcher's -rtdebug switch. It is NOT optional here: RTGL1's
+rem own log line (stage D, "what the library received") is a debug::Warning, and
+rem rt_main sets allowedMessages=0 without -rtdebug -- so the one probe that can
+rem prove the pNext struct arrived would be silently muted.
+call "%~dp0launch-retribution-rt.cmd" %MAP% debug -- %ARGS%
 exit /b %ERRORLEVEL%
