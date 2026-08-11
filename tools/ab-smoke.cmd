@@ -80,6 +80,12 @@ rem             is a lighting or density question. If it shows NOTHING, either
 rem             the shader cannot see the uniform (check probeall) or the puff is
 rem             not where it is believed to be -- inside the wall you are
 rem             shooting at, for instance.
+rem   probeuni  rt_smoke_debug 4 -- BLUE over the whole screen, always, reading
+rem             nothing but the debug field itself: no puff count, no positions.
+rem             This is the bottom of the ladder. If probeuni is blank while the
+rem             library log reports the values correctly, the shader cannot see
+rem             this uniform group at all -- and no amount of tuning positions or
+rem             densities will ever matter. Run it before probe and probeall.
 rem   probeall  rt_smoke_debug 3 -- green over the WHOLE screen whenever the puff
 rem             list is non-empty, with no position test at all. This is the one
 rem             that separates the two: probeall green + probe blank means the
@@ -115,7 +121,7 @@ rem
 rem Default map is 01: an unfogged map, where smoke has the volume to itself and
 rem rt_smoke_far decides the resolution. Pass 26 for the fog interaction.
 rem
-rem Usage: ab-smoke.cmd <full|fat|thin|still|drift|walk|glued|edgeonly|nearfade|blendslow|blendraw|reach30|reach8|off|nolight|debug|probe|probeall|novol|fogsafe|fogsmoke> [1-32]
+rem Usage: ab-smoke.cmd <full|fat|thin|still|drift|walk|glued|edgeonly|nearfade|blendslow|blendraw|reach30|reach8|off|nolight|debug|probeuni|probe|probeall|novol|fogsafe|fogsmoke> [1-32]
 rem ---------------------------------------------------------------------------
 
 set "ARM=%~1"
@@ -163,6 +169,7 @@ if /i "%ARM%"=="nolight"   set "ARGS=%NOFOG% %SMOKE% +rt_smoke_illum 0"
 if /i "%ARM%"=="debug"     set "ARGS=%NOFOG% %SMOKE% +rt_smoke_debug 1"
 if /i "%ARM%"=="probe"     set "ARGS=%NOFOG% %SMOKE% +rt_smoke_debug 2"
 if /i "%ARM%"=="probeall"  set "ARGS=%NOFOG% %SMOKE% +rt_smoke_debug 3"
+if /i "%ARM%"=="probeuni"  set "ARGS=%NOFOG% %SMOKE% +rt_smoke_debug 4"
 if /i "%ARM%"=="novol"     set "ARGS=+rt_fog 0 +rt_fog_presets 0 +rt_volume_type 1 %SMOKE% +rt_smoke 0"
 
 rem The fog regression. fogsafe defaults to MAP26 because that is the map with a
@@ -171,7 +178,7 @@ if /i "%ARM%"=="fogsafe"   set "ARGS=%FOG26% %SMOKE%" & if "%~2"=="" set "MAP=26
 if /i "%ARM%"=="fogsmoke"  set "ARGS=%FOG26% %SMOKE%" & if "%~2"=="" set "MAP=26"
 
 if not defined ARGS (
-  echo Usage: %~nx0 full^|fat^|thin^|still^|drift^|walk^|glued^|edgeonly^|nearfade^|blendslow^|blendraw^|reach30^|reach8^|off^|nolight^|debug^|probe^|probeall^|novol^|fogsafe^|fogsmoke  [1-32]
+  echo Usage: %~nx0 full^|fat^|thin^|still^|drift^|walk^|glued^|edgeonly^|nearfade^|blendslow^|blendraw^|reach30^|reach8^|off^|nolight^|debug^|probeuni^|probe^|probeall^|novol^|fogsafe^|fogsmoke  [1-32]
   exit /b 1
 )
 
