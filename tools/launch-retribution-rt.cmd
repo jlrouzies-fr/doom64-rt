@@ -14,6 +14,7 @@ set "BULBTEX=G:\AI\Doom64-RT\Doom64-Retribution\d64r-bulb-textures.wad"
 set "CTELFIX=G:\AI\Doom64-RT\Doom64-Retribution\d64r-ctel-fix.wad"
 set "SKY=G:\AI\Doom64-RT\Doom64-Retribution\d64r-rt-sky.pk3"
 set "LAVAFX=G:\AI\Doom64-RT\Doom64-Retribution\d64r-lava-fx.pk3"
+set "BLOODFX=G:\AI\Doom64-RT\Doom64-Retribution\d64r-blood-persist.pk3"
 set "MUS=G:\AI\Doom64-RT\Doom64-Retribution\D64MUS.PK3"
 rem Full console transcript (incl. startup) -> shareable log. `logfile` is
 rem whitelisted to run at GS_STARTUP (c_dispatch.cpp), so it captures
@@ -473,13 +474,22 @@ rem d64r-seqlight-fix.wad replaces maps to clear LightSequence chains -- phased
 rem waves of light that travel along a run of sectors with no fixture casting
 rem them. Under RT they are worse than in the original renderer: rt_sector_emis
 rem makes any sector at/above minlight 160 a source, so the wave pulses as a
+rem d64r-blood-persist.pk3: BLUD splats stay for the level instead of vanishing
+rem after ~0.9 s. The lifetime was never a renderer setting -- it is the `Stop`
+rem at the end of 64Blood's Spawn in the WAD's own DECORATE, so the pk3 replaces
+rem those three actors with copies that end on `BLUD A -1`. rt_gore_life 32 puts
+rem the stock behaviour back (the handler expires them; DECORATE cannot read a
+rem cvar). rt_gore_max caps the live count, oldest first. Do not confuse
+rem rt_gore_* with rt_blood_tint_* below -- the latter is the blood LIQUID
+rem surface, nothing to do with splats. See docs/blood-persist.md.
+rem
 rem sourceless glow. Currently only MAP03's twin staircases; three more chains
 rem are surveyed and awaiting playtest in docs/sequence-light-chains.md.
 rem Load order note: MAP03 has no special-160 linedefs, so it is absent from
 rem FIX3D and the two wads never touch the same map.
 start "" gzdoom.exe ^
   -iwad "%IWAD%" ^
-  -file "%MOD%" "%BM%" "%SKUL%" "%FLSH%" "%MUS%" "%FIX3D%" "%SEQL%" "%BULBTEX%" "%CTELFIX%" "%SKY%" -file "%LAVAFX%" ^
+  -file "%MOD%" "%BM%" "%SKUL%" "%FLSH%" "%MUS%" "%FIX3D%" "%SEQL%" "%BULBTEX%" "%CTELFIX%" "%SKY%" -file "%LAVAFX%" "%BLOODFX%" ^
   -rtnolauncher -width 1280 -height 720 %RTDEBUG% ^
   +logfile "%LOGF%" ^
   +vid_fullscreen 0 +win_x -1 +win_y %WINY% +queryiwad false +sv_cheats 1 +god +notarget +map %MAPLUMP% ^
@@ -558,12 +568,13 @@ start "" gzdoom.exe ^
   +rt_rr_reset_on_lightcut 1 +rt_rr_reset_on_dynlight 1 +rt_rr_reset_delta 0.5 +rt_rr_reset_min_ms 250 ^
   +rt_rr_reset_hold 0 +rt_rr_reset_now 0 +rt_rr_reset_debug 0 ^
   +rt_restir_initial 32 ^
-  +rt_lava_gi 40 +rt_lava_debug 0 +rt_lava_tint_r 255 +rt_lava_tint_g 140 +rt_lava_tint_b 76 ^
-  +rt_lava_emis 6 +rt_lava_flow 0.45 +rt_lava_flow_speed 0.03 +rt_lava_flow_scale 0.12 ^
-  +rt_lava_flow_pixel 0.25 +rt_lava_pulse 0.10 +rt_lava_pulse_speed 0.35 ^
+  +rt_lava_gi 20 +rt_lava_debug 0 +rt_lava_tint_r 255 +rt_lava_tint_g 60 +rt_lava_tint_b 76 ^
+  +rt_lava_emis 1 +rt_lava_flow 0 +rt_lava_flow_speed 0.03 +rt_lava_flow_scale 0.12 ^
+  +rt_lava_flow_pixel 0.25 +rt_lava_pulse 0.1 +rt_lava_pulse_speed 0.35 ^
   +rt_lava_light_on 0 +rt_lava_light_intensity 1800 +rt_lava_light_spacing 96 ^
   +rt_lava_light_radius 0.3 +rt_lava_light_z 40 +rt_lava_light_max 256 +rt_lava_light_dist 2048 ^
   +rt_lava_light_r 255 +rt_lava_light_g 90 +rt_lava_light_b 20 +rt_lava_light_debug 0 ^
+  +rt_gore_life 0 +rt_gore_max 1500 +rt_gore_scale_var 0.35 +rt_gore_roll 0 ^
   +rt_water_style 1 +rt_water_liquids 1 ^
   +rt_water_tint_r 1 +rt_water_tint_g 1 +rt_water_tint_b 15 ^
   +rt_water_crest_r 140 +rt_water_crest_g 204 +rt_water_crest_b 255 ^

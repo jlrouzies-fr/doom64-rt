@@ -14,6 +14,14 @@ D64LavaSpark straight up out of a random point with a random arc. The spark is a
 its light cools with it, because a droplet in the air is the one part of a lava
 room that has a reason to be visibly changing.
 
+NO HAZE LAYER, AND WHY. A slab of soft, very low-alpha additive puffs above the
+lake is the standard way to fake heat volume, and it cannot work on this
+renderer: RT rasterizes these sprites as an ALPHA-TESTED cutout, so a radial
+gradient becomes a hard-edged disc at the 0.5 threshold and the actor's alpha
+(0.03) is never applied -- every puff draws at full texel strength. In game that
+was a row of flat orange balls hanging over the lava. A volume above the surface
+has to come from the volumetric medium (rt_fog_*), not from billboards.
+
 The sprites are generated here rather than drawn, at 8x8 and 16x16, in the
 game's own palette range and with hard pixel edges. Two things they must get
 right:
