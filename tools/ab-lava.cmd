@@ -1,5 +1,5 @@
 @echo off
-setlocal EnableExtensions
+setlocal EnableExtensions EnableDelayedExpansion
 rem ---------------------------------------------------------------------------
 rem A/B the lava. Maps with a lava FLOOR, from the UDMF: MAP15 (1 sector),
 rem MAP20 (2), MAP21 (2, the big hall -- default here), MAP34 (3, and the only
@@ -94,6 +94,17 @@ rem ---------------------------------------------------------------------------
 
 set "ARM=%~1"
 set "MAP=%~2"
+
+rem Anything after the map is forwarded verbatim to the launcher, so a run can
+rem be driven unattended (+screenshot_dir, +exec of a deferred console script).
+rem It lands AFTER the arm's own cvars, so it wins -- same rule as the "--"
+rem passthrough in launch-retribution-rt.cmd.
+set "PASS="
+set "IDX=0"
+for %%A in (%*) do (
+  set /a IDX+=1
+  if !IDX! GEQ 3 set "PASS=!PASS! %%~A"
+)
 if "%ARM%"=="" set "ARM=on"
 if "%MAP%"==""  set "MAP=21"
 
@@ -143,5 +154,5 @@ set "DBG="
 if /i "%ARM%"=="debug" set "DBG=debug"
 if /i "%ARM%"=="solo"  set "DBG=debug"
 if /i "%ARM%"=="control" set "DBG=debug"
-call "%~dp0launch-retribution-rt.cmd" %MAP% %DBG% -- %ARGS% %LOG%
+call "%~dp0launch-retribution-rt.cmd" %MAP% %DBG% -- %ARGS% %LOG% %PASS%
 exit /b %ERRORLEVEL%

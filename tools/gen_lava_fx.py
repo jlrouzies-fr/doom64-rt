@@ -45,11 +45,16 @@ OUT = ROOT / "Doom64-Retribution/d64r-lava-fx.pk3"
 
 # Cooling ramp for the four frames, as sRGB. Same reasoning as the heat ramp in
 # gen_lava_looks: pick the colour you want to SEE, not a linear triple.
+# Not white at the hot end. A near-white droplet plus RenderStyle Add plus an
+# emissive multiplier renders as a flat white pill -- which is exactly what the
+# first version looked like in game. Molten rock leaving a lake is ORANGE; the
+# white-hot reading comes from it being bright against a dark room, not from the
+# texel being white.
 SPARK_FRAMES = [
-    ("A", "#fff0c0", 1.00),  # just left the surface, white-hot
-    ("B", "#ff9a2a", 0.85),
-    ("C", "#e03c08", 0.65),
-    ("D", "#5a1002", 0.40),  # crusting over on the way down
+    ("A", "#ff8c1a", 1.00),  # just left the surface
+    ("B", "#f05c0c", 0.90),
+    ("C", "#a82408", 0.70),
+    ("D", "#4a0c02", 0.45),  # crusting over on the way down
 ]
 
 
@@ -85,7 +90,7 @@ def make_spark(hex_color: str, scale: float, size: int) -> Image.Image:
     yy, xx = np.mgrid[0:n, 0:n]
     cx = cy = (n - 1) / 2.0
     # taller than wide: a droplet, not a ball
-    d = np.sqrt( ( ( xx - cx ) / ( n * 0.34 ) ) ** 2 + ( ( yy - cy ) / ( n * 0.46 ) ) ** 2 )
+    d = np.sqrt( ( ( xx - cx ) / ( n * 0.26 ) ) ** 2 + ( ( yy - cy ) / ( n * 0.38 ) ) ** 2 )
 
     rgba = np.zeros((n, n, 4), dtype=np.uint8)
     core = d < 0.55
@@ -110,19 +115,25 @@ ZSCRIPT = r'''version "4.12"
 
 // Doom64-RT: lava sprays.
 //
-// A lava room is otherwise entirely static -- the crust does not move, and the
-// heat shader only modulates how bright it is. Droplets are the one element
-// with real motion in them, and they are cheap: GZDoom already does the
-// ballistics, and RTGL1 gives a sprite a light from its texture meta, which is
-// the ONE place that meta works (on a flat it does nothing at all, which is why
-// the lava needed rt_lava_gi).
+// A lava room is otherwise completely static -- the crust does not move and the
+// heat shader only modulates how bright it is. Droplets are the one element with
+// real motion. They are also cheap: GZDoom does the ballistics, and RTGL1 gives
+// a SPRITE a light from its texture meta, which is the one place that meta works
+// at all (on a flat it does nothing, which is why the lava needed rt_lava_gi).
 //
-// Spawning is per-SECTOR rather than per-tic-per-map: a lake is found once at
-// level load, and each one keeps its own emitter with a rate proportional to
-// its area, so a puddle spits occasionally and a lake seethes.
+// EVERYTHING LIVES IN THE EVENT HANDLER. The first version put the per-lake
+// emitters in a custom Thinker created with new("D64LavaEmitter"), and its Tick
+// never ran -- the handler reported "2 lava sector(s) spitting" and not one
+// spark was ever thrown. An EventHandler's WorldTick is guaranteed to run, so
+// the lakes are just parallel arrays here and there is no second object whose
+// lifecycle can go wrong.
 
 class D64LavaSpark : Actor
 {
+    // Set false on the fragments, so a break does not cascade: without it every
+    // child breaks again on its own way down and one throw turns into a swarm.
+    bool canBreak;
+
     Default
     {
         Radius 2;
@@ -130,7 +141,7 @@ class D64LavaSpark : Actor
         Speed 0;
         Gravity 0.55;              // heavier than a bubble, lighter than a rock
         RenderStyle "Add";
-        Alpha 1.0;
+        Alpha 0.85;
         +NOBLOCKMAP +NOTELEPORT +MISSILE +THRUACTORS
         +CLIENTSIDEONLY +FORCEXYBILLBOARD +NOTRIGGER
         -SOLID
@@ -138,85 +149,96 @@ class D64LavaSpark : Actor
     States
     {
     Spawn:
-        LSPK A 6 A_FadeOut(0.0);
-        LSPK B 8;
-        LSPK C 8;
-        LSPK D 10 A_FadeOut(0.10);
+        LSPK A 8;
+        LSPK B 10;
+        LSPK C 10;
+        LSPK D 12 A_FadeOut(0.08);
         Stop;
+    }
+
+    override void BeginPlay()
+    {
+        Super.BeginPlay();
+        canBreak = true;
+    }
+
+    // One fragment. Kept tiny and short-lived -- these are the filament, not
+    // more droplets, and at full size they read as a firework.
+    void ShedBit( Vector3 v, double sc )
+    {
+        // Cast, or the field is invisible: Actor.Spawn returns Actor, and
+        // b.canBreak on an Actor is "Unknown identifier".
+        let b = D64LavaSpark( Actor.Spawn( "D64LavaSpark", pos ) );
+        if( !b ) { return; }
+        b.canBreak = false;
+        b.vel      = v;
+        b.scale    = ( sc * 0.55, sc * 0.85 );  // taller than wide: a filament, not a dot
+        b.alpha    = 0.7;
+        b.tics     = 4;                  // starts part-cooled, dies sooner
     }
 
     override void Tick()
     {
         Super.Tick();
-        // Die on contact with anything, including the lava it came from --
-        // otherwise droplets pile up on the floor as little glowing dots and
-        // the room fills with them.
-        if( pos.z <= floorz + 1 || pos.z >= ceilingz - 1 )
+        if( isFrozen() ) { return; }
+
+        if( canBreak )
+        {
+            // A thread of small stuff torn off while it is still climbing. This
+            // is what makes it read as molten rock rather than a solid pellet:
+            // the surface tension loses and bits come off the back.
+            if( vel.z > 1.5 && random( 0, 255 ) < 70 )
+            {
+                ShedBit( ( vel.x * 0.35 + frandom( -0.25, 0.25 ),
+                           vel.y * 0.35 + frandom( -0.25, 0.25 ),
+                           vel.z * 0.30 + frandom( -0.4, 0.4 ) ),
+                         frandom( 0.5, 0.9 ) );
+            }
+
+            // And it BREAKS at the top of the arc, where a real droplet is
+            // slowest and least able to hold itself together.
+            if( vel.z <= 0.6 && pos.z > floorz + 12 )
+            {
+                canBreak = false;
+                int pieces = random( 2, 4 );
+                for( int i = 0; i < pieces; i++ )
+                {
+                    ShedBit( ( frandom( -1.6, 1.6 ), frandom( -1.6, 1.6 ), frandom( -0.4, 1.4 ) ),
+                             frandom( 0.6, 1.0 ) );
+                }
+            }
+        }
+
+        // Die on landing. The +2.5 margin is because it is SPAWNED at floorz + 2
+        // and would otherwise kill itself on its first tic.
+        if( pos.z <= floorz + 2.5 && vel.z <= 0 )
         {
             Destroy();
         }
     }
 }
 
-class D64LavaEmitter : Thinker
-{
-    Sector    sec;
-    double    minx, miny, maxx, maxy;
-    int       period;       // tics between throws
-    int       countdown;
-
-    static D64LavaEmitter Create( Sector s, double x0, double y0, double x1, double y1, int per )
-    {
-        let e = new( "D64LavaEmitter" );
-        e.sec = s;
-        e.minx = x0; e.miny = y0; e.maxx = x1; e.maxy = y1;
-        e.period = per;
-        e.countdown = random( 0, per );   // so lakes do not all spit in unison
-        return e;
-    }
-
-    override void Tick()
-    {
-        if( sec == null ) { return; }
-        if( --countdown > 0 ) { return; }
-        countdown = period;
-
-        // Rejection-sample a point actually inside the sector: a lake is rarely
-        // convex and its bounding box always overlaps the walkway beside it, so
-        // a box sample throws droplets out of solid ground. Same lesson the
-        // light grid learned, and cheap here because it runs a few times a
-        // second, not per pixel.
-        for( int tries = 0; tries < 6; tries++ )
-        {
-            double px = frandom( minx, maxx );
-            double py = frandom( miny, maxy );
-            if( level.PointInSector( (px, py) ) != sec ) { continue; }
-
-            double fz = sec.floorplane.ZatPoint( (px, py) );
-            let sp = Actor.Spawn( "D64LavaSpark", (px, py, fz + 2) );
-            if( sp )
-            {
-                // Mostly up, a little sideways. 6..11 is roughly a half-second
-                // hang, which is long enough to read as an arc.
-                sp.vel = ( frandom( -0.9, 0.9 ), frandom( -0.9, 0.9 ), frandom( 5.0, 11.0 ) );
-                sp.scale = ( frandom( 0.6, 1.3 ), frandom( 0.6, 1.3 ) );
-            }
-            return;
-        }
-    }
-}
-
 class D64LavaFx : EventHandler
 {
-    // Rate is per 1024x1024 map units of lake, so it scales with the water --
-    // a fixed per-sector rate makes a puddle as busy as a lake.
-    const TICS_PER_THROW_PER_AREA = 26;
+    // Parallel arrays, one entry per lava sector. Sector indices rather than
+    // Sector refs: ZScript will not hold a dynamic array of struct pointers.
+    Array<int>    secIdx;
+    Array<double> minx, miny, maxx, maxy;
+
+    int spawned;
+    int tick;
+
+    // Rate is what the PLAYER sees, not what the lake covers.
+    const PERIOD    = 7;     // tics between bursts
+    const PER_BURST = 2;     // droplets per burst
+    const NEAR_MIN  = 64;    // no closer than this, or they spawn in your face
+    const NEAR_MAX  = 700;
 
     override void WorldLoaded( WorldEvent e )
     {
-        if( level.maptime > 0 ) { return; }
+        secIdx.Clear(); minx.Clear(); miny.Clear(); maxx.Clear(); maxy.Clear();
+        spawned = 0;
 
-        int found = 0;
         for( int i = 0; i < level.sectors.Size(); i++ )
         {
             let s = level.sectors[ i ];
@@ -224,7 +246,7 @@ class D64LavaFx : EventHandler
             fl = fl.MakeUpper();
             if( fl.IndexOf( "HLAVA" ) != 0 && fl.IndexOf( "D64LAVA" ) != 0 ) { continue; }
 
-            double minx = 1e30, miny = 1e30, maxx = -1e30, maxy = -1e30;
+            double x0 = 1e30, y0 = 1e30, x1 = -1e30, y1 = -1e30;
             for( int li = 0; li < s.lines.Size(); li++ )
             {
                 let ln = s.lines[ li ];
@@ -232,42 +254,187 @@ class D64LavaFx : EventHandler
                 Vertex vb = ln.v2;
                 if( va )
                 {
-                    minx = min( minx, va.p.x ); maxx = max( maxx, va.p.x );
-                    miny = min( miny, va.p.y ); maxy = max( maxy, va.p.y );
+                    x0 = min( x0, va.p.x ); x1 = max( x1, va.p.x );
+                    y0 = min( y0, va.p.y ); y1 = max( y1, va.p.y );
                 }
                 if( vb )
                 {
-                    minx = min( minx, vb.p.x ); maxx = max( maxx, vb.p.x );
-                    miny = min( miny, vb.p.y ); maxy = max( maxy, vb.p.y );
+                    x0 = min( x0, vb.p.x ); x1 = max( x1, vb.p.x );
+                    y0 = min( y0, vb.p.y ); y1 = max( y1, vb.p.y );
                 }
             }
-            if( minx > maxx ) { continue; }
+            if( x0 > x1 ) { continue; }
 
-            double area = ( maxx - minx ) * ( maxy - miny );
-            int per = int( clamp( TICS_PER_THROW_PER_AREA * 1048576.0 / max( area, 1.0 ), 3, 140 ) );
-            D64LavaEmitter.Create( s, minx, miny, maxx, maxy, per );
-            found++;
+            secIdx.Push( i );
+            minx.Push( x0 ); miny.Push( y0 ); maxx.Push( x1 ); maxy.Push( y1 );
         }
 
-        if( found > 0 )
+        if( secIdx.Size() > 0 )
         {
-            Console.Printf( "D64LavaFx: %d lava sector(s) spitting", found );
+            Console.Printf( "D64LavaFx: %d lava sector(s), %d droplet(s) every %d tics near the player",
+                            secIdx.Size(), PER_BURST, PERIOD );
+        }
+    }
+
+    override void WorldTick()
+    {
+        if( secIdx.Size() == 0 ) { return; }
+
+        // SPAWN NEAR THE PLAYER, not uniformly across the lake.
+        //
+        // Uniform-over-area was the obvious reading of "a lake seethes" and it
+        // is wrong in practice: MAP21's lava sector has a 2043x1392 bounding
+        // box, so at four droplets a second essentially all of them land out of
+        // frame and the effect is invisible while the log happily reports them
+        // being thrown. What matters is the density the player SEES, so the
+        // sample disc follows the camera and the rate is per-second, not
+        // per-acre. Same instinct as the light grid's distance cull.
+        let pmo = players[ consoleplayer ].mo;
+        if( !pmo ) { return; }
+
+        if( --tick > 0 ) { return; }
+        tick = PERIOD;
+
+        for( int n = 0; n < PER_BURST; n++ )
+        {
+            for( int tries = 0; tries < 10; tries++ )
+            {
+                double ang = frandom( 0, 360 );
+                double rad = frandom( NEAR_MIN, NEAR_MAX );
+                double px  = pmo.pos.x + cos( ang ) * rad;
+                double py  = pmo.pos.y + sin( ang ) * rad;
+
+                Sector sec = level.PointInSector( (px, py) );
+                if( !sec ) { continue; }
+                String fl = TexMan.GetName( sec.GetTexture( Sector.floor ) ).MakeUpper();
+                if( fl.IndexOf( "HLAVA" ) != 0 && fl.IndexOf( "D64LAVA" ) != 0 ) { continue; }
+
+                double fz = sec.floorplane.ZatPoint( (px, py) );
+                let sp = Actor.Spawn( "D64LavaSpark", (px, py, fz + 2) );
+                if( sp )
+                {
+                    spawned++;
+                    if( spawned <= 3 || ( spawned % 200 ) == 0 )
+                    {
+                        Console.Printf( "D64LavaFx: spark %d at (%.0f %.0f %.0f), %.0f from player",
+                                        spawned, px, py, fz, rad );
+                    }
+                    sp.vel = ( frandom( -0.55, 0.55 ), frandom( -0.55, 0.55 ), frandom( 1.8, 3.9 ) );
+                    sp.scale = ( frandom( 0.5, 0.9 ), frandom( 0.5, 0.9 ) );
+                }
+                break;
+            }
         }
     }
 }
 '''
 
 
+
+# A dynamic light per frame, cooling with the droplet.
+#
+# Two separate light mechanisms are in play and it is worth being clear which is
+# which. The sprite's textures.json entry gives RTGL1 an emissive/light for the
+# BILLBOARD -- that is the one place that meta works. GLDEFS gives GZDoom a
+# real dynamic light, which rt_main forwards to RTGL1 via
+# RT_UploadGzDoomDynamicLights. The second is what actually throws light on the
+# walls as a droplet flies past, so it is the one being asked for here.
+#
+# Radii stay in the teens deliberately: above rt_dynlight_rsoft a LARGER radius
+# is DIMMER, so a droplet with size 64 would light less than one with size 16.
+GLDEFS = """// Doom64-RT lava sprays. Radius is not brightness -- see the note in
+// tools/gen_lava_fx.py before raising any of these.
+pointlight D64LAVASPARK_A
+{
+	color 1.0 0.55 0.10
+	size 18
+}
+pointlight D64LAVASPARK_B
+{
+	color 1.0 0.36 0.05
+	size 16
+}
+pointlight D64LAVASPARK_C
+{
+	color 0.85 0.18 0.03
+	size 13
+}
+pointlight D64LAVASPARK_D
+{
+	color 0.45 0.07 0.01
+	size 9
+}
+
+object D64LavaSpark
+{
+	frame LSPKA { light D64LAVASPARK_A }
+	frame LSPKB { light D64LAVASPARK_B }
+	frame LSPKC { light D64LAVASPARK_C }
+	frame LSPKD { light D64LAVASPARK_D }
+}
+"""
+
+
+# An EventHandler in a ZSCRIPT lump is NOT registered on its own -- it has to be
+# named in MAPINFO. Without this the class compiles, loads, and never runs, which
+# is exactly what happened: the pk3 reported "5 lumps", the level loaded, and
+# there was no D64LavaFx line and no droplets. Same one line d64r-rt-sky.pk3 uses.
+MAPINFO = """GameInfo
+{
+	AddEventHandlers = "D64LavaFx"
+}
+"""
+
+
+# The sprite half of the lighting, and it has to be written by the tool: this
+# lives in rt/data/textures.json under build/, which is gitignored and rewritten
+# wholesale by the PBR tooling, so a hand edit is neither recorded nor durable.
+# Same reason tools/set_water_meta.py exists.
+SPARK_META = {
+    "LSPKA0": (760, [255, 140, 26], 0.7),
+    "LSPKB0": (520, [240, 92, 12], 0.6),
+    "LSPKC0": (280, [168, 36, 8], 0.45),
+    "LSPKD0": (100, [74, 12, 2], 0.3),
+}
+TEXJSON = ROOT / "sourcecode/gzdoom-rt/build/RelWithDebInfo/rt/data/textures.json"
+
+
+def patch_texjson() -> int:
+    import json
+
+    if not TEXJSON.exists():
+        print(f"  (skipped {TEXJSON.name}: not found -- build gzdoom first)")
+        return 0
+    data = json.loads(TEXJSON.read_text(encoding="utf-8"))
+    seen, n = set(), 0
+    for e in data["array"]:
+        nm = e.get("textureName")
+        if nm in SPARK_META and nm not in seen:
+            seen.add(nm)
+            i, c, em = SPARK_META[nm]
+            e["lightIntensity"], e["lightColor"], e["emissiveMult"] = i, c, em
+            n += 1
+    for nm, (i, c, em) in SPARK_META.items():
+        if nm not in seen:
+            data["array"].append(
+                {"textureName": nm, "lightIntensity": i, "lightColor": c,
+                 "emissiveMult": em, "metallicDefault": 0}
+            )
+            n += 1
+    TEXJSON.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    return n
+
+
 def build(dry: bool) -> int:
     frames = []
     for letter, hexc, scale in SPARK_FRAMES:
-        size = 16 if letter in ("A", "B") else 8
+        size = 8 if letter in ("A", "B") else 6
         img = make_spark(hexc, scale, size)
         # centred horizontally, anchored at the bottom: a droplet hangs from its
         # own position rather than being centred on it
         frames.append((f"LSPK{letter}0", png_with_grab(img, size // 2, size)))
 
-    print(f"{OUT.name}: {len(frames)} spark frame(s), ZSCRIPT {len(ZSCRIPT)} bytes")
+    print(f"{OUT.name}: {len(frames)} spark frame(s), ZSCRIPT {len(ZSCRIPT)} bytes, MAPINFO registers D64LavaFx, GLDEFS lights the droplets")
     for name, blob in frames:
         print(f"   sprites/{name}.png  {len(blob)} bytes")
     if dry:
@@ -276,10 +443,13 @@ def build(dry: bool) -> int:
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(OUT, "w", zipfile.ZIP_DEFLATED) as z:
+        z.writestr("MAPINFO", MAPINFO)
+        z.writestr("GLDEFS", GLDEFS)
         z.writestr("ZSCRIPT", ZSCRIPT)
         for name, blob in frames:
             z.writestr(f"sprites/{name}.png", blob)
     print(f"\nwrote {OUT}")
+    print(f"{patch_texjson()} spark entr(ies) written to textures.json")
     return 0
 
 

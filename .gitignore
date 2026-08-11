@@ -141,3 +141,7 @@ tools/d64r-rt-sky/textures/MOONSKY_preview.png
 # Local undo state, not source: the overlays it holds are whatever happened to
 # be in the tree at the time.
 tools/_lava_mat_backup/
+
+# Unattended A/B capture output (tools/ab-lava.cmd + rt_autoshot).
+tools/_lavashot/
+rt-lava.log
