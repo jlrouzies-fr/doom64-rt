@@ -18,6 +18,7 @@ mechanisms that look correct and silently do nothing.
 | `BAL2` / `BAL8` projectiles | wrong light colour (violet & green on red sprites) | fixed in every `textures.json` + the generator |
 | `FIRE` bonfire | **missing from `RT_FLAME_KINDS` entirely** — 117 placements | added, built; see Case 7 and `docs/flame-lighting.md` |
 | `A028` / `A029` gargoyle statues | red eyes painted in the art, never emissive | `_e` masks + `emissiveMult`, live; see Case 8 |
+| `SWXC*` / `CMPSW*` switches | 54 of 95 faces had no emissive at all, and none cast light | composites masked + `rt_switch_lights`, built; see Case 9 |
 
 Verified running: `rt_hand_light: uploaded=10 of 10 wanted (cap 48, within 2048u) I=45`
 in MAP05 (5 knights × 2 fists), and `uploaded=14 of 14` in MAP13 (Barons + Hell Knights
@@ -579,6 +580,81 @@ widen into a bare `A02` prefix and swallow the other seven `A02x` decorations. W
 registration a later `gen_world_emissives.py` scrub would treat them as strays.
 
 **Not verified in-engine.**
+
+---
+
+## Case 9 — the switches (`SWXC*`, `CMPSW*`) — a patch is not what the engine names
+
+Retribution's switches change art when thrown (ANIMDEFS `CMPSW##A → ON → CMPSW##B`) and
+the ON art lights up: `SWXC`'s demon face gains red eyes, `SWXSG`'s plate gains a pink
+gem. Two separate defects, and the first is the more instructive.
+
+### 1. The allowlist named patches; the engine names composites
+
+`SWITCH_ON_EMIS` in `gen_world_emissives.py` lists **patches**. `SWXCB` had a correct `_e`
+mask and `emissiveMult 0.4`, so the 41 sidedefs using the bare 32×32 texture lit their eyes
+properly. But Retribution stamps that patch into 56 `CMPSW*` wall panels, and it is the
+**panel** the engine renders and names. None had a mask or an entry.
+
+So the same switch lit up on a bare wall and was completely inert on a panel — **41 uses
+working, 54 dead**, across 14 maps. The generator now expands over the `TEXTURES` lump:
+for each composite embedding a lit patch, it pastes **that patch's own `_e`** at the
+recorded offset. Never re-derived; one source of truth, so the two forms cannot drift.
+
+**The lit frame is not the letter.** `SWXC` lights on `B`, but `SWXCL` and `SWXCKL` light
+on `A` — their eyes go *out* when pressed. Keying the expansion off the allowlist rather
+than the A/B suffix is what keeps those two right; a letter rule lights them backwards.
+
+Two latent bugs fell out of this, both in `gen_world_emissives.py` and both silent:
+
+- `patch_global_inline()` appended a new entry in single-line form, then its
+  "drop later duplicates" pass — which deletes *every* match, not every match after the
+  first — removed the line it had just written. Only ever hit genuinely **new** names, so
+  56 masks and 56 overlay rows produced **zero** rows in `textures.json`, the only file
+  RTGL1 reads.
+- Running the tool drops authored names out of the overlay (`replace=True` rewrites it
+  from that run's entries). One run removed `SFLATAQ`, `SFLATAS`, `SPACEAZ` and nine
+  `SMONF*`/`SMONLB*`. Harmless in game — the global keeps its meta — but
+  `_authored_emis_keep()` builds the allowlist *from* the overlay, so the next scrub
+  would strip exactly those as strays. **Diff the overlay against HEAD after running it.**
+
+### 2. Glow is not light — `rt_switch_lights`
+
+Mechanism 2 again: the eyes now glowed and still lit nothing. `lightIntensity` is no help,
+it is sprite-only. So the switches get an engine light, `RT_UploadSwitchLights()`, on the
+`RT_UploadWallStripLights` pattern — walk sidedefs, match the texture, place a light on the
+face.
+
+The table is **generated** (`tools/gen_switch_lights.py` → `rt_switch_lights.h`), and every
+number in it is measured from the `_e` mask that the emissive pass already wrote:
+
+| field | source |
+| --- | --- |
+| position | centroid of the mask's lit texels, in texel space |
+| colour | those texels' average hue at full saturation |
+| `lit` | lit texel count — 7 for the `SWXC` eyes, 46 for the `SWXSG` gem |
+
+Cast light and on-screen glow therefore come from the same pixels and cannot drift — the
+`LPUF` failure mode, designed out rather than watched for. Intensity scales by
+`sqrt(lit/7)`, not linearly: linear would hand the gem 6.5× the eyes and read as a
+spotlight.
+
+**No state tracking.** The walk reads `side->GetTexture()`, which *is* the swapped texture,
+so the light exists exactly while the lit face is on the wall — correct across a save, a
+level reset, or the switch thrown back off, for free.
+
+**The one convention is vertical placement**, from the sidedef's pegging flags and row
+offset. That is derived, not measured, and this project has been bitten by exactly that
+twice (`RT_UploadWallStripLights`' normal direction, `rt_spin_panel_yaw`). Hence
+`rt_switch_light_zofs` and a debug dump that prints *which pegging branch* placed each
+light. A light computed outside its own band is dropped rather than buried in a wall,
+where it would be indistinguishable from the feature not working.
+
+`rt_switch_lights 0` is a **true** revert, unlike `rt_flame_light_on`: the eyes keep
+glowing, they just stop lighting. Verify with `tools/ab-switch.cmd debug` — MAP20 has 21
+`SWXC` faces. Throw a switch first; the A frame is unlit and correctly emits nothing.
+
+**Not verified in-engine.** Nobody has confirmed a marker sits on a pair of eyes.
 
 ---
 
