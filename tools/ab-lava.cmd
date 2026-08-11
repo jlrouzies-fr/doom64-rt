@@ -30,6 +30,14 @@ rem            a hundred of them and each sits 0.75 m off the surface.
 rem   dim      600 lm -- what the "some light, underwhelming" shot was.
 rem   bright   5400 lm. The arms are 3x apart,
 rem            so one run of dim/on/bright brackets the answer.
+rem   haze     VOLUMETRIC heat haze. The fog volume (RtVolumetric.rgen, a
+rem            160x88x64 froxel grid) is real in-scattering, not a billboard --
+rem            but it only scatters LIGHTS, and the lava's GI is emissive, not a
+rem            light. So this turns the analytic grid back on to feed it. In fog
+rem            the grid's weakness stops mattering: the pooling that looked bad
+rem            on bare walls IS the haze. rt_fog_presets 0 so the arm's own fog
+rem            cvars win over the preset table (see docs/rt-fog-implementation.md
+rem            trap 2).
 rem   flagcheck LAVA SURFACES PAINTED MAGENTA. Not a look -- a test. If the lava
 rem            is not magenta, the LAVA flag is not reaching the shader and
 rem            nothing about rt_lava_emis can work. Check this before tuning.
@@ -89,7 +97,7 @@ rem
 rem Every arm sets every lava cvar explicitly, so a value left in the ini from a
 rem previous arm can never leak into the next one.
 rem
-rem Usage: ab-lava.cmd <off|on|dim|bright|fixexp|redder|flagcheck|gi|gihard|noshader|hot|smooth|churn|fine|coarse|tight|solo|control|debug> [1-34]
+rem Usage: ab-lava.cmd <off|on|dim|bright|haze|fixexp|redder|flagcheck|gi|gihard|noshader|hot|smooth|churn|fine|coarse|tight|solo|control|debug> [1-34]
 rem ---------------------------------------------------------------------------
 
 set "ARM=%~1"
@@ -125,6 +133,7 @@ if /i "%ARM%"=="dim"    set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 6
 if /i "%ARM%"=="bright" set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 5400 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.3 %DEF% +rt_lava_gi 0"
 if /i "%ARM%"=="fixexp"   set "ARGS=+rt_lava_light_on 0 +rt_lava_light_intensity 1800 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.3 %COL% %GEO% +rt_lava_light_debug 0 +rt_lava_autogoto 1 +rt_lava_debug 0 +rt_lava_emis 1 +rt_lava_flow 0 +rt_lava_flow_speed 0.03 +rt_lava_flow_scale 0.12 +rt_lava_flow_pixel 0.25 +rt_lava_pulse 0.1 +rt_lava_pulse_speed 0.35 +rt_lava_gi 20 +rt_lava_tint_r 255 +rt_lava_tint_g 60 +rt_lava_tint_b 76 +rt_tnmp_ev100_min 5.5 +rt_tnmp_ev100_max 5.5"
 if /i "%ARM%"=="redder"   set "ARGS=+rt_lava_light_on 0 +rt_lava_light_intensity 1800 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.3 %COL% %GEO% +rt_lava_light_debug 0 +rt_lava_autogoto 1 +rt_lava_debug 0 +rt_lava_emis 1 +rt_lava_flow 0 +rt_lava_flow_speed 0.03 +rt_lava_flow_scale 0.12 +rt_lava_flow_pixel 0.25 +rt_lava_pulse 0.1 +rt_lava_pulse_speed 0.35 +rt_lava_gi 20 +rt_lava_tint_r 255 +rt_lava_tint_g 90 +rt_lava_tint_b 40"
+if /i "%ARM%"=="haze"     set "ARGS=+rt_lava_autogoto 1 +rt_lava_gi 20 +rt_lava_emis 1 +rt_lava_pulse 0.1 +rt_lava_tint_r 255 +rt_lava_tint_g 60 +rt_lava_tint_b 76 +rt_lava_light_on 1 +rt_lava_light_intensity 400 +rt_lava_light_spacing 128 +rt_lava_light_radius 0.3 +rt_lava_light_z 40 +rt_lava_light_max 256 +rt_lava_light_dist 2048 %COL% +rt_lava_light_debug 0 +rt_fog 1 +rt_fog_presets 0 +rt_fog_illum 1 +rt_fog_color A03008 +rt_fog_density 8 +rt_fog_density_far 40 +rt_fog_far 24 +rt_fog_curve 1.8 +rt_fog_ambient 0"
 if /i "%ARM%"=="flagcheck" set "ARGS=+rt_lava_light_on 0 +rt_lava_light_intensity 1800 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.3 %COL% %GEO% +rt_lava_light_debug 0 +rt_lava_autogoto 1 +rt_lava_debug 1 +rt_lava_emis 1 +rt_lava_flow 0 +rt_lava_gi 1 +rt_lava_tint_r 255 +rt_lava_tint_g 60 +rt_lava_tint_b 76"
 if /i "%ARM%"=="gi"       set "ARGS=+rt_lava_light_on 0 +rt_lava_light_intensity 1800 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.3 %COL% %GEO% +rt_lava_light_debug 0 +rt_lava_autogoto 1 +rt_lava_debug 0 +rt_lava_emis 1 +rt_lava_flow 0 +rt_lava_flow_speed 0.03 +rt_lava_flow_scale 0.12 +rt_lava_flow_pixel 0.25 +rt_lava_pulse 0.1 +rt_lava_pulse_speed 0.35 +rt_lava_gi 20 +rt_lava_tint_r 255 +rt_lava_tint_g 60 +rt_lava_tint_b 76"
 if /i "%ARM%"=="gihard"   set "ARGS=+rt_lava_light_on 0 +rt_lava_light_intensity 1800 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.3 %COL% %GEO% +rt_lava_light_debug 0 +rt_lava_autogoto 1 +rt_lava_debug 0 +rt_lava_emis 1 +rt_lava_flow 0 +rt_lava_flow_speed 0.03 +rt_lava_flow_scale 0.12 +rt_lava_flow_pixel 0.25 +rt_lava_pulse 0.1 +rt_lava_pulse_speed 0.35 +rt_lava_gi 150 +rt_lava_tint_r 255 +rt_lava_tint_g 60 +rt_lava_tint_b 76"
@@ -140,7 +149,7 @@ if /i "%ARM%"=="control" set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 
 if /i "%ARM%"=="debug"  set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 1800 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.3 %COL% %GEO% +rt_lava_light_debug 1 +rt_lava_autogoto 1 +rt_lava_gi 0"
 
 if not defined ARGS (
-  echo Usage: %~nx0 ^<off^|on^|dim^|bright^|fixexp^|redder^|flagcheck^|gi^|gihard^|noshader^|hot^|smooth^|churn^|fine^|coarse^|tight^|solo^|control^|debug^> [1-34]
+  echo Usage: %~nx0 ^<off^|on^|dim^|bright^|haze^|fixexp^|redder^|flagcheck^|gi^|gihard^|noshader^|hot^|smooth^|churn^|fine^|coarse^|tight^|solo^|control^|debug^> [1-34]
   exit /b 1
 )
 
