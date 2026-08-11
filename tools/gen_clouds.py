@@ -1,4 +1,4 @@
-"""
+r"""
 Build the storm sky: a sliced volumetric cloud deck and four lightning bolts.
 
 Why this exists
@@ -163,8 +163,17 @@ def _fbm3(rng: np.random.Generator, nz: int, ny: int, nx: int,
 # --------------------------------------------------------------------------
 # the cloud volume
 # --------------------------------------------------------------------------
-def _build_volume(seed: int, coverage: float, sharpness: float) -> np.ndarray:
-    """Density in [0,1], shape (NSLICES, RES, RES). Index 0 is the cloud BASE."""
+def _build_volume(seed: int, coverage: float, sharpness: float,
+                  edge: float, erode: float, octaves: int) -> np.ndarray:
+    """Density in [0,1], shape (NSLICES, RES, RES). Index 0 is the cloud BASE.
+
+    `edge` is the width of the feathered rim in normalised-noise units and
+    `erode` how hard the high-frequency field bites into it. Together they decide
+    whether the deck reads as SMOKE or as CUT-OUT SHAPES, which is the single
+    biggest difference between this and the console game's sky: Doom 64's is a
+    continuous smoky mass whose structure is all luminance, while a narrow edge
+    plus heavy erosion gives hard-rimmed blobs with holes punched between them.
+    """
     rng = np.random.default_rng(seed)
 
     # fy/fx of 3 over 1024px, six octaves. The low base is deliberate: a cloud
@@ -178,7 +187,7 @@ def _build_volume(seed: int, coverage: float, sharpness: float) -> np.ndarray:
     # same shape rather than into structure -- the clouds had depth in the
     # geometry and none in the art. At 3 a mass genuinely changes outline as it
     # rises, which is what the eye reads as three-dimensional.
-    n = _fbm3(rng, NSLICES, RES, RES, fz=3, fy=3, fx=3, octaves=6)
+    n = _fbm3(rng, NSLICES, RES, RES, fz=3, fy=3, fx=3, octaves=octaves)
 
     # Vertical shape. h = 0 at the base, 1 at the top.
     #
@@ -218,9 +227,8 @@ def _build_volume(seed: int, coverage: float, sharpness: float) -> np.ndarray:
     # Higher slices get a higher threshold, so a mass shrinks with height. `edge`
     # is the width of the feathered rim in normalised-noise units.
     thresh = (base_t + (1.0 - base_t) * (1.0 - shape)).astype(np.float32)
-    edge = 0.20
 
-    t = np.clip((n - thresh) / edge, 0.0, 1.0)
+    t = np.clip((n - thresh) / max(1e-4, edge), 0.0, 1.0)
     d = t * t * (3.0 - 2.0 * t)
 
     # Edge erosion. A second, much higher-frequency field carved out of the
@@ -242,7 +250,7 @@ def _build_volume(seed: int, coverage: float, sharpness: float) -> np.ndarray:
     # was the first try and it ate the cloud BASE, which is the one cut the
     # player is directly underneath and the one that has to read as substantial.
     # It is also simply what clouds do -- the wispy end is the top.
-    cut = er * 0.5 * (0.35 + 0.65 * h)[:, None, None]
+    cut = er * erode * (0.35 + 0.65 * h)[:, None, None]
     d = np.clip((d - cut) / np.maximum(1e-4, 1.0 - cut), 0.0, 1.0)
 
     return np.clip(d * sharpness, 0.0, 1.0).astype(np.float32)
@@ -263,14 +271,36 @@ def _light_volume(dens: np.ndarray, extinction: float, ambient: float) -> np.nda
 
 def _slice_to_image(dens: np.ndarray, light: np.ndarray,
                     lit: tuple[int, int, int], shadow: tuple[int, int, int],
-                    alpha_scale: float) -> Image.Image:
+                    alpha_scale: float, alpha_floor: float = 0.0) -> Image.Image:
+    """Density and light to one RGBA cut.
+
+    `alpha_floor` is what closes the deck, and it is applied to ALPHA ONLY --
+    the density the lighting was integrated from is untouched. That separation
+    is the whole trick, and getting it wrong cost two attempts:
+
+      * the holes are an ALPHA problem. Where density is near zero the slice is
+        transparent and you see the backdrop, which is what put black gaps in a
+        purple sky.
+      * the flat-grey-slab is a LIGHTING problem. Raising coverage, or flooring
+        the DENSITY, closes the holes by making every column equally thick --
+        and then the downward light integral is the same everywhere, so there is
+        nothing left to see. Worse, the slice you actually look up at is the
+        BASE, which sits under the whole column and is therefore the most
+        uniformly shadowed of all: flooring density turns it into flat paint.
+
+    Flooring alpha alone closes the sky without touching the light. A thin patch
+    stays opaque but keeps its high transmittance, so it renders as bright lit
+    cloud; a thick patch renders as a dark underside. Which is what the sky being
+    matched actually is -- fully covered, with all of its structure in luminance.
+    """
     lit_a = np.array(lit, dtype=np.float32)
     sh_a = np.array(shadow, dtype=np.float32)
     rgb = sh_a[None, None, :] + (lit_a - sh_a)[None, None, :] * light[:, :, None]
 
     out = np.empty((dens.shape[0], dens.shape[1], 4), dtype=np.uint8)
     out[..., :3] = np.clip(rgb, 0, 255).astype(np.uint8)
-    out[..., 3] = np.clip(dens * alpha_scale * 255.0, 0, 255).astype(np.uint8)
+    a = alpha_floor + (1.0 - alpha_floor) * dens
+    out[..., 3] = np.clip(a * alpha_scale * 255.0, 0, 255).astype(np.uint8)
     return Image.fromarray(out, "RGBA")
 
 
@@ -371,18 +401,70 @@ def main() -> None:
     ap.add_argument("--preview", action="store_true",
                     help="also write *_preview.png contact sheets (never packed)")
     ap.add_argument("--seed", type=int, default=64)
-    ap.add_argument("--coverage", type=float, default=0.46,
-                    help="how much of the sky is cloud, 0..1. Above ~0.75 the deck "
-                         "closes over and the moon never shows through.")
-    ap.add_argument("--extinction", type=float, default=3.2,
+    # -- the five knobs that decide SMOKE versus CUT-OUTS ---------------------
+    #
+    # All five moved together after comparing a shot of the deck against the
+    # console game's sky (screen/ourclouds.png vs screen/doom64clouds.png).
+    # Measured over the sky region of each:
+    #
+    #                     darkest 2%   Y std (blotchiness)   pure black
+    #   Doom 64             #100F1F          25.2               none
+    #   ours, before        #000000          35.8               yes
+    #
+    # Two separate faults. The SHAPE was hard-rimmed islands with clear sky
+    # between them, where the target is a continuous mass whose structure is all
+    # luminance -- that is coverage, edge and erode. And the darkest parts went
+    # to actual black rather than to dark purple cloud, which is what makes a
+    # gap read as a HOLE punched in the sky instead of as depth -- that is
+    # ambient, extinction and the shadow colour below.
+    ap.add_argument("--coverage", type=float, default=0.72,
+                    help="how much of the sky is cloud, 0..1. Was 0.46, which "
+                         "left the islands-in-clear-sky look. The old warning "
+                         "here -- that above ~0.75 the deck closes over and the "
+                         "moon never shows through -- no longer applies: the "
+                         "moon's transmittance is a slab now (hw_skyportal.cpp), "
+                         "so a closed deck still passes rt_clouds_transmit of "
+                         "the tint instead of collapsing to nothing.")
+    ap.add_argument("--edge", type=float, default=0.30,
+                    help="width of the feathered rim, in normalised-noise units. "
+                         "Was 0.20, which is a rim only a few pixels wide once "
+                         "magnified onto the deck -- i.e. a cut-out edge.")
+    ap.add_argument("--erode", type=float, default=0.22,
+                    help="how hard the high-frequency field bites into the rim. "
+                         "Was 0.50. Erosion is what keeps silhouettes from "
+                         "looking like threshold contours, but at 0.5 it tore "
+                         "the masses into separate islands.")
+    ap.add_argument("--octaves", type=int, default=5,
+                    help="FBM octaves. Was 6; one fewer is a visibly smoother "
+                         "field, and the target sky has very little fine detail.")
+    ap.add_argument("--alpha-floor", type=float, default=0.30,
+                    help="minimum OPACITY, so the deck closes over instead of "
+                         "showing the backdrop through gaps. Applied to alpha "
+                         "only, never to the density the lighting is integrated "
+                         "from -- see _slice_to_image for why that distinction "
+                         "is the whole thing. 0 restores the old holes.")
+    ap.add_argument("--extinction", type=float, default=2.6,
                     help="how fast light is absorbed downward through the deck. "
-                         "Higher = darker undersides, more contrast.")
+                         "Higher = darker undersides, more contrast. Was 3.2, "
+                         "which saturates to black over a FLOORED column -- the "
+                         "floor makes every column thick, so this has to come "
+                         "down by roughly the same factor to keep the range.")
+    ap.add_argument("--ambient", type=float, default=0.06,
+                    help="floor on the downward light. LOW on purpose, and "
+                         "lower than the 0.10 it was: contrast between lit tops "
+                         "and shadowed undersides is what little structure a "
+                         "fully covered deck has left. What stops the dark end "
+                         "reaching black is SHADOW below, not this -- at zero "
+                         "light a texel IS the shadow colour, so the two knobs "
+                         "are independent and it took pairing them to get both "
+                         "contrast and a non-black floor.")
     args = ap.parse_args()
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-    dens = _build_volume(args.seed, coverage=args.coverage, sharpness=1.0)
-    light = _light_volume(dens, extinction=args.extinction, ambient=0.10)
+    dens = _build_volume(args.seed, coverage=args.coverage, sharpness=1.0,
+                         edge=args.edge, erode=args.erode, octaves=args.octaves)
+    light = _light_volume(dens, extinction=args.extinction, ambient=args.ambient)
 
     # NEUTRAL, on purpose. The art carries shape and LUMINANCE; hue is the
     # engine's job (rt_clouds_tint, overridable per map in RT_CLOUD_PRESETS).
@@ -394,12 +476,21 @@ def main() -> None:
     # Keeping the slices near-achromatic means any tint reproduces cleanly --
     # including the old blue, which is now just the default cvar value.
     LIT = (216, 220, 228)
-    SHADOW = (32, 33, 40)
+    # Raised from (32, 33, 40). This is the colour of a fully shadowed cloud
+    # interior, and it does not reach the screen on its own -- it is multiplied
+    # by rt_clouds_tint and again by the per-shell rt_clouds_dark ramp, so the
+    # base shell of a purple deck showed it at roughly a fifth of this value.
+    # At 32 that landed on black, which is why the deck had holes in it rather
+    # than depth: the darkest cloud and the absence of cloud were the same
+    # colour. Doom 64's darkest sky pixel is #100F1F -- dark, still purple,
+    # never black.
+    SHADOW = (74, 76, 88)
 
     written = []
     imgs = []
     for k in range(NSLICES):
-        img = _slice_to_image(dens[k], light[k], LIT, SHADOW, alpha_scale=0.88)
+        img = _slice_to_image(dens[k], light[k], LIT, SHADOW,
+                              alpha_scale=0.88, alpha_floor=args.alpha_floor)
         imgs.append(img)
         p = OUT_DIR / f"CLOUDV{k + 1}.png"
         img.save(p)

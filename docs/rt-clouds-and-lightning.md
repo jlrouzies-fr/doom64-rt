@@ -455,6 +455,51 @@ tileable in X and Y only — Z is the cloud's own vertical axis and has hard
 limits (clear air below the base, clear air above the tops), so a field that
 tiled vertically would put cloud tops directly under cloud bases.
 
+### Matching the console game's sky
+
+The deck's first look was **hard-rimmed islands with black holes punched between
+them**, against a reference (`screen/doom64clouds.png`, Doom 64's own `CLOUDPRP`
+sky) that is a continuous smoky mass with no clear sky in it at all. Measured
+over the sky region of each shot:
+
+| | darkest 2% | Y std (blotchiness) | pure black |
+|---|---|---|---|
+| Doom 64 | `#100F1F` | 25.2 | none |
+| ours, before | `#000000` | 35.8 | yes |
+
+Two separate faults, and they want opposite fixes:
+
+- **the holes are an ALPHA problem.** Where density is near zero the slice is
+  transparent and the backdrop shows through. Fixed with `--alpha-floor`, which
+  closes the deck.
+- **the flat-grey-slab is a LIGHTING problem.** Raising coverage, or flooring the
+  *density*, closes the holes by making every column equally thick — and then the
+  downward light integral is the same everywhere and there is nothing left to
+  see. Worse, the slice you look up at is the **base**, which sits under the
+  whole column and is the most uniformly shadowed of all, so flooring density
+  turns exactly the visible cut into flat paint. Two attempts died here.
+
+So the floor is applied to **alpha only**, never to the density the lighting was
+integrated from. A thin patch stays opaque but keeps its high transmittance and
+renders as bright lit cloud; a thick patch renders as a dark underside — which
+is what the reference is, a fully covered sky with all its structure in
+luminance.
+
+The other pair is `--ambient` and `SHADOW`. At zero light a texel *is* the shadow
+colour, so `SHADOW` sets the dark end and `ambient` sets the contrast, and they
+are independent. `ambient` went **down** (0.10 → 0.06) for contrast while
+`SHADOW` went **up** (32 → 74) so the dark end is dark purple rather than black.
+That is computable exactly, because the art is achromatic: a cloud texel is
+`LIT × tint × shell ramp`. MAP12's `8660C0` puts the bright cloud at `#7153AC`
+against Doom 64's `#745BAD`, and the dark at `#110C1D` against its `#100F1F`.
+
+The **shape** is not computable that way. An offline composite of the slices was
+tried as a tuning target and came out 5–15× off the renderer's real contrast — it
+cannot model eight discs at different heights seen in perspective with tiling —
+so the shape values are reasoned, not fitted, and `tools/ab-clouds.cmd` is how
+they get settled. Full set: `coverage` 0.46→0.72, `edge` 0.20→0.30, `erode`
+0.50→0.25, `octaves` 6→5, `alpha_floor` 0→0.30.
+
 **Threshold by percentile, not by an absolute level.** The textbook cloud remap,
 `(n - thresh) / (1 - thresh)`, was tried first and cannot work on this field:
 FBM values cluster near 0.5 and essentially never reach 1, so dividing by
