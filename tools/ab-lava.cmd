@@ -42,6 +42,12 @@ rem            room lights up, the lights work and the only question left is the
 rem            number. If a single 3000 lm light in the middle of the lava does
 rem            nothing, the lights are not reaching the renderer and no amount of
 rem            tuning will help -- which is a completely different bug.
+rem The debug and solo arms also TELEPORT YOU ONTO THE LAVA (rt_lava_autogoto)
+rem and write to rt-lava.log instead of rt-console.log. Both exist for the same
+rem reason: the first four rounds of "the lava lights nothing" were judged from
+rem 48 metres away, and the run that would have shown it was overwritten by the
+rem next launch before it could be read.
+rem
 rem   debug    rt_lava_light_debug 1 -- prints how many lava sectors matched, how
 rem            many grid points fell in range and how many survived the cap. If
 rem            that line says 0 sectors, nothing about intensity will help.
@@ -59,7 +65,12 @@ if "%MAP%"==""  set "MAP=21"
 
 set "COL=+rt_lava_light_r 255 +rt_lava_light_g 90 +rt_lava_light_b 20"
 set "GEO=+rt_lava_light_z 24 +rt_lava_light_max 256 +rt_lava_light_dist 2048"
-set "DEF=%COL% %GEO% +rt_lava_light_debug 0"
+set "DEF=%COL% %GEO% +rt_lava_light_debug 0 +rt_lava_autogoto 0"
+rem A LOG OF ITS OWN. rt-console.log is one file that every launch overwrites, so
+rem the evidence from a lava run was twice destroyed by the next unrelated launch
+rem before it could be read. +logfile comes after the launcher's own, so it wins.
+set "LOG=+logfile %~dp0\..\rt-lava.log"
+t-lava.log"
 
 if /i "%ARM%"=="off"    set "ARGS=+rt_lava_light_on 0 +rt_lava_light_intensity 60 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.6 %DEF%"
 if /i "%ARM%"=="on"     set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 60 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.6 %DEF%"
@@ -68,8 +79,8 @@ if /i "%ARM%"=="bright" set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 1
 if /i "%ARM%"=="fine"   set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 60 +rt_lava_light_spacing 48 +rt_lava_light_radius 0.6 %COL% %GEO% +rt_lava_light_max 512 +rt_lava_light_debug 0"
 if /i "%ARM%"=="coarse" set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 60 +rt_lava_light_spacing 192 +rt_lava_light_radius 0.6 %DEF%"
 if /i "%ARM%"=="tight"  set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 60 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.08 %DEF%"
-if /i "%ARM%"=="solo"   set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 3000 +rt_lava_light_spacing 4096 +rt_lava_light_radius 0.6 %COL% +rt_lava_light_z 24 +rt_lava_light_max 8 +rt_lava_light_dist 4096 +rt_lava_light_debug 1"
-if /i "%ARM%"=="debug"  set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 60 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.6 %COL% %GEO% +rt_lava_light_debug 1"
+if /i "%ARM%"=="solo"   set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 3000 +rt_lava_light_spacing 4096 +rt_lava_light_radius 0.6 %COL% +rt_lava_light_z 24 +rt_lava_light_max 8 +rt_lava_light_dist 4096 +rt_lava_light_debug 1 +rt_lava_autogoto 1"
+if /i "%ARM%"=="debug"  set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 60 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.6 %COL% %GEO% +rt_lava_light_debug 1 +rt_lava_autogoto 1"
 
 if not defined ARGS (
   echo Usage: %~nx0 ^<off^|on^|dim^|bright^|fine^|coarse^|tight^|solo^|debug^> [1-34]
@@ -85,5 +96,5 @@ rem and looks like it never ran.
 set "DBG="
 if /i "%ARM%"=="debug" set "DBG=debug"
 if /i "%ARM%"=="solo"  set "DBG=debug"
-call "%~dp0launch-retribution-rt.cmd" %MAP% %DBG% -- %ARGS%
+call "%~dp0launch-retribution-rt.cmd" %MAP% %DBG% -- %ARGS% %LOG%
 exit /b %ERRORLEVEL%
