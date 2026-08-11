@@ -39,6 +39,22 @@ Update those when phases complete or facts change. Do not invent parallel tracke
 
 ## A surface looks wrongly lit — do this first
 
+**If the report names a PLACE ("the cage", "the panel by the door"), get the sector
+from the game before theorising — aim at it and type `whatsthat`:**
+
+    whatsthat: sector 150  lightlevel 255  tag 0  middle texture 'C53'
+               threshold 220 -> ABOVE: this surface SELF-EMITS
+               brightest neighbour: sector 0 at 180  (delta +75)
+
+Identifying a surface by rendering candidate textures and matching the screenshot got
+`C921`/`HDOR10` right and `C52`/`C53` wrong, a round trip each. A screenshot carries no
+sector index. See `docs/rt-lighting-practices.md` §30.
+
+**Do not skip an element because a fixture is near it.** That test pointed the wrong way
+four times out of four — including a `64BigFire` *inside* the MAP12 cages. Under RT the
+fire is a real light, so the painted 255 is a second, sourceless copy of it. The strong
+signal is the **host**: what the element sits inside, and whether that is darker (§31).
+
 **If it BLINKS, PULSES or SWEEPS, go straight to `rt_lightlevel_watch`.** It prints
 every sector whose lightlevel moves, as it moves, needing no texture or tag to aim it:
 
