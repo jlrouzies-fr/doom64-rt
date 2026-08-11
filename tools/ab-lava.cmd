@@ -48,6 +48,13 @@ rem reason: the first four rounds of "the lava lights nothing" were judged from
 rem 48 metres away, and the run that would have shown it was overwritten by the
 rem next launch before it could be read.
 rem
+rem   control  THE ONE THAT MATTERS NOW. Everything up to LightManager::Add is
+rem            verified good by the RTGL probe and the room is still black, so
+rem            this uploads a 2000 lm WHITE light one metre above the camera,
+rem            through the same code path. If the room stays black with a lamp
+rem            on your head, analytic lights are broken here and the lava grid
+rem            was never the bug. If it lights up, the grid is at fault and this
+rem            is the control to compare against.
 rem   debug    rt_lava_light_debug 1 -- prints how many lava sectors matched, how
 rem            many grid points fell in range and how many survived the cap. If
 rem            that line says 0 sectors, nothing about intensity will help.
@@ -55,7 +62,7 @@ rem
 rem Every arm sets every lava cvar explicitly, so a value left in the ini from a
 rem previous arm can never leak into the next one.
 rem
-rem Usage: ab-lava.cmd <off|on|dim|bright|fine|coarse|tight|solo|debug> [1-34]
+rem Usage: ab-lava.cmd <off|on|dim|bright|fine|coarse|tight|solo|control|debug> [1-34]
 rem ---------------------------------------------------------------------------
 
 set "ARM=%~1"
@@ -80,10 +87,11 @@ if /i "%ARM%"=="fine"   set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 6
 if /i "%ARM%"=="coarse" set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 60 +rt_lava_light_spacing 192 +rt_lava_light_radius 0.6 %DEF%"
 if /i "%ARM%"=="tight"  set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 60 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.08 %DEF%"
 if /i "%ARM%"=="solo"   set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 3000 +rt_lava_light_spacing 4096 +rt_lava_light_radius 0.6 %COL% +rt_lava_light_z 24 +rt_lava_light_max 8 +rt_lava_light_dist 4096 +rt_lava_light_debug 1 +rt_lava_autogoto 1"
+if /i "%ARM%"=="control" set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 60 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.6 %COL% %GEO% +rt_lava_light_debug 2 +rt_lava_autogoto 1"
 if /i "%ARM%"=="debug"  set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 60 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.6 %COL% %GEO% +rt_lava_light_debug 1 +rt_lava_autogoto 1"
 
 if not defined ARGS (
-  echo Usage: %~nx0 ^<off^|on^|dim^|bright^|fine^|coarse^|tight^|solo^|debug^> [1-34]
+  echo Usage: %~nx0 ^<off^|on^|dim^|bright^|fine^|coarse^|tight^|solo^|control^|debug^> [1-34]
   exit /b 1
 )
 
@@ -94,7 +102,9 @@ rem OWN messages. That is what the LAVA PROBE line in LightManager.cpp needs:
 rem rt_main sets allowedMessages=0 without it, so an RTGL-side probe is silent
 rem and looks like it never ran.
 set "DBG="
+if /i "%ARM%"=="control" set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 60 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.6 %COL% %GEO% +rt_lava_light_debug 2 +rt_lava_autogoto 1"
 if /i "%ARM%"=="debug" set "DBG=debug"
 if /i "%ARM%"=="solo"  set "DBG=debug"
+if /i "%ARM%"=="control" set "DBG=debug"
 call "%~dp0launch-retribution-rt.cmd" %MAP% %DBG% -- %ARGS% %LOG%
 exit /b %ERRORLEVEL%
