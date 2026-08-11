@@ -34,6 +34,11 @@ needed, the near/far ramp, the flashlight, and why MAP26's moon is off):
 
 → **`docs/rt-fog-implementation.md`** — the code path end to end, and its four traps
 
+Localised volumetric smoke (`rt_smoke_*`, muzzle smoke as a real medium in the
+fog's froxel volume, and why the sim is on the CPU):
+
+→ **`docs/rt-smoke.md`**
+
 Blood splats that stay on the floor (`rt_gore_*`, and why the one-second
 lifetime was in the WAD's DECORATE and not in the renderer):
 
@@ -233,6 +238,7 @@ light on amber art, so it fails a naive art-vs-light hue audit.
 | `tools/test_gallery_emis_qa.cmd` | Auto QA: emis hygiene + 8-yaw wash score (pass/fail). |
 | `tools/ab-fog.cmd` | Illuminated fog A/B, default MAP26. Profiles `full`/`ramp`/`veil`/`ramp2`/`wall`/`deep`/`even`/`flatramp`/`inverse`/`twotone`; flashlight `flsh`/`flshraw`/`flshwide`; isolation `off`/`nolight`/`flat`/`ambient`/`grey`/`thin`/`dense`/`reach20`/`reach90`/`moon`/`debug`. See `docs/rt-fog.md`. |
 | `tools/ab-water.cmd` | Water A/B: `stock`/`styl`/`flat`/`mirror`/`noglow`/`nocaus`/`debug`, default MAP10. Flats are tagged engine-side (`l_waterflag`), no setup needed. See `docs/rt-water.md`. |
+| `tools/ab-smoke.cmd` | Volumetric muzzle smoke A/B, default MAP01. `full`/`fat`/`thin`/`still`/`drift`/`walk`/`glued`; traps `nearfade`/`blendslow`/`blendraw`; resolution `reach30`/`reach8`; isolation `off`/`nolight`/`debug`; and `fogsafe`/`fogsmoke`, the fog regression. See `docs/rt-smoke.md`. |
 | `tools/ab-blood.cmd` | Persistent blood A/B: `off`/`on`/`uncapped`/`tight`/`plain`/`wild`/`roll`, default MAP01. The lifetime is DECORATE in the WAD, not a renderer setting. See `docs/blood-persist.md`. |
 
 Important cvars on Retribution launch (do not crank blindly):

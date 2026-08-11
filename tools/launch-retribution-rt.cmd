@@ -247,6 +247,27 @@ rem  scatters exactly ONE light -- whatever TryGetVolumetricLight picks, in prac
 rem  the sun -- and MAP26's moon is deliberately off, so without this its fog would
 rem  have no source at all and collapse to flat ambient. See docs/rt-fog.md and
 rem  tools\ab-fog.cmd; `fog` in the console reports the medium.
+rem LOCALISED SMOKE (rt_smoke_*): muzzle smoke as a REAL participating medium, in the
+rem  same froxel volume the fog uses, so the muzzle flash that made it lights it from
+rem  inside. Puffs are spheres simulated on the CPU -- the only side that can see the
+rem  level, which is why a puff pools under a low ceiling instead of passing through.
+rem  NOT A SPRITE, and not a second volume: the density is added per froxel, so
+rem  CmVolumetricProcess's prefix sum gives it correct occlusion for free.
+rem  rt_smoke_light_near 0 is deliberately the OPPOSITE of rt_fog_light_near 2. The fog
+rem  needs the near-light fade or a carried light whites out the screen; the muzzle
+rem  flash lighting the smoke at the barrel is the entire effect. Both are chosen PER
+rem  FROXEL, so a smoke frame cannot retune a fogged map -- .\tools\ab-smoke.cmd fogsafe
+rem  is the check, and it must be pixel-identical to .\tools\ab-fog.cmd ramp.
+rem  rt_smoke_far 14 is a RESOLUTION knob, not a reach: the volume's 64 slices spread
+rem  over it, so 14 m gives 0.22 m cells that can resolve a puff where rt_volume_far's
+rem  30 gives 0.47 m and a puff reads as one slab. Short is free because the base
+rem  density is 0 when smoke has the volume to itself. A FOGGED map always wins this.
+rem  rt_mzlflsh 1 is pinned WITH the smoke, not near the other light cvars, because
+rem  it gates both: a puff is born at the muzzle flash's resolved position -- already
+rem  traced back out of any wall -- so the light and the smoke it lights are one
+rem  point. rt_mzlflsh is CVAR_ARCHIVE and was not pinned before, so an ini value
+rem  could have turned the smoke off with no rt_smoke_* cvar saying so.
+rem  See docs/rt-smoke.md and .\tools\ab-smoke.cmd.
 rem d64r-lostsoul-rt.pk3: yellow SKUL sprites + LSGL offset-glow EventHandler.
 rem d64r-rt-flashlight.pk3: stylized 5-cell battery HUD (rt_flsh_charge / battstate; F toggles)
 rem  + battery sound cues (rt_flsh_flicker counter; d64rt_flsh_sound / _vol to mute or tune).
@@ -551,6 +572,13 @@ start "" gzdoom.exe ^
   +rt_fog 1 +rt_fog_presets 1 +rt_fog_color 000000 +rt_fog_density 0.01 +rt_fog_density_mult 0.3 ^
   +rt_fog_density_far 10 +rt_fog_color_far 000000 +rt_fog_curve 1 ^
   +rt_fog_far 45 +rt_fog_ambient 1 +rt_fog_lightmult 1 +rt_fog_light_near 2 +rt_fog_illum 1 ^
+  +rt_mzlflsh 1 ^
+  +rt_smoke 1 +rt_smoke_density 6 +rt_smoke_color 9E9689 +rt_smoke_count 3 +rt_smoke_budget 24 ^
+  +rt_smoke_life 1.6 +rt_smoke_radius 0.18 +rt_smoke_growth 0.55 ^
+  +rt_smoke_speed 1.8 +rt_smoke_spread 0.55 +rt_smoke_rise 0.65 +rt_smoke_drag 1.9 ^
+  +rt_smoke_inherit 0.85 +rt_smoke_offset 0.35 +rt_smoke_repeat 5 ^
+  +rt_smoke_far 14 +rt_smoke_ambient 0.08 +rt_smoke_illum 1 ^
+  +rt_smoke_light_near 0 +rt_smoke_illum_blend 0.4 ^
   +rt_sun_leak_debug 0 +rt_sun_require_sky 1 ^
   +rt_classic 0 ^
   +rt_flsh 0 +rt_flsh_intensity 156 +rt_flsh_angle 42 +rt_flsh_pitch 22 ^

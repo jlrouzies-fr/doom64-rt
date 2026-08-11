@@ -282,6 +282,14 @@ something you are holding goes; the beam ahead of you survives; a lamp on a wall
 five metres away is untouched. Muzzle flashes get the same treatment for free,
 which they needed for the same reason.
 
+**One exception, added later.** Muzzle flashes needed the fade because of what
+they do to fog filling the whole screen. They do something else to *localised
+smoke*: a muzzle flash is at ~0 m from its own puff, and lighting that puff from
+inside is the entire point of `docs/rt-smoke.md`. So the fade is now chosen **per
+froxel** — `rt_fog_light_near` in fog, `rt_smoke_light_near` (0) inside a puff —
+rather than read from the uniform directly. A cell with no smoke in it is
+unaffected, which is deliberate and is what `ab-smoke.cmd fogsafe` checks.
+
 Directional lights are unaffected: `sampleLight` puts the moon's and the
 lightning's sampled position far away, so the fade never triggers on them.
 
@@ -404,6 +412,11 @@ to be inert for a whole round trip.
   one `fogdensity` per map — but it means an indoor room in a fogged level is
   fogged too. Per-sector fog would need the medium bound to geometry, which the
   froxel volume has no notion of.
+  **Partly lifted since.** `docs/rt-smoke.md` adds world-space *spheres* of
+  medium on top of this one, so the volume can now say "there is something here"
+  after all. That is the mechanism per-sector fog would want; what it does not
+  have is a way to bind to geometry rather than to a radius, and 32 spheres do
+  not cover a room.
 - **The sky is fogged too, at full strength.** A sky pixel's world position is
   past `rt_fog_far`, so it samples the far slice like any other distant surface
   and comes back fully covered. On MAP26 that is right — `VOIDSKY` is flat dark

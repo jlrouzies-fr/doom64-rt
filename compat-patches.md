@@ -836,3 +836,62 @@ One clause in `traceDirectIllumination` under
 `#if LIGHT_SAMPLE_METHOD == LIGHT_SAMPLE_METHOD_VOLUME`, so surfaces still
 receive the light physically. `tools/ab-fog.cmd flshraw` is the whiteout, kept so
 the fade can be seen working rather than trusted.
+
+## Localised volumetric smoke — one RTGL1 froxel change (2026-08-11)
+
+The fog above is one density for the whole level and the froxel grid is
+camera-fitted, so there was no way to say *there is smoke here*. This adds a list
+of world-space spheres whose density is **added** to that medium per froxel:
+muzzle smoke that the muzzle flash which made it lights from inside. Full
+write-up: `docs/rt-smoke.md`.
+
+**`RgDrawFrameSmokeParams`, a NEW pNext struct.** Not six more fields on
+`RgDrawFrameVolumetricParams`, on purpose — the fog is shipped and tuned against
+a measured transmittance ladder, and a struct that does not change size cannot
+break a caller that knows nothing about smoke. Puffs ride in the global uniform
+(`smokePuffs[32]` + `smokeAlbedoDensity[32]`, 1 KB) rather than a storage buffer:
+a `LightManager` clone would mean a new descriptor set in
+`RayTracingPipeline.cpp` for no gain at 32.
+
+**The shared code is one block in `RtVolumetric.rgen`**, with all the maths in a
+new `Source/Shaders/Smoke.h`. `CmVolumetricProcess.comp` needed **no change** —
+it is a front-to-back prefix sum over whatever the raygen wrote, so a puff gets
+correct occlusion and transmittance for free.
+
+The property that had to hold: with `smokeCount` 0 the loop does not execute and
+the medium arithmetic collapses algebraically to the fog's two lines. The
+derivation is written out in `Smoke.h`; `tools/ab-smoke.cmd fogsafe` is the
+check, and must be pixel-identical to `ab-fog.cmd ramp`.
+
+### Both trap fixes are per froxel, not per frame
+
+Two values the fog depends on had to differ inside smoke, and the obvious
+implementation of each would have retuned MAP26 every time the player fired.
+Since the smoke density at a cell is known before the lighting block runs, both
+are chosen per cell and fog cells keep the fog's values bit for bit.
+
+- **The near-light fade.** `rt_fog_light_near` (2 m) exists so a carried light
+  does not white out the screen, and the entry above notes muzzle flashes get it
+  "for free". They needed it for fog filling the screen; a muzzle flash is at
+  ~0 m from its own *smoke*, so at 2 m the puff is fully faded and the effect is
+  gone. `traceDirectIllumination` now reads a file-scope `g_volumeLightNearFade`
+  (sentinel −1 = the uniform, since GLSL requires a constant initializer) which
+  `RtVolumetric.rgen` sets per cell. `rt_smoke_light_near` ships at 0.
+- **The 0.05 temporal blend.** Right for fog, far too slow for a 2–3 frame muzzle
+  flash: the smoke would light up ~0.7 s after the flash and linger as long
+  again. `rt_smoke_illum_blend` is 0.4 inside a puff, the literal 0.05 elsewhere.
+
+Engine side (`rt_main.cpp`): `rt_smoke_*`, a CPU puff simulation modelled on
+`RT_UploadFlameLights` (maptime-driven, so pause freezes it; nearest-first to a
+budget). The sim is on the CPU because it is the only side that can see the
+level — a puff pools under a low ceiling via `PointInSector`/`ceilingplane`,
+which a GPU sim could only guess at from the depth buffer. It uses a **private
+xorshift**, not `M_Random`: the gameplay RNG is part of the simulation and
+consuming it from the renderer would desync demos and netgames invisibly.
+
+`rt_smoke_density` is optical depth per **metre**, not per cell — the slice
+thickness is paid engine-side — so unlike `rt_fog_density` it does not change
+meaning when the volume's reach does. `rt_mzlflsh` is now pinned in the launcher:
+it gates the smoke spawn as well as the flash, and was `CVAR_ARCHIVE` and
+unpinned, so an ini value could have disabled smoke with no `rt_smoke_*` cvar
+saying so.
