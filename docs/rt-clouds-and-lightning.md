@@ -494,13 +494,23 @@ That is computable exactly, because the art is achromatic: a cloud texel is
 
 **The tint, and why it does not sit on the reference.** `8660C0` is what Doom
 64's sky measures at — bright `#7253AC` against its `#745BAD`, dark `#110D1E`
-against its `#100F1F`. That matched on paper and read **weak** in motion, so
-MAP12 and MAP30 ship one rung past it at `9C55DC`: same luminance, saturation
-0.50 → 0.61. Holding luminance is the point — "stronger purple" should mean more
-saturated, not brighter — and since G carries most of the luminance, the cost of
-that saturation is paid in R and B rather than by darkening. The full ladder is
-in `tools/ab-clouds.cmd`, which takes a tint as its third argument so it can be
+against its `#100F1F`. It matched on paper and read **weak** in motion. The sweep
+then went to `9C55DC`, up into the neon range as far as `9A28FF`, and came back
+*down*: MAP12 and MAP30 ship **`6135A0`**, which is `9A28FF` faded (saturation
+0.84 → 0.67) and deepened (Y 80 → 70). Bright cloud `#522E8F`, dark `#0D0719`.
+
+Three independent axes, and that is why it took a sweep rather than a
+calculation: **sat** is how neon (bought by dropping G), **R/B** is purple versus
+pink (violet wants B well above R, ~0.55–0.72), and **Y** is how deep. Moving two
+at once makes two arms incomparable. The full ladder is in
+`tools/ab-clouds.cmd`, which takes a tint as its third argument so it can be
 swept without a rebuild.
+
+`6135A0` delivers about a **third less light** than `9C55DC` did — moon intensity
+11.1 against 17.4 — because tint luminance scales the moonlight as well as the
+picture, and this one is both darker and more saturated. Left uncompensated on
+purpose; if MAP12's outdoors wants it back, that row's `transmit` 0.45 → 0.60
+restores it without touching the colour.
 
 One asymmetry worth knowing before turning it further: the **moonlight** hue
 saturates faster than the picture and pins near the top of the ladder. Its colour

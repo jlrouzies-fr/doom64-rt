@@ -59,26 +59,27 @@ rem arm has to state every value it cares about, since RT_CVARs are CVAR_ARCHIVE
 rem and an unset one carries over from the last arm.
 rem
 rem TINT, and the ladder to sweep it along. Pass one as the third argument:
-rem   tools\ab-clouds.cmd ship 12 9859D3
+rem   tools\ab-clouds.cmd ship 12 6E3CB7
 rem
 rem The art is achromatic, so the tint IS the cloud colour and also the colour of
-rem the moonlight coming through -- both ends of the rendered range are
-rem arithmetic. This ladder holds LUMINANCE constant and varies only saturation,
-rem which is the point: "stronger purple" should mean more saturated, not
-rem brighter or darker. G carries most of the luminance, so the cost of
-rem saturation is paid in R and B.
+rem the moonlight coming through -- every column below is arithmetic off the tint,
+rem not sampled. THREE independent axes, and a sweep is only readable if it moves
+rem one at a time:
+rem   sat  how neon, bought by dropping G
+rem   R/B  purple versus pink -- violet wants B well above R, about 0.55-0.72
+rem   Y    how deep, i.e. how dark the whole thing sits
 rem
-rem     tint      sat   R/B   bright cloud  dark cloud   moon I
-rem     6C6C96   0.28  0.72      #5B5D86     #0E0E17      21.6
-rem     7A66AA   0.40  0.72      #675898     #100E1A      20.8
-rem     8660C0   0.50  0.70      #7253AC     #110D1E      20.6   <- matches Doom 64
-rem     9C55DC   0.61  0.71      #8449C5     #140B22      17.4   <- SHIPPING
-rem     A64BEE   0.68  0.70      #8D41D5     #160A25      16.9
-rem     A63CFF   0.76  0.65      #8D34E4     #160828      15.3   neon, deck stays bright
-rem     9A28FF   0.84  0.60      #8223E4     #140528      12.7   neon, deeper
-rem     8A1FE8   0.87  0.59      #751BCF     #120424      10.8   deep neon, dark end of usable
-rem     7B12D8   0.92  0.57      #6810C1     #100222       8.7   very deep, dims the level
-rem     C24DFF   0.70  0.76      #A442E4     #190A28      18.2   too far: reads PINK
+rem     tint      sat   R/B     Y   bright cloud  dark cloud   moon I
+rem     8660C0   0.50  0.70   111      #7253AC     #110D1E      20.6   = Doom 64's own sky
+rem     9C55DC   0.61  0.71   110      #8449C5     #140B22      17.4
+rem     A63CFF   0.76  0.65    97      #8D34E4     #160828      15.3   neon
+rem     9A28FF   0.84  0.60    80      #8223E4     #140528      12.7   neon, deeper
+rem     7F35D2   0.75  0.60    80      #6C2DBC     #110721      12.7   9A28FF faded a little
+rem     6E3CB7   0.67  0.60    80      #5D34A3     #0E081C      12.7   9A28FF faded
+rem     6135A0   0.67  0.60    70      #522E8F     #0D0719      11.1   <- SHIPPING: faded + deep
+rem     543B8C   0.58  0.60    70      #47337D     #0B0816      11.1   fainter still
+rem     4E4B82   0.42  0.60    80      #424174     #0A0A14      12.7   last purple rung
+rem     C24DFF   0.70  0.76   115      #A442E4     #190A28      18.2   too far: reads PINK
 rem
 rem TWO AXES, and they are not the same one.
 rem   sat  is how NEON it is, and it is bought by dropping G.
@@ -98,9 +99,14 @@ rem transmittance divided by its own luminance and then clamped, so from about
 rem sat 0.6 both R and B are pinned at 255 and only G still moves. Past that,
 rem saturation changes the sky a lot and the light on the walls very little.
 rem
-rem 8660C0 is what the console game's sky actually measures at (bright #745BAD,
-rem dark #100F1F in screen/doom64clouds.png). It read WEAK in motion, so the
-rem shipping value is deliberately one rung past the reference rather than on it.
+rem HOW THE SHIPPING VALUE WAS ARRIVED AT, because the path is not obvious from
+rem the endpoint. 8660C0 first -- the console game's sky measured pixel for pixel
+rem (bright #745BAD, dark #100F1F in screen/doom64clouds.png). It matched and read
+rem WEAK. Then 9C55DC, then up into the neon range as far as 9A28FF, and from
+rem there the answer came back DOWN rather than further out: 6135A0 is 9A28FF
+rem faded (sat 0.84 -> 0.67) and deepened (Y 80 -> 70). So the sweep went past the
+rem answer in both directions before settling between them, which is the argument
+rem for keeping every rung in the table rather than only the winner.
 rem
 rem Usage: ab-clouds.cmd <ship|old|thin|heavy|flat|nodeck> [map, default 12] [tint hex]
 rem ---------------------------------------------------------------------------
@@ -112,7 +118,7 @@ if "%ARM%"=="" set "ARM=ship"
 rem MAP12 by default: it is the map the deck is a LIGHT source on, so it shows
 rem both halves at once -- the picture and the purple it puts on the level.
 if "%MAP%"==""  set "MAP=12"
-if "%TINTHEX%"=="" set "TINTHEX=9C55DC"
+if "%TINTHEX%"=="" set "TINTHEX=6135A0"
 
 set "TINT=+rt_clouds_tint %TINTHEX%"
 set "BASE=+rt_clouds 1 +rt_clouds_presets 0 %TINT% +rt_clouds_wind 0.010 +rt_clouds_dark 0.45"
@@ -126,10 +132,10 @@ if /i "%ARM%"=="nodeck" set "ARGS=+rt_clouds 0 +rt_clouds_presets 0"
 
 if not defined ARGS (
   echo Usage: %~nx0 ^<ship^|old^|thin^|heavy^|flat^|nodeck^> [map, default 12] [tint hex]
-  echo   tint ladder ^(sat = how neon, R/B = purple vs pink^):
-  echo     8660C0 0.50 ^(= Doom 64^) ^| 9C55DC 0.61 ^(ship^) ^| A63CFF 0.76 neon
-  echo     9A28FF 0.84 deeper neon ^| 8A1FE8 0.87 deep neon ^| 7B12D8 0.92 very deep
-  echo   deeper costs LIGHT: pair it with +rt_clouds_transmit 0.60
+  echo   tint ladder ^(sat = how neon, R/B = purple vs pink, Y = how deep^):
+  echo     8660C0 0.50 ^(= Doom 64^) ^| 9C55DC 0.61 ^| A63CFF 0.76 neon ^| 9A28FF 0.84
+  echo     6E3CB7 0.67 faded ^| 6135A0 0.67 faded+deep ^(SHIP^) ^| 543B8C 0.58 fainter
+  echo   deep or saturated costs LIGHT: pair it with +rt_clouds_transmit 0.60
   exit /b 1
 )
 
