@@ -101,6 +101,18 @@ RELIEF_STRENGTH = 0.035
 SELF_EMIT = 1.5  # the cracks are hot rock, not lit rock
 SELF_EMIT_GAMMA = 1.3
 
+# On-screen emission trim, and the reason it lives here rather than in a cvar.
+#
+# CmPrepareFinal.comp does  hdr += screenEmis * emissionMaxScreenColor,  and the
+# launcher pins rt_emis_maxscrcolor 3. Judged in game, the lava wanted an
+# effective 1 -- but that cvar is GLOBAL and every other emissive in the map is
+# already balanced against the 3. So the factor is baked into the lava's own _e
+# instead: divide here, and pay it back through emissiveMult so the INDIRECT
+# contribution is unchanged (indirect is _e * emissiveMult and never sees
+# emissionMaxScreenColor at all).
+SCREEN_EMIS_TRIM = 1.0 / 3.0
+SHIPPED_EMISSIVE_MULT = 1.5
+
 
 def build_from(albedo, m):
     """-> (unnormalised _e as RGB, height, normal_rgb, orm_rgb)"""
@@ -174,12 +186,12 @@ def apply(dry: bool) -> int:
         m = crack_mask(albedo)
         shared = build_from(albedo, m)
         built = {n: shared for n in group}
-        peak = float(shared[0].max())
+        peak = float(shared[0].max()) / SCREEN_EMIS_TRIM
         # emissiveMult is NOT the brightness knob for what you see: primary and
         # reflection use the raw _e sample and ignore it entirely (HitInfo.inl).
-        # It scales the INDIRECT contribution only, so it stays at what the lava
-        # shipped with; the visible level is set by the peak below.
-        mult = 1.5
+        # It scales the INDIRECT contribution only -- so it absorbs the screen
+        # trim, leaving indirect exactly where it was while the screen dims.
+        mult = round(SHIPPED_EMISSIVE_MULT / SCREEN_EMIS_TRIM, 3)
 
         print(f"  {'/'.join(group):28} peak _e {peak:5.3f}  "
               f"(emissiveMult {mult}, indirect only; {len(group)} frame(s) share one set)")

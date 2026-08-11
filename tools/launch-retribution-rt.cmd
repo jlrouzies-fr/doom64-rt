@@ -357,7 +357,9 @@ rem rt_lava_light_intensity is the brightness knob and rt_lava_light_spacing is 
 rem evenness knob -- intensity is scaled by (spacing/96)^2 so changing the density
 rem does not change how bright the room is. Radius is wide on purpose: a lake is an
 rem area source, and a small radius gives every grid point its own hard shadow, which
-rem reads as a row of lamps under the floor. tools\ab-lava.cmd has the arms.
+rem reads as a row of lamps under the floor. tools\ab-lava.cmd has the arms, and
+rem MAP14/19/20/33 are the only maps with a lava FLOOR -- 20 is the big one. The
+rem _gallery per-map table is NOT that list: it counts references, not floors.
 rem The lava SURFACE is separate and is not a cvar at all -- _e/_n/_h/_orm baked by
 rem tools\gen_lava_material.py (--apply / --revert). Keep the two apart when judging:
 rem "the room is dark" is the light, "the lava looks wrong" is the surface.

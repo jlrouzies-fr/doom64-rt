@@ -1,8 +1,15 @@
 @echo off
 setlocal EnableExtensions
 rem ---------------------------------------------------------------------------
-rem A/B the lava. HLAVA1 (the 5-frame flat) is in MAP15, MAP20, MAP21 and MAP34;
-rem D64LAVA1/2 (the warp2 patches) are MAP34 only. Default map here is 21.
+rem A/B the lava. THE ONLY MAPS WITH A LAVA FLOOR ARE 14, 19, 20 AND 33 -- parsed
+rem straight out of the UDMF (texturefloor = "HLAVA*" / "D64LAVA*"), 1/2/2/3
+rem sectors respectively. Default here is 20.
+rem
+rem Do not trust tools\_gallery for this: its per-map table lists HLAVA1 in
+rem 15/20/21/34, which is where the texture is REFERENCED, not where it is a
+rem floor. Testing the lava lights on MAP21 finds no lava sector at all and looks
+rem exactly like the feature being broken -- which is how an entire round of
+rem "still no light cast" was spent.
 rem
 rem TWO INDEPENDENT HALVES, and they were confused for each other for most of a
 rem session, so the arms keep them apart:
@@ -42,7 +49,7 @@ rem ---------------------------------------------------------------------------
 set "ARM=%~1"
 set "MAP=%~2"
 if "%ARM%"=="" set "ARM=on"
-if "%MAP%"==""  set "MAP=21"
+if "%MAP%"==""  set "MAP=20"
 
 set "COL=+rt_lava_light_r 255 +rt_lava_light_g 90 +rt_lava_light_b 20"
 set "GEO=+rt_lava_light_z 12 +rt_lava_light_max 256 +rt_lava_light_dist 2048"
