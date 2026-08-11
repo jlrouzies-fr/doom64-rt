@@ -69,7 +69,7 @@ This is the one that decides whether the feature exists.
 `LightManager::TryGetVolumetricLight` picks **one** light for the whole volume:
 a `RG_LIGHT_ADDITIONAL_VOLUMETRIC` light if one exists, otherwise the sun.
 Nothing in this game sets that flag, so it is always the sun — which on MAP26 is
-switched off on purpose (§4). The fog therefore received **nothing**, and
+switched off on purpose (§5). The fog therefore received **nothing**, and
 collapsed to flat `rt_fog_ambient`: a coloured pane of glass over the screen,
 i.e. exactly the rasterizer fog this was supposed to improve on.
 
@@ -109,51 +109,46 @@ level, and it is not free. A map gets fog because someone looked at it.
 
 | map | fog | why |
 |---|---|---|
-| MAP26 | on, ramped 6 → 190 over 32 m at curve 2.4 | *Hardcore.* The map this was built for, and the one with a reference shot. Colour inherited from its own `fade` `00 56 56`; density **stated**, because a ramp is not something one `fogdensity` can say (below). `illum` forced on — see §4. |
+| MAP26 | on, ramped 0.01 → 10 over 32 m at curve 2.4 | *Hardcore.* The map this was built for, and the one with a reference shot. Colour inherited from its own `fade` `00 56 56`; density, far density and ambient all **inherited from the cvars** — a `-1` in a row means "keep the launcher's", so the shipping medium lives in one place. `illum` forced on — see §5. |
 
-### The MAP26 profile, and why it is a ramp
+### The MAP26 profile
 
-The reference shot is not uniform fog and it is worth being precise about what
-it is: the wall beside the player keeps its rivets and only takes a tint, and
-the far end of the corridor is **gone**. A single density cannot do both — at
-the strength that removes the corridor, the near wall is already a silhouette.
+The shipping medium is a **luminous veil, not an occluder**:
 
-So the shipping row is clear near and heavy far, and the numbers come off that
-description rather than off feel:
+    rt_fog_density       0.01     at the camera
+    rt_fog_density_far   10       at rt_fog_far
+    rt_fog_ambient       1        the unlit floor
+    curve 2.4, reach 32 m         (the two values MAP26's row states itself)
 
 | distance | | transmittance |
 |---|---|---|
-| 128 map units | 4 m | 0.95 — the air you stand in, essentially clear |
-| 256 | 8 m | 0.88 |
-| 512 | 16 m | 0.59 — half-gone across a large room |
-| 768 | 24 m | 0.20 |
-| 1024 | 32 m | 0.02 — the far slice, and everything beyond it |
+| 128 map units | 4 m | 1.00 |
+| 256 | 8 m | 1.00 |
+| 512 | 16 m | 0.98 |
+| 768 | 24 m | 0.93 |
+| 1024 | 32 m | 0.83 — and everything beyond |
 
-The arithmetic, if a map needs different ones. `RtVolumetric.rgen` uses a flat
-`density × 0.001` per cell over 64 cells spread evenly across `rt_fog_far`, so
-for a ramp `d0 → d1` at curve `k`, optical depth to depth fraction `t` is
+So about a sixth of a distant surface is fog and **nothing is hidden**. What
+makes it read is not extinction, it is the in-scattered light: `rt_fog_ambient 1`
+is fifty times the floor the first, thick version used, so the medium **glows on
+its own** and the level's lights modulate that glow rather than supply it.
 
-    tau(t) = 0.064 · [ d0·t + (d1 − d0)·t^(k+1)/(k+1) ]      T = exp(−tau)
+That is a different design from where this started, and it is worth being
+explicit about the trade, because it inverts the argument in §2: with the floor
+dominating, less of what you see is the lights' doing. `tools/ab-fog.cmd
+noambient` is the fog with the floor removed entirely — the lit component alone —
+and it is now the more informative arm of that pair.
 
-**The curve is what makes it work, not the ends.** At `curve 1` those exact same
-densities start hazing the room you are standing in immediately — 0.86 at 128
-units instead of 0.95 — because linear thickening begins at the camera. 2.4
-holds the near value out to about half the volume and then closes hard.
-`tools/ab-fog.cmd flatramp` is that failure, kept as an arm because it is the
-first thing anyone will try.
+The heavy profile is one command away and still tuned:
+`ab-fog.cmd ramp2` / `wall` are the occluding versions (transmittance 0.15 and
+0.01 at 768 units), and the arithmetic below sizes any other.
 
-**`rt_fog_far 32` is part of the look, not a budget.** Everything past it is
-shaded with the far slice, so the wall of teal closes at corridor distance —
-1024 map units — instead of a room-and-a-half further out. It is also where the
-volume spends its 64 slices of precision.
-
-**This row states its densities, and that is a deliberate exception** to the
-"take it from the map" rule below. `fogdensity` is one number; it can say how
-thick, not where. A map that wants a uniform medium should still inherit.
-
-The other eight maps that carry `fade` + `fogdensity` — MAP12, 21, 25, 27, 29,
-30, 31, 33 — are **not** listed yet. Adding one is a single row; the authoring
-loop is below.
+**Curve and reach are what MAP26's row states**, because they are about this map
+rather than about fog in general: reach 32 m is 1024 map units, past which
+everything takes the far slice, so the fog stops deepening at corridor distance;
+curve 2.4 holds the near value out to about half the volume. Everything else in
+the row is `-1`, meaning *keep the cvar* — so "the default" is a real thing that
+can be changed in one place.
 
 ### The values come out of the map, on purpose
 
@@ -268,7 +263,40 @@ default to being read out of the map rather than set anywhere greppable.
 
 ---
 
-## 4. MAP26's moon is off, and that is part of this
+## 4. The flashlight, and the one thing lit fog gets wrong
+
+Switch a flashlight on inside the medium and the screen whites out. Nothing is
+broken: a light standing in fog lights the froxels around it by inverse square,
+and the flashlight is at ~0 m, so the cells directly in front of the camera get
+an enormous in-scattered term. That is exactly what a headlight in fog does, it
+is why fog lamps are mounted low and aimed down, and in a first-person game it
+is unplayable — the torch becomes a switch that blinds you.
+
+It is also *only* a problem for lights you are carrying. The same effect a few
+metres down the corridor is the shaft of light through fog that this whole
+feature exists to produce.
+
+So `rt_fog_light_near` (2 m) fades in-scattering out within that distance **of a
+light** — keyed off the light's position, never the camera's. Glare from
+something you are holding goes; the beam ahead of you survives; a lamp on a wall
+five metres away is untouched. Muzzle flashes get the same treatment for free,
+which they needed for the same reason.
+
+Directional lights are unaffected: `sampleLight` puts the moon's and the
+lightning's sampled position far away, so the fade never triggers on them.
+
+`0` restores the physical behaviour, and `tools/ab-fog.cmd flshraw` is that arm —
+kept so the fade can be *seen* doing something rather than trusted. `flsh` is the
+same profile with the fade at its default, and `flshwide` at 5 m if 2 still
+glares.
+
+The implementation is one clause in `traceDirectIllumination`, inside
+`#if LIGHT_SAMPLE_METHOD == LIGHT_SAMPLE_METHOD_VOLUME`, so it touches the fog
+and nothing else — surfaces still receive the light physically.
+
+---
+
+## 5. MAP26's moon is off, and that is part of this
 
 `RT_MOON_PRESETS` already hid MAP26's moon **disc**: it is one of the three
 `VOIDSKY` maps, whose skybox is a plain box of flat dark teal with no starfield,
@@ -292,26 +320,58 @@ comparison, rather than leaving the decision asserted.
 
 ---
 
-## 5. Testing
+## 6. Testing
 
 `tools/ab-fog.cmd <arm> [map]`, default MAP26:
 
+Transmittance below is at 128 / 256 / 512 / 768 / 1024 map units, computed from
+the formula above rather than eyeballed.
+
+**Profiles** — walk the same corridor in each:
+
+| arm | ramp | T |
+|---|---|---|
+| `full` | the shipping row, via the preset table (MAP26 only) | 1.00 1.00 0.98 0.93 0.83 |
+| `ramp` | the same profile forced onto any map — 0.01 → 10, curve 2.4, 32 m | as above |
+| `veil` | 3 → 70, curve 2.0, 40 m. Air, not weather | 0.98 0.95 0.85 0.65 0.41 |
+| `ramp2` | 6 → 320, curve 3.0, 32 m. Same clear air, harder wall | 0.95 0.89 0.60 0.15 0.00 |
+| `wall` | 2 → 700, curve 4.0, 28 m. Nothing, then shut | 0.98 0.95 0.54 0.01 0.00 |
+| `deep` | the shipping shape over 60 m, for rooms 32 m closes too early in | 0.97 0.95 0.87 0.74 0.54 |
+| `even` | no ramp — the map's own density, uniform | 0.71 0.51 0.26 0.13 0.07 |
+| `flatramp` | the shipping ends at curve 1.0 — the failure the curve avoids | 0.87 0.63 0.19 0.03 0.00 |
+| `inverse` | backwards: thick around you, clear beyond | |
+| `twotone` | the ramp with the tint split as well | |
+
+On MAP26, `ramp` and `full` should be **indistinguishable** — they are the same
+numbers by two different routes. If they are not, the preset table did not apply,
+which makes this a free check that the row is live.
+
+`even` and `flatramp` are the two failures this profile was arrived at through,
+kept for that reason: `even` is a uniform MAPINFO-derived medium (**0.71 at 128
+map units** — nearly a third of the wall two metres from your face is already
+fog), and `flatramp` is a ramp whose curve starts thickening at the camera.
+
+**Flashlight** (§4):
+
+| arm | |
+|---|---|
+| `flsh` | the shipping profile, flashlight lit at launch |
+| `flshraw` | the same with `rt_fog_light_near 0` — the whiteout |
+| `flshwide` | fade at 5 m, if 2 still glares |
+
+**Isolation:**
+
 | arm | what it isolates |
 |---|---|
-| `full` | the shipping configuration — the preset table on |
-| `off` | `rt_fog 0`; the volumetrics fall back to the global `rt_volume_*`. What the map looked like before |
-| `nolight` | `rt_fog_illum 0` — the fog with the one light it used to get, i.e. none on this map |
+| `off` | `rt_fog 0` — the global `rt_volume_*` values. What the map was before |
+| `nolight` | `rt_fog_illum 0` — the fog lit by the one light it used to get, i.e. none on this map |
 | `flat` | RTGL1's depth-based fog in the same colour: one `exp()` per pixel, no volume, no lighting |
-| `thin` / `dense` | a third / double the MAPINFO-derived density — so they only bite while a map is still on the sentinel, not on the ramp arms, which state theirs |
-| `ramp` | the shipping profile forced onto any map (6 → 190, curve 2.4, reach 32 m). On MAP26 it should be indistinguishable from `full`; if it is not, the table did not apply |
-| `ramp2` | same near end, far end 320 at `curve 3.0` — the teal wall closes harder |
-| `flatramp` | the shipping ends at `curve 1.0` — the failure the curve exists to avoid |
-| `inverse` | the ramp backwards: thick around you, clear beyond |
-| `twotone` | colour split as well as density: cyan near, deep teal far |
-| `reach20` / `reach90` | `rt_fog_far` 20 m / 90 m — the volume's reach and its precision at once. Named for the reach because `fog near`/`fog far` are the *ramp*, a different knob |
-| `ambient` | a big unlit floor: what fog looks like painted rather than lit |
+| `ambient` | `rt_fog_ambient 4` — four times the shipping floor; the lights stop registering against it |
+| `noambient` | `rt_fog_ambient 0` — nothing but what the level's lights scatter. Says how much of the fog is lit and how much is the floor |
 | `grey` | the colour taken out, the density kept |
-| `moon` | the moon put back on (§4) |
+| `thin` / `dense` | a third / double the MAPINFO-derived density, so they bite only while a map is on the sentinel |
+| `reach20` / `reach90` | `rt_fog_far` — the volume's reach and its precision at once |
+| `moon` | the moon put back on (§5) |
 | `debug` | `full` + `rt_fog_debug 1` |
 
 `rt_fog_debug` is `RT_CVAR_NOARCH` on purpose, like `rt_sun_leak_debug` and
@@ -320,7 +380,7 @@ to be inert for a whole round trip.
 
 ---
 
-## 6. Files
+## 7. Files
 
 | file | role |
 |---|---|
@@ -331,7 +391,7 @@ to be inert for a whole round trip.
 | `RTGL/Include/RTGL1/RTGL1.h` | `illuminateFromAllLights`, `mediaColor` on `RgDrawFrameVolumetricParams` |
 | `tools/ab-fog.cmd` | the arms above |
 
-## 7. Known limits
+## 8. Known limits
 
 - **Monochrome extinction** (§2). Distance fades toward the fog colour rather
   than filtering by it.
@@ -357,6 +417,9 @@ to be inert for a whole round trip.
 
 ## See also
 
+- `docs/rt-fog-implementation.md` — the code path end to end: every file the
+  fog touches in the order the data moves through them, the uniform layout, the
+  optical-depth arithmetic, and the four traps
 - `docs/moon-and-sky-leaks.md` — why MAP26's moon is off and what
   `rt_sun_require_sky` had already done to it
 - `docs/rt-clouds-and-lightning.md` — the same opt-in per-map table shape, and

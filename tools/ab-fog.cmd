@@ -21,12 +21,13 @@ rem over the volume's 64 slices, T = exp(-tau).
 rem
 rem   full      THE SHIPPING ROW via RT_FOG_PRESETS. MAP26 only; every other map
 rem             gets nothing. This is what a player sees.
-rem   ramp      the shipping profile forced onto ANY map: 6 -> 190, curve 2.4,
-rem             reach 32 m. T ~0.95 at 128 units, 0.59 at 512, 0.20 at 768, 0.02
-rem             by 1024. On MAP26 it should be indistinguishable from `full` --
-rem             if it is not, the preset table did not apply, and that makes this
-rem             a free check that the row is live.
-rem             T at 128/256/512/768/1024 units: 0.95 0.88 0.59 0.20 0.02
+rem   ramp      the shipping profile forced onto ANY map: 0.01 -> 10, curve 2.4,
+rem             reach 32 m. A luminous VEIL rather than an occluder -- it hides
+rem             nothing, and with rt_fog_ambient 1 the medium glows on its own
+rem             while the level's lights modulate it. On MAP26 it should be
+rem             indistinguishable from `full`; if it is not, the preset table did
+rem             not apply, and that makes this a free check that the row is live.
+rem             T at 128/256/512/768/1024 units: 1.00 1.00 0.98 0.93 0.83
 rem   veil      the lightest that still reads as fog: 3 -> 70, curve 2.0, 40 m.
 rem             Air, not weather. Use when the level's own geometry should carry
 rem             the depth and the fog is only tinting it.
@@ -77,8 +78,12 @@ rem             all-lights froxel pass is worth. Expect flat, painted-on fog.
 rem   flat      rt_volume_type 2 -- RTGL1's depth-based fog in the same colour.
 rem             One exp() per pixel, no volume, no lighting. The cheap version,
 rem             and the honest answer to "is the volume worth its cost".
-rem   ambient   rt_fog_ambient 0.12 -- a big unlit floor. What fog looks like
-rem             PAINTED rather than lit, with nothing else changed.
+rem   ambient   rt_fog_ambient 4 -- four times the shipping floor. Fog as pure
+rem             paint: at this level the lights barely register against it.
+rem   noambient rt_fog_ambient 0 -- the other end, and the more interesting one
+rem             now that the floor IS the shipping look. Nothing but what the
+rem             level's own lights scatter. This is the arm that says how much of
+rem             the fog you are seeing is lit and how much is the floor.
 rem   grey      the colour taken out (808080), the density kept. Separates how
 rem             much of the look is the cyan from how much is the medium.
 rem   thin      a third of the MAPINFO-derived density, uniform.
@@ -111,7 +116,7 @@ rem
 rem Console, in any arm: `fog` reports the medium and prints a paste-ready
 rem RT_FOG_PRESETS row; `fog on 00A0A0 60 45` tunes it live.
 rem
-rem Usage: ab-fog.cmd <full|ramp|veil|ramp2|wall|deep|even|flatramp|inverse|twotone|flsh|flshraw|flshwide|off|nolight|flat|ambient|grey|thin|dense|reach20|reach90|moon|debug> [1-32]
+rem Usage: ab-fog.cmd <full|ramp|veil|ramp2|wall|deep|even|flatramp|inverse|twotone|flsh|flshraw|flshwide|off|nolight|flat|ambient|noambient|grey|thin|dense|reach20|reach90|moon|debug> [1-32]
 rem ---------------------------------------------------------------------------
 
 set "ARM=%~1"
@@ -123,12 +128,12 @@ rem Defaults, spelled out once. Later +cvar wins, so an arm names only what it
 rem changes. colour 000000 and density -1 are the SENTINELS: use the map's own
 rem MAPINFO fade and fogdensity. Prefer them -- a literal copy of the map's data
 rem here is the copy that goes stale.
-set "FOG=+rt_fog 1 +rt_fog_presets 0 +rt_fog_color 000000 +rt_fog_density -1 +rt_fog_density_mult 0.3 +rt_fog_density_far -1 +rt_fog_color_far 000000 +rt_fog_curve 1 +rt_fog_far 45 +rt_fog_ambient 0.02 +rt_fog_lightmult 1 +rt_fog_light_near 2 +rt_fog_illum 1 +rt_fog_debug 0 +rt_volume_type 1 +rt_flsh 0"
+set "FOG=+rt_fog 1 +rt_fog_presets 0 +rt_fog_color 000000 +rt_fog_density 0.01 +rt_fog_density_mult 0.3 +rt_fog_density_far 10 +rt_fog_color_far 000000 +rt_fog_curve 1 +rt_fog_far 45 +rt_fog_ambient 1 +rt_fog_lightmult 1 +rt_fog_light_near 2 +rt_fog_illum 1 +rt_fog_debug 0 +rt_volume_type 1 +rt_flsh 0"
 
 if /i "%ARM%"=="full"     set "ARGS=%FOG% +rt_fog_presets 1"
 
 rem Profiles. near -> far over a reach, shaped by the curve.
-if /i "%ARM%"=="ramp"     set "ARGS=%FOG% +rt_fog_density 6 +rt_fog_density_far 190 +rt_fog_curve 2.4 +rt_fog_far 32"
+if /i "%ARM%"=="ramp"     set "ARGS=%FOG% +rt_fog_density 0.01 +rt_fog_density_far 10 +rt_fog_curve 2.4 +rt_fog_far 32"
 if /i "%ARM%"=="veil"     set "ARGS=%FOG% +rt_fog_density 3 +rt_fog_density_far 70 +rt_fog_curve 2.0 +rt_fog_far 40"
 if /i "%ARM%"=="ramp2"    set "ARGS=%FOG% +rt_fog_density 6 +rt_fog_density_far 320 +rt_fog_curve 3.0 +rt_fog_far 32"
 if /i "%ARM%"=="wall"     set "ARGS=%FOG% +rt_fog_density 2 +rt_fog_density_far 700 +rt_fog_curve 4.0 +rt_fog_far 28"
@@ -147,7 +152,8 @@ rem Isolation.
 if /i "%ARM%"=="off"      set "ARGS=%FOG% +rt_fog 0"
 if /i "%ARM%"=="nolight"  set "ARGS=%FOG% +rt_fog_illum 0"
 if /i "%ARM%"=="flat"     set "ARGS=%FOG% +rt_fog 0 +rt_volume_type 2 +rt_volume_scatter 60 +rt_volume_ambient 0.35"
-if /i "%ARM%"=="ambient"  set "ARGS=%FOG% +rt_fog_ambient 0.12"
+if /i "%ARM%"=="ambient"  set "ARGS=%FOG% +rt_fog_ambient 4"
+if /i "%ARM%"=="noambient" set "ARGS=%FOG% +rt_fog_ambient 0"
 if /i "%ARM%"=="grey"     set "ARGS=%FOG% +rt_fog_color 808080"
 if /i "%ARM%"=="thin"     set "ARGS=%FOG% +rt_fog_density_mult 0.1"
 if /i "%ARM%"=="dense"    set "ARGS=%FOG% +rt_fog_density_mult 0.6"
@@ -157,7 +163,7 @@ if /i "%ARM%"=="moon"     set "ARGS=%FOG% +rt_moon_presets 0 +rt_sun 1 +rt_sun_i
 if /i "%ARM%"=="debug"    set "ARGS=%FOG% +rt_fog_presets 1 +rt_fog_debug 1"
 
 if not defined ARGS (
-  echo Usage: %~nx0 full^|ramp^|veil^|ramp2^|wall^|deep^|even^|flatramp^|inverse^|twotone^|flsh^|flshraw^|flshwide^|off^|nolight^|flat^|ambient^|grey^|thin^|dense^|reach20^|reach90^|moon^|debug  [1-32]
+  echo Usage: %~nx0 full^|ramp^|veil^|ramp2^|wall^|deep^|even^|flatramp^|inverse^|twotone^|flsh^|flshraw^|flshwide^|off^|nolight^|flat^|ambient^|noambient^|grey^|thin^|dense^|reach20^|reach90^|moon^|debug  [1-32]
   exit /b 1
 )
 

@@ -818,3 +818,21 @@ the `fog` CCMD. **Resolution is deferred to the first rendered frame** —
 `primaryLevel->fadeto` / `->fogdensity` there are still the previous map's.
 MAP26's `RT_MOON_PRESETS` row also drops the moon's light to 0: a directional
 light rakes a froxel volume from one bearing and the fog reads as a lit slab.
+
+### The flashlight in fog (same day)
+
+Lit fog made the flashlight a switch that blinds you. Not a bug: a light in a
+medium lights the froxels around it by inverse square, and the flashlight is at
+~0 m, so the cells right in front of the camera flood. It is what a headlight in
+fog does, and it is unplayable first-person.
+
+`rt_fog_light_near` (2 m) fades in-scattering within that distance **of a light**
+— keyed off the light's position, not the camera's, so glare from a light you are
+*holding* goes while the beam's shaft further down the corridor, which is the
+entire point of lit fog, survives. Muzzle flashes get it for free. Directional
+lights never trigger it (`sampleLight` puts their position far away).
+
+One clause in `traceDirectIllumination` under
+`#if LIGHT_SAMPLE_METHOD == LIGHT_SAMPLE_METHOD_VOLUME`, so surfaces still
+receive the light physically. `tools/ab-fog.cmd flshraw` is the whiteout, kept so
+the fade can be seen working rather than trusted.
