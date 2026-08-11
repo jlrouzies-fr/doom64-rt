@@ -229,10 +229,15 @@ class D64LavaFx : EventHandler
     int tick;
 
     // Rate is what the PLAYER sees, not what the lake covers.
+    //
+    // NEAR_MAX is effectively the effect's DRAW DISTANCE: nothing is spawned
+    // beyond it, so the lake goes still in the distance. Doubling it quadruples
+    // the area the same burst has to cover, so PER_BURST goes up with it or the
+    // near field visibly thins out -- the two are not independent knobs.
     const PERIOD    = 7;     // tics between bursts
-    const PER_BURST = 2;     // droplets per burst
+    const PER_BURST = 5;     // droplets per burst
     const NEAR_MIN  = 64;    // no closer than this, or they spawn in your face
-    const NEAR_MAX  = 700;
+    const NEAR_MAX  = 1400;
 
     override void WorldLoaded( WorldEvent e )
     {
