@@ -43,11 +43,12 @@ rem            room lights up, the lights work and the only question left is the
 rem            number. If a single 3000 lm light in the middle of the lava does
 rem            nothing, the lights are not reaching the renderer and no amount of
 rem            tuning will help -- which is a completely different bug.
-rem The debug and solo arms also TELEPORT YOU ONTO THE LAVA (rt_lava_autogoto)
-rem and write to rt-lava.log instead of rt-console.log. Both exist for the same
-rem reason: the first four rounds of "the lava lights nothing" were judged from
-rem 48 metres away, and the run that would have shown it was overwritten by the
-rem next launch before it could be read.
+rem EVERY ARM TELEPORTS YOU ONTO THE LAVA on the first frame (rt_lava_autogoto),
+rem and the debug/solo/control arms write rt-lava.log instead of rt-console.log.
+rem Both exist for the same reason: the first four rounds of "the lava lights
+rem nothing" were judged from 48 metres away, and the run that would have shown
+rem it was overwritten by the next launch before it could be read. Append
+rem "+rt_lava_autogoto 0" if you want to walk there yourself.
 rem
 rem   control  THE ONE THAT MATTERS NOW. Everything up to LightManager::Add is
 rem            verified good by the RTGL probe and the room is still black, so
@@ -73,7 +74,7 @@ if "%MAP%"==""  set "MAP=21"
 
 set "COL=+rt_lava_light_r 255 +rt_lava_light_g 90 +rt_lava_light_b 20"
 set "GEO=+rt_lava_light_z 24 +rt_lava_light_max 256 +rt_lava_light_dist 2048"
-set "DEF=%COL% %GEO% +rt_lava_light_debug 0 +rt_lava_autogoto 0"
+set "DEF=%COL% %GEO% +rt_lava_light_debug 0 +rt_lava_autogoto 1"
 rem A LOG OF ITS OWN. rt-console.log is one file that every launch overwrites, so
 rem the evidence from a lava run was twice destroyed by the next unrelated launch
 rem before it could be read. +logfile comes after the launcher's own, so it wins.
@@ -103,7 +104,6 @@ rem OWN messages. That is what the LAVA PROBE line in LightManager.cpp needs:
 rem rt_main sets allowedMessages=0 without it, so an RTGL-side probe is silent
 rem and looks like it never ran.
 set "DBG="
-if /i "%ARM%"=="control" set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 600 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.3 %COL% %GEO% +rt_lava_light_debug 2 +rt_lava_autogoto 1"
 if /i "%ARM%"=="debug" set "DBG=debug"
 if /i "%ARM%"=="solo"  set "DBG=debug"
 if /i "%ARM%"=="control" set "DBG=debug"
