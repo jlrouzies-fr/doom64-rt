@@ -18,7 +18,8 @@ rem
 rem   off      rt_lava_light_on 0 -- surface only. This is what the lava looked
 rem            like before the lights existed, and the A/B for "is the room dark
 rem            because the lava is dim, or because nothing emits".
-rem   on       the default: 0.9 per light at 96-unit spacing.
+rem   on       the default: 180 lumen per light at 96-unit spacing. Lumen is
+rem            the scale the whole file uses -- flames are 900.
 rem   dim      half intensity, for a room that blows out.
 rem   bright   double intensity.
 rem   fine     48-unit spacing. Four times as many lights, SAME total brightness
@@ -47,14 +48,14 @@ set "COL=+rt_lava_light_r 255 +rt_lava_light_g 90 +rt_lava_light_b 20"
 set "GEO=+rt_lava_light_z 12 +rt_lava_light_max 256 +rt_lava_light_dist 2048"
 set "DEF=%COL% %GEO% +rt_lava_light_debug 0"
 
-if /i "%ARM%"=="off"    set "ARGS=+rt_lava_light_on 0 +rt_lava_light_intensity 0.9 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.6 %DEF%"
-if /i "%ARM%"=="on"     set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 0.9 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.6 %DEF%"
-if /i "%ARM%"=="dim"    set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 0.45 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.6 %DEF%"
-if /i "%ARM%"=="bright" set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 1.8 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.6 %DEF%"
-if /i "%ARM%"=="fine"   set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 0.9 +rt_lava_light_spacing 48 +rt_lava_light_radius 0.6 %COL% %GEO% +rt_lava_light_max 512 +rt_lava_light_debug 0"
-if /i "%ARM%"=="coarse" set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 0.9 +rt_lava_light_spacing 192 +rt_lava_light_radius 0.6 %DEF%"
-if /i "%ARM%"=="tight"  set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 0.9 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.08 %DEF%"
-if /i "%ARM%"=="debug"  set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 0.9 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.6 %COL% %GEO% +rt_lava_light_debug 1"
+if /i "%ARM%"=="off"    set "ARGS=+rt_lava_light_on 0 +rt_lava_light_intensity 180 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.6 %DEF%"
+if /i "%ARM%"=="on"     set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 180 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.6 %DEF%"
+if /i "%ARM%"=="dim"    set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 90 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.6 %DEF%"
+if /i "%ARM%"=="bright" set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 360 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.6 %DEF%"
+if /i "%ARM%"=="fine"   set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 180 +rt_lava_light_spacing 48 +rt_lava_light_radius 0.6 %COL% %GEO% +rt_lava_light_max 512 +rt_lava_light_debug 0"
+if /i "%ARM%"=="coarse" set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 180 +rt_lava_light_spacing 192 +rt_lava_light_radius 0.6 %DEF%"
+if /i "%ARM%"=="tight"  set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 180 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.08 %DEF%"
+if /i "%ARM%"=="debug"  set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 180 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.6 %COL% %GEO% +rt_lava_light_debug 1"
 
 if not defined ARGS (
   echo Usage: %~nx0 ^<off^|on^|dim^|bright^|fine^|coarse^|tight^|debug^> [1-34]
