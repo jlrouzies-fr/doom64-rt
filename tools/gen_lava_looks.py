@@ -366,7 +366,142 @@ def look_retro(src, m, noise):
     return a, np.floor(e * 12.0) / 12.0
 
 
-LOOKS = [
+# ---------------------------------------------------------------------------
+# the ART-PRESERVING candidates
+#
+# Verdict on the first sheet: "2 (light only) seems the best, strangely". Not
+# strangely at all. Panels 3-9 there all THROW THE ART AWAY -- they replace the
+# painted crust with a synthetic heat ramp keyed on a mask derived from it, so
+# the artist's per-crack shading, the warm/cool variation between plates and the
+# hand-placed hot spots are all flattened into one gradient. What comes back is
+# smooth and generic, and the pixel art was neither.
+#
+# So this set inverts the rule: the albedo is never replaced, only lit and
+# MODULATED. Every panel starts from panel 2 -- the real flat, lit by its own
+# cracks -- and adds exactly one thing on top, so the art keeps its authorship
+# and the shader only does what the texture cannot do for itself.
+# ---------------------------------------------------------------------------
+
+
+def _base(albedo, e, m, ndl=None, gain=1.0):
+    """Panel 2: the real flat lit by its own cracks, plus the authored _e.
+
+    ndl, when given, replaces the isotropic glow with directional shading from
+    the cracks -- the SAME light, just with a direction. That is the whole
+    difference between a lit texture and a surface.
+    """
+    glow = blur(m, 5) * gain
+    shade = glow if ndl is None else glow * (0.30 + 1.7 * ndl)
+    # the painted cracks are hot rock, not lit rock: a little self-emission in
+    # the flat's OWN colour, so their hue still comes from the art
+    self_emit = albedo * (m[..., None] ** 1.3) * 1.5 * gain
+    return e * 1.6 + albedo * (0.10 + 0.85 * shade[..., None]) + self_emit
+
+
+def art_relief(src, m, noise):
+    """Panel 2 + relief. The one addition a texture cannot make for itself.
+
+    Height is 1 - crack mask, so the molten line is the LOW point, and the light
+    comes out of it. Plate faces turned toward a crack brighten, plate tops go
+    dark. Nothing about the albedo changes.
+    """
+    albedo, e = src
+    h, nx, ny = relief(m, 0.035)
+    ndl, _ = lit_by_cracks(m, nx, ny)
+    return albedo, _base(albedo, e, m, ndl=ndl)
+
+
+def art_relief_deep(src, m, noise):
+    """Same, with the channels cut deeper and the plate middles occluded."""
+    albedo, e = src
+    h, nx, ny = relief(m, 0.085, depth=1.9)
+    ndl, _ = lit_by_cracks(m, nx, ny, reach=3)
+    return albedo, _base(albedo, e, m, ndl=ndl * np.clip(1.25 - h, 0, 1) * 1.6)
+
+
+def art_convection(src, m, noise):
+    """Panel 2 + a large low-frequency field over the crack light.
+
+    Whole plates cool while others stay open. Uniform cracks are the single
+    thing that most reads as "texture with a glow map"; in the shader this field
+    scrolls, which gives the surface motion without touching the flat.
+    """
+    albedo, e = src
+    f = 0.35 + 1.45 * noise**1.6
+    return albedo, _base(albedo, e, m * f, gain=1.0) * (0.55 + 0.75 * f[..., None])
+
+
+def art_cores(src, m, noise):
+    """Panel 2 + white-hot cores on the top few percent of the mask only.
+
+    Not a ramp over the whole crack -- just the open centre of the widest
+    channels, left in the art's hue everywhere else.
+    """
+    albedo, e = src
+    core = np.clip((m - 0.80) / 0.20, 0, 1) ** 0.7
+    hot = np.array(srgb("#ffb347"), dtype=np.float32)
+    return albedo, _base(albedo, e, m) + core[..., None] * hot * 2.2
+
+
+def art_halo(src, m, noise):
+    """Panel 2 + a soft wide halo: heat and dust in the air over the flow."""
+    albedo, e = src
+    wide = blur(m, 6)
+    tint = (albedo * m[..., None]).reshape(-1, 3).sum(axis=0)
+    tint = tint / max(float(tint.max()), 1e-4)
+    return albedo, _base(albedo, e, m) + wide[..., None] * tint * 0.55
+
+
+def art_wet(src, m, noise):
+    """Panel 2 + relief + a WET sheen on the open cracks only.
+
+    The answer to "lava does not reflect": no mirror, no environment -- a tight
+    specular lobe on the molten channels, lit by the lava itself, so they read
+    as liquid while the crust stays matte.
+    """
+    albedo, e = src
+    h, nx, ny = relief(m, 0.05, depth=1.4)
+    ndl, _ = lit_by_cracks(m, nx, ny)
+    slope = np.clip(np.abs(np.gradient(m)[0]) + np.abs(np.gradient(m)[1]), 0, 1)
+    spec = np.clip(m - 0.55, 0, 1) * (0.35 + slope)
+    return albedo, _base(albedo, e, m, ndl=ndl) + spec[..., None] * np.array(
+        srgb("#ff8c3c"), dtype=np.float32
+    ) * 1.6
+
+
+def art_proposal(src, m, noise):
+    """Relief + convection + cores. The three that do not fight the art.
+
+    Relief for the shape the texture cannot carry, convection so the flow is not
+    uniform and moves, cores so the widest channels read as open. Albedo
+    untouched throughout.
+    """
+    albedo, e = src
+    f = 0.40 + 1.35 * noise**1.6
+    h, nx, ny = relief(m, 0.035)
+    ndl, _ = lit_by_cracks(m, nx, ny)
+    core = np.clip((m - 0.80) / 0.20, 0, 1) ** 0.7
+    hot = np.array(srgb("#ffb347"), dtype=np.float32)
+    out = _base(albedo, e, m * f, ndl=ndl) * (0.60 + 0.65 * f[..., None])
+    return albedo, out + core[..., None] * hot * 1.9 * f[..., None]
+
+
+ART_LOOKS = [
+    ("1. current (the screenshot)", "unlit rock + the sparse authored _e", look_current, False),
+    ("2. light only  [the baseline]", "the real flat, lit by its own cracks", look_lightonly, True),
+    ("3. + relief", "same art, light now has a direction", art_relief, True),
+    ("4. + deeper channels", "relief with the plate middles occluded", art_relief_deep, True),
+    ("5. + convection", "low-freq field; plates cool unevenly", art_convection, True),
+    ("6. + hot cores", "top 20% of the mask only, art elsewhere", art_cores, True),
+    ("7. + heat halo", "soft wide bloom in the flat's own hue", art_halo, True),
+    ("8. + wet cracks", "relief + specular on the channels only", art_wet, True),
+    ("9. relief + convection + cores", "the proposal: all three, albedo untouched", art_proposal, True),
+]
+
+
+# The first sheet: every panel from 3 on REPLACES the albedo with a heat ramp.
+# Kept because it is the evidence for why the art-preserving set exists.
+RAMP_LOOKS = [
     ("1. current (the screenshot)", "unlit rock + the sparse authored _e", look_current, False),
     ("2. light only, no shader", "same texture, lava lights the room", look_lightonly, True),
     ("3. heat ramp, still flat", "blackbody cracks, no relief", look_heat_flat, True),
@@ -491,28 +626,45 @@ def font(size: int):
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--tex", default="HLAVA1", help="source flat lump (default HLAVA1)")
-    ap.add_argument("--out", default=str(ROOT / "screen/lava_looks.png"))
+    ap.add_argument(
+        "--set",
+        dest="which",
+        choices=("art", "ramp"),
+        default="art",
+        help="art (default): keep the albedo, add shading on top. "
+        "ramp: the first pass, which replaced it with a heat ramp.",
+    )
+    ap.add_argument("--out", default=None)
     args = ap.parse_args()
+
+    looks = ART_LOOKS if args.which == "art" else RAMP_LOOKS
+    if args.out is None:
+        args.out = str(ROOT / f"screen/lava_looks_{args.which}.png")
 
     src = load_source(args.tex)
     m = crack_mask(src[0])
     noise = value_noise(m.shape, cells=3, seed=7)
 
-    rows = (len(LOOKS) + COLS - 1) // COLS
+    rows = (len(looks) + COLS - 1) // COLS
     W = COLS * PANEL_W + (COLS + 1) * PAD
     H = rows * (PANEL_H + LABEL_H) + (rows + 1) * PAD + 44
     sheet = Image.new("RGB", (W, H), (16, 15, 16))
     draw = ImageDraw.Draw(sheet)
     draw.text(
         (PAD, 13),
-        f"lava shader — candidate looks on {args.tex}   "
-        f"(mockup: fixed perspective, painted room light, baked relief, not path traced)",
+        f"lava shader — candidate looks on {args.tex}"
+        + (
+            "   —  ALBEDO KEPT, shading added on top"
+            if args.which == "art"
+            else "   —  albedo REPLACED by a heat ramp"
+        )
+        + "   (mockup: fixed perspective, painted room light, baked relief)",
         font=font(19),
         fill=(190, 185, 180),
     )
 
     f_title, f_sub = font(21), font(16)
-    for i, (title, sub, fn, lit) in enumerate(LOOKS):
+    for i, (title, sub, fn, lit) in enumerate(looks):
         r, c = divmod(i, COLS)
         x = PAD + c * (PANEL_W + PAD)
         y = 44 + PAD + r * (PANEL_H + LABEL_H + PAD)
