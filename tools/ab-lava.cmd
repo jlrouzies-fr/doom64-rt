@@ -33,6 +33,13 @@ rem            so one run of dim/on/bright brackets the answer.
 rem   flagcheck LAVA SURFACES PAINTED MAGENTA. Not a look -- a test. If the lava
 rem            is not magenta, the LAVA flag is not reaching the shader and
 rem            nothing about rt_lava_emis can work. Check this before tuning.
+rem   fixexp   PINS AUTO-EXPOSURE (ev100 min = max = 5.5). Everything else is
+rem            the default. Auto-exposure runs over ev100 2..7.7 -- 5.7 stops,
+rem            52x -- and the lava is most of the bright content in the frame,
+rem            so raising its brightness makes the exposure drop and the picture
+rem            barely changes. That is the standing explanation for "rt_lava_emis
+rem            14 does nothing" and "the flow does not do much"; this arm is the
+rem            test of it, not a fix.
 rem   redder   tint g 90 b 40 instead of 140/76, for lava that is angrier still.
 rem            This is the knob for "too yellow": pull GREEN down.
 rem   gi       THE ANSWER TO "REMOVE THE LIGHT POINTS". Analytic grid OFF, the
@@ -82,7 +89,7 @@ rem
 rem Every arm sets every lava cvar explicitly, so a value left in the ini from a
 rem previous arm can never leak into the next one.
 rem
-rem Usage: ab-lava.cmd <off|on|dim|bright|redder|flagcheck|gi|gihard|noshader|hot|smooth|churn|fine|coarse|tight|solo|control|debug> [1-34]
+rem Usage: ab-lava.cmd <off|on|dim|bright|fixexp|redder|flagcheck|gi|gihard|noshader|hot|smooth|churn|fine|coarse|tight|solo|control|debug> [1-34]
 rem ---------------------------------------------------------------------------
 
 set "ARM=%~1"
@@ -105,6 +112,7 @@ if /i "%ARM%"=="off"    set "ARGS=+rt_lava_gi 0 +rt_lava_light_on 0 +rt_lava_lig
 if /i "%ARM%"=="on"     set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 1800 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.3 %DEF% +rt_lava_gi 0"
 if /i "%ARM%"=="dim"    set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 600 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.3 %DEF% +rt_lava_gi 0"
 if /i "%ARM%"=="bright" set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 5400 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.3 %DEF% +rt_lava_gi 0"
+if /i "%ARM%"=="fixexp"   set "ARGS=+rt_lava_light_on 0 +rt_lava_light_intensity 1800 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.3 %COL% %GEO% +rt_lava_light_debug 0 +rt_lava_autogoto 1 +rt_lava_debug 0 +rt_lava_emis 6 +rt_lava_flow 0.45 +rt_lava_flow_speed 0.03 +rt_lava_flow_scale 0.12 +rt_lava_flow_pixel 0.25 +rt_lava_pulse 0.10 +rt_lava_pulse_speed 0.35 +rt_lava_gi 40 +rt_lava_tint_r 255 +rt_lava_tint_g 140 +rt_lava_tint_b 76 +rt_tnmp_ev100_min 5.5 +rt_tnmp_ev100_max 5.5"
 if /i "%ARM%"=="redder"   set "ARGS=+rt_lava_light_on 0 +rt_lava_light_intensity 1800 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.3 %COL% %GEO% +rt_lava_light_debug 0 +rt_lava_autogoto 1 +rt_lava_debug 0 +rt_lava_emis 6 +rt_lava_flow 0.45 +rt_lava_flow_speed 0.03 +rt_lava_flow_scale 0.12 +rt_lava_flow_pixel 0.25 +rt_lava_pulse 0.10 +rt_lava_pulse_speed 0.35 +rt_lava_gi 40 +rt_lava_tint_r 255 +rt_lava_tint_g 90 +rt_lava_tint_b 40"
 if /i "%ARM%"=="flagcheck" set "ARGS=+rt_lava_light_on 0 +rt_lava_light_intensity 1800 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.3 %COL% %GEO% +rt_lava_light_debug 0 +rt_lava_autogoto 1 +rt_lava_debug 1 +rt_lava_emis 6 +rt_lava_flow 0.45 +rt_lava_gi 1 +rt_lava_tint_r 255 +rt_lava_tint_g 140 +rt_lava_tint_b 76"
 if /i "%ARM%"=="gi"       set "ARGS=+rt_lava_light_on 0 +rt_lava_light_intensity 1800 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.3 %COL% %GEO% +rt_lava_light_debug 0 +rt_lava_autogoto 1 +rt_lava_debug 0 +rt_lava_emis 6 +rt_lava_flow 0.45 +rt_lava_flow_speed 0.03 +rt_lava_flow_scale 0.12 +rt_lava_flow_pixel 0.25 +rt_lava_pulse 0.10 +rt_lava_pulse_speed 0.35 +rt_lava_gi 40 +rt_lava_tint_r 255 +rt_lava_tint_g 140 +rt_lava_tint_b 76"
@@ -121,7 +129,7 @@ if /i "%ARM%"=="control" set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 
 if /i "%ARM%"=="debug"  set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 1800 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.3 %COL% %GEO% +rt_lava_light_debug 1 +rt_lava_autogoto 1 +rt_lava_gi 0"
 
 if not defined ARGS (
-  echo Usage: %~nx0 ^<off^|on^|dim^|bright^|redder^|flagcheck^|gi^|gihard^|noshader^|hot^|smooth^|churn^|fine^|coarse^|tight^|solo^|control^|debug^> [1-34]
+  echo Usage: %~nx0 ^<off^|on^|dim^|bright^|fixexp^|redder^|flagcheck^|gi^|gihard^|noshader^|hot^|smooth^|churn^|fine^|coarse^|tight^|solo^|control^|debug^> [1-34]
   exit /b 1
 )
 

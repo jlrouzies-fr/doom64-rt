@@ -13,6 +13,7 @@ set "SEQL=G:\AI\Doom64-RT\Doom64-Retribution\d64r-seqlight-fix.wad"
 set "BULBTEX=G:\AI\Doom64-RT\Doom64-Retribution\d64r-bulb-textures.wad"
 set "CTELFIX=G:\AI\Doom64-RT\Doom64-Retribution\d64r-ctel-fix.wad"
 set "SKY=G:\AI\Doom64-RT\Doom64-Retribution\d64r-rt-sky.pk3"
+set "LAVAFX=G:\AI\Doom64-RT\Doom64-Retribution\d64r-lava-fx.pk3"
 set "MUS=G:\AI\Doom64-RT\Doom64-Retribution\D64MUS.PK3"
 rem Full console transcript (incl. startup) -> shareable log. `logfile` is
 rem whitelisted to run at GS_STARTUP (c_dispatch.cpp), so it captures
@@ -478,7 +479,7 @@ rem Load order note: MAP03 has no special-160 linedefs, so it is absent from
 rem FIX3D and the two wads never touch the same map.
 start "" gzdoom.exe ^
   -iwad "%IWAD%" ^
-  -file "%MOD%" "%BM%" "%SKUL%" "%FLSH%" "%MUS%" "%FIX3D%" "%SEQL%" "%BULBTEX%" "%CTELFIX%" "%SKY%" ^
+  -file "%MOD%" "%BM%" "%SKUL%" "%FLSH%" "%MUS%" "%FIX3D%" "%SEQL%" "%BULBTEX%" "%CTELFIX%" "%SKY%" -file "%LAVAFX%" ^
   -rtnolauncher -width 1280 -height 720 %RTDEBUG% ^
   +logfile "%LOGF%" ^
   +vid_fullscreen 0 +win_x -1 +win_y %WINY% +queryiwad false +sv_cheats 1 +god +notarget +map %MAPLUMP% ^
