@@ -700,6 +700,46 @@ warm.
 | 32, 35 | HDOR10 door recesses, painted warm salmon `(254,146,118)` inside halls at cold blue `(89,164,255)` | donor 15 | the hall's blue |
 | 47–52, 61–69, 93 | the H119 courtyard pillars, warm yellow `(254,225,109)` inside a 2944×2944 courtyard at `(146,194,254)` | donor 46 | the courtyard's blue |
 
+### DONE — MAP25, the eight lamp alcoves
+
+Reported as `screen/faketexturelitfloor_level25.png`, and named correctly on sight:
+*"just a texture on the floor under the ceiling light that has been color changed"*.
+
+| sectors | what | from | to |
+|---|---|---|---|
+| 19, 25, 26, 57, 58, 59, 60, 74 | 64×64 SFLATAS lamp alcoves, warm `(240,240,140)` inside rooms at cold blue `(80,120,200)` | donor 6 | the room's blue |
+
+Eight identical shallow recesses whose ceiling is **SFLATAS — a panel with four lamp
+bulbs painted on it** (the white blobs at the top of the screenshot). The fixture is
+real. The floor is not: `SFLATAM` on both sides of the line, same flat, same height,
+unbroken, with the alcove painted warm — a hard-edged colour change across a continuous
+diamond-plate floor, which is the gold tiles among the grey ones in the shot.
+
+**Purely the colour half, and `whatsthat` said so before any work started:**
+
+    lightlevel 200  tag 0
+    threshold 200 -> below: not self-emitting
+    brightest neighbour: sector 6 at 140  (delta +60)
+
+The emission test is strictly greater, so 200 never emitted and no amount of brightness
+work would have touched these — the same shape as the MAP13 courtyard pillars. All three
+scanners report MAP25 clean for this reason (`scan_light_specials` finds only 3 blinks,
+`scan_fake_lightshafts` and `scan_painted_light` find nothing).
+
+**The map contains its own control group.** Sectors **7 and 76** carry the *same* SFLATAS
+lamp ceiling and were left at 140 with the room's blue. So warm-and-bright is not how
+this fixture is lit anywhere else in the level — the frame test from MAP11's H66 panel,
+applied to a repeated element. The lightlevel was dropped 200 → 140 as well; that changes
+nothing under RT and is there only so the eight painted alcoves end up identical to the
+two unpainted ones.
+
+The room keeps its real lamps: thirteen `64LampTechLongHang` (1015) and ten 1016 stand
+120–176u from these alcoves with GLDEFS pointlights, and nothing here touches things.
+
+MAP25 is one of the maps in `d64r-3dfloor-rtfix.wad` — the builder re-stripped 4
+`Sector_Set3dFloor` linedefs, which is the load-order trap at the foot of this document
+doing its job.
+
 The door was reported as *"that door floor texture still has a harsh split of colour —
 is it the texture colour that was changed to simulate light in front of the door?"* Yes,
 exactly that: the floor texture is `CASFL27` on both sides of the line, and the torches

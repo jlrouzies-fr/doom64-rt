@@ -27,6 +27,11 @@ The moon, and the sky leaks it exposed (`rt_sun_*`, `rt_moon_*`, per-map aim,
 
 → **`docs/moon-and-sky-leaks.md`**
 
+Per-map fog (`rt_fog_*`, `RT_FOG_PRESETS`, the two RTGL1 froxel changes it
+needed, and why MAP26's moon is off):
+
+→ **`docs/rt-fog.md`**
+
 Anything DLSS Ray Reconstruction:
 
 → **`RAYRECONSTRUCTION.md`** (root, ~35 lines — start here, always)
@@ -219,6 +224,7 @@ light on amber art, so it fails a naive art-vs-light hue audit.
 | `tools/wash-scratch/00-RUN-ORDER.cmd` | **From-scratch wash ladder** (isolated `build/WashScratch`; play build untouched). |
 | `tools/launch-texture-gallery-ce-pbr.cmd` | Same MAP99 with DoomCE Substance PBR overlay (A/B). |
 | `tools/test_gallery_emis_qa.cmd` | Auto QA: emis hygiene + 8-yaw wash score (pass/fail). |
+| `tools/ab-fog.cmd` | Illuminated fog A/B: `full`/`off`/`nolight`/`flat`/`thin`/`dense`/`near`/`far`/`ambient`/`grey`/`moon`/`debug`, default MAP26. See `docs/rt-fog.md`. |
 | `tools/ab-water.cmd` | Water A/B: `stock`/`styl`/`flat`/`mirror`/`noglow`/`nocaus`/`debug`, default MAP10. Flats are tagged engine-side (`l_waterflag`), no setup needed. See `docs/rt-water.md`. |
 
 Important cvars on Retribution launch (do not crank blindly):

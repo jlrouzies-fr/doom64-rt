@@ -780,3 +780,41 @@ While building the above: `copy /Y` of `RTGL1.dll` fails when gzdoom is running
 (file locked), the failure is swallowed by `>nul`, and the script still prints
 BUILD_OK — so fresh shaders get playtested against an old DLL. The copy is now
 error-checked and the script aborts with a message naming the cause.
+
+## Illuminated fog — two RTGL1 froxel changes (2026-08-11)
+
+Nine Retribution maps ask for fog in their own MAPINFO (`fade` + `fogdensity`;
+MAP26 is cyan `00 56 56` at 200). Both keys belong to the rasterizer's fog and
+the RT path read neither, so no map showed any. Rebuilt as a participating
+**medium** in RTGL1's froxel volume rather than as a distance lerp, so the
+level's own lights scatter through it. Full write-up: `docs/rt-fog.md`.
+
+Two things RTGL1 could not express, both in `RtVolumetric.rgen`:
+
+- **`volumeMediaColor`** — the pass had no coloured medium at all. The only
+  colour was `volumeAmbient`, the *unlit* term, so a cyan fog still had white
+  haze around every lamp standing in it. Now a scattering albedo multiplying the
+  whole in-scattered term. `{1,1,1}` is the identity every unfogged map passes.
+  Extinction stays monochrome — the transmittance channel is one float all the
+  way to `CmPrepareFinal`, so per-channel would be a framebuffer change.
+- **`volumeAllLights`** — the pass scatters exactly **one** light, whatever
+  `LightManager::TryGetVolumetricLight` picks: a `RG_LIGHT_ADDITIONAL_VOLUMETRIC`
+  light if any exists (nothing in this game sets that flag) and otherwise the
+  sun. On MAP26, whose moon is deliberately off, that is *nothing* — the fog
+  collapsed to flat ambient, i.e. back to the rasterizer fog it was meant to
+  improve on. Now runs the full per-froxel direct estimate.
+
+The all-lights branch already existed (`ILLUMINATION_VOLUME`) but was gated on
+`illumVolumeEnable` = `rt_illum_volume`, which **also** switches how
+`RsWorld.inl` shades every rasterized translucent primitive in the game — so
+asking for lit fog would have meant accepting that. Split: `illumVolumeEnable`
+decides who *reads* `g_illuminationVolume`, `volumeAllLights` decides whether it
+is *computed*. Both write it, because the 0.05 temporal blend reads back what it
+stored last frame and never converges otherwise.
+
+Engine side (`rt_main.cpp`): `rt_fog_*`, `RT_FOG_PRESETS` (opt-in, MAP26 only),
+the `fog` CCMD. **Resolution is deferred to the first rendered frame** —
+`RT_OnLevelLoad` runs from `G_InitNew`, i.e. *before* `P_SetupLevel`, so
+`primaryLevel->fadeto` / `->fogdensity` there are still the previous map's.
+MAP26's `RT_MOON_PRESETS` row also drops the moon's light to 0: a directional
+light rakes a froxel volume from one bearing and the fog reads as a lit slab.

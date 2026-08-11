@@ -495,6 +495,34 @@ SHAFTS = [
              "touch the courtyard; 5, 186 and 187 border nothing but each other, so a "
              "per-sector 'brighter than every neighbour' test sees two of the five.",
     ),
+    Shaft(
+        "MAP33", [46], from_light=255, to_light=150,
+        enabled=True,
+        note="Reported via `whatsthat` (screen/map33fake.png): the 64x64 TITLEA alcove "
+             "at (1952,1184), painted 255 against sector 47 at 150 -- delta +105, the "
+             "widest on this map. Checked that TITLEA is not a repeated fixture before "
+             "fixing the instance: it appears on exactly two sectors, and the other (61) "
+             "is already at 200, below MAP33's 210 threshold.\n"
+             "\n"
+             "Also checked that MAP33 is not the actual title screen. Its MAPINFO name "
+             "is 'Titlemap' (D64HUSTR_33), but there is no `titlemap` directive anywhere "
+             "in the lump, so it is an ordinary playable level and relighting it cannot "
+             "darken the menu.",
+    ),
+    Shaft(
+        "MAP25", [19, 25, 26, 57, 58, 59, 60, 74], from_light=200, to_light=140,
+        enabled=True,
+        note="The brightness half of the MAP25 lamp alcoves -- see the TINTS entry for "
+             "the full write-up; the COLOUR is what was reported and what actually "
+             "shows. This entry changes nothing under RT and is here for consistency "
+             "only: 200 is not above MAP25's threshold of 200 (the test is strictly "
+             "greater), so these never self-emitted and `whatsthat` said so. Included "
+             "because the instruction was to make them like the rest, and the rest is "
+             "sectors 7 and 76 -- the same SFLATAS lamp ceiling, left by the author at "
+             "140 with the room's own blue. Dropping 200 to the hosts' 140 makes the "
+             "eight painted alcoves byte-for-byte the same fixture as the two "
+             "unpainted ones.",
+    ),
     # "despite the flame, the surround is fake lit" -- and it is. Same finding as the
     # MAP12 cages: a fixture INSIDE the sector makes the paint redundant, because RT
     # lights that fire or torch for real (RT_UploadFlameLights: intensity, flicker,
@@ -1282,6 +1310,46 @@ TINTS = [
              "work would ever have touched them -- this one is purely the colour "
              "half of the painted-light problem, and the reason TINTS exists as its "
              "own family.",
+    ),
+    Tint(
+        "MAP25",
+        [19, 25, 26, 57, 58, 59, 60, 74],
+        donor=6, from_lightcolor=0xF0F08C,
+        enabled=True,
+        note="THE REPORTED ONE (screen/faketexturelitfloor_level25.png): 'just a "
+             "texture on the floor under the ceiling light that has been color "
+             "changed'. Exactly that, and the map data agrees on every count.\n"
+             "\n"
+             "Eight identical 64x64 alcoves, each one a shallow recess whose ceiling "
+             "is SFLATAS -- a panel with FOUR LAMP BULBS painted on it, the white "
+             "blobs at the top of the screenshot. The fixture is real. What is not "
+             "real is the floor: SFLATAM on both sides of the line, same flat, same "
+             "height, unbroken, with the alcove painted warm yellow rgb(240,240,140) "
+             "inside host rooms at cold blue rgb(80,120,200). That lands as a "
+             "hard-edged colour change across a continuous diamond-plate floor -- the "
+             "gold tiles among the grey ones in the shot -- with no gradient and "
+             "nothing casting it. It is the author drawing the lamp's pool of light "
+             "onto the ground.\n"
+             "\n"
+             "This one is PURELY the colour half. `whatsthat` reported it outright: "
+             "lightlevel 200 against MAP25's threshold of 200, 'below: not "
+             "self-emitting'. The test is strictly greater, so these never emitted "
+             "and no amount of brightness work would have touched them -- the same "
+             "shape as the MAP13 courtyard pillars, and the reason TINTS exists "
+             "separately from SHAFTS.\n"
+             "\n"
+             "The clinching evidence is on the same map: sectors 7 and 76 carry the "
+             "SAME SFLATAS lamp ceiling and were left at 140 and rgb(80,120,200), "
+             "i.e. unpainted. So warm-and-bright is not how this fixture is lit "
+             "anywhere else in the level, which is the frame test from MAP11's H66 "
+             "panel applied to a repeated element. Donor 6 is the host of the "
+             "reported alcove; all eight hosts (5, 6, 12, 13, 29, 30, 55, 56) carry "
+             "the identical blue, so one donor serves the set and the eight cannot "
+             "end up looking different from each other.\n"
+             "\n"
+             "The bulbs themselves are untouched and the room keeps its real lamps -- "
+             "thirteen 64LampTechLongHang (1015) and ten 1016 stand 120-176u from "
+             "these alcoves and carry GLDEFS pointlights.",
     ),
     Tint(
         "MAP13", [32, 35], donor=15, from_lightcolor=0xFE9276,
