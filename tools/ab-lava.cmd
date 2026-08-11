@@ -1,15 +1,14 @@
 @echo off
 setlocal EnableExtensions
 rem ---------------------------------------------------------------------------
-rem A/B the lava. THE ONLY MAPS WITH A LAVA FLOOR ARE 14, 19, 20 AND 33 -- parsed
-rem straight out of the UDMF (texturefloor = "HLAVA*" / "D64LAVA*"), 1/2/2/3
-rem sectors respectively. Default here is 20.
+rem A/B the lava. Maps with a lava FLOOR, from the UDMF: MAP15 (1 sector),
+rem MAP20 (2), MAP21 (2, the big hall -- default here), MAP34 (3, and the only
+rem place D64LAVA1/2 appear). 8 lava-floor sectors in the whole game.
 rem
-rem Do not trust tools\_gallery for this: its per-map table lists HLAVA1 in
-rem 15/20/21/34, which is where the texture is REFERENCED, not where it is a
-rem floor. Testing the lava lights on MAP21 finds no lava sector at all and looks
-rem exactly like the feature being broken -- which is how an entire round of
-rem "still no light cast" was spent.
+rem A UDMF map here is exactly 6 lumps -- MAPxx, TEXTMAP, BEHAVIOR, ZNODES,
+rem SCRIPTS, ENDMAP. Any scan that walks a wider window and keys lumps by NAME
+rem reads the NEXT map's TEXTMAP and reports every answer shifted by one map.
+rem That produced a confident "MAP21 has no lava" here, which is false.
 rem
 rem TWO INDEPENDENT HALVES, and they were confused for each other for most of a
 rem session, so the arms keep them apart:
@@ -49,7 +48,7 @@ rem ---------------------------------------------------------------------------
 set "ARM=%~1"
 set "MAP=%~2"
 if "%ARM%"=="" set "ARM=on"
-if "%MAP%"==""  set "MAP=20"
+if "%MAP%"==""  set "MAP=21"
 
 set "COL=+rt_lava_light_r 255 +rt_lava_light_g 90 +rt_lava_light_b 20"
 set "GEO=+rt_lava_light_z 12 +rt_lava_light_max 256 +rt_lava_light_dist 2048"
