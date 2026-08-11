@@ -12,10 +12,16 @@ carries per-crack shading, warm/cool variation between plates and hand-placed
 hot spots that a mask derived from it cannot reproduce. So the albedo is never
 touched. What gets written is:
 
-  _e    GREY, so the hue comes entirely from the art the shader multiplies it
-        by. Carries four things: a small crust lift, the relief shading from
-        light coming OUT of the cracks, self-emission on the cracks themselves,
-        and the wide halo.
+  _e    the ART, times a scalar modulation -- so it is in COLOUR, and carries
+        the crust lift, the relief shading from light coming out of the cracks,
+        self-emission on the cracks, and the wide halo.
+
+        It has to be colour. HitInfo.inl: with an _e map, primary and reflection
+        emission is the RAW _e sample; only the indirect path multiplies by
+        emissiveMult, and NOTHING multiplies by the base colour. The first
+        version of this file wrote a grey mask on the assumption that the shader
+        would tint it with the albedo, and the lava rendered white. Whatever hue
+        the lava is to have must be in these pixels.
   _n    relief normal. Height is 1 - crack mask, so the molten line is the LOW
         point, which is what a crack is.
   _h    the same height, for parallax.
@@ -91,7 +97,7 @@ SELF_EMIT_GAMMA = 1.3
 
 
 def build(name: str):
-    """-> (unnormalised _e, height, normal_rgb, orm_rgb)"""
+    """-> (unnormalised _e as RGB, height, normal_rgb, orm_rgb)"""
     albedo, _authored_e = load_source(name)
     m = crack_mask(albedo)
 
@@ -103,12 +109,15 @@ def build(name: str):
     shade = glow * (0.30 + 1.7 * ndl)
     wide = blur(m, HALO_RADIUS)
 
-    e = (
+    mod = (
         CRUST_AMBIENT
         + CRUST_GAIN * shade
         + SELF_EMIT * (m**SELF_EMIT_GAMMA)
         + HALO_STRENGTH * wide
     )
+    # The art carries the hue -- that is the whole point of the look that was
+    # chosen, and it is also the only way hue reaches the screen at all.
+    e = albedo * mod[..., None]
 
     # Normal map, tangent space, +Z up. nx/ny already carry the strength.
     inv = 1.0 / np.sqrt(nx * nx + ny * ny + 1.0)
@@ -147,9 +156,13 @@ def apply(dry: bool) -> int:
         built = {n: build(n) for n in group}
         # ONE peak for the whole sequence, or the animation flickers.
         peak = max(float(e.max()) for e, _h, _n, _o in built.values())
-        mult = round(peak * 1.5, 3)  # 1.5 is the emissiveMult the lava ships with
+        # emissiveMult is NOT the brightness knob for what you see: primary and
+        # reflection use the raw _e sample and ignore it entirely (HitInfo.inl).
+        # It scales the INDIRECT contribution only, so it stays at what the lava
+        # shipped with; the visible level is set by the peak below.
+        mult = 1.5
 
-        print(f"  {'/'.join(group):28} peak _e {peak:5.2f}  -> emissiveMult {mult}")
+        print(f"  {'/'.join(group):28} peak _e {peak:5.3f}  (emissiveMult {mult}, indirect only)")
         for name, (e, h, normal, orm) in built.items():
             mults[name] = mult
             if dry:
