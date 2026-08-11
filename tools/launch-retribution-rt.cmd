@@ -523,8 +523,8 @@ start "" gzdoom.exe ^
   +rt_rr_reset_on_lightcut 1 +rt_rr_reset_on_dynlight 1 +rt_rr_reset_delta 0.5 +rt_rr_reset_min_ms 250 ^
   +rt_rr_reset_hold 0 +rt_rr_reset_now 0 +rt_rr_reset_debug 0 ^
   +rt_restir_initial 32 ^
-  +rt_lava_light_on 1 +rt_lava_light_intensity 180 +rt_lava_light_spacing 96 ^
-  +rt_lava_light_radius 0.6 +rt_lava_light_z 12 +rt_lava_light_max 256 +rt_lava_light_dist 2048 ^
+  +rt_lava_light_on 1 +rt_lava_light_intensity 60 +rt_lava_light_spacing 96 ^
+  +rt_lava_light_radius 0.6 +rt_lava_light_z 24 +rt_lava_light_max 256 +rt_lava_light_dist 2048 ^
   +rt_lava_light_r 255 +rt_lava_light_g 90 +rt_lava_light_b 20 +rt_lava_light_debug 0 ^
   +rt_water_style 1 +rt_water_liquids 1 ^
   +rt_water_tint_r 1 +rt_water_tint_g 1 +rt_water_tint_b 15 ^
