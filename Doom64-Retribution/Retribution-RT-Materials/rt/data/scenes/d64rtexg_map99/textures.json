@@ -801,7 +801,7 @@
       "textureName": "SMONBA",
       "roughnessDefault": 0.7,
       "metallicDefault": 0.25,
-      "emissiveMult": 1.0
+      "emissiveMult": 2.8
     },
     {
       "textureName": "CASF12",
@@ -3515,7 +3515,8 @@
     {
       "textureName": "CMPSW16B",
       "roughnessDefault": 0.7,
-      "metallicDefault": 0.25
+      "metallicDefault": 0.25,
+      "emissiveMult": 0.4
     },
     {
       "textureName": "CMPSW35A",
@@ -3899,15 +3900,15 @@
     },
     {
       "textureName": "SMONBB",
-      "emissiveMult": 1.0
+      "emissiveMult": 2.8
     },
     {
       "textureName": "SMONBC",
-      "emissiveMult": 1.0
+      "emissiveMult": 2.8
     },
     {
       "textureName": "SMONBD",
-      "emissiveMult": 1.0
+      "emissiveMult": 2.8
     },
     {
       "textureName": "SMONCB",
@@ -4064,6 +4065,226 @@
         190,
         255
       ]
+    },
+    {
+      "textureName": "CMPSW01B",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW02B",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW03B",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW05B",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW06B",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW07B",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW08B",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW09B",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW10B",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW11B",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW12B",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW13B",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW14B",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW15B",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW17B",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW18B",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW19B",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW20B",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW21B",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW23A",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW24B",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW25B",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW26A",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW27B",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW28A",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW29A",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW30B",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW31B",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW32A",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW33A",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW34B",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW35B",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW36B",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW37B",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW38B",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW39B",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW41B",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW42B",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW43B",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW44B",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW45A",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW46B",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW47A",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW48B",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW49B",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW50B",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW52B",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW53B",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW54B",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW55B",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW56B",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW57B",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW58B",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW59B",
+      "emissiveMult": 0.4
+    },
+    {
+      "textureName": "CMPSW62B",
+      "emissiveMult": 0.4
     }
   ]
 }

@@ -127,8 +127,19 @@ def main() -> int:
     print(f"world allowlist: {len(allow)}")
     if len(allow) < 20:
         errors.append(f"allowlist too small ({len(allow)})")
-    if len(allow) > 120:
-        errors.append(f"allowlist suspiciously large ({len(allow)}) — wash risk")
+    # The wash guard counts AREA risk, not names. Switch faces are excluded because a
+    # switch mask is a handful of texels — SWXCB is 7 of 1024 — so a hundred of them
+    # cannot wash anything, and they arrive in bulk: one lit 32x32 patch is stamped into
+    # up to 18 CMPSW* wall panels, and the panel is what the engine names, so all of them
+    # must be allowlisted or the composite switches go dark (the 2026-08-11 bug: 41 bare
+    # switch faces lit, 54 composite ones inert). Counting them here would have made the
+    # fix trip this guard and tempted someone to raise the threshold for everything,
+    # which is the one change that would let a real wash back in.
+    SWITCH_RE = re.compile(r"^(SWX|CMPSW\d+[AB]$)", re.I)
+    wash = {n for n in allow if not SWITCH_RE.match(n)}
+    print(f"  wash-relevant (non-switch): {len(wash)}")
+    if len(wash) > 120:
+        errors.append(f"allowlist suspiciously large ({len(wash)} non-switch) — wash risk")
 
     keep = load_keep_set()
     check_global(errors, keep)

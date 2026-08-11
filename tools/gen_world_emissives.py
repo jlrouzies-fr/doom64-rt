@@ -261,6 +261,38 @@ def compose_from_textures(lumps: dict[str, bytes], name: str) -> Image.Image | N
     return canvas
 
 
+def textures_composites(
+    lumps: dict[str, bytes]
+) -> list[tuple[str, int, int, list[tuple[str, int, int]]]]:
+    """Every ZDoom TEXTURES composite: (name, w, h, [(patch, x, y), ...]).
+
+    compose_from_textures() above answers "build me THIS texture"; this answers "which
+    textures embed patch P, and where". The switch expansion needs the second question:
+    a lit switch face is a 32x32 patch stamped into a wall panel, and it is the panel
+    the engine renders and names.
+    """
+    tex = lumps.get("TEXTURES")
+    if not tex:
+        return []
+    text = tex.decode("latin1", "replace")
+    out: list[tuple[str, int, int, list[tuple[str, int, int]]]] = []
+    for m in re.finditer(
+        r"(?im)^\s*(?:Texture|WallTexture|Flat)\s+\"?([\w\-\[\]]+)\"?\s*,\s*(\d+)\s*,\s*(\d+)"
+        r"\s*\n\s*\{(.*?)\n\}",
+        text,
+        re.S,
+    ):
+        patches = [
+            (pm.group(1).upper(), int(pm.group(2)), int(pm.group(3)))
+            for pm in re.finditer(
+                r"(?im)^\s*Patch\s+\"?([\w\-]+)\"?\s*,\s*(-?\d+)\s*,\s*(-?\d+)", m.group(4)
+            )
+        ]
+        if patches:
+            out.append((m.group(1).upper(), int(m.group(2)), int(m.group(3)), patches))
+    return out
+
+
 def resolve_albedo(lumps: dict[str, bytes], name: str) -> Image.Image | None:
     key = name.upper()
     if key in lumps:
@@ -994,6 +1026,7 @@ def patch_global_inline(path: Path, entries: dict[str, dict]) -> None:
         return
     text = path.read_text(encoding="utf-8")
     for name, meta in entries.items():
+        inserted = False
         parts = [f'"textureName":"{name}"']
         for k, v in meta.items():
             if k == "textureName":
@@ -1069,13 +1102,25 @@ def patch_global_inline(path: Path, entries: dict[str, dict]) -> None:
             else:
                 line = f"    ,   {{ {body} }}"
                 text = re.sub(r"\n(\s*\]\s*\}\s*)$", "\n" + line + r"\n\1", text, count=1)
-        # Drop any later single-line duplicates for this name
-        text = re.sub(
-            rf'^\s*,\s*\{{[ \t]*"textureName"[ \t]*:[ \t]*"{re.escape(name)}"[^}}\n]*\}}\s*$\n?',
-            "",
-            text,
-            flags=re.M,
-        )
+                inserted = True
+        # Drop any later single-line duplicates for this name.
+        #
+        # NOT when we just took the insert branch above. That branch appends the entry in
+        # exactly the single-line leading-comma form this pattern matches, and the pattern
+        # deletes every occurrence rather than every occurrence after the first — so an
+        # entry for a name that was NOT already in the file was appended and then removed
+        # again, in the same pass, leaving no trace and no error. Names already present
+        # were unaffected because their block is pretty-printed multiline, which is why
+        # this went unnoticed until the CMPSW* switch composites (2026-08-11): 56 masks
+        # written to rt/mat, 56 overlay rows, and zero of them reaching textures.json,
+        # which is the only file RTGL1 actually reads.
+        if not inserted:
+            text = re.sub(
+                rf'^\s*,\s*\{{[ \t]*"textureName"[ \t]*:[ \t]*"{re.escape(name)}"[^}}\n]*\}}\s*$\n?',
+                "",
+                text,
+                flags=re.M,
+            )
     path.write_text(text, encoding="utf-8")
 
 
@@ -1089,6 +1134,7 @@ def _authored_emis_keep(extra: set[str] | None = None) -> set[str]:
         overlay_dir / "textures_pinky_eyes.json",
         overlay_dir / "textures_fx.json",
         overlay_dir / "textures_explosions.json",
+        overlay_dir / "textures_statue_eyes.json",
     ):
         if not p.exists():
             continue
@@ -1453,6 +1499,53 @@ def main() -> None:
             d.mkdir(parents=True, exist_ok=True)
             eimg.save(d / f"{name}_e.png")
 
+    # ---- Composite switch faces -------------------------------------------------
+    #
+    # SWITCH_ON_EMIS names PATCHES. On a wall the engine renders and names the
+    # COMPOSITE, and Retribution stamps these 32x32 switch faces into 56 wall panels
+    # (CMPSW*) across 14 maps. Every lit patch had a working _e mask and every one of
+    # those 56 composites had none, so a switch on a bare SWXCA wall lit its eyes and
+    # the identical switch on a CMPSW panel stayed dead. That is the whole bug: 41 bare
+    # uses worked, 54 composite uses did not, and the four the report named
+    # (CMPSW53A/35A/43A/44A) were all in the second group.
+    #
+    # The mask is the patch's own _e PASTED at the recorded offset, never re-derived.
+    # One source of truth means the bare and composite forms cannot drift — the drift
+    # that produced the LPUF regression.
+    #
+    # Only the ON frame of a pair is in SWITCH_ON_EMIS, and which letter that is varies:
+    # SWXC lights on B, SWXCL and SWXCKL light on A (their eyes go OUT when pressed).
+    # Keying off the allowlist rather than the letter is what keeps those two right.
+    # A composite embedding an unlit patch has no mask to paste and is skipped, which is
+    # how the dark CMPSW*A panels correctly get nothing.
+    comp_made = 0
+    for comp, cw, ch, patches in textures_composites(lumps):
+        if comp in entries:
+            continue  # a real rule already owns this texture; do not clobber it
+        lit = [(p, px, py) for p, px, py in patches if p in SWITCH_ON_EMIS]
+        if not lit:
+            continue
+        canvas = Image.new("RGBA", (cw, ch), (0, 0, 0, 0))
+        donor_meta: dict | None = None
+        for pname, px, py in lit:
+            src_path = MAT / f"{pname}_e.png"
+            if not src_path.exists():
+                continue
+            pe = Image.open(src_path).convert("RGBA")
+            canvas.paste(pe, (px, py), pe)
+            donor_meta = entries.get(pname)
+        if donor_meta is None or canvas.getbbox() is None or e_max(canvas) < 8:
+            continue
+        meta = dict(donor_meta)
+        meta["textureName"] = comp
+        entries[comp] = meta
+        for d in (MAT, MAT_DEV, OMAT):
+            d.mkdir(parents=True, exist_ok=True)
+            canvas.save(d / f"{comp}_e.png")
+        comp_made += 1
+    if comp_made:
+        by_src["switch-composite"] += comp_made
+
     if "SMONF4" in entries and "SMONF5" not in entries:
         donor_path = MAT / "SMONF4_e.png"
         if donor_path.exists():
@@ -1556,6 +1649,19 @@ def main() -> None:
             path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
         return n
 
+    # replace=True: the overlay is rewritten from THIS run's entries, so any authored
+    # name the run happens to skip silently falls out of it. That is not theoretical —
+    # the 2026-08-11 switch-composite run dropped SFLATAQ, SFLATAS, SPACEAZ and the nine
+    # SMONF*/SMONLB* monitors, all of which are committed and authored. The global
+    # textures.json kept their meta (patch_global_inline only rewrites what it is given),
+    # so nothing changed in game that day; the damage is latent, because
+    # _authored_emis_keep() builds the allowlist FROM this overlay and the next scrub pass
+    # would then strip exactly those names out of the global as strays.
+    #
+    # If you run this tool, diff the overlay against HEAD before committing and put back
+    # anything it removed that you did not mean to retire. SFLATAQ/SFLATAS/SPACEAZ in
+    # particular must keep their mult — see LAMP_FLAT_NO_EMIS above for why removing it
+    # was the wrong half of a fix once already.
     upsert_json(OVERLAY, entries, replace=True)
     for scene in (SCENE_MAP01, SCENE_GALLERY):
         if scene.exists():
