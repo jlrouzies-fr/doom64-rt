@@ -602,6 +602,62 @@ static scan lacks.
 - Do not answer a repeated report by re-explaining the previous elimination. Build the
   instrument instead — §25 and §28 both exist because that was learned late.
 
+## 30. `whatsthat` — identify a reported surface from the game, not from the screenshot
+
+Point at a surface in play and type `whatsthat`:
+
+```
+whatsthat: sector 150  lightlevel 255  tag 0  middle texture 'C53'
+           threshold 220 -> ABOVE: this surface SELF-EMITS
+           brightest neighbour: sector 0 at 180  (delta +75)
+```
+
+Sector index, lightlevel, tag, the texture on the **exact** surface hit (floor / ceiling /
+top / middle / bottom), whether it is above the map's `rt_sector_emis` threshold, and the
+frame test printed — brightest neighbour and delta.
+
+It exists because the alternative was costing a round trip each time. Identifying a
+reported surface meant rendering candidate textures and picking the one that looked like
+the screenshot. That got `C921` and `HDOR10` right, and `C52` and `C53` wrong. **A
+screenshot does not carry a sector index; the running game does.**
+
+Note the MAP12 cage came back as `C53` — deliberately excluded from texture matching as
+common wall cladding (597 sectors game-wide). No amount of texture matching could have
+found it; it needed the geometry.
+
+**Rule:** when a report names a place rather than a thing ("the cage", "the panel by the
+door"), get the sector from the game before forming any theory about it.
+
+## 31. A fixture INSIDE the sector makes the paint redundant, not warranted
+
+The survey reports the nearest light-bearing thing, and it is tempting to read a small
+distance as "the paint is reinforcing something real, leave it alone". That reading was
+wrong every time it was applied:
+
+| case | fixture | verdict |
+|---|---|---|
+| MAP11 H66 face panel | 133u | fake — its own frame stayed dark |
+| MAP12 C53 rust panels | 45u | fake — the wall they are bolted to stayed dark |
+| MAP12 cages (150/151) | **0u**, a `64BigFire` *inside* | fake — see below |
+| MAP13 door recess | 97u | fake |
+
+The cages are the clearest. Under RT that fire is a **real light** —
+`RT_UploadFlameLights` gives it intensity, flicker and falloff. So a painted 255 on the
+sector containing it is not the fixture's light; it is a **second copy** of that light,
+flat and sourceless, laid on top of the real one. Removing it leaves the cage lit by its
+own fire, which is the entire point of the port (§1: the original sector data is baked
+shading, not lighting).
+
+**Rules:**
+
+- Fixture distance is a weak signal and it has pointed the wrong way four times out of
+  four. The strong signal is the **host**: what does this element sit inside, and is that
+  darker?
+- A fixture *inside* the element is evidence the paint is **redundant**, because RT will
+  light it for real. It is not evidence the paint is earned.
+- The one thing fixture proximity is good for is deciding what to look at first, never
+  what to skip.
+
 ## Pending visual confirmation
 
 `RT_UploadCeilingEdgeLamps` (MAP03 ceiling strips) and the map-relative

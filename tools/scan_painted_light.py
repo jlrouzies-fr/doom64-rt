@@ -177,17 +177,133 @@ def already_handled(mapname: str):
     return bright, tinted
 
 
-def scan_map(lumps, mapname: str, delta: int, entries: bool, lit_nums: set[int]) -> int:
-    start, end = map_lump_range(lumps, mapname)
-    text = next(
-        (decode_textmap(b) for n, b in lumps[start:end] if n.upper() == "TEXTMAP"), None
-    )
-    if text is None:
-        return 0
+SEQL_WAD = WAD.parent / "d64r-seqlight-fix.wad"
+
+# Families that are SUPPOSED to read as lit: switches, exit signs, monitors, teleport
+# pads, key floors. SEXIT even ships an emissive mask. Stripping these is the CRTRAKA
+# mistake -- a rule applied by name to art that never asked for it.
+EMITTER_FAMILIES = ("SWX", "SEXIT", "CRT", "SMON", "CFACE", "SPORT", "SKEYFL", "CMPSW")
+
+
+def is_emitter_family(tex: str) -> bool:
+    return tex.upper().startswith(EMITTER_FAMILIES)
+
+
+def effective_lumps():
+    """Map name -> the lumps the GAME actually loads for it.
+
+    d64r-seqlight-fix.wad loads after the base wad, so for any map it contains, ITS
+    version is the one in play. Reading that instead of the original is what makes
+    'already fixed' disappear from the survey by construction, rather than by keeping a
+    list of what was done and hoping it stays in sync.
+    """
+    base = read_wad_lumps(WAD)
+    patched = read_wad_lumps(SEQL_WAD) if SEQL_WAD.exists() else []
+    have = set()
+    for n, _ in patched:
+        if re.fullmatch(r"MAP\d\d", n.upper()):
+            have.add(n.upper())
+    return base, patched, have
+
+
+def map_text(base, patched, have, mapname):
+    src = patched if mapname in have else base
+    try:
+        s, e = map_lump_range(src, mapname)
+    except StopIteration:
+        return None
+    return next((decode_textmap(b) for n, b in src[s:e] if n.upper() == "TEXTMAP"), None)
+
+
+def known_fixture_textures(base):
+    """Texture signatures of everything we have ALREADY confirmed and repaired.
+
+    Read off the enabled SHAFTS entries against the ORIGINAL map data, so the set is
+    'what a confirmed fake looks like' rather than a hand-kept list. Finding the same
+    textures elsewhere is the safest possible extrapolation: it is the same fixture,
+    built the same way, painted the same way, on another map.
+    """
+    try:
+        import make_seqlight_fix as S
+    except Exception:
+        return {}
+    out: dict[str, list[str]] = defaultdict(list)
+    for h in getattr(S, "SHAFTS", []):
+        if not h.enabled:
+            continue
+        text = None
+        try:
+            s, e = map_lump_range(base, h.mapname)
+            text = next((decode_textmap(b) for n, b in base[s:e]
+                         if n.upper() == "TEXTMAP"), None)
+        except StopIteration:
+            pass
+        if not text:
+            continue
+        m = MapInfo(text)
+        for si in h.sectors:
+            if si < len(m.sec):
+                for t in m.tex.get(si, ()):
+                    if not is_emitter_family(t):
+                        out[t.upper()].append(f"{h.mapname}:{si}")
+    return out
+
+
+def elements(m, thr: float, min_delta: int):
+    """Group the map's over-threshold sectors into ELEMENTS, then test each element
+    against what borders it.
+
+    Three shapes of the same defect defeated a per-sector test, each found the hard way
+    from a report (MAP11, MAP18, MAP12):
+
+      SINGLE   a recess or panel, brighter than the wall it is cut into.
+      NESTED   a floor plus the one-unit ring around it. The inner sector's ONLY
+               neighbour is its own ring, so per-sector it looks like it has no darker
+               host and is skipped entirely.
+      REGION   a whole painted area -- MAP12's cave is eleven connected sectors. A
+               contiguous region has no INTERNAL darker neighbour; only its boundary
+               does, so a per-sector test sees a few edge cases and misses the body.
+
+    Connected components of over-threshold sectors handle all three, because in every
+    case the element IS exactly one component. The comparison is then the component
+    against its BOUNDARY -- the "frame test": the surface the element is set into.
+
+    `host` (the repair target) is the BRIGHTEST bordering sector, so a repair can never
+    take an element below the room around it. That is the property that makes bulk
+    application safe even where a call is wrong: the failure mode is "a panel stops
+    standing out", never "a room goes black".
+    """
+    above = {i for i in range(len(m.sec)) if m.light(i) > thr}
+    seen: set[int] = set()
+    out = []
+    for s0 in above:
+        if s0 in seen:
+            continue
+        comp = {s0}
+        stack = [s0]
+        seen.add(s0)
+        while stack:
+            x = stack.pop()
+            for n in m.adj.get(x, ()):
+                if n in above and n not in seen:
+                    seen.add(n)
+                    comp.add(n)
+                    stack.append(n)
+        border = {n for i in comp for n in m.adj.get(i, ()) if n not in above}
+        if not border:
+            continue                      # sealed off; nothing to compare against
+        host = max(m.light(n) for n in border)
+        lo = min(m.light(i) for i in comp)
+        if lo - host < min_delta:
+            continue
+        out.append((sorted(comp), host, lo))
+    return out
+
+
+def scan_text(text: str, mapname: str, delta: int, lit_nums: set[int], known: dict):
     m = MapInfo(text)
     if not m.sec:
-        return 0
-
+        return []
     counts: dict[str, int] = defaultdict(int)
     for i in range(len(m.sec)):
         for t in m.tex.get(i, ()):
@@ -204,112 +320,134 @@ def scan_map(lumps, mapname: str, delta: int, entries: bool, lit_nums: set[int])
         except ValueError:
             continue
         if ty in LIGHT_THINGS or ty in lit_nums:
-            fixtures.append((float(t.get("x", 0)), float(t.get("y", 0)), ty))
+            fixtures.append((float(t.get("x", 0)), float(t.get("y", 0))))
 
-    def nearest_fixture(i: int):
-        c = m.centre(i)
-        if not c or not fixtures:
-            return None
-        return min((math.hypot(x - c[0], y - c[1]), ty) for x, y, ty in fixtures)
+    def nearest_fixture(ids):
+        best = None
+        for i in ids:
+            c = m.centre(i)
+            if not c or not fixtures:
+                continue
+            d = min(math.hypot(x - c[0], y - c[1]) for x, y in fixtures)
+            best = d if best is None else min(best, d)
+        return best
 
-    done_bright, done_tint = already_handled(mapname)
-
-    bright, tinted = [], []
-    for i in range(len(m.sec)):
-        nb = list(m.adj.get(i, ()))
-        if not nb:
+    rows = []
+    for comp, host, lo in elements(m, thr, delta):
+        tex = {t.upper() for i in comp for t in m.tex.get(i, ())}
+        # Drop anything whose ONLY identity is an emitter family: switches, exit signs,
+        # monitors, teleport pads and key floors are meant to read as lit.
+        plain = {t for t in tex if not is_emitter_family(t)}
+        if not plain:
             continue
-        hi_nb = max(m.light(n) for n in nb)
-        if m.light(i) > thr and m.light(i) - hi_nb >= delta:
-            bright.append((i, m.light(i), hi_nb))
-        # Colour: differs from EVERY neighbour, and is small enough to be an element
-        # inside a room rather than a room in its own right.
-        mine = m.colour(i)
-        if all(colour_dist(mine, m.colour(n)) >= COLOUR_DELTA for n in nb):
-            big = max(m.area(n) for n in nb)
-            if m.area(i) <= big * AREA_RATIO:
-                tinted.append((i, mine, max(nb, key=lambda n: m.area(n))))
-
-    if not bright and not tinted:
-        return 0
-
-    print(f"\n=== {mapname}   sectors={len(m.sec)}  emis threshold={thr:.0f}  "
-          f"fixtures placed={len(fixtures)}")
-
-    groups: dict[tuple, list] = defaultdict(list)
-    for i, l, hi in bright:
-        groups[(m.signature(i), hi)].append((i, l))
-
-    if groups:
-        print(f"\n  PAINTED BRIGHTNESS  (lightlevel > {thr:.0f} and >= {delta} over every neighbour)")
-        print(f"    {'texture':10} {'->':>4} {'n':>3}  {'fixture':>16}  sectors")
-        for (sig, to), members in sorted(groups.items(), key=lambda kv: -len(kv[1])):
-            ids = [i for i, _ in members]
-            nf = [nearest_fixture(i) for i in ids]
-            nf = [x for x in nf if x]
-            near = f"{min(x[0] for x in nf):.0f}u" if nf else "none on map"
-            mark = " [done]" if set(ids) <= done_bright else ""
-            print(f"    {sig:10} {to:4d} {len(ids):3d}  {near:>16}  "
-                  f"{ids if len(ids) <= 12 else str(ids[:12]) + '...'}{mark}")
-
-    if tinted:
-        print(f"\n  PAINTED COLOUR  (differs >= {COLOUR_DELTA} from every neighbour, "
-              f"area <= {AREA_RATIO:.0%} of host)")
-        print(f"    {'sec':>5} {'colour':>16} {'host':>5} {'host colour':>16}  "
-              f"{'fixture':>12}  texture")
-        for i, c, host in tinted:
-            nf = nearest_fixture(i)
-            near = f"{nf[0]:.0f}u" if nf else "none"
-            mark = " [done]" if i in done_tint else ""
-            print(f"    {i:5d} {str(c):>16} {host:5d} {str(m.colour(host)):>16}  "
-                  f"{near:>12}  {m.signature(i)}{mark}")
-
-    if entries:
-        print("\n  --- paste-ready entries for tools/make_seqlight_fix.py ---")
-        for (sig, to), members in sorted(groups.items(), key=lambda kv: -len(kv[1])):
-            ids = [i for i, _ in members]
-            if set(ids) <= done_bright:
-                continue
-            froms = sorted({l for _, l in members})
-            if len(froms) != 1:
-                print(f"    # {sig}: mixed from_light {froms}, split before using")
-                continue
-            nf = [nearest_fixture(i) for i in ids]
-            nf = [x for x in nf if x]
-            near = f"{min(x[0] for x in nf):.0f}u" if nf else "no fixture on the map"
-            print(f'    Shaft(\n        "{mapname}", {ids}, from_light={froms[0]}, '
-                  f'to_light={to},\n        enabled=False,   # nearest fixture {near}\n'
-                  f'        note="{sig} x{len(ids)} — UNREVIEWED, judge in play.",\n    ),')
-        for i, c, host in tinted:
-            if i in done_tint:
-                continue
-            print(f'    Tint(\n        "{mapname}", [{i}], donor={host}, '
-                  f'from_lightcolor=0x{int(m.sec[i].get("lightcolor", "0")) & 0xFFFFFF:06X},\n'
-                  f'        enabled=False,   # {m.signature(i)}\n'
-                  f'        note="UNREVIEWED.",\n    ),')
-
-    return len(bright) + len(tinted)
+        rows.append({
+            "map": mapname, "sectors": comp, "host": host, "from": lo,
+            "froms": sorted({m.light(i) for i in comp}),
+            "shape": "single" if len(comp) == 1 else ("pair" if len(comp) == 2 else "region"),
+            "tex": ",".join(sorted(plain)[:3]),
+            "known": sorted(plain & set(known)),
+            "fixture": nearest_fixture(comp), "thr": thr,
+        })
+    return rows
 
 
 def main() -> None:
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     entries = "--entries" in sys.argv
+    known_only = "--known" in sys.argv
     delta = 30
     if "--delta" in sys.argv:
         delta = int(sys.argv[sys.argv.index("--delta") + 1])
 
-    lumps = read_wad_lumps(WAD)
-    lit_nums = lit_actor_editor_numbers(lumps)
-    print(f"light-bearing actor editor numbers from GLDEFS+DECORATE: {len(lit_nums)}")
+    base, patched, have = effective_lumps()
+    lit_nums = lit_actor_editor_numbers(base)
+    known = known_fixture_textures(base)
 
     maps = [f"MAP{int(a):02d}" for a in args] or [f"MAP{i:02d}" for i in range(1, 35)]
-    total = 0
+    allrows = []
     for mp in maps:
-        try:
-            total += scan_map(lumps, mp, delta, entries, lit_nums)
-        except StopIteration:
+        text = map_text(base, patched, have, mp)
+        if text is None:
             continue
-    print(f"\nTOTAL candidates across {len(maps)} map(s): {total}")
+        allrows.extend(scan_text(text, mp, delta, lit_nums, known))
+
+    if known_only:
+        allrows = [r for r in allrows if r["known"]]
+
+    print()
+    print("=" * 80)
+    print("PAINTED LIGHT — elements above their map's emission threshold and at least")
+    print(f"{delta} brighter than everything bordering them.")
+    print()
+    print(f"Reading the PATCHED map where one exists ({len(have)} maps in "
+          f"d64r-seqlight-fix.wad), so anything already repaired is simply gone.")
+    print("Switch / exit / monitor / teleporter / key families are excluded — those are")
+    print("meant to read as lit.")
+    if known_only:
+        print()
+        print("--known: showing ONLY elements built from a texture we have already")
+        print("confirmed and repaired elsewhere. Same fixture, another map.")
+    print("=" * 80)
+
+    if known:
+        print()
+        print(f"Confirmed-fake fixture textures ({len(known)}), from the enabled SHAFTS entries:")
+        for t in sorted(known):
+            where = known[t]
+            print(f"   {t:12} already fixed at {', '.join(where[:4])}"
+                  f"{' …' if len(where) > 4 else ''}")
+
+    bymap: dict[str, list] = defaultdict(list)
+    for r in allrows:
+        bymap[r["map"]].append(r)
+
+    print()
+    print(f"{'map':7}{'elems':>6}{'sectors':>8}{'single':>7}{'pair':>5}{'region':>7}"
+          f"   biggest element")
+    for mp in sorted(bymap, key=lambda k: -sum(len(r["sectors"]) for r in bymap[k])):
+        rs = bymap[mp]
+        big = max(rs, key=lambda r: len(r["sectors"]))
+        print(f"{mp:7}{len(rs):6}{sum(len(r['sectors']) for r in rs):8}"
+              f"{sum(1 for r in rs if r['shape']=='single'):7}"
+              f"{sum(1 for r in rs if r['shape']=='pair'):5}"
+              f"{sum(1 for r in rs if r['shape']=='region'):7}"
+              f"   {big['tex'][:26]} x{len(big['sectors'])}")
+
+    print()
+    print(f"TOTAL: {len(allrows)} elements, {sum(len(r['sectors']) for r in allrows)} "
+          f"sectors, {len(bymap)} maps")
+    for sh in ("single", "pair", "region"):
+        k = [r for r in allrows if r["shape"] == sh]
+        if k:
+            print(f"   {sh:7} {len(k):4d} elements  "
+                  f"{sum(len(r['sectors']) for r in k):4d} sectors")
+
+    if known_only and allrows:
+        print()
+        print("EVERY MATCH (same fixture as one already repaired):")
+        print(f"   {'map':7}{'n':>3}{'from':>6}{'->':>5}{'shape':>8}  "
+              f"{'matched texture(s)':28} sectors")
+        for r in sorted(allrows, key=lambda r: (r["map"], -len(r["sectors"]))):
+            ids = str(r["sectors"][:8]) + ("…" if len(r["sectors"]) > 8 else "")
+            print(f"   {r['map']:7}{len(r['sectors']):3}{r['from']:6}{r['host']:5}"
+                  f"{r['shape']:>8}  {','.join(r['known'])[:28]:28} {ids}")
+
+    if entries:
+        print()
+        print("  --- paste-ready ---")
+        for mp in sorted(bymap):
+            for r in sorted(bymap[mp], key=lambda r: -len(r["sectors"])):
+                froms = r["froms"]
+                if len(froms) != 1:
+                    print(f"    # {mp} {r['sectors']}: mixed from_light {froms} — split first")
+                    continue
+                why = ("matches " + ",".join(r["known"])) if r["known"] else r["tex"]
+                print("    Shaft(")
+                print(f'        "{mp}", {r["sectors"]}, from_light={froms[0]}, '
+                      f'to_light={r["host"]},')
+                print(f'        enabled=False,   # {why}')
+                print(f'        note="{r["tex"]} x{len(r["sectors"])} — UNREVIEWED.",')
+                print("    ),")
 
 
 if __name__ == "__main__":

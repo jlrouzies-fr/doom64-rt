@@ -220,6 +220,173 @@ class Shaft:
 
 
 SHAFTS = [
+    # ---- PANEL SWEEP -----------------------------------------------------------
+    # 29 elements, 36 sectors, 9 maps. Not found by eye: found by taking the fixtures
+    # ALREADY confirmed from screenshots and repaired in this table, then looking for
+    # the same ones everywhere else.
+    #
+    # The match set is DERIVED, not hand-listed. tools/scan_painted_light.py reads the
+    # textures off this table's own enabled entries, then keeps only those used on
+    # FEWER THAN 40 sectors game-wide. That cut is the whole safety of the sweep --
+    # C53 appears on 597 sectors, C35 on 245, C10 on 234, C52 on 179. Matching those
+    # would strip whole walls because a wall somewhere else was painted, which is "how
+    # the level looks", not a defect. What survives is C921, C22, C911, C402/C403,
+    # HDOR10, C74, C77, C79, H56, H66, H90, H116, HTRAC1, HELLAE, C19, C307B1 --
+    # alcoves, recessed panels, door surrounds and trap faces.
+    #
+    # Every entry is above its map's emission threshold, at least 30 brighter than
+    # EVERYTHING bordering it, and six sectors or fewer. to_light is the brightest
+    # bordering sector, so no entry here can take a room below what surrounds it.
+    #
+    # Deliberately excluded: the switch / exit / monitor / teleporter / key families,
+    # which are supposed to read as lit (stripping those would be the CRTRAKA mistake);
+    # and one 28-sector region on MAP32 that matched HDOR10 -- a 28-sector region is not
+    # a panel and wants looking at rather than sweeping.
+    Shaft(
+        "MAP12", [30], from_light=255, to_light=180,
+        enabled=True,
+        note="C402 panel x1 -- same fixture already confirmed and repaired elsewhere; see the PANEL SWEEP note above.",
+    ),
+    Shaft(
+        "MAP12", [132], from_light=255, to_light=180,
+        enabled=True,
+        note="C402 panel x1 -- same fixture already confirmed and repaired elsewhere; see the PANEL SWEEP note above.",
+    ),
+    Shaft(
+        "MAP14", [78], from_light=255, to_light=220,
+        enabled=True,
+        note="C74 panel x1 -- same fixture already confirmed and repaired elsewhere; see the PANEL SWEEP note above.",
+    ),
+    Shaft(
+        "MAP14", [79], from_light=255, to_light=220,
+        enabled=True,
+        note="C74 panel x1 -- same fixture already confirmed and repaired elsewhere; see the PANEL SWEEP note above.",
+    ),
+    Shaft(
+        "MAP14", [81], from_light=255, to_light=220,
+        enabled=True,
+        note="C74 panel x1 -- same fixture already confirmed and repaired elsewhere; see the PANEL SWEEP note above.",
+    ),
+    Shaft(
+        "MAP16", [114], from_light=255, to_light=160,
+        enabled=True,
+        note="C22 panel x1 -- same fixture already confirmed and repaired elsewhere; see the PANEL SWEEP note above.",
+    ),
+    Shaft(
+        "MAP16", [121], from_light=255, to_light=160,
+        enabled=True,
+        note="C911 panel x1 -- same fixture already confirmed and repaired elsewhere; see the PANEL SWEEP note above.",
+    ),
+    Shaft(
+        "MAP16", [183], from_light=255, to_light=160,
+        enabled=True,
+        note="C911 panel x1 -- same fixture already confirmed and repaired elsewhere; see the PANEL SWEEP note above.",
+    ),
+    Shaft(
+        "MAP16", [190], from_light=255, to_light=200,
+        enabled=True,
+        note="C22 panel x1 -- same fixture already confirmed and repaired elsewhere; see the PANEL SWEEP note above.",
+    ),
+    Shaft(
+        "MAP16", [197], from_light=255, to_light=220,
+        enabled=True,
+        note="C921 panel x1 -- same fixture already confirmed and repaired elsewhere; see the PANEL SWEEP note above.",
+    ),
+    Shaft(
+        "MAP16", [209], from_light=255, to_light=180,
+        enabled=True,
+        note="C921 panel x1 -- same fixture already confirmed and repaired elsewhere; see the PANEL SWEEP note above.",
+    ),
+    Shaft(
+        "MAP18", [82, 83, 84], from_light=255, to_light=150,
+        enabled=True,
+        note="C307B1 panel x3 -- same fixture already confirmed and repaired elsewhere; see the PANEL SWEEP note above.",
+    ),
+    Shaft(
+        "MAP18", [133], from_light=255, to_light=200,
+        enabled=True,
+        note="C22 panel x1 -- same fixture already confirmed and repaired elsewhere; see the PANEL SWEEP note above.",
+    ),
+    Shaft(
+        "MAP18", [202], from_light=255, to_light=200,
+        enabled=True,
+        note="C921 panel x1 -- same fixture already confirmed and repaired elsewhere; see the PANEL SWEEP note above.",
+    ),
+    Shaft(
+        "MAP18", [264], from_light=255, to_light=150,
+        enabled=True,
+        note="C911 panel x1 -- same fixture already confirmed and repaired elsewhere; see the PANEL SWEEP note above.",
+    ),
+    Shaft(
+        "MAP18", [265], from_light=255, to_light=150,
+        enabled=True,
+        note="C911 panel x1 -- same fixture already confirmed and repaired elsewhere; see the PANEL SWEEP note above.",
+    ),
+    Shaft(
+        "MAP20", [254], from_light=255, to_light=180,
+        enabled=True,
+        note="H116 panel x1 -- same fixture already confirmed and repaired elsewhere; see the PANEL SWEEP note above.",
+    ),
+    Shaft(
+        "MAP21", [232], from_light=255, to_light=170,
+        enabled=True,
+        note="C921 panel x1 -- same fixture already confirmed and repaired elsewhere; see the PANEL SWEEP note above.",
+    ),
+    Shaft(
+        "MAP21", [233, 234, 235], from_light=255, to_light=170,
+        enabled=True,
+        note="C921 panel x3 -- same fixture already confirmed and repaired elsewhere; see the PANEL SWEEP note above.",
+    ),
+    Shaft(
+        "MAP21", [245], from_light=255, to_light=170,
+        enabled=True,
+        note="C921 panel x1 -- same fixture already confirmed and repaired elsewhere; see the PANEL SWEEP note above.",
+    ),
+    Shaft(
+        "MAP21", [246], from_light=255, to_light=170,
+        enabled=True,
+        note="C921 panel x1 -- same fixture already confirmed and repaired elsewhere; see the PANEL SWEEP note above.",
+    ),
+    Shaft(
+        "MAP21", [247], from_light=255, to_light=170,
+        enabled=True,
+        note="C921 panel x1 -- same fixture already confirmed and repaired elsewhere; see the PANEL SWEEP note above.",
+    ),
+    Shaft(
+        "MAP22", [112], from_light=255, to_light=200,
+        enabled=True,
+        note="C74,C911 panel x1 -- same fixture already confirmed and repaired elsewhere; see the PANEL SWEEP note above.",
+    ),
+    Shaft(
+        "MAP22", [122], from_light=255, to_light=160,
+        enabled=True,
+        note="C921 panel x1 -- same fixture already confirmed and repaired elsewhere; see the PANEL SWEEP note above.",
+    ),
+    Shaft(
+        "MAP22", [123], from_light=255, to_light=160,
+        enabled=True,
+        note="C911 panel x1 -- same fixture already confirmed and repaired elsewhere; see the PANEL SWEEP note above.",
+    ),
+    Shaft(
+        "MAP22", [153], from_light=255, to_light=180,
+        enabled=True,
+        note="C911 panel x1 -- same fixture already confirmed and repaired elsewhere; see the PANEL SWEEP note above.",
+    ),
+    Shaft(
+        "MAP22", [158], from_light=255, to_light=190,
+        enabled=True,
+        note="C921 panel x1 -- same fixture already confirmed and repaired elsewhere; see the PANEL SWEEP note above.",
+    ),
+    Shaft(
+        "MAP23", [255, 256, 292, 326], from_light=255, to_light=160,
+        enabled=True,
+        note="C22 panel x4 -- same fixture already confirmed and repaired elsewhere; see the PANEL SWEEP note above.",
+    ),
+    Shaft(
+        "MAP24", [72], from_light=255, to_light=170,
+        enabled=True,
+        note="HELLAE panel x1 -- same fixture already confirmed and repaired elsewhere; see the PANEL SWEEP note above.",
+    ),
     # The same defect as the shafts below, on a different shape of sector: a wall
     # element painted bright while the room it sits in is not. No special, no ACS --
     # both were surveyed for MAP13 and neither covers these (scan_light_specials 13
@@ -271,6 +438,80 @@ SHAFTS = [
     # Enabled where the nearest light-bearing thing is 279u or further. Held back:
     # sector 210 (fixture 40u) and 152 (133u), close enough that the paint may be
     # reinforcing a real fixture, and 96 (160u) for the same reason.
+    Shaft(
+        "MAP12", [94, 95, 96, 97, 98, 99, 100, 101, 102, 119, 229],
+        from_light=255, to_light=180,
+        enabled=True,
+        note="THE REPORTED ONE (screen/fakelitcave_level12.png). The cave, C402/C403 "
+             "rough rock -- eleven CONNECTED sectors all painted 255 inside a map "
+             "whose median is 180 and whose threshold is 220, bordered on every side "
+             "by 180. The whole region emits, which is why the rock reads evenly lit "
+             "with no falloff anywhere while the floor tiles in front stay dark.\n"
+             "\n"
+             "Found by clustering, not by the neighbour test. A contiguous painted "
+             "REGION has no internal darker neighbour -- only its boundary sectors do "
+             "-- so 'brighter than every neighbour' sees a handful of edge cases and "
+             "misses the body of it. Connected components of above-threshold sectors, "
+             "compared against what borders the component, is the test that finds "
+             "this shape.\n"
+             "\n"
+             "The candles in that shot are real 64WallTorch/candle things and are "
+             "untouched: they have proper falloff pools on the right-hand wall, which "
+             "is exactly what the painted rock does not.",
+    ),
+    Shaft(
+        "MAP12", [247, 250, 251, 252, 253, 254, 255, 260, 261, 262, 263, 264, 265],
+        from_light=255, to_light=180,
+        enabled=True,
+        note="THE REPORTED ONE (screen/fakelitpanel_level12.png). The C53 rust panels "
+             "with the stud dots, painted 255 on grey stone walls at 180. Four TRIPLES "
+             "plus one single, and the triples' geometry is the screenshot: a tall "
+             "centre flanked by two short ones --\n"
+             "\n"
+             "    250 (34x12, z 212..252)  251 (40x12, z 172..368)  252 (34x12, z 212..252)\n"
+             "        short                     TALL                     short\n"
+             "\n"
+             "repeated at (-2107..-2021,-970), (-2411..-2325,-970), (-277..-363,-566) "
+             "and (-667..-581,-566). 247 is the lone taller panel at (-2312,180).\n"
+             "\n"
+             "Held back by the survey's fixture column -- something light-bearing sits "
+             "45u away -- and that test was wrong again for the same reason it was "
+             "wrong on MAP11's face panel: the wall these are mounted ON is at 180 and "
+             "stays dark. A light 45 units from a 34x12 panel cannot brighten the "
+             "panel and not the stone it is bolted to.",
+    ),
+    Shaft(
+        "MAP12", [150, 151], from_light=255, to_light=180,
+        enabled=True,
+        note="THE CAGES (screen/fakelitcage_level12.png), identified by `whatsthat` "
+             "after two wrong guesses from the screenshot. 80x80 enclosures at "
+             "(-184,-968) and (-184,-568), C53 + SPACEBN, painted 255 inside sector 0 "
+             "at 180.\n"
+             "\n"
+             "Each one CONTAINS a 64BigFire, and that is why I passed over them twice: "
+             "the survey's fixture column read 0u and I treated a fixture inside the "
+             "sector as justifying the paint. It is the opposite. Under RT that fire "
+             "is a real light -- RT_UploadFlameLights gives it intensity, flicker and "
+             "falloff -- so the painted 255 is not the fixture's light, it is a SECOND "
+             "copy of it, flat and sourceless, laid over the real one. Dropping to the "
+             "room's 180 leaves the cage lit by its own fire and nothing else, which "
+             "is the whole point of the port.\n"
+             "\n"
+             "A fixture inside the sector makes the paint REDUNDANT under a path "
+             "tracer, not warranted. The same argument applies to sectors 31, 32 and "
+             "116 on this map (a 64TorchLongYellow in each, all at 255 over 180); they "
+             "are left for a look rather than swept, being outdoor torch pedestals "
+             "rather than a reported defect.",
+    ),
+    Shaft(
+        "MAP12", [256, 257, 258, 259], from_light=255, to_light=180,
+        enabled=True,
+        note="THE OTHER REPORTED ONE (screen/fakelitcage_level12.png). The four C52 "
+             "barred cages, 48x48 each, one at each corner of the same area: "
+             "(-1952,-16), (-784,-16), (-784,-1568), (-1952,-1568). Painted 255 with "
+             "180 all round them, so the barred panel glows and the structure it is "
+             "set into stays black. Same fixture four times, so they move together.",
+    ),
     Shaft(
         "MAP18", [2, 258, 110, 259], from_light=255, to_light=220,
         enabled=True,
