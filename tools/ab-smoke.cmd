@@ -131,7 +131,7 @@ if "%MAP%"==""  set "MAP=01"
 
 rem The shipping values, spelled out once. Later +cvar wins, so an arm names only
 rem what it changes.
-set "SMOKE=+rt_smoke 1 +rt_smoke_density 6 +rt_smoke_color 9E9689 +rt_smoke_count 3 +rt_smoke_budget 24 +rt_smoke_life 1.6 +rt_smoke_radius 0.35 +rt_smoke_growth 0.7 +rt_smoke_speed 1.8 +rt_smoke_spread 0.55 +rt_smoke_rise 0.65 +rt_smoke_drag 1.9 +rt_smoke_inherit 0.85 +rt_smoke_offset 0.7 +rt_smoke_repeat 5 +rt_smoke_far 14 +rt_smoke_ambient 0.08 +rt_smoke_illum 1 +rt_smoke_light_near 0 +rt_smoke_illum_blend 0.4 +rt_smoke_debug 1"
+set "SMOKE=+rt_smoke 1 +rt_smoke_density 6 +rt_smoke_color 9E9689 +rt_smoke_count 3 +rt_smoke_budget 24 +rt_smoke_life 1.6 +rt_smoke_radius 0.35 +rt_smoke_growth 0.7 +rt_smoke_speed 1.8 +rt_smoke_spread 0.55 +rt_smoke_rise 0.65 +rt_smoke_drag 1.9 +rt_smoke_inherit 0.85 +rt_smoke_offset 0.7 +rt_smoke_repeat 5 +rt_smoke_far 14 +rt_smoke_ambient 0.08 +rt_smoke_illum 1 +rt_smoke_light_near 0 +rt_smoke_illum_blend 0.4"
 
 rem Fog OFF by default, and the preset table with it, so an unfogged map stays
 rem unfogged and the smoke is the only thing in the volume. The fog arms below
@@ -142,6 +142,13 @@ rem The shipping MAP26 fog, by cvar rather than by table, so it matches
 rem ab-fog.cmd's `ramp` arm exactly -- that identity is the whole point of
 rem `fogsafe`.
 set "FOG26=+rt_fog 1 +rt_fog_presets 0 +rt_fog_color 000000 +rt_fog_density 0.01 +rt_fog_density_mult 0.3 +rt_fog_density_far 10 +rt_fog_color_far 000000 +rt_fog_curve 2.4 +rt_fog_far 32 +rt_fog_ambient 1 +rt_fog_lightmult 1 +rt_fog_light_near 2 +rt_fog_illum 1 +rt_fog_debug 0 +rt_volume_type 1 +rt_flsh 0"
+
+rem The probe mode is appended ONCE, at the very end, from %DBG%. It used to
+rem live in %SMOKE% as well as in the probe arms, so the command line carried
+rem `+rt_smoke_debug 1 +rt_smoke_debug 4` -- and three diagnostic runs came back
+rem reporting mode 1, i.e. the first occurrence won and the probe never ran.
+rem Never let an arm state a cvar that the base string also states.
+set "DBG=+rt_smoke_debug 1"
 
 if /i "%ARM%"=="full"      set "ARGS=%NOFOG% %SMOKE%"
 
@@ -166,10 +173,10 @@ if /i "%ARM%"=="reach8"    set "ARGS=%NOFOG% %SMOKE% +rt_smoke_far 8"
 rem Isolation.
 if /i "%ARM%"=="off"       set "ARGS=%NOFOG% %SMOKE% +rt_smoke 0"
 if /i "%ARM%"=="nolight"   set "ARGS=%NOFOG% %SMOKE% +rt_smoke_illum 0"
-if /i "%ARM%"=="debug"     set "ARGS=%NOFOG% %SMOKE% +rt_smoke_debug 1"
-if /i "%ARM%"=="probe"     set "ARGS=%NOFOG% %SMOKE% +rt_smoke_debug 2"
-if /i "%ARM%"=="probeall"  set "ARGS=%NOFOG% %SMOKE% +rt_smoke_debug 3"
-if /i "%ARM%"=="probeuni"  set "ARGS=%NOFOG% %SMOKE% +rt_smoke_debug 4"
+if /i "%ARM%"=="debug"     set "ARGS=%NOFOG% %SMOKE%"
+if /i "%ARM%"=="probe"     set "ARGS=%NOFOG% %SMOKE%" & set "DBG=+rt_smoke_debug 2"
+if /i "%ARM%"=="probeall"  set "ARGS=%NOFOG% %SMOKE%" & set "DBG=+rt_smoke_debug 3"
+if /i "%ARM%"=="probeuni"  set "ARGS=%NOFOG% %SMOKE%" & set "DBG=+rt_smoke_debug 4"
 if /i "%ARM%"=="novol"     set "ARGS=+rt_fog 0 +rt_fog_presets 0 +rt_volume_type 1 %SMOKE% +rt_smoke 0"
 
 rem The fog regression. fogsafe defaults to MAP26 because that is the map with a
@@ -182,8 +189,11 @@ if not defined ARGS (
   exit /b 1
 )
 
+set "ARGS=%ARGS% %DBG%"
+
 echo === smoke arm "%ARM%", MAP%MAP% ===
 echo     %ARGS%
+echo     probe mode: %DBG:~17%   (in game: `smoke 4` blue / `smoke 2` magenta / `smoke` reports)
 if /i "%ARM%"=="fogsafe" echo     COMPARE AGAINST: .\tools\ab-fog.cmd ramp 26  -- must be pixel-identical while not firing
 echo     (fire at a wall in a DARK room; the tell is the puff being brighter while its own flash is lit)
 echo.
