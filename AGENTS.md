@@ -28,9 +28,16 @@ The moon, and the sky leaks it exposed (`rt_sun_*`, `rt_moon_*`, per-map aim,
 → **`docs/moon-and-sky-leaks.md`**
 
 Per-map fog (`rt_fog_*`, `RT_FOG_PRESETS`, the two RTGL1 froxel changes it
-needed, and why MAP26's moon is off):
+needed, the near/far ramp, the flashlight, and why MAP26's moon is off):
 
-→ **`docs/rt-fog.md`**
+→ **`docs/rt-fog.md`** — what it is, which maps, how to tune it
+
+→ **`docs/rt-fog-implementation.md`** — the code path end to end, and its four traps
+
+Blood splats that stay on the floor (`rt_gore_*`, and why the one-second
+lifetime was in the WAD's DECORATE and not in the renderer):
+
+→ **`docs/blood-persist.md`**
 
 Anything DLSS Ray Reconstruction:
 
@@ -224,8 +231,9 @@ light on amber art, so it fails a naive art-vs-light hue audit.
 | `tools/wash-scratch/00-RUN-ORDER.cmd` | **From-scratch wash ladder** (isolated `build/WashScratch`; play build untouched). |
 | `tools/launch-texture-gallery-ce-pbr.cmd` | Same MAP99 with DoomCE Substance PBR overlay (A/B). |
 | `tools/test_gallery_emis_qa.cmd` | Auto QA: emis hygiene + 8-yaw wash score (pass/fail). |
-| `tools/ab-fog.cmd` | Illuminated fog A/B: `full`/`off`/`nolight`/`flat`/`thin`/`dense`/`near`/`far`/`ambient`/`grey`/`moon`/`debug`, default MAP26. See `docs/rt-fog.md`. |
+| `tools/ab-fog.cmd` | Illuminated fog A/B, default MAP26. Profiles `full`/`ramp`/`veil`/`ramp2`/`wall`/`deep`/`even`/`flatramp`/`inverse`/`twotone`; flashlight `flsh`/`flshraw`/`flshwide`; isolation `off`/`nolight`/`flat`/`ambient`/`grey`/`thin`/`dense`/`reach20`/`reach90`/`moon`/`debug`. See `docs/rt-fog.md`. |
 | `tools/ab-water.cmd` | Water A/B: `stock`/`styl`/`flat`/`mirror`/`noglow`/`nocaus`/`debug`, default MAP10. Flats are tagged engine-side (`l_waterflag`), no setup needed. See `docs/rt-water.md`. |
+| `tools/ab-blood.cmd` | Persistent blood A/B: `off`/`on`/`uncapped`/`tight`/`plain`/`wild`/`roll`, default MAP01. The lifetime is DECORATE in the WAD, not a renderer setting. See `docs/blood-persist.md`. |
 
 Important cvars on Retribution launch (do not crank blindly):
 

@@ -223,6 +223,12 @@ rem  the single source and no copy of it can go stale here.
 rem  OPT-IN per map (RT_FOG_PRESETS in rt_main.cpp, MAP26 only today) for the reason
 rem  the cloud deck is: fog changes every distance judgement in a level, and it costs
 rem  a shadow ray per froxel cell.
+rem  The shipping medium is a luminous VEIL, not an occluder: density 0.01 at the
+rem  camera to 10 at the far plane, with rt_fog_ambient 1 -- fifty times the floor
+rem  the first thick version used -- so the fog GLOWS and the level's lights
+rem  modulate it rather than supply it. At these densities ~17% of a surface is
+rem  fog by 1024 map units and nothing is hidden; the earlier 6 -> 190 profile is
+rem  still one command away (toolsb-fog.cmd ramp2 / wall).
 rem  NEAR and DISTANT fog are separate knobs: the medium is a ramp from
 rem  rt_fog_density at the camera to rt_fog_density_far at rt_fog_far, shaped by
 rem  rt_fog_curve (>1 = hold the near value longer, so the room you stand in stays
@@ -246,6 +252,21 @@ rem d64r-rt-flashlight.pk3: stylized 5-cell battery HUD (rt_flsh_charge / battst
 rem  + battery sound cues (rt_flsh_flicker counter; d64rt_flsh_sound / _vol to mute or tune).
 rem  Charge is persistent: switching off no longer refills the cell, it trickles back up at
 rem  rt_flsh_idle_recharge x the post-burnout rate.
+rem  HOLD HEIGHT AND INTENSITY (2026-08-11): rt_flsh_u -0.7 -> -0.58 and intensity 90 -> 156.
+rem  The low hold is deliberate horror framing, but it put the beam's centre on the floor only
+rem  1.44 m ahead. The camera sits 41 map units = 1.28 m up, so -0.58 is 0.70 m above the floor
+rem  against the old 0.58 m -- 1.206x. rt_flsh_pitch stays at 22 ON PURPOSE: with the angle
+rem  fixed the triangle is merely SCALED, so the lit spot moves out by that same 1.206x to
+rem  1.74 m. One number buys both the height and the reach; changing the pitch as well would
+rem  compound them.
+rem  The intensity is NOT a 73% brightness increase. Raising the source scales the lit footprint
+rem  in both dimensions, so its AREA grows 1.456x and the same flux over it lands 0.687x as
+rem  bright -- at the old 90 the higher hold would have made the pool DIMMER. 156 = 1.2x the
+rem  light x 1.456x to pay for the move, i.e. about 1.19x brighter than before at the new spot.
+rem  rt_flsh_u/_r/_f/_radius are now pinned above because they are CVAR_ARCHIVE and were NOT
+rem  pinned before -- an ini value could silently override the hold position on every launch,
+rem  which is the same trap that cost four arms on rt_tnmp_ev100_min/max.
+rem  Tune with .\tools\ab-flsh.cmd (arms at 108 / 130 / 156 and the old and new hold heights).
 rem Eye/fire mats: engine rt\mat\ + rt\data\textures.json (no extra -file).
 rem DLSS-RR transient-light ghosting: rt_rr_reset_on_lightcut/on_dynlight flush RR's
 rem  temporal history (InReset) on flashlight on/off and dynlight appear/disappear
@@ -487,6 +508,23 @@ rem sourceless glow. Currently only MAP03's twin staircases; three more chains
 rem are surveyed and awaiting playtest in docs/sequence-light-chains.md.
 rem Load order note: MAP03 has no special-160 linedefs, so it is absent from
 rem FIX3D and the two wads never touch the same map.
+rem
+rem rt_sector_tint_albedo is pinned at 1.0 but eleven maps do not run at 1.0, and
+rem that is not a contradiction: the 1.0 here is the BASE that RT_TINT_PRESETS
+rem lowers per map at level load, and the base is what every unlisted map gets
+rem back. So `rt_sector_tint_albedo` in the console reads 0.63 on MAP13 and 1.0
+rem on MAP01 -- read it there, not here.
+rem
+rem The table exists because the sector colormap hue is multiplied into surface
+rem ALBEDO, and being peak-normalized it can only remove channels. On a cool map
+rem it removes red, which is most of what a warm light is made of: the flashlight
+rem (ffbe82) lands on MAP01's #FFAA82 as saturated orange and on MAP13's #6AADFF
+rem as blue-dominant grey, 21% dimmer. Lowering the GLOBAL instead does not work
+rem -- MAP02's switch-triggered blue room is the most saturated colormap in the
+rem game, so any global reduction hits it hardest, and it is the effect the 1.0
+rem default was chosen for. MAP02 therefore has no row and is untouched.
+rem See RT_TINT_PRESETS in rt_main.cpp for the per-map numbers and .\tools\ab-tint.cmd
+rem to compare arms (`ab-tint.cmd basefl 13` vs `ab-tint.cmd flsh 13`).
 start "" gzdoom.exe ^
   -iwad "%IWAD%" ^
   -file "%MOD%" "%BM%" "%SKUL%" "%FLSH%" "%MUS%" "%FIX3D%" "%SEQL%" "%BULBTEX%" "%CTELFIX%" "%SKY%" -file "%LAVAFX%" "%BLOODFX%" ^
@@ -510,12 +548,13 @@ start "" gzdoom.exe ^
   +rt_lightning_alt_min 15 +rt_lightning_alt_max 40 ^
   +rt_lightning_bolt 1 +rt_lightning_bolt_size 55 ^
   +rt_lightning_sectorflash 1 +rt_lightning_debug 0 ^
-  +rt_fog 1 +rt_fog_presets 1 +rt_fog_color 000000 +rt_fog_density -1 +rt_fog_density_mult 0.3 ^
-  +rt_fog_density_far -1 +rt_fog_color_far 000000 +rt_fog_curve 1 ^
-  +rt_fog_far 45 +rt_fog_ambient 0.02 +rt_fog_lightmult 1 +rt_fog_light_near 2 +rt_fog_illum 1 ^
+  +rt_fog 1 +rt_fog_presets 1 +rt_fog_color 000000 +rt_fog_density 0.01 +rt_fog_density_mult 0.3 ^
+  +rt_fog_density_far 10 +rt_fog_color_far 000000 +rt_fog_curve 1 ^
+  +rt_fog_far 45 +rt_fog_ambient 1 +rt_fog_lightmult 1 +rt_fog_light_near 2 +rt_fog_illum 1 ^
   +rt_sun_leak_debug 0 +rt_sun_require_sky 1 ^
   +rt_classic 0 ^
-  +rt_flsh 0 +rt_flsh_intensity 90 +rt_flsh_angle 42 +rt_flsh_pitch 22 ^
+  +rt_flsh 0 +rt_flsh_intensity 156 +rt_flsh_angle 42 +rt_flsh_pitch 22 ^
+  +rt_flsh_u -0.58 +rt_flsh_r -0.3 +rt_flsh_f 0 +rt_flsh_radius 0.02 ^
   +rt_flsh_battery 1 +rt_flsh_on_secs 30 +rt_flsh_die_secs 4 +rt_flsh_off_secs 5 ^
   +rt_flsh_idle_recharge 0.25 ^
   +rt_flsh_color ffbe82 ^
@@ -531,7 +570,7 @@ start "" gzdoom.exe ^
   +rt_illum_sens_direct 1 +rt_illum_sens_indirect 0.75 +rt_illum_sens_spec 1 ^
   +rt_shadowrays 4 ^
   +rt_emis_mapboost 200 +rt_emis_additive_dflt 0.15 +rt_emis_maxscrcolor 3 ^
-  +rt_sector_tint_lights 0.85 +rt_sector_tint_albedo 1.0 ^
+  +rt_sector_tint_lights 0.85 +rt_sector_tint_albedo 1.0 +rt_sector_tint_presets 1 ^
   +rt_sector_emis 0.35 +rt_sector_emis_minlight 160 +rt_sector_emis_margin 40 +rt_sector_emis_debug 0 ^
   +rt_sector_lights 0 +rt_sector_flicker 0 ^
   +rt_dynlight 1 +rt_dynlight_flicker 0 +rt_dynlight_intensity 40 +rt_dynlight_max 500 +rt_dynlight_rsoft 20 +rt_dynlight_stack_atten 1 +rt_dynlight_minradius 16 ^
