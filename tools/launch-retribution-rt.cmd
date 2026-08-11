@@ -344,7 +344,7 @@ rem not the artist's; the mask is fixed at the source and no light is invented f
 rem
 rem rt_water_style: Doom 64's LIQUID flats -- water (D64W1_/D64W2_), nukage
 rem (D64N1_/D64N2_), sludge (D64S1_/D64S2_, e.g. the brown pools in MAP12) and
-rem blood (D64B1_/D64B2_), plus the WFALL/SFALL/BFALL wall sheets -- are tagged
+rem blood (D64B1_/D64B2_) -- are tagged
 rem RG_MESH_PRIMITIVE_WATER engine-side by
 rem a texture-name match in rt_main.cpp (l_waterflag), which hands them to RTGL's
 rem refl/refr pass -- watch for the "RT water: tagging" line at map load. RTGL's
@@ -365,10 +365,14 @@ rem body tint (rt_{water,nukage,sludge,blood}_tint_*) for where the flat is
 rem black and a crest colour (..._crest_*) for its caustic veins. The crest is
 rem not the body brightened -- water's body is deep blue but its crests are pale
 rem cyan, which is what the source art's brightest texels are. rt_water_liquids 0
-rem restricts the shader to water again; rt_water_falls 0 drops the WFALL/SFALL/
-rem BFALL WALL sheets, which is the knob to reach for if a waterfall starts
-rem leaking light -- tagging a wall as water strips its INSTANCE_MASK_WORLD_*
-rem bits, so it stops blocking shadow rays.
+rem restricts the shader to water again.
+rem FLOOR FLATS ONLY. The WFALL/SFALL/BFALL wall sheets were tagged too for one
+rem revision and are not any more: RG_MESH_PRIMITIVE_WATER makes a primitive
+rem refractive, and ASManager then rewrites its TLAS mask to INSTANCE_MASK_REFRACT
+rem alone, dropping every INSTANCE_MASK_WORLD_* bit. A pool getting no shadow is
+rem survivable; a WALL that stops blocking shadow rays is not -- MAP10's falls
+rem leaked light straight through the solid lines they are painted on, and the
+rem stylized surface reflected it back. Structural, not a tuning failure.
 rem
 rem rt_flame_light_*: every open flame in the game -- standing torches (TL*/TS*), wall
 rem sconces (A030/A031/A032/GTCH), loose fires (BFLM/GFLM/RFLM/YFLM), the bonfire (FIRE)
@@ -497,7 +501,7 @@ start "" gzdoom.exe ^
   +rt_rr_reset_on_lightcut 1 +rt_rr_reset_on_dynlight 1 +rt_rr_reset_delta 0.5 +rt_rr_reset_min_ms 250 ^
   +rt_rr_reset_hold 0 +rt_rr_reset_now 0 +rt_rr_reset_debug 0 ^
   +rt_restir_initial 32 ^
-  +rt_water_style 1 +rt_water_liquids 1 +rt_water_falls 1 ^
+  +rt_water_style 1 +rt_water_liquids 1 ^
   +rt_water_tint_r 1 +rt_water_tint_g 1 +rt_water_tint_b 15 ^
   +rt_water_crest_r 140 +rt_water_crest_g 204 +rt_water_crest_b 255 ^
   +rt_nukage_tint_r 2 +rt_nukage_tint_g 15 +rt_nukage_tint_b 4 ^

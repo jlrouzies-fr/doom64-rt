@@ -1,9 +1,12 @@
 """Tag the Doom 64 LIQUID flats as water for RTGL1.
 
-Covers all four liquids -- water, nukage, sludge, blood -- plus the WFALL /
-SFALL / BFALL wall sheets. They are one flat design in four palettes and share
-the stylized surface shader; the engine picks the body colour per liquid from
-the texture name (rt_main.cpp l_waterflag), this script only says "liquid".
+Covers all four liquids -- water, nukage, sludge, blood. They are one flat design
+in four palettes and share the stylized surface shader; the engine picks the body
+colour per liquid from the texture name (rt_main.cpp l_waterflag), this script
+only says "liquid".
+
+The WFALL/SFALL/BFALL wall sheets are deliberately NOT tagged (see _FALLS below)
+but ARE quarantined, because their frame-01-only overlays are a separate defect.
 
 Why this exists as a script rather than an edit: rt/data/textures.json under
 build/ is gitignored and rewritten by the PBR tooling (apply_all_category_pbr.py
@@ -49,12 +52,24 @@ TARGET = ROOT / "sourcecode/gzdoom-rt/build/RelWithDebInfo/rt/data/textures.json
 # D64W1_* is the same, 64 frames. D64WATR1/2 are the source patches (warp2).
 #
 # All FOUR liquids, not just water: nukage (D64N*), sludge (D64S*) and blood
-# (D64B*) are the same 64-frame flat design in a different palette, and the
-# WFALL/SFALL/BFALL wall sheets likewise. The engine tells them apart by name
-# and picks a body/crest colour per liquid; here they are all just "water".
+# (D64B*) are the same 64-frame flat design in a different palette. The engine
+# tells them apart by name and picks a body/crest colour per liquid; here they
+# are all just "water".
 _SEQ = ("D64W1_", "D64W2_", "D64N1_", "D64N2_",
-        "D64S1_", "D64S2_", "D64B1_", "D64B2_",
-        "WFALL", "SFALL", "BFALL")
+        "D64S1_", "D64S2_", "D64B1_", "D64B2_")
+
+# The WALL sheets. 64-frame sequences exactly like the flats, and they are NOT
+# tagged as liquid: RG_MESH_PRIMITIVE_WATER makes a primitive refractive, and
+# ASManager then rewrites its TLAS mask to INSTANCE_MASK_REFRACT alone, dropping
+# every INSTANCE_MASK_WORLD_* bit. A pool that casts no shadow is survivable; a
+# WALL that stops blocking shadow rays is not, and MAP10's falls leaked light
+# through the solid lines they are painted on.
+#
+# They stay in the QUARANTINE list regardless. Frame-01-only overlays are a
+# defect of their own -- the surface gains a normal map and a heightmap for two
+# tics per cycle and snaps back -- and that is true whether or not anything ever
+# tags them as liquid.
+_FALLS = ("WFALL", "SFALL", "BFALL")
 _PATCHES = ("D64WATR1", "D64WATR2", "D64NUKG1", "D64NUKG2",
             "D64SLDG1", "D64SLDG2", "D64BLOD1", "D64BLOD2")
 
@@ -86,7 +101,7 @@ META = {
 #
 # Every liquid family has the same frame-01-only overlays, for the same reason:
 # the PBR tooling worked from the names the maps reference.
-FRAME1_ONLY_MATS = tuple(f"{p}01" for p in _SEQ)
+FRAME1_ONLY_MATS = tuple(f"{p}01" for p in _SEQ + _FALLS)
 MAT_SUFFIXES = ("_n.png", "_orm.png", "_h.png")
 
 MAT_DIRS = [
@@ -175,6 +190,14 @@ def main() -> int:
             if name not in seen:
                 entries.append({"textureName": name, **META})
                 changed.append((name, "added"))
+
+    # The falls were tagged for one revision. Untag on every --apply, so a tree
+    # that ran the old version converges instead of keeping a leak nobody can
+    # see in the source any more.
+    fall_names = {f"{p}{i:02d}" for p in _FALLS for i in range(1, 65)}
+    for e in entries:
+        if e.get("textureName") in fall_names and e.pop("isWater", None) is not None:
+            changed.append((e["textureName"], "untagged (wall sheet)"))
 
     TARGET.write_text(json.dumps(data, indent=2), encoding="utf-8")
     for name, what in changed:
