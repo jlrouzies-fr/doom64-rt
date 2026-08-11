@@ -26,8 +26,8 @@ rem            like before the lights existed, and the A/B for "is the room dark
 rem            because the lava is dim, or because nothing emits".
 rem   on       the default: 180 lumen per light at 96-unit spacing. Lumen is
 rem            the scale the whole file uses -- flames are 900.
-rem   dim      half intensity, for a room that blows out.
-rem   bright   double intensity.
+rem   dim      300 lm, for a room that blows out.
+rem   bright   2700 lm, 3x a torch, for a room that stays dark.
 rem   fine     48-unit spacing. Four times as many lights, SAME total brightness
 rem            (intensity is scaled by spacing^2), so this isolates evenness from
 rem            brightness -- the one comparison a single knob cannot make.
@@ -35,6 +35,12 @@ rem   coarse   192-unit spacing, likewise.
 rem   tight    small source radius: every grid point throws its own hard shadow,
 rem            which reads as a row of lamps under the floor. Shows why the
 rem            default radius is wide.
+rem   solo     THE DECISIVE ONE when the room looks unlit. Spacing 4096 so each
+rem            lava sector gets one or two grid points, at 20000 lm each. If the
+rem            room lights up, the lights work and the only question left is the
+rem            number. If a single 20000 lm light in the middle of the lava does
+rem            nothing, the lights are not reaching the renderer and no amount of
+rem            tuning will help -- which is a completely different bug.
 rem   debug    rt_lava_light_debug 1 -- prints how many lava sectors matched, how
 rem            many grid points fell in range and how many survived the cap. If
 rem            that line says 0 sectors, nothing about intensity will help.
@@ -42,7 +48,7 @@ rem
 rem Every arm sets every lava cvar explicitly, so a value left in the ini from a
 rem previous arm can never leak into the next one.
 rem
-rem Usage: ab-lava.cmd <off|on|dim|bright|fine|coarse|tight|debug> [1-34]
+rem Usage: ab-lava.cmd <off|on|dim|bright|fine|coarse|tight|solo|debug> [1-34]
 rem ---------------------------------------------------------------------------
 
 set "ARM=%~1"
@@ -56,15 +62,16 @@ set "DEF=%COL% %GEO% +rt_lava_light_debug 0"
 
 if /i "%ARM%"=="off"    set "ARGS=+rt_lava_light_on 0 +rt_lava_light_intensity 180 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.6 %DEF%"
 if /i "%ARM%"=="on"     set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 180 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.6 %DEF%"
-if /i "%ARM%"=="dim"    set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 90 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.6 %DEF%"
-if /i "%ARM%"=="bright" set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 360 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.6 %DEF%"
+if /i "%ARM%"=="dim"    set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 300 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.6 %DEF%"
+if /i "%ARM%"=="bright" set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 2700 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.6 %DEF%"
 if /i "%ARM%"=="fine"   set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 180 +rt_lava_light_spacing 48 +rt_lava_light_radius 0.6 %COL% %GEO% +rt_lava_light_max 512 +rt_lava_light_debug 0"
 if /i "%ARM%"=="coarse" set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 180 +rt_lava_light_spacing 192 +rt_lava_light_radius 0.6 %DEF%"
 if /i "%ARM%"=="tight"  set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 180 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.08 %DEF%"
+if /i "%ARM%"=="solo"   set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 20000 +rt_lava_light_spacing 4096 +rt_lava_light_radius 0.6 %COL% +rt_lava_light_z 12 +rt_lava_light_max 8 +rt_lava_light_dist 4096 +rt_lava_light_debug 1"
 if /i "%ARM%"=="debug"  set "ARGS=+rt_lava_light_on 1 +rt_lava_light_intensity 180 +rt_lava_light_spacing 96 +rt_lava_light_radius 0.6 %COL% %GEO% +rt_lava_light_debug 1"
 
 if not defined ARGS (
-  echo Usage: %~nx0 ^<off^|on^|dim^|bright^|fine^|coarse^|tight^|debug^> [1-34]
+  echo Usage: %~nx0 ^<off^|on^|dim^|bright^|fine^|coarse^|tight^|solo^|debug^> [1-34]
   exit /b 1
 )
 
