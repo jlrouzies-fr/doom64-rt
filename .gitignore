@@ -136,3 +136,8 @@ tools/rtgl-variants/
 # one is only for looking at. pack_rt_sky.py deliberately does not ship it --
 # it would put a second, wrong sky in the pk3 under a name GZDoom resolves.
 tools/d64r-rt-sky/textures/MOONSKY_preview.png
+
+# Backups made by tools/gen_lava_material.py --apply, restored by --revert.
+# Local undo state, not source: the overlays it holds are whatever happened to
+# be in the tree at the time.
+tools/_lava_mat_backup/
