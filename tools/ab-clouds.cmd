@@ -68,18 +68,35 @@ rem which is the point: "stronger purple" should mean more saturated, not
 rem brighter or darker. G carries most of the luminance, so the cost of
 rem saturation is paid in R and B.
 rem
-rem     tint      sat   bright cloud   dark cloud   moonlight
-rem     6C6C96   0.28      #5B5D86      #0E0E17      #AFC3FF
-rem     7A66AA   0.40      #675898      #100E1A      #C6B8FF
-rem     8660C0   0.50      #7253AC      #110D1E      #D9ADFF   <- matches Doom 64
-rem     9C55DC   0.61      #8449C5      #140B22      #FF9BFF   <- SHIPPING
-rem     A852E9   0.65      #8E47D0      #160B24      #FF94FF
-rem     B44BF5   0.69      #9841DB      #180A26      #FF89FF   near neon, careful
+rem     tint      sat   R/B   bright cloud  dark cloud   moon I
+rem     6C6C96   0.28  0.72      #5B5D86     #0E0E17      21.6
+rem     7A66AA   0.40  0.72      #675898     #100E1A      20.8
+rem     8660C0   0.50  0.70      #7253AC     #110D1E      20.6   <- matches Doom 64
+rem     9C55DC   0.61  0.71      #8449C5     #140B22      17.4   <- SHIPPING
+rem     A64BEE   0.68  0.70      #8D41D5     #160A25      16.9
+rem     A63CFF   0.76  0.65      #8D34E4     #160828      15.3   neon, deck stays bright
+rem     9A28FF   0.84  0.60      #8223E4     #140528      12.7   neon, deeper
+rem     8A1FE8   0.87  0.59      #751BCF     #120424      10.8   deep neon, dark end of usable
+rem     7B12D8   0.92  0.57      #6810C1     #100222       8.7   very deep, dims the level
+rem     C24DFF   0.70  0.76      #A442E4     #190A28      18.2   too far: reads PINK
 rem
-rem The moonlight column saturates fast because its hue is the transmittance
-rem DIVIDED by its own luminance and then clamped -- past about 0.6 both R and B
-rem are already pinned at 255 and only G keeps falling, so further saturation
-rem changes the light much less than it changes the picture.
+rem TWO AXES, and they are not the same one.
+rem   sat  is how NEON it is, and it is bought by dropping G.
+rem   R/B  is whether it reads PURPLE or PINK. Violet wants B well above R,
+rem        about 0.55-0.70. Once R climbs toward B it is magenta, however
+rem        saturated it is -- C24DFF is more saturated than 8660C0 and reads
+rem        worse, because it moved along the wrong axis.
+rem
+rem The cost of neon is LIGHT. G carries most of the luminance, so dropping it to
+rem saturate also drops tint luminance, and tint luminance scales the moonlight
+rem as well as the picture (moon I above, at rt_sun_intensity 90). Compensate on
+rem the transmit rather than by backing off the colour: at 9A28FF, transmit
+rem 0.45 -> 0.60 puts moon I back to 16.9, i.e. where it is today.
+rem
+rem The moonlight HUE, by contrast, stops responding early: it is the
+rem transmittance divided by its own luminance and then clamped, so from about
+rem sat 0.6 both R and B are pinned at 255 and only G still moves. Past that,
+rem saturation changes the sky a lot and the light on the walls very little.
 rem
 rem 8660C0 is what the console game's sky actually measures at (bright #745BAD,
 rem dark #100F1F in screen/doom64clouds.png). It read WEAK in motion, so the
@@ -109,8 +126,10 @@ if /i "%ARM%"=="nodeck" set "ARGS=+rt_clouds 0 +rt_clouds_presets 0"
 
 if not defined ARGS (
   echo Usage: %~nx0 ^<ship^|old^|thin^|heavy^|flat^|nodeck^> [map, default 12] [tint hex]
-  echo   tint ladder, luminance held, saturation only:
-  echo     6C6C96 0.28 ^| 7A66AA 0.40 ^| 8660C0 0.50 ^| 9C55DC 0.61 ^(ship^) ^| A852E9 0.65
+  echo   tint ladder ^(sat = how neon, R/B = purple vs pink^):
+  echo     8660C0 0.50 ^(= Doom 64^) ^| 9C55DC 0.61 ^(ship^) ^| A63CFF 0.76 neon
+  echo     9A28FF 0.84 deeper neon ^| 8A1FE8 0.87 deep neon ^| 7B12D8 0.92 very deep
+  echo   deeper costs LIGHT: pair it with +rt_clouds_transmit 0.60
   exit /b 1
 )
 
