@@ -148,7 +148,7 @@ rem live in %SMOKE% as well as in the probe arms, so the command line carried
 rem `+rt_smoke_debug 1 +rt_smoke_debug 4` -- and three diagnostic runs came back
 rem reporting mode 1, i.e. the first occurrence won and the probe never ran.
 rem Never let an arm state a cvar that the base string also states.
-set "DBG=+rt_smoke_debug 1"
+set "DBG=+rt_smoke_debug 0"
 
 if /i "%ARM%"=="full"      set "ARGS=%NOFOG% %SMOKE%"
 
@@ -173,7 +173,7 @@ if /i "%ARM%"=="reach8"    set "ARGS=%NOFOG% %SMOKE% +rt_smoke_far 8"
 rem Isolation.
 if /i "%ARM%"=="off"       set "ARGS=%NOFOG% %SMOKE% +rt_smoke 0"
 if /i "%ARM%"=="nolight"   set "ARGS=%NOFOG% %SMOKE% +rt_smoke_illum 0"
-if /i "%ARM%"=="debug"     set "ARGS=%NOFOG% %SMOKE%"
+if /i "%ARM%"=="debug"     set "ARGS=%NOFOG% %SMOKE%" & set "DBG=+rt_smoke_debug 1"
 if /i "%ARM%"=="probe"     set "ARGS=%NOFOG% %SMOKE%" & set "DBG=+rt_smoke_debug 2"
 if /i "%ARM%"=="probeall"  set "ARGS=%NOFOG% %SMOKE%" & set "DBG=+rt_smoke_debug 3"
 if /i "%ARM%"=="probeuni"  set "ARGS=%NOFOG% %SMOKE%" & set "DBG=+rt_smoke_debug 4"

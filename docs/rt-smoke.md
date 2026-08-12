@@ -631,7 +631,7 @@ unfocused window throttles to about one tic a second.
 | `reach30` / `reach8` | `rt_smoke_far` as slice thickness |
 | `off` | `rt_smoke 0` — the before |
 | `nolight` | `rt_smoke_illum 0`. Ambient plus one light, i.e. usually nothing: flat grey soup |
-| `debug` | `rt_smoke_debug 1` |
+| `debug` | `rt_smoke_debug 1` — the only LOOK arm that logs. Every other arm ships with it OFF, because console spam over the image is the last thing you want while judging one |
 | `fogsafe` | **the fog regression** (§5). MAP26, must match `ab-fog.cmd ramp` |
 | `fogsmoke` | MAP26, firing. Both media in one volume, and the puff coarser because the fog owns the reach |
 
