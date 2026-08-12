@@ -211,10 +211,10 @@ Left alone, ambient smoke would win every contest for a pool slot simply by
 outlasting everything else — and the smoke that would be pushed out is the wisp
 off the gun in your hands. Three mechanisms prevent that, and none is optional:
 
-1. **`rt_smoke_ambient_far` (9 m)** — tighter than the weapon cull, because a
+1. **`rt_smoke_ambient_far` (14 m)** — tighter than the weapon cull, because a
    torch two rooms away is a slot spent on something the froxel grid cannot
    resolve anyway.
-2. **`rt_smoke_ambient_budget` (40 of 128)** — a ceiling on how many ambient
+2. **`rt_smoke_ambient_budget` (52 of 128)** — a ceiling on how many ambient
    puffs may be *alive*. Emission stops at the cap rather than pushing other
    smoke out. An emitter held off keeps its own cadence, so nothing catches up
    in a burst when a slot frees.
@@ -222,7 +222,7 @@ off the gun in your hands. Three mechanisms prevent that, and none is optional:
    overflow rule prefer them, so a shot finds room even with the flames at their
    cap.
 
-`smoke` in the console reports the split — `48 live (40 ambient, cap 40)`. Sitting
+`smoke` in the console reports the split — `60 live (52 ambient, cap 52)`. Sitting
 *at* the cap is the expected state in a torch-lit room, not a fault.
 
 **The buffer went 32 → 128 for this.** Muzzle smoke alone fits in 32; a room full
