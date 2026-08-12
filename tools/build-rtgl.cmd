@@ -45,6 +45,19 @@ if not errorlevel 1 (
 )
 popd
 
+rem The C and GLSL halves of ShGlobalUniform are generated from one list but
+rem packed by different rules, and a scalar run that is not a multiple of four
+rem silently moves every vec4 after it in GLSL only. Nothing reports that: the
+rem shader simply reads the wrong addresses. It has cost two sessions here, so
+rem the build refuses to continue.
+echo === Checking ShGlobalUniform layout ===
+python "%~dp0check_uniform_layout.py"
+if errorlevel 1 (
+  echo.
+  echo Refusing to build against a uniform whose two layouts disagree.
+  exit /b 1
+)
+
 rem ---------------------------------------------------------------------------
 rem THE GENERATED HEADER IS NOT A TRACKED DEPENDENCY, and that cost a full day.
 rem
