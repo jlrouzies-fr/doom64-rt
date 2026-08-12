@@ -44,6 +44,7 @@ from __future__ import annotations
 
 import re
 import sys
+import zipfile
 from pathlib import Path
 
 ROOT = Path(r"G:\AI\Doom64-RT")
@@ -54,6 +55,13 @@ ROOT = Path(r"G:\AI\Doom64-RT")
 INC = ROOT / r"sourcecode\gzdoom-rt\src\common\rendering\rt\rt_cvars.inc"
 INC_CPP = ROOT / r"sourcecode\gzdoom-rt\src\common\rendering\rt\rt_cvars.cpp"
 PINS = ROOT / r"tools\d64rt-pins.cfg"
+# THIRD source: not every rt_* cvar is an engine cvar. The gore family
+# (rt_gore_life, rt_gore_burst*) is declared in a CVARINFO lump inside
+# d64r-blood-persist.pk3, because the feature it belongs to is a pk3 -- and the
+# launcher pins those the same way it pins engine ones. Without this the checker
+# calls all nine of them orphans and exits 1 on a healthy tree, which is the
+# crying-wolf failure the comment above is about.
+PK3_DIR = ROOT / "Doom64-Retribution"
 
 # The X-macro list. Every entry is RT_CVAR( name, default, "help" ) or one of the
 # NOARCH / COLOR / STRING variants, and the default may be 12, 12.f, true, or
@@ -63,6 +71,35 @@ DECL = re.compile(
 )
 
 
+# A CVARINFO declaration: [server|user] [noarchive] <type> <name> = <value>;
+CVARINFO_DECL = re.compile(
+    r"^\s*(?:server|user)\s+(?P<noarch>noarchive\s+)?"
+    r"(?:int|float|bool|color|string)\s+(?P<name>\w+)\s*=\s*(?P<value>[^;]+);",
+    re.M,
+)
+
+
+def parse_pk3_defaults() -> dict[str, tuple[str, str]]:
+    """Cvars declared by a loaded pk3's CVARINFO rather than by the engine."""
+    out: dict[str, tuple[str, str]] = {}
+    for pk3 in sorted(PK3_DIR.glob("*.pk3")):
+        try:
+            with zipfile.ZipFile(pk3) as z:
+                names = [n for n in z.namelist() if Path(n).name.upper() == "CVARINFO"]
+                for n in names:
+                    text = z.read(n).decode("utf-8", errors="replace")
+                    for m in CVARINFO_DECL.finditer(text):
+                        out[m.group("name")] = (
+                            m.group("value").strip(),
+                            "_NOARCH" if m.group("noarch") else "",
+                        )
+        except (zipfile.BadZipFile, OSError):
+            # A pk3 locked by a running game, or not a zip at all. Skipping is
+            # right: this source only ever ADDS known names.
+            continue
+    return out
+
+
 def parse_defaults() -> dict[str, tuple[str, str]]:
     out: dict[str, tuple[str, str]] = {}
     for src in (INC, INC_CPP):
@@ -70,6 +107,10 @@ def parse_defaults() -> dict[str, tuple[str, str]]:
             continue
         for m in DECL.finditer(src.read_text(encoding="utf-8", errors="replace")):
             out[m.group("name")] = (m.group("value").strip(), m.group("kind") or "")
+    # Engine declarations win on a name collision -- if both ever declare the
+    # same cvar, the engine's is the one the pin is really talking to.
+    for name, decl in parse_pk3_defaults().items():
+        out.setdefault(name, decl)
     return out
 
 

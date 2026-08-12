@@ -63,7 +63,7 @@ rem but the launcher pins them anyway -- belt and braces, same rule as ab-lava.)
 rem That is why adding the five rt_gore_burst_* cvars meant editing all seven of
 rem the arms above and not only the new ones.
 rem
-rem Usage: ab-blood.cmd <off|on|uncapped|tight|plain|wild|roll|boom|noboom|bigboom> [1-34]
+rem Usage: ab-blood.cmd <off|on|uncapped|tight|plain|wild|roll|boom|noboom|bigboom|color|nocolor> [1-34]
 rem ---------------------------------------------------------------------------
 
 set "ARM=%~1"
@@ -95,10 +95,25 @@ if /i "%ARM%"=="roll"     set "ARGS=+rt_gore_life 0  +rt_gore_max 1500 +rt_gore_
 
 if /i "%ARM%"=="boom"     set "ARGS=+rt_gore_life 0  +rt_gore_max 1500 +rt_gore_scale_var 0.35 +rt_gore_roll 0 +rt_gore_burst 1 +rt_gore_burst_count 5  +rt_gore_burst_speed 4.0 +rt_gore_burst_lift 3.0 +rt_gore_burst_debug 1"
 if /i "%ARM%"=="noboom"   set "ARGS=+rt_gore_life 0  +rt_gore_max 1500 +rt_gore_scale_var 0.35 +rt_gore_roll 0 +rt_gore_burst 0 +rt_gore_burst_count 5  +rt_gore_burst_speed 4.0 +rt_gore_burst_lift 3.0 +rt_gore_burst_debug 1"
+rem BLOOD COLOUR. Not a gore cvar at all -- rt_tex_translations is the engine
+rem fix that gives a palette-translated texture its own RTGL1 material name.
+rem Without it every translation of BLUDA0 uploads under one name and RTGL1
+rem keeps only the first, so per-monster BloodColor renders as whatever blood
+rem happened to be drawn first. LAUNCH-TIME ONLY: the name is cached per
+rem hardware texture, so this cannot be flipped from the console -- which is the
+rem whole reason these two arms exist.
+rem   color     translations ON + the rename debug print. MAP03 (21 Nightmare
+rem             Imps, 8 Cacodemons) or MAP14 (all four new families at once).
+rem             No rename lines in the log = the fix is not live; stop there
+rem             rather than judging a colour on screen.
+rem   nocolor   translations OFF. Everything bleeds red again.
+if /i "%ARM%"=="color"    set "ARGS=+rt_gore_life 0  +rt_gore_max 1500 +rt_gore_scale_var 0.35 +rt_gore_roll 0 %BURST% +rt_tex_translations 1 +rt_tex_translations_debug 1"
+if /i "%ARM%"=="nocolor"  set "ARGS=+rt_gore_life 0  +rt_gore_max 1500 +rt_gore_scale_var 0.35 +rt_gore_roll 0 %BURST% +rt_tex_translations 0 +rt_tex_translations_debug 1"
+
 if /i "%ARM%"=="bigboom"  set "ARGS=+rt_gore_life 0  +rt_gore_max 1500 +rt_gore_scale_var 0.35 +rt_gore_roll 0 +rt_gore_burst 1 +rt_gore_burst_count 12 +rt_gore_burst_speed 7.0 +rt_gore_burst_lift 5.0 +rt_gore_burst_debug 1"
 
 if not defined ARGS (
-  echo Usage: %~nx0 ^<off^|on^|uncapped^|tight^|plain^|wild^|roll^|boom^|noboom^|bigboom^> [1-34]
+  echo Usage: %~nx0 ^<off^|on^|uncapped^|tight^|plain^|wild^|roll^|boom^|noboom^|bigboom^|color^|nocolor^> [1-34]
   exit /b 1
 )
 

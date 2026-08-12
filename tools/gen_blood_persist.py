@@ -58,6 +58,14 @@ The burst does two different things on purpose:
 Both kinds land in the existing WorldThingSpawned, so the jitter, the FIFO and
 rt_gore_max apply with no change to that method.
 
+PER-MONSTER BLOOD COLOUR (the DECORATE half, again). BloodColor is a DECORATE
+property, so the only way to give an existing actor one is a subclass that
+replaces it -- five of them at the bottom of the DECORATE lump. It needs the
+engine's rt_tex_translations to be on: without that, every palette translation
+of BLUDA0 is uploaded to RTGL1 under the same material name and only the first
+survives, which is why Retribution's own two colours (Nightmare Imp purple, Hell
+Knight green) had never once appeared on screen.
+
 Usage:
     tools\\.venv-ai\\Scripts\\python.exe tools/gen_blood_persist.py           # report
     tools\\.venv-ai\\Scripts\\python.exe tools/gen_blood_persist.py --apply
@@ -191,6 +199,61 @@ ACTOR RTBloodPersistInvis : 64InvisiBlood replaces 64InvisiBlood
 \t\tStop
 \t}
 }
+
+// ---------------------------------------------------------------------------
+// PER-MONSTER BLOOD COLOUR.
+//
+// BloodColor builds a translation that multiplies each palette entry's
+// BRIGHTNESS by the colour (CreateBloodTranslation, r_translate.cpp), so it
+// recolours the existing BLUD art rather than replacing it -- no new sprites.
+// The engine copies it onto every splat (P_SpawnBlood), A_SpawnItemEx flags 131
+// carry it to the satellites, and the explosion burst copies it too.
+//
+// THIS ONLY RENDERS WITH rt_tex_translations 1. Without that engine fix every
+// translation of BLUDA0 uploads under the same RTGL1 material name and only the
+// first survives -- which is why Retribution's own two colours were invisible.
+//
+// Each actor overrides NOTHING but the colour. A_BossDeath resolves
+// GetReplacee() and matches on either type (p_enemy.cpp), so map special
+// actions keyed on 64Arachnotron still fire through the replacement.
+
+// Retribution already ships 7B 5A 84 on this one; darker so it reads as clearly
+// not-blood in an unlit room rather than as a pink splash.
+ACTOR RTBloodNightmareImp : 64NightmareImp replaces 64NightmareImp
+{
+\tBloodColor "4B 2A 5A"
+}
+
+ACTOR RTBloodCacodemon : 64Cacodemon replaces 64Cacodemon
+{
+\tBloodColor "3C 64 C8"
+}
+
+ACTOR RTBloodPainElemental : 64PainElemental replaces 64PainElemental
+{
+\tBloodColor "6B 4A 28"
+}
+
+ACTOR RTBloodArachnotron : 64Arachnotron replaces 64Arachnotron
+{
+\tBloodColor "C8 C8 64"
+}
+
+// Matches the Arachnotron. No map in the game places one, so this is authoring
+// for completeness and cannot be judged in play.
+ACTOR RTBloodSpiderMastermind : 64SpiderMastermind replaces 64SpiderMastermind
+{
+\tBloodColor "C8 C8 64"
+}
+
+// NOT HERE ON PURPOSE:
+//   64HellKnight   -- Retribution already authors 18 8C 31 (green). We add
+//                     nothing; the engine fix is what makes it visible.
+//   64BaronOfHell  -- stays RED by decision, even though it will bleed red
+//                     beside a green Hell Knight. Do not "fix" that to match.
+//   everything else -- humans, Doom Imps, Demons, Revenant, Mancubus,
+//                     Cyberdemon, Archvile. Red has to stay the common case or
+//                     it stops reading as blood at all.
 """
 
 
@@ -290,7 +353,15 @@ class RTBloodPersistHandler : EventHandler
 
 		if (cBurstDebug != null && cBurstDebug.GetBool())
 		{
-			Console.Printf("RTBloodBurst: %s dmg %d -> %d splats", t.GetClassName(), e.Damage, n);
+			// The colour is printed because it is otherwise unanswerable without
+			// a screenshot: it says whether the victim's DECORATE BloodColor
+			// reached the actor at all, separately from whether the RENDERER
+			// then showed it (which is rt_tex_translations' problem).
+			// r/g/b members rather than a cast: Color is its own scalar type in
+			// ZScript and the whole pk3 fails to parse if a conversion is wrong.
+			Console.Printf("RTBloodBurst: %s dmg %d -> %d splats  bloodcolor %d,%d,%d",
+			               t.GetClassName(), e.Damage, n,
+			               t.BloodColor.r, t.BloodColor.g, t.BloodColor.b);
 		}
 
 		// The engine path, once. It is the only thing that emits the RT fluid
@@ -417,7 +488,9 @@ def build(dry: bool) -> int:
     print(f"{OUT.name}: {len(LUMPS)} lump(s), no sprites (BLUD A-D come from D64RTR_v15.WAD)")
     for name, text in LUMPS.items():
         print(f"   {name:<9} {len(text):>5} bytes")
-    print("   DECORATE: 3 replacements, each Spawn ending on 'BLUD A -1'")
+    print(f"   DECORATE: {DECORATE.count('replaces')} replacements"
+          f" -- 3 blood actors ending on 'BLUD A -1',"
+          f" {DECORATE.count(chr(9) + 'BloodColor ')} monster BloodColor overrides")
     print("   ZSCRIPT:  RTBloodPersistHandler -- scale/flip/roll jitter + FIFO cap")
     print("             + WorldThingDamaged explosion burst (DMG_EXPLOSION)")
     print(f"   CVARINFO: {CVARINFO.count('server noarchive')} cvars"

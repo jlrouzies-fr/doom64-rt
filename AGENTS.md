@@ -39,8 +39,9 @@ fog's froxel volume, and why the sim is on the CPU):
 
 → **`docs/rt-smoke.md`**
 
-Blood splats that stay on the floor (`rt_gore_*`, and why the one-second
-lifetime was in the WAD's DECORATE and not in the renderer):
+Blood splats that stay on the floor (`rt_gore_*`, why the one-second lifetime
+was in the WAD's DECORATE and not in the renderer, the explosion burst, and
+per-monster blood colour + the RT material-naming bug that hid it):
 
 → **`docs/blood-persist.md`**
 
@@ -325,7 +326,7 @@ declaration cannot drift from its definition. Put nothing in that file except an
 | `tools/ab-water.cmd` | Water A/B: `stock`/`styl`/`flat`/`mirror`/`noglow`/`nocaus`/`debug`, default MAP10. Flats are tagged engine-side (`l_waterflag`), no setup needed. See `docs/rt-water.md`. |
 | `tools/smoke-lab.cmd` | **Smoke lab — MAP97 dark / MAP96 bright beige** — unattended capture of muzzle smoke in a controlled room (`python tools/build_smoke_lab.py` first). `tools/smoke-sweep.cmd <cvar> <values...>` walks one cvar at a fixed tic; `python tools/smoke_gallery.py` renders named candidate looks into one labelled PNG. Judge smoke here, never in a real level — and colour/visibility questions belong on MAP96. |
 | `tools/ab.cmd smoke-<arm>` | Volumetric smoke A/B (arms are cfgs in `tools/arms/`, NOT command-line strings). `smoke-full`/`fat`/`thin`/`still`/`drift`/`walk`/`glued`; monsters `smoke-monster`/`nomonster`; sources `smoke-flames`/`noflames`/`proj`/`barrel`/`crowd`; look `smoke-stylize0`; traps `nearfade`/`blendslow`/`blendraw`; resolution `reach30`/`reach8`; isolation `off`/`nolight`/`debug`; and `fogsafe`/`fogsmoke`, the fog regression. See `docs/rt-smoke.md`. |
-| `tools/ab-blood.cmd` | Persistent blood A/B: `off`/`on`/`uncapped`/`tight`/`plain`/`wild`/`roll`; explosion splash `boom`/`noboom`/`bigboom`, default MAP01. The lifetime is DECORATE in the WAD, not a renderer setting; explosive kills leave no blood in stock GZDoom because `P_RadiusAttack` never calls `P_SpawnBlood`. See `docs/blood-persist.md`. |
+| `tools/ab-blood.cmd` | Persistent blood A/B: `off`/`on`/`uncapped`/`tight`/`plain`/`wild`/`roll`; explosion splash `boom`/`noboom`/`bigboom`; per-monster colour `color`/`nocolor` (try MAP03 or MAP14), default MAP01. The lifetime is DECORATE in the WAD, not a renderer setting; explosive kills leave no blood in stock GZDoom because `P_RadiusAttack` never calls `P_SpawnBlood`; and blood colour needs `rt_tex_translations` (pitfall 30). See `docs/blood-persist.md`. |
 
 Important cvars on Retribution launch (do not crank blindly):
 
@@ -485,6 +486,25 @@ Clear all enemy `_e` + strip meta: `python tools/clear_enemy_eye_emissives.py` t
     merely **ambiguous** with it, so it is `rt_pi()` now; and `RT_CalcPowerupFlags()`
     is deliberately still file-local to `rt_main.cpp` — only the `RT_POWERUP_FLAG_*`
     bits are shared.
+
+30. **An RTGL1 material is identified by NAME, and the first upload of a name
+    wins — so anything that changes a texture's *pixels* without changing its
+    name is silently discarded.** `MakeTextureName` (`rt_buffers.h`) used to
+    derive the name from the `FGameTexture` alone, which meant every palette
+    **translation** of a sprite uploaded as the same material. RTGL1's
+    `PreferExistingMaterials` (`TextureManager.cpp:500`) then logs "Material
+    with the same name already exists, ignoring new data" and drops it. gzdoom
+    had done its half correctly the whole time — a separate hardware texture per
+    translation (`hw_texcontainer.h:62`) with correctly remapped pixels.
+    That is why per-monster `BloodColor` never rendered, including the two
+    Retribution itself authored (`64NightmareImp`, `64HellKnight`). It also made
+    blood colour **order-dependent**: whichever translation was drawn first
+    coloured every monster's blood for the session.
+    Fixed by `rt_tex_translations` (default on, pinned): translated textures get
+    a `_tr<FRemapTable::Index>` suffix, untranslated names stay byte-identical.
+    **Launch-time only** — the name is cached per hardware texture. Prove it is
+    live with `rt_tex_translations_debug 1`; no lines means it is not.
+    See `docs/blood-persist.md`.
 
 ## Suggested next work
 

@@ -144,6 +144,105 @@ no blood is the **negative control**, not a failure. `noboom` is the flip,
 against a wall mid-air; the lever for that is `rt_gore_burst_speed` down, not a
 new clamp.
 
+## Per-monster blood colour
+
+Retribution already authored two of these, and **neither had ever rendered**:
+
+```
+64NightmareImp   BloodColor "7B 5A 84"    (D64RTR_v15.WAD DECORATE:2922)
+64HellKnight     BloodColor "18 8C 31"    (DECORATE:3398)
+```
+
+`BloodColor` (`thingdef_properties.cpp:786`) builds a translation with
+`CreateBloodTranslation` (`r_translate.cpp:180`) that multiplies each palette
+entry's **brightness** by the colour — it recolours the existing BLUD art rather
+than replacing it, so no new sprites are involved. `P_SpawnBlood` copies it onto
+every splat, `A_SpawnItemEx` flags 131 carry it to the satellites, and the
+explosion burst copies it too.
+
+### Why it was invisible: RT material names ignored the translation
+
+`RTHardwareTexture::MakeTextureName` (`rt_buffers.h`) derived the RTGL1 material
+name from the `FGameTexture` alone — `BLUDA0` — with no translation component.
+GZDoom does everything right: it allocates a **separate** hardware texture per
+translation (`texture.cpp:536`, keyed at `hw_texcontainer.h:62`) and
+`CreateTexBuffer` produces correctly remapped pixels. Then the upload is dropped
+on the floor:
+
+```cpp
+// deps/RTGL/Source/TextureManager.cpp:51, 500-507
+constexpr bool PreferExistingMaterials = true;
+if (materials.contains(info.pTextureName)) {
+    debug::Verbose("Material with the same name already exists, ignoring new data: {}");
+    return false; }
+```
+
+**First upload of the session wins.** Red normally got there first — but the order
+is not guaranteed, so a session where a Nightmare Imp bled before anything else
+would have tinted *every* monster's blood purple. That latent nondeterminism was
+worth fixing on its own.
+
+`rt_tex_translations` (default **1**, pinned) appends a suffix to the material
+name for translated textures only: `BLUDA0` → `BLUDA0_tr7`. The index is
+`FRemapTable::Index`, a globally unique CRC-deduplicated index into
+`uniqueRemaps` (`palettecontainer.cpp:199`), normalised exactly the way gzdoom's
+own `FHardwareTextureContainer::GetTexID` does — so equal translations collapse
+onto one name and two different ones can never collide. Untranslated names are
+byte-identical to before, so nothing in `rt/mat`, `rt/mat_dev` or
+`textures.json` moves.
+
+Two things about it:
+
+- **It is a launch-time flip, not a live one.** The name is computed once in
+  `CreateIfWasnt` and cached on the hardware texture; toggling the cvar
+  mid-session changes nothing already uploaded.
+- `rt_tex_translations_debug 1` prints one line per translated texture as it is
+  uploaded (`base → base_trN`). **No lines means the fix is not live** — check
+  that before judging any colour on screen.
+
+A translated sprite no longer finds an authored RT material under its base name.
+For blood that is free (there are no `BLUD*` materials), and the only other
+translated sprites are corpses crushed flat by a door, which take
+`BloodTranslation` on the generic crush state (`p_mobj.cpp:1199, 1242`) — squashed
+gib frames, never the walking frames that carry eye `_e` masks.
+
+### The table
+
+Five replacement subclasses in the pk3's `DECORATE`, each overriding nothing but
+the colour:
+
+| actor | colour | |
+|---|---|---|
+| `64NightmareImp` | `4B 2A 5A` | dark purple — **overrides** the WAD's lighter `7B 5A 84` |
+| `64HellKnight` | `18 8C 31` | green, **the WAD's own** — we add nothing, the engine fix just makes it visible |
+| `64Cacodemon` | `3C 64 C8` | deep blue |
+| `64PainElemental` | `6B 4A 28` | brown |
+| `64Arachnotron` | `C8 C8 64` | pale yellow-green |
+| `64SpiderMastermind` | `C8 C8 64` | matches the Arachnotron; **no map places one**, so it cannot be judged in play |
+| `64BaronOfHell` | — | **red, deliberately.** It bleeds red beside a green Hell Knight; that is the decision, not an oversight |
+
+Everything else — humans, Doom Imps, Demons, Revenant, Mancubus, Cyberdemon,
+Archvile — stays red, because red has to remain the common case or it stops
+reading as blood at all.
+
+Replacing a monster class is safe for boss specials: `A_BossDeath` resolves
+`GetReplacee()` and matches on either the replacee's or its own type
+(`p_enemy.cpp:3206`), so a MAP07-style Arachnotron death action still fires. If a
+replacement ever does disturb something, the fallback is `Actor.CopyBloodColor`
+(`vmthunks_actors.cpp:1717` — it writes both `BloodColor` and `BloodTranslation`
+on an *instance*) driven from `WorldThingSpawned` against a hidden donor actor,
+touching no monster class at all.
+
+**The RT fluid particles stay red.** `RT_SpawnBlood_Thing` (`p_mobj.cpp:5943`)
+takes no actor and no colour; the fluid colour is frame-global
+(`rt_blood_color_r/g/b`, set once per frame at `rt_main.cpp:1848`). Making it
+per-actor needs an RTGL1 API change. Do not re-investigate.
+
+Test on **MAP03** (21 Nightmare Imps, 8 Cacodemons) and **MAP14**, the one map
+carrying all four new families at once (6 Caco, 3 Pain, 4 Arachnotron, 7 Hell
+Knight). Shoot something red-blooded in the same room as the check that the
+suffix is actually unique.
+
 ## Open question
 
 `rt_gore_roll` is off by default because it is the one part not verified in
