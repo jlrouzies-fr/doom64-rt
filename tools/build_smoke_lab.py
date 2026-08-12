@@ -171,6 +171,22 @@ def build_textmap(warm: bool = False) -> str:
         )
     )
 
+    # A ROCKET LAUNCHER AND AMMO ON THE SPAWN. The rocket is the loudest smoke
+    # source in the game -- a trail in flight plus a burst where it lands -- so
+    # it is the one to judge "is the smoke still glowing" against. Dropped on the
+    # player start rather than given by console: `give` runs before a player
+    # exists, and GZDoom auto-switches on pickup, so walking onto it at spawn
+    # arms it with no input at all.
+    for kind, dx in ( ( 2003, 0.0 ), ( 2046, 24.0 ), ( 2046, -24.0 ) ):
+        parts.append(
+            blk("thing",
+                x=float(ROOM_W // 2) + dx,
+                y=float(ROOM_D - 384),
+                angle=0, type=kind,
+                skill1=True, skill2=True, skill3=True, skill4=True, skill5=True,
+                single=True, coop=True, dm=True)
+        )
+
     # ---- the three lighting cases ---------------------------------------
     # All at 64 units up, roughly muzzle height, so they light the puff rather
     # than the floor under it.
@@ -284,6 +300,13 @@ def build_textmap(warm: bool = False) -> str:
     return "\n".join(parts)
 
 
+# The launcher and ammo are dropped on the player start (see build_textmap), and
+# the SELECTION is done by rt_autofire_slot in the engine rather than here. A
+# custom player class with Player.StartItem was tried first and is fatal: MAPINFO
+# is parsed BEFORE DECORATE, so `playerclass` names a class that does not exist
+# yet and the game dies during G_ParseMapInfo with nothing useful in the log.
+
+
 def build_mapinfo() -> bytes:
     txt = (
         "map MAP97 \"RT Smoke Lab\"\n"
@@ -297,9 +320,12 @@ def build_mapinfo() -> bytes:
         "    // fixtures placed above and nothing the map format added for us.\n"
         "}\n"
     )
-    buf = OUT_MAPINFO
-    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
-        z.writestr("MAPINFO", txt)
+    # clearplayerclasses/playerclass is game-wide, which is exactly right: this
+    # pk3 is only ever loaded by the lab.
+    # clearplayerclasses/playerclass is game-wide, which is exactly right:
+    # this pk3 is only ever loaded by the lab.
+    with zipfile.ZipFile(OUT_MAPINFO, 'w', zipfile.ZIP_DEFLATED) as z:
+        z.writestr('MAPINFO', txt)
     return txt.encode()
 
 
