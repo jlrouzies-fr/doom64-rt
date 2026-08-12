@@ -377,6 +377,131 @@ SHAFTS = [
         enabled=True,
         note="C921 panel x1 -- same fixture already confirmed and repaired elsewhere; see the PANEL SWEEP note above.",
     ),
+    # ---- MAP22 REVIEW ---------------------------------------------------------
+    # 17 elements, 18 sectors -- the rest of MAP22's painted 255s, reviewed one at a
+    # time rather than swept. Every one is above the map's threshold (240), at least
+    # 30 brighter than EVERYTHING bordering it, and carries no authored `_e` -- so
+    # none of them is a real emitter (checked against rt/mat_dev; the switch / exit /
+    # monitor / teleporter / key families are excluded by the scanner already).
+    #
+    # NOTE the PANEL SWEEP's "fewer than 40 sectors game-wide" cut is NOT what admits
+    # most of these, because scan_painted_light.py does not currently apply that cut at
+    # all -- its "confirmed-fake" set includes C53 (597 sectors), C35 (245), C10 (234).
+    # So its `# matches C10,C35` on sectors 124/125 is exactly the blind extrapolation
+    # the note warns against, and is NOT the reason that entry is enabled here.
+    # These are enabled on the per-element frame test instead, which is per-map
+    # evidence and does not extrapolate. Only 275/276 (CYTRAKA, 27) and 277 (CDOR4,
+    # 11) would also pass the rarity cut.
+    #
+    # to_light is the brightest bordering sector throughout, so the failure mode of a
+    # wrong call here is "a panel stops standing out", never "a room goes black".
+
+    # Door surrounds, tracks and recesses -- 1x16 to 384x64, the classic panel shape.
+    Shaft(
+        "MAP22", [266], from_light=255, to_light=180,
+        enabled=True,
+        note="CTRAK1 door track x1, 1x16u. A 64BigFire-class fixture sits 22u away, so under RT the track is lit for real -- the paint is a second sourceless copy of it (practices §31).",
+    ),
+    Shaft(
+        "MAP22", [267], from_light=255, to_light=180,
+        enabled=True,
+        note="CTRAK1 door track x1, 1x16u -- twin of 266, same fixture 22u away.",
+    ),
+    Shaft(
+        "MAP22", [271], from_light=255, to_light=160,
+        enabled=True,
+        note="C37,C921F sill x1, 128x1u. C921F is used on ONE sector game-wide; both neighbours (75, 82) sit at 160.",
+    ),
+    Shaft(
+        "MAP22", [272], from_light=255, to_light=160,
+        enabled=True,
+        note="CBTRAKA,CDOR3 door surround x1, 128x16u; fixture 48u away, host 160.",
+    ),
+    Shaft(
+        "MAP22", [273], from_light=255, to_light=180,
+        enabled=True,
+        note="CBTRAKA,CDOR3 door surround x1, 128x16u -- same doorway as 272.",
+    ),
+    Shaft(
+        "MAP22", [275], from_light=255, to_light=170,
+        enabled=True,
+        note="CYTRAKA door surround x1 -- same fixture already confirmed and repaired at MAP16:114, MAP16:190; 27 sectors game-wide, so this one also clears the PANEL SWEEP rarity cut.",
+    ),
+    Shaft(
+        "MAP22", [276], from_light=255, to_light=180,
+        enabled=True,
+        note="CYTRAKA door surround x1 -- twin of 275, same MAP16 precedent.",
+    ),
+    Shaft(
+        "MAP22", [277], from_light=255, to_light=190,
+        enabled=True,
+        note="CDOR4 door surround x1 -- same fixture already confirmed and repaired at MAP10:189; 11 sectors game-wide, clears the rarity cut.",
+    ),
+    Shaft(
+        "MAP22", [34], from_light=255, to_light=180,
+        enabled=True,
+        note="C24,C37 recess x1, 64x64u cut into sector 33 at 180. C24 is 9 sectors game-wide.",
+    ),
+    Shaft(
+        "MAP22", [35], from_light=255, to_light=180,
+        enabled=True,
+        note="C24,C37 recess x1, 64x64u -- twin of 34, same host sector 33.",
+    ),
+    Shaft(
+        "MAP22", [139], from_light=255, to_light=180,
+        enabled=True,
+        note="C18,C24 recess x1, 64x64u; sole neighbour 138 at 180.",
+    ),
+    Shaft(
+        "MAP22", [141], from_light=255, to_light=180,
+        enabled=True,
+        note="C18,C24 recess x1, 64x64u; sole neighbour 140 at 180.",
+    ),
+    Shaft(
+        "MAP22", [18], from_light=255, to_light=220,
+        enabled=True,
+        note="C3F strip x1, 384x64u; sole neighbour 17 at 220. C3F is 7 sectors game-wide and has no _e -- it is panelling, not a fixture.",
+    ),
+
+    # Room-sized painted areas -- the 'baked lit environment' half. Each is a whole
+    # room at 255 whose ONLY neighbour is the corridor around it at 160-180, with no
+    # light-bearing actor inside it and no sky ceiling to be moonlit through. Nothing
+    # in the room can be casting this, which is the §5 test: it is baked shading, not
+    # a light. After the repair each room sits level with the corridor it opens off.
+    Shaft(
+        "MAP22", [91], from_light=255, to_light=160,
+        enabled=True,
+        note="C2 room x1, 384x312u, ceiling CASF203 (not sky). Sole neighbour 28 at 160; nearest light-bearing actor 206u away, i.e. outside the room.",
+    ),
+    Shaft(
+        "MAP22", [124, 125], from_light=255, to_light=160,
+        enabled=True,
+        note="C10,C35 room x2, 256x256u. Neighbours 118 and 126 both at 160; nearest light-bearing actor 1663u away -- there is nothing on this side of the map to cast it. NOT enabled on the C10/C35 texture match, which is too common to sweep on (234/245 sectors).",
+    ),
+    Shaft(
+        "MAP22", [127], from_light=255, to_light=160,
+        enabled=True,
+        note="WFALL01 waterfall room x1, 256x320u; sole neighbour 126 at 160, nearest fixture 1697u. Liquid falls are deliberately not auto-emitters here (pitfall 20), so nothing lights this room -- the 255 is pure baked shading.",
+    ),
+    Shaft(
+        "MAP22", [172], from_light=255, to_light=180,
+        enabled=True,
+        note="C35,C3F hall x1, 576x384u -- the largest one. Sole neighbour 90 at 180; nearest light-bearing actor 160u away, outside it.",
+    ),
+    # DO NOT SWEEP the 20-sector region [0, 1, 5..9, 100..105, 107..109, 254, 255,
+    # 263, 278] that scan_painted_light.py reports on MAP22 *after* these repairs.
+    # It is not a defect and it is not new: stripping the 23 sectors above drops the
+    # map median 200 -> 180, so the emission threshold drops 240 -> 220 and this
+    # region crosses it. 17 of its 20 sectors have an F_SKY ceiling -- it is the open
+    # courtyard, and under RT the moon lights it for real. The scanner also refuses to
+    # emit an entry for it ("mixed from_light [230, 255] -- split first"), which is the
+    # same signal the PANEL SWEEP note recorded for MAP32's 28-sector region: a region
+    # this size is not a panel and wants looking at rather than sweeping.
+    #
+    # General trap: every repair lowers the median, which lowers the threshold, which
+    # can expose a fresh 'element' on the next scan. Re-scanning after a fix does not
+    # give you the same map with less paint on it.
+
     Shaft(
         "MAP23", [255, 256, 292, 326], from_light=255, to_light=160,
         enabled=True,
