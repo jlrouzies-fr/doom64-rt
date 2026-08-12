@@ -381,6 +381,28 @@ looks.** At 0.47 m cells, a 0.18 m puff is 0.77 of a cell across its whole
 0.35 spans about 1.3 cells at birth and roughly 3 by the end of its life. This
 is the number to raise first if smoke looks like a blink rather than a cloud.
 
+**`rt_smoke_life` changes a filament's SHAPE, not just its duration — and this
+cost a round trip.** Raising it 1.6 → 2.2 made the pistol read as "smoke
+appearing above me, too sprayed out, not a trail off the gun tip". Three separate
+couplings, only the first of which was noticed in advance:
+
+| what | why it follows life |
+|---|---|
+| SIZE | a puff keeps expanding at `growth` for the whole extra time |
+| HEIGHT | `rise` integrates over time: 2.4 s puts the plume 0.96 m above the barrel, 3.3 s puts it at 1.42 m — above the player's head |
+| SPREAD | `rt_smoke_curl` scales with age **squared**, so 37% more life is 89% more lateral wander |
+
+Size was paired away with `growth`. Height and spread were not, and they are what
+turned a thread into a cloud overhead. **A profile whose read depends on absolute
+time has to restate that time whenever the shared cvar moves** — so the Pistol and
+Chaingun rows carry `life` multipliers chosen to hold their absolute lifetimes at
+the values they always had (1.1 × 2.2 ≈ 1.5 × 1.6), and their `growth`
+multipliers compensate the lower `rt_smoke_growth` the same way.
+
+The lesson generalises: **on a filament, "more smoke" is more PARCELS at the same
+spacing and the same lifetime.** Nothing else is safe. The pistol went 14 → 18
+releases and every other number in its row is arithmetically what it was.
+
 **`rt_smoke_life` and `rt_smoke_growth` are one knob, not two.** A puff's final
 size is `radius + growth x life`, so raising the life alone does not make smoke
 last longer — it makes it *bigger*, and the `radius0 / radius` dilution then
