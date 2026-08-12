@@ -72,6 +72,16 @@ anywhere in it. Two candidate fixes were tried:
 Ask what the original image is *depicting* — a fixture, a glowing panel, an ambient
 wash — and pick the RT construct with that shape.
 
+**And put it where the art draws the emitter, which is a question about the TEXTURE TILE,
+not about the surface.** A wall texture repeats, so the unit of "one fixture" is one
+64×64 tile, not one sidedef: a 128-tall band is *two* stacked panels with *two* screens.
+Placing one light at the middle of the band puts it on the seam between them, lighting
+bare panelling — `screen/pointlightinthemiddlebad.png`. Within the tile, the emitter's
+position is the `_e` mask's lit centroid, and it is not necessarily the middle: SMONAA,
+SMONCA and SMONDA all draw their screens at 0.46–0.54 of the tile, so "centre" looks like
+the rule, but SMONBA's readout block sits at **0.688** — and the panels Retribution itself
+wired sit at 0.625–0.688 to match. Derive the position from the mask; do not centre it.
+
 ## 5. Albedo cannot rescue an unlit room
 
 Albedo is a reflectance multiplier. **Zero incident light × any albedo is still black.**

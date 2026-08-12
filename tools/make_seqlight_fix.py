@@ -2149,7 +2149,7 @@ class PanelLamp:
 
     def __init__(self, texture: str, maps: dict[str, int], color: tuple[int, int, int],
                  hi: int, lo: int, tile: float, min_len: float, max_len: float,
-                 offset: float, height_frac: float, min_gap: float,
+                 offset: float, screen_v: float, screen_h: float, min_gap: float,
                  enabled: bool, note: str):
         self.texture = texture.upper()
         self.maps = maps
@@ -2160,7 +2160,8 @@ class PanelLamp:
         self.min_len = min_len
         self.max_len = max_len
         self.offset = offset
-        self.height_frac = height_frac
+        self.screen_v = screen_v
+        self.screen_h = screen_h
         self.min_gap = min_gap
         self.enabled = enabled
         self.note = note
@@ -2176,11 +2177,18 @@ PANEL_LAMPS = [
         # Derived with `--panels`, never counted by hand. MAP34 is in this list
         # because that probe scans past MAP32 and found a panel there that the
         # original survey missed.
-        maps={"MAP01": 1, "MAP03": 2, "MAP05": 5, "MAP06": 2,
-              "MAP07": 22, "MAP08": 1, "MAP29": 4, "MAP34": 1},
+        # 48, not 38: a 128-tall band is TWO stacked panels and gets two lights,
+        # MAP34's 256 band gets four. See the SPACING note in add_panel_lights.
+        maps={"MAP01": 1, "MAP03": 3, "MAP05": 5, "MAP06": 4,
+              "MAP07": 22, "MAP08": 1, "MAP29": 8, "MAP34": 4},
         color=(255, 255, 255), hi=32, lo=28,
         tile=64.0, min_len=40.0, max_len=72.0,
-        offset=8.0, height_frac=0.5, min_gap=40.0,
+        # Where the SCREEN is inside the 64x64 tile, as fractions of the tile
+        # measured from its bottom-left. Straight off the _e mask's lit centroid
+        # (lit rows 14..26 of 64, cols 34..53) — SMONBA's readout block sits high
+        # and right of centre, NOT in the middle of the tile. Re-derive with:
+        #   the _e centroid one-liner in the class docstring.
+        offset=8.0, screen_v=0.688, screen_h=0.680, min_gap=40.0,
         enabled=True,
         note="The white data-readout monitor. See the class docstring: it is the "
              "only SMON family in the game with no light of its own (8 of 78 "
@@ -2407,10 +2415,52 @@ def add_panel_lights(
     whole sector (rt-lighting-practices.md §21). Getting that wrong puts the
     light in front of the panel instead of on it.
 
-    SPACING. One light per `tile` units along the face, centred, matching the
-    mod's own measured density -- so a 64-wide panel gets exactly one, in the
-    middle. (With the shipped max_len of 72 that is every face this rule takes;
-    the loop is general because the density measurement is.)
+    SCREEN POSITION IN THE TILE. The light does not go in the middle of the tile;
+    it goes where the lit element is drawn, which is what makes it read as coming
+    off the screen. That position is the `_e` mask's lit centroid, and it differs
+    per family -- which is why the mod's own lights differ per family too:
+
+        texture   _e centroid (from tile bottom)   authored light, tile fraction
+        SMONAA           0.541                            0.500  (74 of 94)
+        SMONCA           0.480                              --
+        SMONDA           0.463                              --
+        SMONBA           0.688                          0.625..0.688  (all 6)
+
+    SMONAA/CA/DA draw their screens near the middle of the tile, so the authors'
+    0.50 sits on them. SMONBA's readout block is high in the tile, and the six
+    SMONBA panels Retribution DID wire are correspondingly high. So the rule is
+    "put it on the `_e` centroid", not "put it in the middle" -- the middle is
+    merely what that reduces to for three families out of four.
+
+    Re-derive the centroid for a new texture with:
+
+        from PIL import Image
+        im = Image.open('rt/mat/SMONBA_e.png').convert('L'); w,h = im.size
+        px = im.load()
+        rows = [sum(1 for x in range(w) if px[x,y]>30) for y in range(h)]
+        cols = [sum(1 for y in range(h) if px[x,y]>30) for x in range(w)]
+        t = sum(rows)
+        v = 1 - sum(y*n for y,n in enumerate(rows))/t/h    # screen_v
+        h_= sum(x*n for x,n in enumerate(cols))/t/w        # screen_h
+
+    TEXTURE ANCHOR. Tiles are counted from the end the texture is pegged to, not
+    from the floor, or a band that is not a whole number of tiles puts every
+    screen off by the remainder. All SMONBA sidedefs carry `offsetx`/`offsety` 0
+    and no peg flags, so a one-sided `middle` hangs from the CEILING downward --
+    which is the case this is exercised by (78 of 80 faces).
+
+    SPACING. One light per `tile` unit of face, in BOTH axes -- a texture tile is
+    one panel with one screen on it, so a 128-tall band is two stacked panels and
+    needs two lights. Confirmed against the mod's own SMONAA faces:
+
+        band  64 (1 tile)   light heights [32]
+        band 128 (2 tiles)  light heights [32, 96]
+        band 256 (4 tiles)  light heights [32, 96, 160, 224]
+
+    Getting this wrong is what `screen/pointlightinthemiddlebad.png` shows: one
+    light at 0.5 of a 128-unit BAND lands on the seam between two tiles, lighting
+    bare panelling midway between the two screens, and reads as a bare bulb stuck
+    on the wall rather than as the screens glowing.
     """
     def flds(b: str) -> dict[str, str]:
         return {k: v.strip() for k, v in re.findall(r"(\w+)\s*=\s*([^;]+);", b)}
@@ -2423,13 +2473,29 @@ def add_panel_lights(
     secs = [flds(b) for b in re.findall(r"(?ms)^sector\s*\{(.*?)\}", text)]
     things = [flds(b) for b in re.findall(r"(?ms)^thing\s*\{(.*?)\}", text)]
 
-    # Stock GZDoom dynamic-light things — what min_gap tests against, so a panel
-    # the mod already lit does not get a second light stacked on it.
-    existing = [
-        (float(t["x"]), float(t["y"]))
+    # What min_gap tests against, so a panel the mod already lit does not get a
+    # second light stacked on it. Entries are (x, y, z) with z None for the mod's
+    # own things: a UDMF thing's `height` is relative to its sector's floor and
+    # we do not know which sector it is in without a point-in-sector test, so
+    # those stay a 2D "this panel is already wired" test.
+    #
+    # Ours carry a real z and are compared in 3D, because two lights on the SAME
+    # panel column at different heights are exactly what a two-tile band needs.
+    # Testing those in 2D silently dropped every second-row light and left the
+    # count identical to the one-per-face version.
+    existing: list[tuple[float, float, float | None]] = [
+        (float(t["x"]), float(t["y"]), None)
         for t in things
         if int(float(t.get("type", 0))) in (9800, 9801, 9802, 9803, 9804)
     ]
+
+    def too_close(px: float, py: float, pz: float, gap: float) -> bool:
+        for lx, ly, lz in existing:
+            if math.hypot(lx - px, ly - py) > gap:
+                continue
+            if lz is None or abs(lz - pz) <= gap:
+                return True
+        return False
 
     lines = [flds(b) for b in re.findall(r"(?ms)^linedef\s*\{(.*?)\}", text)]
 
@@ -2447,6 +2513,36 @@ def add_panel_lights(
     out = [text.rstrip("\n")]
     added = 0
     report: list[str] = []
+
+    def place(px: float, py: float, zworld: float, fh: float,
+              panel: PanelLamp) -> None:
+        r, g, b = panel.color
+        out.append(
+            "thing\n{\n"
+            f"x = {px:.3f};\n"
+            f"y = {py:.3f};\n"
+            # UDMF `height` is relative to the sector FLOOR, not absolute.
+            f"height = {zworld - fh:.3f};\n"
+            "angle = 0;\n"
+            # 9802 PointLightFlicker, the type the mod uses for every animated
+            # wall monitor (199 of its 205 light things). rt_dynlight_flicker
+            # must stay on or the whole class is skipped — pitfall 27.
+            "type = 9802;\n"
+            f"arg0 = {r};\n"
+            f"arg1 = {g};\n"
+            f"arg2 = {b};\n"
+            f"arg3 = {panel.hi};\n"
+            f"arg4 = {panel.lo};\n"
+            "skill1 = true;\nskill2 = true;\nskill3 = true;\n"
+            "skill4 = true;\nskill5 = true;\n"
+            "single = true;\ncoop = true;\n"
+            "class1 = true;\nclass2 = true;\nclass3 = true;\n"
+            "class4 = true;\nclass5 = true;\n"
+            "}\n"
+        )
+        # Placed lights join the gap test, so two panels meeting at a corner
+        # cannot stack a pair in the same spot.
+        existing.append((px, py, zworld))
 
     for panel in panels:
         placed = 0
@@ -2495,44 +2591,40 @@ def add_panel_lights(
                     if key == "sideback":
                         nx, ny = -nx, -ny
 
-                    n = max(1, int(round(length / panel.tile)))
-                    for k in range(n):
-                        t = (k + 0.5) / n
-                        px = ax + (bx - ax) * t + nx * panel.offset
-                        py = ay + (by - ay) * t + ny * panel.offset
-                        if any(math.hypot(lx - px, ly - py) <= panel.min_gap
-                               for lx, ly in existing):
+                    # Vertical tiling, counted from the pegged end. `middle` on a
+                    # one-sided line hangs from the top; lower-unpegged flips it,
+                    # and an upper texture is bottom-pegged unless upper-unpegged.
+                    top_anchored = (
+                        "dontpegbottom" not in d if part in ("mid", "bot")
+                        else "dontpegtop" in d
+                    )
+                    rows = max(1, int(math.ceil((hi_z - lo_z) / panel.tile - 1e-6)))
+                    cols = max(1, int(round(length / panel.tile)))
+
+                    for row in range(rows):
+                        # Distance from the screen down to the tile's top edge.
+                        drop = (1.0 - panel.screen_v) * panel.tile
+                        if top_anchored:
+                            z = hi_z - row * panel.tile - drop
+                        else:
+                            z = lo_z + (rows - row) * panel.tile - drop
+                        # A partial tile at the far end has no screen on it.
+                        if not (lo_z + 1.0 <= z <= hi_z - 1.0):
                             continue
-                        z = lo_z + (hi_z - lo_z) * panel.height_frac - fh
-                        r, g, b = panel.color
-                        out.append(
-                            "thing\n{\n"
-                            f"x = {px:.3f};\n"
-                            f"y = {py:.3f};\n"
-                            f"height = {z:.3f};\n"
-                            "angle = 0;\n"
-                            # 9802 PointLightFlicker, the type the mod uses for
-                            # every animated wall monitor (199 of its 205 light
-                            # things). rt_dynlight_flicker must stay on or the
-                            # whole class is skipped before upload — pitfall 27.
-                            "type = 9802;\n"
-                            f"arg0 = {r};\n"
-                            f"arg1 = {g};\n"
-                            f"arg2 = {b};\n"
-                            f"arg3 = {panel.hi};\n"
-                            f"arg4 = {panel.lo};\n"
-                            "skill1 = true;\nskill2 = true;\nskill3 = true;\n"
-                            "skill4 = true;\nskill5 = true;\n"
-                            "single = true;\ncoop = true;\n"
-                            "class1 = true;\nclass2 = true;\nclass3 = true;\n"
-                            "class4 = true;\nclass5 = true;\n"
-                            "}\n"
-                        )
-                        # Placed lights join the gap test, so two panels meeting
-                        # at a corner cannot stack a pair in the same spot.
-                        existing.append((px, py))
-                        added += 1
-                        placed += 1
+
+                        for k in range(cols):
+                            # screen_h is measured from the texture's left, which
+                            # runs v1->v2 on a front sidedef and v2->v1 on a back.
+                            frac = k + (panel.screen_h if key == "sidefront"
+                                        else 1.0 - panel.screen_h)
+                            t = min(1.0, max(0.0, frac / cols))
+                            px = ax + (bx - ax) * t + nx * panel.offset
+                            py = ay + (by - ay) * t + ny * panel.offset
+                            if too_close(px, py, z, panel.min_gap):
+                                continue
+                            place(px, py, z, fh, panel)
+                            placed += 1
+                            added += 1
         report.append(f"{panel.texture} x{placed}")
     return "\n".join(out) + "\n", added, report
 

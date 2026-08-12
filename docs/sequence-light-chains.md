@@ -819,7 +819,7 @@ Each family's light matches its own emissive mask, which is the check
 
 SMONBA's lit element is a 260-pixel white data-readout block, not a coloured CRT.
 
-### Density, also measured
+### Density, also measured — one light per TILE, in both axes
 
 Lights within 24u of the face segment, bucketed by face length, over SMONAA:
 
@@ -830,8 +830,53 @@ Lights within 24u of the face segment, bucketed by face length, over SMONAA:
 | 128 | 1 | 2.00 | 1.00 |
 | 192 | 9 | 3.00 | 1.00 |
 
-Exactly **one light per 64-unit tile**, at **0.50 of the panel band's height**
-(median over 110 lights), **8 units** off the face.
+And the same holds **vertically** — a texture tile is one panel with one screen on
+it, so a tall band is a stack of panels:
+
+| band height | tiles | authored light heights |
+|---|---|---|
+| 64 | 1 | `[32]` |
+| 128 | 2 | `[32, 96]` |
+| 256 | 4 | `[32, 96, 160, 224]` |
+
+So: **one light per 64×64 tile**, **8 units** off the face.
+
+### The screen is not in the middle of the tile
+
+`screen/pointlightinthemiddlebad.png` is what the first pass shipped: a light at
+0.50 of the *band* on a 128-tall panel, which lands on the **seam between the two
+tiles**, lighting bare panelling midway between the two screens. It reads as a
+bare bulb stuck on the wall — the light does not appear to come from anything.
+
+Two separate errors, and the band-vs-tile one hid the other. The light's height
+within the tile is the `_e` mask's lit centroid, and that differs per family:
+
+| texture | `_e` centroid, from tile bottom | authored light, tile fraction |
+|---|---|---|
+| `SMONAA` | 0.541 | 0.500 (74 of 94) |
+| `SMONCA` | 0.480 | — |
+| `SMONDA` | 0.463 | — |
+| **`SMONBA`** | **0.688** | **0.625–0.688** (all 6) |
+
+SMONAA/CA/DA draw their screens near the middle of the tile, so the authors' 0.50
+sits on them and "put it in the middle" looks like the rule. **SMONBA's readout
+block is high and right of centre** (lit rows 14–26 of 64, cols 34–53), and the
+six SMONBA panels Retribution *did* wire are correspondingly high. The rule is
+**put the light on the `_e` centroid**; the middle is merely what that reduces to
+for three families out of four.
+
+Both fixes together take the count from 38 to **48** — the extra ten are the
+second rows on MAP06/MAP29's 128-tall bands, MAP03's 128 top, and MAP34's 256.
+
+A third bug sat underneath and is worth its own line: the `min_gap` duplicate test
+was **2D**, so the second light on a tile column read as a duplicate of the first
+and was dropped. The count stayed at 38 and looked like the vertical tiling had
+simply had no effect. Ours are now compared in 3D; the mod's own things stay a 2D
+"this panel is already wired" test, since a UDMF thing's `height` is relative to
+its sector floor and identifying that sector needs a point-in-sector test.
+
+Verified on the built wad: all 48 at tile fraction **0.688**, inside the mask's lit
+rows (0.594–0.781), and all 48 in open space.
 
 ### Trap 1 — do not light every face; MAP07 is not a monitor wall
 

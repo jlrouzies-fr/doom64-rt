@@ -161,19 +161,30 @@ To make a fixture cast light, add a light **thing** to the map (`LAMPS` /
 effects off, and removing it leaves them running.
 
 `PANEL_LAMPS` is the wall-monitor family. Retribution lights its animated panels with a
-9802 `PointLightFlicker` **8 units off the face**, one per 64-unit tile, coloured to
-match the panel's own `_e` mask — never texture metadata. **SMONBA was the one monitor
+9802 `PointLightFlicker` **8 units off the face**, one per 64×64 tile — in **both** axes,
+so a 128-tall band is two stacked panels and gets two lights — placed at the **`_e` mask's
+lit centroid** within the tile and coloured to match it. Never texture metadata.
+**SMONBA was the one monitor
 family in the game with no light of its own** (8 of 78 faces, and those eight are a
 neighbouring SMONAA's light at a median 64u against 8u everywhere else), so it read as
 animated but dead; it now gets a white flicker, white because its `_e` is neutral
-(146,146,146) where SMONAA's is green. Two traps, both paid for:
+(146,146,146) where SMONAA's is green. **48 lights across 8 maps.** Four traps, all paid
+for:
 
-- **Only single-tile faces are lit.** 62 of the 78 SMONBA faces are MAP07's clad band —
-  128/192/256-unit runs — and SMONAA's density there would add ~105 flickering lights to
+- **Only single-tile-WIDE faces are lit.** 62 of the 78 SMONBA faces are MAP07's clad band
+  — 128/192/256-unit runs — and SMONAA's density there would add ~105 flickering lights to
   one map. That is §20 exactly. `max_len` excludes them, as Retribution's own authors did.
 - **Front sidedef is the RIGHT of `v1→v2`.** A sector-**centroid** sign test put 25 of 38
   lights inside solid geometry, because a sprawling sector's centroid is not inside it.
-  Measured against the mod's 169 authored monitor lights: 157 sit on the right normal.
+  Measured against the mod's 169 authored monitor lights: 157 sit on the right normal (§32).
+- **A tall band is a STACK of panels, and the screen is not mid-tile.** One light at 0.50
+  of a 128-unit band lands on the seam between two tiles, on bare panelling —
+  `screen/pointlightinthemiddlebad.png`. Tile vertically too, and put the light at the
+  `_e` centroid: SMONBA's screen is at **0.688**, not 0.5, which is why the six panels the
+  mod itself wired sit at 0.625–0.688 while SMONAA's 94 sit at 0.500.
+- **A duplicate test must match the axes you tile on.** `min_gap` was 2D, so the second
+  light on a tile column read as a duplicate and was dropped — the count stayed at 38 and
+  the vertical tiling looked inert.
 
 Derive the per-map counts with `--panels` (never by hand — it found a SMONBA panel on
 MAP34 that a MAP01–32 survey missed); retune brightness with `--panel-radii=hi/lo`.
@@ -292,7 +303,7 @@ declaration cannot drift from its definition. Put nothing in that file except an
 | `tools/ab-water.cmd` | Water A/B: `stock`/`styl`/`flat`/`mirror`/`noglow`/`nocaus`/`debug`, default MAP10. Flats are tagged engine-side (`l_waterflag`), no setup needed. See `docs/rt-water.md`. |
 | `tools/smoke-lab.cmd` | **Smoke lab — MAP97 dark / MAP96 bright beige** — unattended capture of muzzle smoke in a controlled room (`python tools/build_smoke_lab.py` first). `tools/smoke-sweep.cmd <cvar> <values...>` walks one cvar at a fixed tic; `python tools/smoke_gallery.py` renders named candidate looks into one labelled PNG. Judge smoke here, never in a real level — and colour/visibility questions belong on MAP96. |
 | `tools/ab.cmd smoke-<arm>` | Volumetric smoke A/B (arms are cfgs in `tools/arms/`, NOT command-line strings). `smoke-full`/`fat`/`thin`/`still`/`drift`/`walk`/`glued`; monsters `smoke-monster`/`nomonster`; sources `smoke-flames`/`noflames`/`proj`/`barrel`/`crowd`; look `smoke-stylize0`; traps `nearfade`/`blendslow`/`blendraw`; resolution `reach30`/`reach8`; isolation `off`/`nolight`/`debug`; and `fogsafe`/`fogsmoke`, the fog regression. See `docs/rt-smoke.md`. |
-| `tools/ab-blood.cmd` | Persistent blood A/B: `off`/`on`/`uncapped`/`tight`/`plain`/`wild`/`roll`, default MAP01. The lifetime is DECORATE in the WAD, not a renderer setting. See `docs/blood-persist.md`. |
+| `tools/ab-blood.cmd` | Persistent blood A/B: `off`/`on`/`uncapped`/`tight`/`plain`/`wild`/`roll`; explosion splash `boom`/`noboom`/`bigboom`, default MAP01. The lifetime is DECORATE in the WAD, not a renderer setting; explosive kills leave no blood in stock GZDoom because `P_RadiusAttack` never calls `P_SpawnBlood`. See `docs/blood-persist.md`. |
 
 Important cvars on Retribution launch (do not crank blindly):
 
