@@ -532,6 +532,39 @@ SHAFTS = [
     # threshold, which can bring a fresh region above it. Re-scanning after a fix does
     # not give you the same map with less paint on it, so the scan has to be re-run
     # until it is quiet rather than once.
+    #
+    # ---- and the two below are that trap actually biting -----------------------
+    # Reported as screen/coloredtexturelevel22yesOrno.png: "the whole floor is
+    # overlight bright sticking out, pillars on it are properly in the dark".
+    #
+    # That description is the tell, and it is worth keeping. A real light cannot
+    # brighten a floor and leave the pillars standing ON it dark. Only a SURFACE-LOCAL
+    # term can, because RTGL1 emissive lights the surface it is on and nothing else
+    # (practices §12) -- the same signature already written up in rt_draw.cpp's
+    # l_worldemissive comment about MAP09's self-glowing courtyard.
+    #
+    # The sector under the crosshair (17, L220) was innocent: lightlevel feeds
+    # l_worldemissive and nothing else, and at exactly the threshold it returns 0.
+    # The culprit was sector 41, one room over, and it is a regression from the
+    # repairs ABOVE: they dropped MAP22's median 200 -> 180, so the threshold fell
+    # 240 -> 220, and sector 41 at L240 crossed it. It emitted NOTHING before this
+    # file touched the map, and 0.57x rt_sector_emis afterwards, over 448x448 units
+    # of open-sky floor.
+    #
+    # The scanners cannot catch this class: scan_painted_light only reports elements
+    # at least 30 brighter than their boundary, and 41's brightest neighbour is 220,
+    # a delta of 20. Checking the (new_threshold, old_threshold] band after every
+    # repair is the check that does catch it -- MAP23 and MAP24 came back empty.
+    Shaft(
+        "MAP22", [41], from_light=240, to_light=220,
+        enabled=True,
+        note="448x448u open-sky floor, F_SKY1. NOT painted-bright originally -- it is levelled with its brightest neighbour (274, also 220) purely to put it back under the emission threshold that this file's own repairs lowered. Delta 20, so no scanner reports it.",
+    ),
+    Shaft(
+        "MAP22", [85], from_light=255, to_light=200,
+        enabled=True,
+        note="64x64u CTEL1 pad, no wall textures at all -- which is why scan_painted_light skips it (it keys on sidedef textures and has none to key on). At L255 against a 220 threshold it was emitting at FULL strength. Checked for a teleport destination first and there is none, so it is an alcove like MAP13:126, not a pad that is meant to read as lit.",
+    ),
 
     Shaft(
         "MAP23", [255, 256, 292, 326], from_light=255, to_light=160,
