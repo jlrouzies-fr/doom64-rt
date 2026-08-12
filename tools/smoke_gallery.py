@@ -36,17 +36,39 @@ OUT = WORK / "gallery.png"
 # shipping value, so a row states only how it differs -- the same convention
 # RT_SMOKE_PROFILES uses.
 CANDIDATES: list[tuple[str, dict[str, str]]] = [
-    ("A  shipping now", {}),
-    ("B  no self-visibility (the old behaviour)", {"rt_smoke_ambient": "0"}),
-    ("C  grey + self-visible", {"rt_smoke_ambient": "0.9", "rt_smoke_color": "B0B0B0"}),
-    ("D  grey, denser", {"rt_smoke_ambient": "0.9", "rt_smoke_color": "B0B0B0",
-                         "rt_smoke_density": "22"}),
-    ("E  strong self-visibility", {"rt_smoke_ambient": "1.6", "rt_smoke_color": "C0C0C0"}),
-    ("F  no stylization", {"rt_smoke_stylize": "0"}),
-    ("G  chunky pixels", {"rt_smoke_stylize": "1", "rt_smoke_stylize_steps": "2",
-                          "rt_smoke_stylize_grid": "0.22"}),
-    ("H  sharp (volume filters off)", {"rt_volume_blur": "0", "rt_volume_dither": "0"}),
+    # THE PARCEL SIZE IS THE WHOLE QUESTION HERE.
+    #
+    # The packer pads a puff's ALONG-view radius up to half a froxel slice
+    # (23.4 cm at rt_volume_far 30) so the grid can resolve it at all, and
+    # divides the density by the same factor to keep the optical depth honest.
+    # A 2.5 cm pistol wisp therefore keeps only 10% of its density, while a
+    # 40 cm barrel burst keeps all of it -- which is why one is a big grey cloud
+    # and the other takes the room's colour and disappears.
+    #
+    # rt_smoke_radius is the global; the pistol row multiplies it by 0.07, so
+    # these values map to parcel radii of roughly 2.5 / 10 / 17 / 24 / 32 cm.
+    ("A  shipping now  (2.5 cm parcels)", {}),
+    ("B  10 cm parcels", {"rt_smoke_radius": "1.5"}),
+    ("C  17 cm parcels", {"rt_smoke_radius": "2.5"}),
+    ("D  24 cm - at the froxel floor, no thinning", {"rt_smoke_radius": "3.4"}),
+    ("E  24 cm + grey", {"rt_smoke_radius": "3.4", "rt_smoke_color": "B4B4B4"}),
+    ("F  32 cm parcels", {"rt_smoke_radius": "4.5"}),
+    ("G  17 cm + grey + denser", {"rt_smoke_radius": "2.5",
+                                  "rt_smoke_color": "B4B4B4",
+                                  "rt_smoke_density": "22"}),
+    ("H  24 cm + grey + more self-visible", {"rt_smoke_radius": "3.4",
+                                             "rt_smoke_color": "B4B4B4",
+                                             "rt_smoke_ambient": "1.0"}),
 ]
+
+# Applied to EVERY candidate, so the comparison stays fair while removing a lab
+# artifact. The map's stand-in muzzle lamp is STEADY, where a real muzzle flash
+# lasts two or three frames -- so a big dense puff saturates to white here far
+# worse than it ever would in play, and at the shipping dynlight intensity every
+# candidate above ~17 cm clipped to a featureless blob. Dimming the lamp puts
+# the range back on screen. It is not a smoke setting and must not be read as
+# one; it only makes the sizes comparable.
+BASE: dict[str, str] = {"rt_dynlight_intensity": "55"}
 
 # The crop the plume lands in, found by differencing runs. Generous enough to
 # survive a puff drifting a little between candidates.
@@ -57,7 +79,8 @@ def capture(overrides: dict[str, str], tic: int, dest: Path) -> bool:
     for d in WORK.glob("2026*"):
         shutil.rmtree(d, ignore_errors=True)
 
-    extra = " ".join(f"+{k} {v}" for k, v in overrides.items())
+    merged = {**BASE, **overrides}
+    extra = " ".join(f"+{k} {v}" for k, v in merged.items())
     # NOT quoted, deliberately. `cmd /c "<string>"` strips the first and last
     # quote of the whole string, so a command that BEGINS with a quoted path
     # comes out mangled and the batch file never runs -- which shows up here as
