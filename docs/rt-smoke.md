@@ -90,6 +90,10 @@ lists a buffer upgrade rather than pretending 32 is enough forever.
     rt_smoke_trail         scale on the per-weapon trail (0 = single burst)
     rt_smoke_curl          lateral turbulence, m/s^2 at one second of age
     rt_smoke_perweapon     apply RT_SMOKE_PROFILES
+    rt_smoke_muzzle_u      METRES to raise the smoke's birth point -- see below
+    rt_smoke_stylize       PIXEL-ART banding of the puff falloff, 0..1
+    rt_smoke_stylize_steps how many bands
+    rt_smoke_stylize_grid  METRES of world-space voxel snapping, 0 = off
     rt_smoke_monster       smoke off a MONSTER's gun too
     rt_smoke_monster_scale how much of it: count AND density together
     rt_smoke_monster_far   metres beyond which a monster's shot makes none
@@ -431,6 +435,57 @@ make every zombieman in the level smokier. That division is not free: the
 round trip is exact for the shipping 4 but not for every value (see the epsilon
 in `RT_SpawnSmokePuffs`).
 
+### The muzzle FLASH's offsets are not the SMOKE's
+
+Smoke is born at the flash's resolved position so the light and the smoke it
+lights are one point by construction. That is still right — but that position is
+chosen for **lighting**: `rt_mzlflsh_u` is −0.9 m, keeping the flash low so it
+washes the room without blowing out the gun sprite.
+
+Inherited directly, that births the puff most of a metre **below eye level** —
+knee height on a standing player — and it rises ~1 m over its life, so it climbs
+straight up *through* the view from underneath. Reported as "the smoke appears
+above me", and as "backing away makes it better": from further off the same
+column reads as a column instead of passing through your face.
+
+`rt_smoke_muzzle_u` (0.3 m) corrects the height for smoke only. The flash does
+not move, and the puff stays on the traced segment, so it cannot be pushed inside
+the wall the trace just pulled it out of. `rt_smoke_offset` (0.8) sets how far
+along that segment it lands.
+
+### Pixel-art stylization
+
+Doom 64's art is entirely hard-edged pixels. The froxel volume gives a puff a
+smooth exponential falloff — physically right, and it reads as an airbrushed blob
+sitting on top of that art. `rt_smoke_stylize` posterizes the falloff into
+`rt_smoke_stylize_steps` bands, and `rt_smoke_stylize_grid` snaps the puff's
+evaluation to a world voxel. Together the puff reads as **drawn** rather than as
+rendered — which also makes it easier to see, since a hard edge survives against
+a busy wall where a soft gradient does not.
+
+Three things about it are deliberate:
+
+**It lives inside `smoke_evalAt`, not in a screen-space pass.** With
+`smokeCount` 0 that function returns zero whatever the stylize values say, so the
+fog's arithmetic still collapses bit for bit and `smoke-fogsafe` still holds. A
+post-process would have changed fog on nine maps (§5).
+
+**The voxel grid is WORLD space, not screen.** Screen-space blocks are the
+obvious way to get "pixels" and they *crawl* as soon as the camera turns, which
+the eye reads as noise rather than as style. The sprites this imitates are pixel
+grids that stay put on the object.
+
+**The outer band uses `ceil`, not `floor`.** The outermost band is where the puff
+meets the world; flooring it quantizes the rim to zero, shrinking the puff by a
+full band and putting the soft silhouette straight back.
+
+**How much survives is decided elsewhere.** `rt_volume_blur` and
+`rt_volume_dither` smooth the volume at *sample* time — after the bands and
+voxels are formed — so they soften exactly what this sharpens. At blur 0 /
+dither 0 the blocks are hard-edged; at the shipping 1 / 2 they read as chunky
+rather than crisp. Those belong to the whole volume, so turning them down is a
+fog decision too.
+
 **`rt_smoke_inherit` picks which wrong answer you get.** A puff is born in the
 world, but the gun that made it is moving. At 0 the smoke visibly lags a strafing
 player and reads as stuck to the world; at 1 it is glued to the camera. 0.85 is
@@ -591,6 +646,7 @@ Shape and emission:
 | `proj` | TRCR / RBAL / MANF / FIRE trails and bursts, with the player's rocket off so the two cannot be confused |
 | `barrel` | shoot a barrel. The burst must land WITH the bang — twenty seconds late means the trigger went back to the actor's removal, and that is its respawn timer |
 | `crowd` | every source at once in a torch-lit fight. The arm for the POOL: watch whether YOUR smoke still appears |
+| `stylize0` | `rt_smoke_stylize 0` — the smooth falloff, the before for the pixel-art look |
 | `quick` | the BEFORE for the linger pass: count 3, budget 24, life 1.6, growth 0.7 |
 | `noTrail` | `rt_smoke_trail 0` — a single burst. The BALL, and the proof that a filament is a shape in time (§8) |
 | `edgeonly` | `rt_smoke_repeat 0`. Hold the chaingun: extralight never re-arms, so a whole burst makes one puff |
