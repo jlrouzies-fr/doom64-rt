@@ -546,6 +546,27 @@ rem game, so any global reduction hits it hardest, and it is the effect the 1.0
 rem default was chosen for. MAP02 therefore has no row and is untouched.
 rem See RT_TINT_PRESETS in rt_main.cpp for the per-map numbers and .\tools\ab-tint.cmd
 rem to compare arms (`ab-tint.cmd basefl 13` vs `ab-tint.cmd flsh 13`).
+rem
+rem rt_dynlight_flicker was 0, and that SUPPRESSED EVERY SMON PANEL LIGHT IN THE GAME.
+rem RT_UploadGzDoomDynamicLights skips FlickerLight/RandomFlickerLight outright when this
+rem is off, and the mod wires its wall monitors with 9802 PointLightFlicker things placed
+rem 4-56 units off the panel face: SMONAA 88/88 wired, SMONDA 25/27, SMONCA 19/21,
+rem SMONEA 6/6. Every one was dropped before upload, so the panels showed only their _e
+rem emissive glow -- which casts nothing -- and read as animated but dead.
+rem
+rem Reported from play on MAP29 three separate ways, and the map data matches the report
+rem exactly. Of MAP29's three SMONDA panels, lines 922 and 937 carry a 9802 (skipped)
+rem while line 927 carries a 9801 PointLightPulse (not skipped, it is not a flicker type)
+rem -- so EXACTLY ONE of the three emitted, which is "only one seemed to have proper light
+rem emit, despite the others also being animated". SMONAA's 88 lights are all pure green
+rem (0,255,0), which is the "should emit more green, i think there is already but its very
+rem dim" half: the green was the _e mask alone, with the actual green light suppressed.
+rem
+rem Blast radius measured before flipping it: 205 9802 things game-wide, 199 of them
+rem beside a SMON panel and 6 anything else, so this turns on the monitors and virtually
+rem nothing else. The cvar's own doc defers ceiling head lights to rt_ceiling_lamps, and
+rem that family is pinned 0 below -- so nothing gets double-lit either.
+rem Compare arms with .\tools\ab-smon.cmd (2026-08-11).
 start "" gzdoom.exe ^
   -iwad "%IWAD%" ^
   -file "%MOD%" "%BM%" "%SKUL%" "%FLSH%" "%MUS%" "%FIX3D%" "%SEQL%" "%BULBTEX%" "%CTELFIX%" "%SKY%" -file "%LAVAFX%" "%BLOODFX%" ^
@@ -601,7 +622,7 @@ start "" gzdoom.exe ^
   +rt_sector_tint_lights 0.85 +rt_sector_tint_albedo 1.0 +rt_sector_tint_presets 1 ^
   +rt_sector_emis 0.35 +rt_sector_emis_minlight 160 +rt_sector_emis_margin 40 +rt_sector_emis_debug 0 ^
   +rt_sector_lights 0 +rt_sector_flicker 0 ^
-  +rt_dynlight 1 +rt_dynlight_flicker 0 +rt_dynlight_intensity 40 +rt_dynlight_max 500 +rt_dynlight_rsoft 20 +rt_dynlight_stack_atten 1 +rt_dynlight_minradius 16 ^
+  +rt_dynlight 1 +rt_dynlight_flicker 1 +rt_dynlight_intensity 40 +rt_dynlight_max 500 +rt_dynlight_rsoft 20 +rt_dynlight_stack_atten 1 +rt_dynlight_minradius 16 ^
   +rt_dynlight_debug 0 +rt_dynlight_debug_marks 0 +rt_wall_tex_debug 0 +rt_dynlight_radius 0.08 ^
   +rt_ceiling_lamps 0 +rt_ceiling_lamp_intensity 0 +rt_ceiling_lamp_radius 0.10 ^
   +rt_ceiling_lamp_off 0.12 +rt_ceiling_lamp_fade 40 +rt_ceiling_lamp_maxspan 128 ^

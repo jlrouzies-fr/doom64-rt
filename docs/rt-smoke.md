@@ -285,7 +285,43 @@ otherwise have turned the smoke off with no `rt_smoke_*` cvar saying so.
 
 ---
 
-## 7. Known limits
+## 7. Two bugs that cost a session, and how they were actually found
+
+Neither was in the smoke code, and both are written up in `compat-patches.md`.
+They are here because the *method* is the reusable part.
+
+**A stale object file made every read above 1984 bytes return zero.**
+`GlobalUniform.cpp` allocates the uniform buffer with `sizeof(ShGlobalUniform)`,
+and its object was not rebuilt when the generated header grew for smoke — so the
+buffer was 1040 bytes short. Fields below the old size worked; fields above it
+silently read zero, with no validation error and nothing in any log.
+
+What broke the deadlock was refusing to keep reasoning. A **probe ladder** in the
+shader — paint on a flag read, then on the count, then on the arrays — localised
+the failure to the array reads. Then a **swap experiment**: exchanging the two
+arrays' positions in the struct. The failure followed the *offset*, not the field
+name, which turns "the shader ignores my data" into "the address is wrong", and
+that is a different search. Object timestamps finished it.
+
+`tools/build-rtgl.cmd` now deletes the object directory whenever the generated
+header changes. `rt_smoke_debug 2..8` are the probes, kept because they cost
+nothing and this class of bug recurs.
+
+**The A/B launcher silently drops its own arguments.** The command line assembled
+by `tools/launch-retribution-rt.cmd` is 8192 characters and cmd.exe truncates at
+8191, so the `-- +cvar` passthrough — which is at the end — never arrives. Three
+diagnostic runs were wasted on probes that never ran, each reporting the default
+of the cvar the arm claimed to set. Until that is fixed, **verify smoke by
+invoking `gzdoom.exe` directly with a short argument list**, and check the
+`DEBUGMODE=` field in the log to confirm which mode actually ran.
+
+`rt_smoke_autospawn <tics>` spawns a puff ahead of the camera with no weapon and
+no trigger, which is what makes an unattended capture possible at all — pair it
+with `rt_autoshot` and `rt_autoquit`.
+
+---
+
+## 8. Known limits
 
 - **Puffs are spheres.** Real smoke is not, and at these radii the eye can tell.
   The fix is not more spheres, it is per-froxel noise modulating the density —

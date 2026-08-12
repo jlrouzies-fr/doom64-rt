@@ -932,3 +932,54 @@ for the same underlying reason: this volume has other tenants.
 slice is `rt_volume_far / 64` = 0.47 m, so the 0.18 m default radius was 0.77 of
 a cell across its whole diameter — it fitted inside one froxel. Default is now
 0.35. The froxel grid, not the puff count, is this feature's resolution limit.
+
+### The smoke was never reaching the GPU — a stale object file (2026-08-12)
+
+Localised smoke rendered nothing for a full debugging session. The cause was not
+in the smoke code, the API, the pNext chain, std140 offsets or the shader.
+
+**`GlobalUniform.obj` was hours out of date.** `GenerateShaders.py -g` rewrites
+`Source/Generated/ShaderCommonC.h`, which defines `ShGlobalUniform`. CMake and
+MSBuild do not know that every `.cpp` depends on that generated header, so a
+translation unit nobody edited keeps its stale object. `GlobalUniform.cpp` is the
+one that matters: it allocates the uniform buffer with `sizeof(ShGlobalUniform)`.
+When the struct grew from 1984 to 3024 bytes for smoke, that object still
+allocated **1984** — so the buffer was 1040 bytes short while the rest of the
+library wrote and read the full struct.
+
+The symptom is the worst kind. Every field below 1984 bytes worked perfectly;
+every field above it silently read **zero**. No validation error, no crash,
+nothing in any log, and the shader looked like it was ignoring its input.
+
+How it was finally caught, after the API and the layout had been cleared:
+
+- a probe ladder in the shader — a flag read (worked), the count (worked), the
+  arrays (blank) — which localised the failure to the array reads;
+- a **swap experiment**: exchanging the two arrays' positions in the struct moved
+  the failure with the OFFSET, not with the field name (1564 read fine, 2076 read
+  zero), proving it was an address problem rather than a data problem;
+- object-file timestamps: `ShaderCommonC.h` and `VulkanDevice.obj` at 21:46,
+  `GlobalUniform.obj` at 13:38.
+
+`tools/build-rtgl.cmd` now keeps a stamp copy of the generated header and
+**deletes `BuildCMake/RayTracedGL1.dir` whenever it changes**, so no object can
+outlive the struct layout it was compiled against. The `rt_smoke F/layout` line
+(one-shot, needs `-rtdebug`) prints `sizeof` and the C offsets beside the SPIR-V
+ones as a canary for the same trap recurring.
+
+### tools/launch-retribution-rt.cmd exceeds cmd.exe's 8191-character limit
+
+Found while chasing the above, and it affects **every A/B tool in this project**.
+
+The assembled command line is 8192 characters — cmd.exe truncates at 8191. The
+`%EXTRA%` passthrough (`-- +cvar value`) sits at the very end, so it is **always
+cut off**: no `ab-*.cmd` arm has been applying its cvars. Three diagnostic runs
+were lost to this before it was noticed, each reporting the default value of the
+cvar the arm claimed to set.
+
+The launcher's own trailing pins are cut too: `+rt_water_debug`,
+`+rt_normalmap_stren` and `+rt_heightmap_stren` never reach the game.
+
+Workaround used for the smoke work: invoke `gzdoom.exe` directly with a short
+argument list. The real fix is to move the pin block into a generated `.cfg` and
+`+exec` it, which is not yet done.

@@ -45,6 +45,39 @@ if not errorlevel 1 (
 )
 popd
 
+rem ---------------------------------------------------------------------------
+rem THE GENERATED HEADER IS NOT A TRACKED DEPENDENCY, and that cost a full day.
+rem
+rem GenerateShaders.py -g rewrites Source/Generated/ShaderCommonC.h, which defines
+rem struct ShGlobalUniform. CMake/MSBuild do not know every .cpp depends on it, so
+rem a file that was not otherwise edited KEEPS ITS STALE OBJECT. GlobalUniform.cpp
+rem is the one that matters: it allocates the uniform buffer with
+rem sizeof(ShGlobalUniform). When the struct grew for localised smoke, that .obj
+rem was hours old and still allocated the OLD size -- so the buffer was 1984 bytes
+rem while the rest of the library wrote and read 3024.
+rem
+rem The symptom is the worst kind: every field BELOW the old size works perfectly
+rem and every field above it silently reads ZERO. No validation error, no crash,
+rem nothing in any log. It looks exactly like a shader that ignores its input, and
+rem it was chased through the API, the pNext chain, std140 offsets and the SPIR-V
+rem before the timestamps gave it away.
+rem
+rem So: if the generated header changed, throw the objects away.
+set "GENHDR=%RTGL%\Source\Generated\ShaderCommonC.h"
+set "GENSTAMP=%RTGL%\BuildCMake\ShaderCommonC.stamp"
+set "GENCHANGED="
+if not exist "%GENSTAMP%" (
+  set "GENCHANGED=1"
+) else (
+  fc /b "%GENHDR%" "%GENSTAMP%" >nul 2>&1
+  if errorlevel 1 set "GENCHANGED=1"
+)
+if defined GENCHANGED (
+  echo === ShaderCommonC.h changed -- clearing objects so nothing keeps a stale ^
+struct layout ===
+  if exist "%RTGL%\BuildCMake\RayTracedGL1.dir" rd /s /q "%RTGL%\BuildCMake\RayTracedGL1.dir"
+)
+
 echo === Configuring RTGL ===
 cmake -A x64 -S "%RTGL%" -B "%RTGL%\BuildCMake" ^
   -DCMAKE_BUILD_TYPE=RelWithDebInfo ^
@@ -56,6 +89,10 @@ if errorlevel 1 exit /b 1
 echo === Building RTGL RelWithDebInfo ===
 cmake --build "%RTGL%\BuildCMake" --config RelWithDebInfo --parallel
 if errorlevel 1 exit /b 1
+
+rem Record the header we just built against, so the next run can tell.
+if not exist "%RTGL%\BuildCMake" mkdir "%RTGL%\BuildCMake"
+copy /y "%GENHDR%" "%GENSTAMP%" >nul
 
 echo === Staging into gzdoom RelWithDebInfo ===
 if not exist "%OUT%\rt\bin" mkdir "%OUT%\rt\bin"

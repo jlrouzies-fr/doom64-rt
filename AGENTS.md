@@ -350,6 +350,19 @@ Clear all enemy `_e` + strip meta: `python tools/clear_enemy_eye_emissives.py` t
 24. **`FIRE` fx prefix swallowing world textures** → `gen_fx_emissives.py` gave `FIRELAVA`/`FIRELAV3` `lightIntensity` 700 + `noShadow`. Fixed via `WORLD_TEX_RE` guard; world fire/lava textures belong to the world allowlist only.
 25. **`rt_rr_temporal` / ComposeNoisy DiffTemporary** → ghost duplicate if writer+reader both live; **black world / muzzle-only** if reader lives after `AccumulateForRR` removed. ComposeNoisy is raw-unfiltered only; do not re-wire temporal-into-RR without a matching every-frame writer.
 26. **Spectres now rasterized TRANSLUCENT + minalpha floor** — `IsSpectre()` no longer sets FORCE_WATER/GLASS/MIRROR. Instead uses `RG_MESH_PRIMITIVE_TRANSLUCENT` (rasterized overlay) with `rt_translucent_minalpha 0.72` floor. Gives sprite-shaped see-through look. `rt_spectre` cvar deprecated. Rebuild gzdoom after changes.
+27. **`rt_dynlight_flicker 0` silently kills every SMON wall monitor light.**
+    `RT_UploadGzDoomDynamicLights` skips `FlickerLight`/`RandomFlickerLight` outright when
+    this is off, and 9802 `PointLightFlicker` is exactly how Retribution wires its animated
+    wall panels — a light **thing** 4–56u off the face, never texture metadata. Measured:
+    SMONAA **88/88** wired that way, SMONDA 25/27, SMONCA 19/21, SMONEA 6/6; **199 of the
+    205** 9802s in the game sit beside a SMON panel. With the flag off they all vanish
+    before upload and the panels show only their `_e` glow — which casts nothing — so they
+    read as *animated but dead*. Now `true` (compiled default **and** launcher pin).
+    The diagnostic that found it: on MAP29 exactly **one of three** identical-looking
+    SMONDA panels lit the room — lines 922/937 are 9802 (skipped), line 927 is a **9801
+    PointLightPulse**, which is not a flicker type and was never skipped. When N identical
+    fixtures behave differently, compare their **thing types** before touching art or meta.
+    A/B: `.\tools\ab-smon.cmd <off|on|steady|dim|bright|marks> [map]`.
 
 ## Suggested next work
 
