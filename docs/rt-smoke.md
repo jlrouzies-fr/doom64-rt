@@ -63,7 +63,7 @@ ceiling and spreading instead of climbing through it is CPU work; a GPU sim gets
 depth-buffer collision at best, which is screen-space guesswork.
 `ab-smoke.cmd drift` is that behaviour on its own.
 
-**The counts are tens.** Muzzle smoke is three puffs a shot against a 24 budget.
+**The counts are tens.** Muzzle smoke is a few puffs a shot against a 32 budget.
 Duke-RT's machinery exists because they want continuous rocket trails and
 per-map ambient sources at scale — which is a real reason, and the reason §7
 lists a buffer upgrade rather than pretending 32 is enough forever.
@@ -75,9 +75,9 @@ lists a buffer upgrade rather than pretending 32 is enough forever.
     rt_smoke               master
     rt_smoke_density       optical depth per METRE at the core
     rt_smoke_color         scattering albedo (hex)
-    rt_smoke_count         puffs per shot
+    rt_smoke_count         puffs per shot (PLAYER weapons only — see below)
     rt_smoke_budget        live puffs uploaded, max 32
-    rt_smoke_life          seconds
+    rt_smoke_life          seconds — move with rt_smoke_growth, see below
     rt_smoke_radius        metres at spawn
     rt_smoke_growth        metres/second of expansion
     rt_smoke_speed         initial speed along the barrel, m/s
@@ -132,8 +132,8 @@ together and a row only states how that weapon differs.
 
 | weapon | reads as |
 |---|---|
-| Pistol | a 2.5 cm thread off the barrel, 14-parcel trail, slow growth |
-| Chaingun | the same thread, shorter and faster — a machine gun is a pistol here |
+| Pistol | a 2.5 cm thread off the barrel, 20-parcel trail at 2-tic spacing, slow growth |
+| Chaingun | the same thread, shorter and more widely spaced — a held trigger re-arms it, and past 32 live puffs more emission just deletes the tail |
 | Shotgun / SSG | a SCATTER of small parcels, widely spread. Not one ball |
 | Rocket launcher | **nothing at the muzzle**. The rocket carries it (below) |
 | Plasma / BFG / Unmaker | **nothing**. Not combustion; the muzzle flash is the effect |
@@ -287,6 +287,34 @@ looks.** At 0.47 m cells, a 0.18 m puff is 0.77 of a cell across its whole
 *diameter*: it lands inside a single froxel and reads as a flicker. The shipping
 0.35 spans about 1.3 cells at birth and roughly 3 by the end of its life. This
 is the number to raise first if smoke looks like a blink rather than a cloud.
+
+**`rt_smoke_life` and `rt_smoke_growth` are one knob, not two.** A puff's final
+size is `radius + growth x life`, so raising the life alone does not make smoke
+last longer — it makes it *bigger*, and the `radius0 / radius` dilution then
+thins it back out, which is the opposite of what a longer life was asked for.
+The two ship paired: 1.6 x 0.7 and 2.2 x 0.5 both end at ~1.46 m, and the second
+spends most of a second longer at the smaller, denser end of that. **To make
+smoke linger, raise one and lower the other by the same factor.**
+
+**More smoke is more PARCELS, and past a point it is more BUDGET.**
+`rt_smoke_count` is per shot and the per-weapon rows multiply it;
+`rt_smoke_budget` is the ceiling on how many live puffs are uploaded at all, and
+it cannot exceed the 32 the uniform carries (`RG_MAX_SMOKE_PUFFS`). It now
+ships **at** 32, so nothing is being withheld.
+
+That ceiling is also why the chaingun's trail is shorter and more widely spaced
+than the pistol's: a held trigger re-arms the emitter every `rt_smoke_repeat`
+tics, and once the pool saturates the overflow rule is **oldest-out** — so
+overfilling it does not add smoke, it deletes the tail, which is exactly the
+part being read as "lingering". Past 32 live puffs, more emission is strictly
+less linger.
+
+**`rt_smoke_count` is a PLAYER-weapon knob and stays one.** The rocket trail,
+the explosion and the monster rows all state an absolute number of parcels and
+divide by it before `RT_SpawnSmokePuffs` multiplies back, so moving it does not
+make every zombieman in the level smokier. That division is not free: the
+round trip is exact for the shipping 4 but not for every value (see the epsilon
+in `RT_SpawnSmokePuffs`).
 
 **`rt_smoke_inherit` picks which wrong answer you get.** A puff is born in the
 world, but the gun that made it is moving. At 0 the smoke visibly lags a strafing
@@ -443,6 +471,7 @@ Shape and emission:
 |---|---|
 | `monster` | monster gun smoke on its own — rockets and the player trail off. Type `notarget` once, then DON'T fire |
 | `nomonster` | the before: `rt_smoke_monster 0`, everything else shipping |
+| `quick` | the BEFORE for the linger pass: count 3, budget 24, life 1.6, growth 0.7 |
 | `noTrail` | `rt_smoke_trail 0` — a single burst. The BALL, and the proof that a filament is a shape in time (§8) |
 | `edgeonly` | `rt_smoke_repeat 0`. Hold the chaingun: extralight never re-arms, so a whole burst makes one puff |
 | `novol` | everything the tool changes EXCEPT the smoke, for isolating an arm-side difference |
@@ -638,11 +667,13 @@ genuinely different amounts of medium — and it is **open**.
 - **Puffs are spheres.** Real smoke is not, and at these radii the eye can tell.
   The fix is not more spheres, it is per-froxel noise modulating the density —
   cheap, independent of particle count, and the natural next step.
-- **32 puffs, hard.** They ride in the global uniform (1 KB) rather than a
-  storage buffer, which is the right trade at this count and the wrong one for
-  rocket trails or per-map ambient sources. That upgrade is a `LightManager`
-  clone plus a descriptor set, and it should wait until something actually needs
-  the capacity.
+- **32 puffs, hard, and the budget now sits ON it.** They ride in the global
+  uniform (1 KB) rather than a storage buffer. `rt_smoke_budget` shipped at 24
+  and is 32 now, so there is no slack left: **a held chaingun saturates the pool
+  and the oldest parcels are culled**, which is the tail you read as lingering.
+  That is the ceiling on "more smoke" today, not any `rt_smoke_*` value. Raising
+  it is a `LightManager` clone plus a descriptor set — and it is now the thing
+  actually needing the capacity, which §7 said to wait for.
 - **The volume is camera-fitted.** A puff beyond the far plane is not
   represented at all. For muzzle smoke, which is by definition in front of your
   face, this has not mattered.
