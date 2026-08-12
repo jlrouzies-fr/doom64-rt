@@ -1,0 +1,139 @@
+"""Render a GALLERY of candidate smoke looks: one capture per candidate, one PNG.
+
+Why this exists. Every earlier round of smoke tuning compared a memory of one
+run against a memory of another, in different rooms, at different moments in a
+puff's life -- and twice that produced a confident conclusion that was simply
+wrong (see the grey-wall sweep, where four settings were declared identical
+because the backdrop hid all of them). A gallery removes the memory: every
+candidate is the same map, the same spawn, the same capture tic, side by side in
+one image with its parameters written on it.
+
+A CANDIDATE IS A WHOLE LOOK, not one cvar. Single-cvar sweeps answer "what does
+this knob do"; picking a look means judging combinations, so each row here is a
+named set of overrides you can point at and say "that one".
+
+Usage:
+    python tools/smoke_gallery.py                 # the built-in candidate set
+    python tools/smoke_gallery.py --tic 95        # capture at a different age
+
+Output:
+    tools/_smokelab/gallery.png
+"""
+from __future__ import annotations
+
+import argparse
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+ROOT = Path(r"G:\AI\Doom64-RT")
+LAB = ROOT / "tools" / "smoke-lab.cmd"
+WORK = ROOT / "tools" / "_smokelab"
+OUT = WORK / "gallery.png"
+
+# Each candidate: (label, {cvar: value}). Everything not named takes the pinned
+# shipping value, so a row states only how it differs -- the same convention
+# RT_SMOKE_PROFILES uses.
+CANDIDATES: list[tuple[str, dict[str, str]]] = [
+    ("A  shipping now", {}),
+    ("B  no self-visibility (the old behaviour)", {"rt_smoke_ambient": "0"}),
+    ("C  grey + self-visible", {"rt_smoke_ambient": "0.9", "rt_smoke_color": "B0B0B0"}),
+    ("D  grey, denser", {"rt_smoke_ambient": "0.9", "rt_smoke_color": "B0B0B0",
+                         "rt_smoke_density": "22"}),
+    ("E  strong self-visibility", {"rt_smoke_ambient": "1.6", "rt_smoke_color": "C0C0C0"}),
+    ("F  no stylization", {"rt_smoke_stylize": "0"}),
+    ("G  chunky pixels", {"rt_smoke_stylize": "1", "rt_smoke_stylize_steps": "2",
+                          "rt_smoke_stylize_grid": "0.22"}),
+    ("H  sharp (volume filters off)", {"rt_volume_blur": "0", "rt_volume_dither": "0"}),
+]
+
+# The crop the plume lands in, found by differencing runs. Generous enough to
+# survive a puff drifting a little between candidates.
+CROP = (900, 420, 1560, 1060)
+
+
+def capture(overrides: dict[str, str], tic: int, dest: Path) -> bool:
+    for d in WORK.glob("2026*"):
+        shutil.rmtree(d, ignore_errors=True)
+
+    extra = " ".join(f"+{k} {v}" for k, v in overrides.items())
+    # NOT quoted, deliberately. `cmd /c "<string>"` strips the first and last
+    # quote of the whole string, so a command that BEGINS with a quoted path
+    # comes out mangled and the batch file never runs -- which shows up here as
+    # every candidate silently failing to capture. The path has no spaces.
+    cmd = (
+        f"{LAB} 1 -- {extra} "
+        f"+rt_autoshot {tic} +rt_autoshot_every 0 +rt_autoquit {tic + 20}"
+    )
+    subprocess.run(["cmd", "/c", cmd], cwd=ROOT, capture_output=True, text=True)
+
+    runs = sorted(WORK.glob("2026*"), key=lambda p: p.stat().st_mtime)
+    if not runs:
+        return False
+    shots = sorted(runs[-1].glob("*.png"))
+    if not shots:
+        shutil.rmtree(runs[-1], ignore_errors=True)
+        return False
+    shutil.copy(shots[0], dest)
+    shutil.rmtree(runs[-1], ignore_errors=True)
+    return True
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--tic", type=int, default=95,
+                    help="maptime to screenshot at; the plume's age is a variable "
+                         "like any other, so every candidate uses the same one")
+    args = ap.parse_args()
+
+    try:
+        from PIL import Image, ImageDraw
+    except ImportError:
+        sys.exit("Pillow missing. Use the Python at "
+                 r"C:\Users\Winter\AppData\Local\Programs\Python\Python313\python.exe")
+
+    shots = WORK / "gallery_shots"
+    shots.mkdir(parents=True, exist_ok=True)
+
+    got: list[tuple[str, dict[str, str], Path]] = []
+    for i, (label, ov) in enumerate(CANDIDATES):
+        dest = shots / f"{i:02d}.png"
+        print(f"  [{i + 1}/{len(CANDIDATES)}] {label} ...", flush=True)
+        if capture(ov, args.tic, dest):
+            got.append((label, ov, dest))
+        else:
+            print("        FAILED to capture")
+
+    if not got:
+        sys.exit("no captures")
+
+    crops = [Image.open(p).convert("RGB").crop(CROP) for _, _, p in got]
+    cw, ch = crops[0].size
+    scale = 0.75
+    cw, ch = int(cw * scale), int(ch * scale)
+    crops = [c.resize((cw, ch), Image.LANCZOS) for c in crops]
+
+    cols = 4
+    rows = (len(crops) + cols - 1) // cols
+    pad, head = 6, 46
+    sheet = Image.new("RGB", (cols * (cw + pad) + pad,
+                              rows * (ch + head + pad) + pad), (14, 14, 16))
+    dr = ImageDraw.Draw(sheet)
+
+    for i, ((label, ov, _), im) in enumerate(zip(got, crops)):
+        r, c = divmod(i, cols)
+        x = pad + c * (cw + pad)
+        y = pad + r * (ch + head + pad)
+        dr.text((x + 4, y + 4), label, fill=(255, 255, 255))
+        detail = "  ".join(f"{k.replace('rt_smoke_', '').replace('rt_volume_', 'vol.')}={v}"
+                           for k, v in ov.items()) or "(all shipping values)"
+        dr.text((x + 4, y + 22), detail[:120], fill=(150, 150, 160))
+        sheet.paste(im, (x, y + head))
+
+    sheet.save(OUT)
+    print(f"\nwrote {OUT}  ({sheet.size[0]}x{sheet.size[1]}, {len(got)} candidates)")
+
+
+if __name__ == "__main__":
+    main()
