@@ -374,8 +374,15 @@ Clear all enemy `_e` + strip meta: `python tools/clear_enemy_eye_emissives.py` t
     `rt_dynlight_max`**: at scale 40 a 24/20 light's raw crest is 960, so the 500 cap clips
     *both* ends for any floor above ~0.52 and the swing flattens to 1.00× — raising the
     floor silently turns the flicker **off** instead of calming it. The scale must come
-    under the cap first. Shipping pair is **16 / 0.55** (crest 347→267, swing 2.41×→1.82×).
-    Lights of radius ≥32 are cap-limited at both scales and do not change at all.
+    under the cap first.
+    (c) **`rt_dynlight_intensity` is GLOBAL to every `FDynamicLight` — never use it to tune
+    one fixture family.** Dialling it 40→10 to settle the monitors dimmed the **key-door
+    lights** and every other 9800 with it; caught in play immediately and rolled back. Use
+    **`rt_dynlight_flicker_scale`**, which applies only to Flicker/RandomFlicker — the same
+    class `rt_dynlight_flicker` gates, i.e. 199-of-205 SMON panels. Doors are steady
+    `PointLight`s and never reach it. Shipped: `intensity 40` (untouched) +
+    `flicker_scale 0.25` + `blink_floor 0.8` → monitors **133..167, swing 1.25×**, every
+    steady light back at its original value.
 
 ## Suggested next work
 

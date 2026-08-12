@@ -25,26 +25,30 @@ rem knob does almost nothing at the shipped value.
 rem
 rem   hi    = max(arg3, arg4)                      24 for a 24/20 monitor
 rem   lo    = min(arg3, arg4)                      20
-rem   blink = 0.15 + 0.85 * (curRadius-lo)/(hi-lo)     0.15 .. 1.00
+rem   f     = rt_dynlight_blink_floor             0.8 shipped
+rem   blink = f + (1-f) * (curRadius-lo)/(hi-lo)      f .. 1.00
 rem   I     = hi * rt_dynlight_intensity * blink
 rem   I     = min(I, rt_dynlight_max)              <-- CAP APPLIED HERE
-rem   if curRadius > rt_dynlight_rsoft: I *= (rsoft/curRadius)^2
+rem   if hi > rt_dynlight_rsoft: I *= (rsoft/hi)^2  <-- NOMINAL radius, not current
 rem
-rem At the shipped 40 / 500 / 20 that is trough 144, crest 347.
+rem At the shipped 10 / 0.8 / 500 / 20 that is trough 133, crest 167.
+rem The figures in TRAP 1 below are at the ORIGINAL scale 40, which is what they
+rem are there to explain.
 rem
 rem TRAP 1 -- the cap hides the intensity knob. Crest raw is 24*40 = 960 and the
 rem   500 cap clips it, so lowering rt_dynlight_intensity does nothing until
 rem   hi*scale falls under 500. Measured crest by scale:
 rem
-rem     scale  40 -> 347     (shipped)
+rem     scale  40 -> 347     the first pass
 rem     scale  30 -> 347     no change at all
 rem     scale  20 -> 333     4% -- looks like the knob is broken
 rem     scale  12 -> 200
 rem     scale   8 -> 133
 rem     scale   5 ->  83
 rem
-rem   So a useful "dim" arm is 12, not 20. An earlier version of this file had 20
-rem   and would have read as "the cvar does nothing".
+rem   So a useful dim arm is 12 or below, not 20. An earlier version of this file
+rem   used 20 and would have read as "the cvar does nothing". The shipped scale is
+rem   10, which is under the cap for every monitor in the game.
 rem
 rem TRAP 2 -- the blink floor and the intensity are COUPLED through the cap, and
 rem   setting one without the other does nothing. rt_dynlight_blink_floor is the
@@ -53,7 +57,7 @@ rem   at scale 40 a 24/20 monitor's raw crest is 24*40 = 960, so BOTH ends clip 
 rem   the 500 cap for any floor above ~0.52 and the swing flattens to 1.00x --
 rem   i.e. raising the floor at scale 40 silently turns the flicker OFF entirely
 rem   rather than calming it. The scale has to come under the cap first
-rem   (24*16 = 384) for the floor to be linear. Shipping pair is 16 / 0.55.
+rem   (24*10 = 240) for the floor to be linear. Shipping pair is 10 / 0.8.
 rem
 rem   This also used to be non-monotonic. The roll-off divided by the CURRENT
 rem   flickering radius while the blink term multiplied by it, so the two fought:
@@ -67,28 +71,33 @@ rem   (0,255,0), pure primary green with no hue normalisation anywhere in the
 rem   dynlight path (unlike the sector-tint path, which peak-normalises). That is
 rem   why a green monitor reads as neon, and why SMONBA -- whose own art is a
 rem   WHITE static-noise screen and whose own lights are mostly RED -- goes green
-rem   when a SMONAA sits 96-224u away. That spill is real, but at 347 intensity
-rem   and full saturation it dominates. There is no cvar for this yet; dimming is
-rem   the only lever without an engine change.
+rem   when a SMONAA sits 96-224u away. That spill is real, and dimming to 167 has
+rem   taken the worst off it, but the HUE is untouched -- there is no saturation
+rem   cvar in this path yet, so dimming is still the only lever for it.
 rem ---------------------------------------------------------------------------
 rem
 rem All figures below are the 24/20 monitor, which is 127 of the 199 panels.
+rem The shipped values were settled in play over three passes:
 rem
-rem   off      rt_dynlight_flicker 0 -- panels glow but cast nothing. The old
-rem            behaviour, and the control.
-rem   loud     the first pass: intensity 40, floor 0.15. Trough 100, crest 347,
-rem            swing 3.5x. This is the "flickering like crazy and too bright" one,
-rem            kept so the shipped values have something to be compared against.
-rem   on       SHIPPED: intensity 16, floor 0.55. Trough 147, crest 267,
-rem            swing 1.82x. Start here.
-rem   calm     intensity 16, floor 0.8 -> swing 1.25x. Barely-there blink, for if
-rem            0.55 still reads as strobing across a wall of panels.
-rem   steady   intensity 16, floor 1.0 -> no blink at all, constant 267. The
-rem            panels still ANIMATE (their _e artwork does), they just stop
-rem            modulating the room. This is now possible only because the
-rem            roll-off was moved onto the nominal radius; before 2026-08-12 a
-rem            floor this high inverted the pulse instead.
-rem   dim      intensity 10, floor 0.55 -> crest 167. If 267 is still too much.
+rem   scale 40 floor 0.15  ->  100..347  3.47x   "flickering like crazy, too bright"
+rem   scale 16 floor 0.55  ->  147..267  1.82x   still too much
+rem   scale 10 floor 0.8   ->  133..167  1.25x   SHIPPED
+rem
+rem At scale 10 nothing clips rt_dynlight_max at all, so every monitor family swings
+rem a uniform 1.25x instead of each arg3/arg4 pair behaving differently.
+rem
+rem   off      rt_dynlight_flicker 0 -- panels glow but cast nothing. The control,
+rem            i.e. what the game looked like before any of this.
+rem   loud     the first pass, kept so the shipped values have something to be
+rem            compared against rather than just asserted.
+rem   mid      the second pass, 16 / 0.55.
+rem   on       SHIPPED: 10 / 0.8. Start here.
+rem   steady   floor 1.0 -> no blink at all, constant 167. The panels still
+rem            ANIMATE (their _e artwork does), they just stop modulating the
+rem            room. Only possible because the roll-off was moved onto the
+rem            nominal radius; before 2026-08-12 a floor this high INVERTED the
+rem            pulse instead of flattening it.
+rem   dimmer   7 / 0.8 -> 93..117. If 167 is still too much.
 rem   marks    magenta marker spheres at each uploaded light plus a console
 rem            tally. This is how you tell "this panel has no light thing" apart
 rem            from "the light is there and dim", which look identical on screen.
@@ -106,7 +115,7 @@ rem                 (-256,768) -- these are the ones going green from spill.
 rem          SMONDA x3 at (-1456,2368) (-1408,2160) (-1360,2368)
 rem   MAP02  the densest set in the game, 35 lights.
 rem
-rem Usage: ab-smon.cmd <off|on|dim|dimmer|nocap|marks> [1-32]
+rem Usage: ab-smon.cmd <off|loud|mid|on|steady|dimmer|marks> [1-32]
 rem ---------------------------------------------------------------------------
 
 set "ARM=%~1"
@@ -120,27 +129,32 @@ rem COMMON goes FIRST in every arm, so an arm's own values override it. Putting 
 rem last silently cancelled the `marks` arm's debug flags in an earlier version.
 rem It sets the debug pair and rsoft explicitly too: without that, one `marks` run
 rem would leave magenta spheres archived into every later arm.
-set "COMMON=+rt_dynlight 1 +rt_dynlight_max 500 +rt_dynlight_stack_atten 1 +rt_dynlight_minradius 16 +rt_dynlight_radius 0.08 +rt_dynlight_rsoft 20 +rt_dynlight_debug 0 +rt_dynlight_debug_marks 0"
+rem rt_dynlight_intensity stays at 40 in EVERY arm. It is global to every
+rem FDynamicLight, so varying it here would dim doors and torches along with the
+rem monitors -- which is exactly the mistake that produced rt_dynlight_flicker_scale.
+rem The arms vary that flicker-only scale instead.
+set "COMMON=+rt_dynlight 1 +rt_dynlight_intensity 40 +rt_dynlight_max 500 +rt_dynlight_stack_atten 1 +rt_dynlight_minradius 16 +rt_dynlight_radius 0.08 +rt_dynlight_rsoft 20 +rt_dynlight_debug 0 +rt_dynlight_debug_marks 0"
 
-if /i "%ARM%"=="off"    set "ARGS=%COMMON% +rt_dynlight_flicker 0 +rt_dynlight_intensity 16 +rt_dynlight_blink_floor 0.55"
-if /i "%ARM%"=="loud"   set "ARGS=%COMMON% +rt_dynlight_flicker 1 +rt_dynlight_intensity 40 +rt_dynlight_blink_floor 0.15"
-if /i "%ARM%"=="on"     set "ARGS=%COMMON% +rt_dynlight_flicker 1 +rt_dynlight_intensity 16 +rt_dynlight_blink_floor 0.55"
-if /i "%ARM%"=="calm"   set "ARGS=%COMMON% +rt_dynlight_flicker 1 +rt_dynlight_intensity 16 +rt_dynlight_blink_floor 0.8"
-if /i "%ARM%"=="steady" set "ARGS=%COMMON% +rt_dynlight_flicker 1 +rt_dynlight_intensity 16 +rt_dynlight_blink_floor 1.0"
-if /i "%ARM%"=="dim"    set "ARGS=%COMMON% +rt_dynlight_flicker 1 +rt_dynlight_intensity 10 +rt_dynlight_blink_floor 0.55"
-if /i "%ARM%"=="marks"  set "ARGS=%COMMON% +rt_dynlight_flicker 1 +rt_dynlight_intensity 16 +rt_dynlight_blink_floor 0.55 +rt_dynlight_debug 1 +rt_dynlight_debug_marks 1"
+if /i "%ARM%"=="off"    set "ARGS=%COMMON% +rt_dynlight_flicker 0 +rt_dynlight_flicker_scale 0.25 +rt_dynlight_blink_floor 0.8"
+if /i "%ARM%"=="loud"   set "ARGS=%COMMON% +rt_dynlight_flicker 1 +rt_dynlight_flicker_scale 1.0  +rt_dynlight_blink_floor 0.15"
+if /i "%ARM%"=="mid"    set "ARGS=%COMMON% +rt_dynlight_flicker 1 +rt_dynlight_flicker_scale 0.4  +rt_dynlight_blink_floor 0.55"
+if /i "%ARM%"=="on"     set "ARGS=%COMMON% +rt_dynlight_flicker 1 +rt_dynlight_flicker_scale 0.25 +rt_dynlight_blink_floor 0.8"
+if /i "%ARM%"=="steady" set "ARGS=%COMMON% +rt_dynlight_flicker 1 +rt_dynlight_flicker_scale 0.25 +rt_dynlight_blink_floor 1.0"
+if /i "%ARM%"=="dimmer" set "ARGS=%COMMON% +rt_dynlight_flicker 1 +rt_dynlight_flicker_scale 0.175 +rt_dynlight_blink_floor 0.8"
+if /i "%ARM%"=="marks"  set "ARGS=%COMMON% +rt_dynlight_flicker 1 +rt_dynlight_flicker_scale 0.25 +rt_dynlight_blink_floor 0.8 +rt_dynlight_debug 1 +rt_dynlight_debug_marks 1"
 
 if not defined ARGS (
-  echo Usage: %~nx0 ^<off^|loud^|on^|calm^|steady^|dim^|marks^> [1-32]
+  echo Usage: %~nx0 ^<off^|loud^|mid^|on^|steady^|dimmer^|marks^> [1-32]
   exit /b 1
 )
 
 echo === SMON monitor light arm "%ARM%", MAP%MAP% ===
 echo     %ARGS%
 echo.
-echo     24/20 monitor, trough..crest / swing:
-echo       off 0 ^| loud 100..347 3.5x ^| on 147..267 1.8x
-echo       calm 214..267 1.25x ^| steady 267 flat ^| dim 92..167 1.8x
+echo     24/20 monitor (127 of the 199 panels), trough..crest / swing:
+echo       off 0            loud   100..347  3.47x   mid  147..267  1.82x
+echo       on  133..167 1.25x (SHIPPED)      steady 167 flat
+echo       dimmer 93..117 1.25x
 echo     MAP29: the SMONBA panels at (176,1072) (256,768) (-256,672) (-256,768)
 echo            are WHITE static screens. Any green on them is spill from the
 echo            SMONAA terminals 96-224u away, whose light is pure (0,255,0).

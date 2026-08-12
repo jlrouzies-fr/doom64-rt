@@ -346,8 +346,24 @@ lateral push by the SQUARE of a parcel's age, so the thread is straight for the
 first fraction of a second and only wanders once it has risen. Each parcel
 carries its own phase, or the whole trail waves in unison and reads as a ribbon.
 
-The pistol therefore ships at a 2.5 cm across-view radius, a 16-parcel trail at
-3-tic spacing, and almost no lateral spread at birth.
+**The emitter follows the barrel; the parcels do not.** World-anchoring the
+emitter -- the first version -- left the thread hanging where the shot happened
+while the gun walked away from it. The release point is now rebuilt from the
+CURRENT viewpoint each time, so smoke keeps coming off the barrel as you turn
+and walk, while parcels already released stay where they were born. That split
+is the whole trick: the emitter tracks, the smoke trails.
+
+**Expansion must DILUTE.** A parcel that grows 37x and keeps its density is 37x
+more smoke than was fired, and that -- not the radius -- was what "too much
+smoke" actually was. Density now scales as `radius0 / radius`. Exponent ONE, not
+two: what a ray collects is optical depth, density x path length, so `1/r` holds
+the depth through the core constant as the parcel spreads. At `1/r^2` it falls as
+`1/r` on top of the `(1-t)^2` age fade, the two compound, and a wisp that grows
+8x over its life vanishes completely -- which is exactly what the first attempt
+did.
+
+The pistol therefore ships at a 2.5 cm across-view radius, a 14-parcel trail at
+3-tic spacing, almost no lateral spread at birth, and slow growth.
 
 ---
 
