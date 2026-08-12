@@ -54,6 +54,7 @@ separate survey because nothing about them is a special:
 
 from __future__ import annotations
 
+import math
 import re
 import struct
 import sys
@@ -2043,6 +2044,155 @@ LAMPS = [
 ]
 
 
+class PanelLamp:
+    """A light THING per WALL PANEL, for a monitor family nobody wired.
+
+    The eighth family, and the second one that ADDS. LAMPS above keys on a SECTOR
+    and its FLAT; this one keys on a SIDEDEF and its TEXTURE, because Doom 64's
+    computer monitors are wall panels and a sector-centre sphere is the wrong
+    shape for them (rt-lighting-practices.md §4).
+
+    WHY THIS EXISTS -- SMONBA is the one unwired monitor family
+    ----------------------------------------------------------
+    Retribution lights its animated wall monitors with a PointLightFlicker (9802)
+    map thing a few units off the panel face. It is never texture metadata: an
+    `_e` mask glows but illuminates nothing (rt-lighting-practices.md §12), so a
+    panel without a thing reads as ANIMATED BUT DEAD. Measured over all 32 maps,
+    counting light things within 72u of each panel face:
+
+        family    faces   with a light      the light
+        SMONAA       87    87   100%        9802 #00ff00 green   r=24/20
+        SMONCA       20    18    90%        9802 #00ffb4 teal    r=24/20 28/24
+        SMONDA       25    25   100%        9802 #0078ff blue    r=24/20
+        SMONEA        6     5    83%        9802 #00ffb4 teal    r=24/20
+        SMONLC        8     8   100%        9800 + 9802
+        SMONBA       78     8    10%        -- and see below
+
+    SMONBA is the outlier, and its 10% is not even real: those eight sit at a
+    MEDIAN of 64 units from the face, i.e. they are the neighbouring SMONAA
+    panel's light, not the SMONBA's own. Every other family has its light at a
+    median of 8. So SMONBA is the one monitor family in the game with no light
+    of its own, on 78 faces across 7 maps.
+
+    WHITE, and that is from the artwork, not from taste
+    --------------------------------------------------
+    The colour of each family's light matches its `_e` emissive mask, which is
+    the check `docs/flame-lighting.md` calls for before lighting any fixture:
+
+        SMONAA  _e mean rgb (47, 207, 47)  green   -> its things are #00ff00
+        SMONBA  _e mean rgb (146,146,146)  neutral -> white
+
+    SMONBA's lit element is a white data-readout block (a 260-pixel noise field
+    in the upper half of the tile), not a coloured CRT. White is what the art
+    already draws.
+
+    DENSITY, taken from the mod rather than invented
+    ------------------------------------------------
+    Lights within 24u of the face SEGMENT, bucketed by face length, over SMONAA:
+
+        face len    faces   lights/face   per 64u
+            62         4        1.00        1.03
+            64        73        1.05        1.05
+           128         1        2.00        1.00
+           192         9        3.00        1.00
+
+    Exactly one light per 64-unit tile, at 0.50 of the panel band's height
+    (median over 110 lights) and ~8u off the face. `tile`, `height_frac` and
+    `offset` below are those three numbers.
+
+    WHY IT IS NOT APPLIED TO EVERY SMONBA FACE
+    ------------------------------------------
+    62 of the 78 faces are on MAP07, where SMONBA is not a monitor at all: it is
+    a continuous 64-tall band at floor 80 / ceiling 144 in runs of 128, 192 and
+    256 units -- the "64-tall alcoves clad SMONBA/SPACEBK/SPACEBO" of
+    docs/sequence-light-chains.md. Applying SMONAA's density there would add ~105
+    flickering white lights to one map, more than the 199 SMON lights in the
+    whole game, which is rt-lighting-practices.md §20 exactly: a fixture rule
+    that is right on the maps you tested and catastrophic on the one you did not.
+
+    Retribution's own authors drew the same line -- on MAP07 they wired the four
+    SMONBA faces that are standalone panels (lights at 13..20u) and left the clad
+    band dark. So `max_len` admits only a single-tile face, and `min_gap` skips
+    any face that already has a light, which is what keeps those four from
+    getting a second one.
+
+    BRIGHTNESS is arg3, and it is the only per-fixture knob there is
+    ---------------------------------------------------------------
+    rt_dynlight_intensity is GLOBAL to every FDynamicLight and
+    rt_dynlight_flicker_scale covers all 199 SMON panels at once (pitfall 28c),
+    so neither can dim SMONBA alone. What is left is the thing's own arg3, via
+    the roll-off in RT_UploadGzDoomDynamicLights:
+
+        intensity = hi * rt_dynlight_intensity * flicker_scale * blink   (cap 500)
+        if hi > rt_dynlight_rsoft:  intensity *= (rsoft / hi)^2
+
+    At the launcher's intensity 40 / flicker_scale 0.25 / blink_floor 0.8 /
+    rsoft 20:
+
+        hi/lo      trough -> crest
+        24/20        133  ->  167     SMONAA's value, the green monitors
+        32/28        100  ->  125     <- shipped: ~75% of SMONAA
+        40/34         80  ->  100
+
+    White reads hotter than green at equal intensity, so matching SMONAA
+    numerically would overshoot; 32/28 is the "not too strong" ask.
+
+    Note this is the ONE place where a radius above rt_dynlight_rsoft is a
+    deliberate choice rather than the trap the Lamp docstring warns about. That
+    warning predates the 2026-08-12 fix which made the roll-off divide by the
+    fixture's NOMINAL `hi` instead of its instantaneous radius. Rolling off on a
+    constant no longer fights the blink term, so the pulse cannot invert and a
+    larger `hi` is now simply a dimmer fixture. `lo` still has to stay at or
+    above rt_dynlight_minradius (16) or the light is culled at the bottom of its
+    cycle and the panel blinks OFF instead of dimming; 28 clears it easily.
+    """
+
+    def __init__(self, texture: str, maps: dict[str, int], color: tuple[int, int, int],
+                 hi: int, lo: int, tile: float, min_len: float, max_len: float,
+                 offset: float, height_frac: float, min_gap: float,
+                 enabled: bool, note: str):
+        self.texture = texture.upper()
+        self.maps = maps
+        self.color = color
+        self.hi = hi
+        self.lo = lo
+        self.tile = tile
+        self.min_len = min_len
+        self.max_len = max_len
+        self.offset = offset
+        self.height_frac = height_frac
+        self.min_gap = min_gap
+        self.enabled = enabled
+        self.note = note
+
+
+PANEL_LAMPS = [
+    PanelLamp(
+        "SMONBA",
+        # mapname -> how many lights this rule must place. Asserted at build time
+        # for the same reason set_lightlevels asserts lightlevel: the rule is
+        # derived from map geometry, so a map edit silently changes the answer.
+        # A build failure is the intended way to find that out.
+        # Derived with `--panels`, never counted by hand. MAP34 is in this list
+        # because that probe scans past MAP32 and found a panel there that the
+        # original survey missed.
+        maps={"MAP01": 1, "MAP03": 2, "MAP05": 5, "MAP06": 2,
+              "MAP07": 22, "MAP08": 1, "MAP29": 4, "MAP34": 1},
+        color=(255, 255, 255), hi=32, lo=28,
+        tile=64.0, min_len=40.0, max_len=72.0,
+        offset=8.0, height_frac=0.5, min_gap=40.0,
+        enabled=True,
+        note="The white data-readout monitor. See the class docstring: it is the "
+             "only SMON family in the game with no light of its own (8 of 78 "
+             "faces, and those eight are a neighbouring SMONAA's light at a "
+             "median 64u, against a median of 8u for every wired family). "
+             "Standalone single-tile faces only -- max_len 72 excludes MAP07's "
+             "clad band, whose 128/192/256-unit runs would otherwise add ~105 "
+             "flickering lights to one map.",
+    ),
+]
+
+
 class StaticAnim:
     """An ANIMDEFS animation to freeze, because the animation IS baked lighting.
 
@@ -2211,6 +2361,182 @@ def add_light_things(
     return "\n".join(out) + "\n", added
 
 
+def add_panel_lights(
+    text: str, panels: list[PanelLamp], mapname: str
+) -> tuple[str, int, list[str]]:
+    """Append a PointLightFlicker (9802) per wall panel face carrying the texture.
+
+    Unlike add_light_things this finds its targets by TEXTURE rather than by
+    sector index, so there is no positional assumption to assert -- a map edit
+    that inserts a sector cannot misaim it. What IS asserted, in main(), is the
+    resulting COUNT per map, which is what catches the map data changing under
+    the rule.
+
+    Three pieces of geometry have to be right, and two of them have cost this
+    project a round trip before:
+
+    OFFSET DIRECTION. The light goes `offset` units off the face, into the room
+    the sidedef faces. Getting this backwards once put a whole feature's lights 2
+    units INSIDE solid geometry, fully occluded and emitting nothing, which by
+    eye is identical to never being uploaded at all (rt-lighting-practices.md
+    §13). Doom's front sidedef is on the RIGHT of v1->v2, so the normal is
+    (dy, -dx)/len for a front sidedef and its negation for a back one.
+
+    That is not taken on trust -- §13's whole point is that this convention was
+    once assumed and assumed wrong. It was measured against the mod's own
+    authored monitor lights, which are ground truth for exactly this question:
+
+        SMONAA  sidefront -> right  102   (left 12, panels facing each other
+                                           across an alcove, counted for both)
+        SMONDA  sidefront -> right   31
+        SMONCA  sidefront -> right   24
+
+    157 of 169. The same measurement gives the median perpendicular offset as
+    exactly 8.0 units, which is where `offset` comes from.
+
+    A sector-centroid sign test was tried first and is WRONG here, in a way worth
+    recording: the centroid of a sprawling or L-shaped sector need not lie inside
+    it, so on MAP07's big sector 305 the test pointed the light into the wall. It
+    reported 25 of 38 lights embedded in solid. The winding convention has no
+    such dependence on sector shape.
+
+    HEIGHT BAND. A thing's UDMF `height` is relative to its sector's FLOOR, and
+    the band a texture covers is not the sector -- a `top` covers the back
+    sector's ceiling up to the front's, a `bottom` the front floor up to the
+    back's, and a `middle` on a two-sided line covers only the OPENING, not the
+    whole sector (rt-lighting-practices.md §21). Getting that wrong puts the
+    light in front of the panel instead of on it.
+
+    SPACING. One light per `tile` units along the face, centred, matching the
+    mod's own measured density -- so a 64-wide panel gets exactly one, in the
+    middle. (With the shipped max_len of 72 that is every face this rule takes;
+    the loop is general because the density measurement is.)
+    """
+    def flds(b: str) -> dict[str, str]:
+        return {k: v.strip() for k, v in re.findall(r"(\w+)\s*=\s*([^;]+);", b)}
+
+    verts = [
+        (float(d["x"]), float(d["y"]))
+        for d in (flds(b) for b in re.findall(r"(?ms)^vertex\s*\{(.*?)\}", text))
+    ]
+    sides = [flds(b) for b in re.findall(r"(?ms)^sidedef\s*\{(.*?)\}", text)]
+    secs = [flds(b) for b in re.findall(r"(?ms)^sector\s*\{(.*?)\}", text)]
+    things = [flds(b) for b in re.findall(r"(?ms)^thing\s*\{(.*?)\}", text)]
+
+    # Stock GZDoom dynamic-light things — what min_gap tests against, so a panel
+    # the mod already lit does not get a second light stacked on it.
+    existing = [
+        (float(t["x"]), float(t["y"]))
+        for t in things
+        if int(float(t.get("type", 0))) in (9800, 9801, 9802, 9803, 9804)
+    ]
+
+    lines = [flds(b) for b in re.findall(r"(?ms)^linedef\s*\{(.*?)\}", text)]
+
+    def secz(si: int) -> tuple[float, float]:
+        s = secs[si]
+        return float(s.get("heightfloor", 0)), float(s.get("heightceiling", 0))
+
+    def seg_dist(px: float, py: float, ax: float, ay: float,
+                 bx: float, by: float) -> float:
+        dx, dy = bx - ax, by - ay
+        L2 = dx * dx + dy * dy
+        t = 0.0 if L2 == 0 else max(0.0, min(1.0, ((px - ax) * dx + (py - ay) * dy) / L2))
+        return math.hypot(px - (ax + t * dx), py - (ay + t * dy))
+
+    out = [text.rstrip("\n")]
+    added = 0
+    report: list[str] = []
+
+    for panel in panels:
+        placed = 0
+        for li, d in enumerate(lines):
+            ax, ay = verts[int(d["v1"])]
+            bx, by = verts[int(d["v2"])]
+            length = math.hypot(bx - ax, by - ay)
+            if length < 1e-6:
+                continue
+
+            for key in ("sidefront", "sideback"):
+                if key not in d:
+                    continue
+                side = sides[int(d[key])]
+                si = int(side.get("sector", -1))
+                if not (0 <= si < len(secs)):
+                    continue
+                other = "sideback" if key == "sidefront" else "sidefront"
+                bi = (int(sides[int(d[other])].get("sector", -1))
+                      if other in d else -1)
+
+                for tk, part in (("texturetop", "top"), ("texturemiddle", "mid"),
+                                 ("texturebottom", "bot")):
+                    if side.get(tk, '"-"').strip('"').upper() != panel.texture:
+                        continue
+                    if not (panel.min_len <= length <= panel.max_len):
+                        continue
+
+                    fh, ch = secz(si)
+                    if part == "top" and bi >= 0:
+                        lo_z, hi_z = secz(bi)[1], ch
+                    elif part == "bot" and bi >= 0:
+                        lo_z, hi_z = fh, secz(bi)[0]
+                    elif part == "mid" and bi >= 0:
+                        # The opening, not the sector — §21.
+                        bfh, bch = secz(bi)
+                        lo_z, hi_z = max(fh, bfh), min(ch, bch)
+                    else:
+                        lo_z, hi_z = fh, ch
+                    if hi_z - lo_z < 1.0:
+                        continue
+
+                    # Unit normal pointing into the room this sidedef faces.
+                    # Front is the RIGHT of v1->v2 — measured, see the docstring.
+                    nx, ny = (by - ay) / length, -(bx - ax) / length
+                    if key == "sideback":
+                        nx, ny = -nx, -ny
+
+                    n = max(1, int(round(length / panel.tile)))
+                    for k in range(n):
+                        t = (k + 0.5) / n
+                        px = ax + (bx - ax) * t + nx * panel.offset
+                        py = ay + (by - ay) * t + ny * panel.offset
+                        if any(math.hypot(lx - px, ly - py) <= panel.min_gap
+                               for lx, ly in existing):
+                            continue
+                        z = lo_z + (hi_z - lo_z) * panel.height_frac - fh
+                        r, g, b = panel.color
+                        out.append(
+                            "thing\n{\n"
+                            f"x = {px:.3f};\n"
+                            f"y = {py:.3f};\n"
+                            f"height = {z:.3f};\n"
+                            "angle = 0;\n"
+                            # 9802 PointLightFlicker, the type the mod uses for
+                            # every animated wall monitor (199 of its 205 light
+                            # things). rt_dynlight_flicker must stay on or the
+                            # whole class is skipped before upload — pitfall 27.
+                            "type = 9802;\n"
+                            f"arg0 = {r};\n"
+                            f"arg1 = {g};\n"
+                            f"arg2 = {b};\n"
+                            f"arg3 = {panel.hi};\n"
+                            f"arg4 = {panel.lo};\n"
+                            "skill1 = true;\nskill2 = true;\nskill3 = true;\n"
+                            "skill4 = true;\nskill5 = true;\n"
+                            "single = true;\ncoop = true;\n"
+                            "class1 = true;\nclass2 = true;\nclass3 = true;\n"
+                            "class4 = true;\nclass5 = true;\n"
+                            "}\n"
+                        )
+                        # Placed lights join the gap test, so two panels meeting
+                        # at a corner cannot stack a pair in the same spot.
+                        existing.append((px, py))
+                        added += 1
+                        placed += 1
+        report.append(f"{panel.texture} x{placed}")
+    return "\n".join(out) + "\n", added, report
+
+
 def set_lightlevels(
     text: str, wanted: dict[int, tuple[int, int]], mapname: str
 ) -> tuple[str, int]:
@@ -2336,11 +2662,72 @@ def show_table() -> None:
         print(f"[{state}] {h.mapname} painted shaft sectors={h.sectors} "
               f"L{h.from_light} -> L{h.to_light}")
         print(f"          {h.note}")
+    for p in PANEL_LAMPS:
+        state = "ADD  " if p.enabled else "keep "
+        print(f"[{state}] {p.texture} panel lights x{sum(p.maps.values())} "
+              f"rgb{p.color} r={p.hi}/{p.lo} maps={p.maps}")
+        print(f"          {p.note}")
+
+
+def probe_panels() -> None:
+    """Dry run: what would PANEL_LAMPS place, per map, on the CURRENT map data?
+
+    This is how the counts in each rule's `maps` table are derived, and how a
+    mismatch reported by the build assert is diagnosed. It scans every map rather
+    than only the listed ones, so a rule that starts matching a map nobody put in
+    the table shows up here instead of shipping silently.
+    """
+    lumps = read_wad_lumps(WAD)
+    for panel in PANEL_LAMPS:
+        found: dict[str, int] = {}
+        for i in range(1, 40):
+            mapname = f"MAP{i:02d}"
+            try:
+                start, end = map_lump_range(lumps, mapname)
+            except StopIteration:
+                continue
+            members = {nm.upper(): blob for nm, blob in lumps[start:end]}
+            if "TEXTMAP" not in members:
+                continue
+            _, n, _ = add_panel_lights(
+                decode_textmap(members["TEXTMAP"]), [panel], mapname
+            )
+            if n:
+                found[mapname] = n
+        print(f"{panel.texture}: maps={found}  total={sum(found.values())}")
+        if found != panel.maps:
+            missing = {k: v for k, v in found.items() if panel.maps.get(k) != v}
+            stale = {k: v for k, v in panel.maps.items() if k not in found}
+            print(f"  TABLE IS STALE — differs at {missing}, absent now {stale}")
 
 
 def main() -> None:
     if "--list" in sys.argv:
         show_table()
+        return
+
+    # Brightness retune without editing the table. arg3 is the only per-fixture
+    # brightness knob there is -- rt_dynlight_intensity is global and
+    # rt_dynlight_flicker_scale moves all 199 SMON panels at once (pitfall 28c) --
+    # and it lives in the map thing, so changing it means rebuilding this wad.
+    # See the PanelLamp docstring for the hi/lo -> intensity table.
+    for arg in sys.argv[1:]:
+        m = re.fullmatch(r"--panel-radii=(\d+)/(\d+)", arg)
+        if not m:
+            continue
+        hi, lo = int(m.group(1)), int(m.group(2))
+        if lo < 16:
+            raise SystemExit(
+                f"--panel-radii lo={lo} is below rt_dynlight_minradius (16): the "
+                f"light would be CULLED at the bottom of its cycle and the panel "
+                f"would blink OFF rather than dim. See the PanelLamp docstring."
+            )
+        for p in PANEL_LAMPS:
+            p.hi, p.lo = hi, lo
+        print(f"panel lights overridden to r={hi}/{lo}")
+
+    if "--panels" in sys.argv:
+        probe_panels()
         return
 
     active = [c for c in CHAINS if c.enabled]
@@ -2351,9 +2738,10 @@ def main() -> None:
     activeAnims = [a for a in STATIC_ANIMS if a.enabled]
     activeTints = [t for t in TINTS if t.enabled]
     activeComputed = [c for c in SCRIPTED_COMPUTED if c.enabled]
+    activePanels = [p for p in PANEL_LAMPS if p.enabled]
     if (not active and not activeBlinks and not activeScripted
             and not activeShafts and not activeLamps and not activeAnims
-            and not activeTints):
+            and not activeTints and not activePanels):
         raise SystemExit("nothing enabled — nothing to build")
 
     # sector index -> the specials it may currently carry, per map
@@ -2402,6 +2790,15 @@ def main() -> None:
         labels.setdefault(l.mapname, []).append(
             f"lamp {l.sectors} {l.flat}* x{len(l.heights)}")
 
+    # Panel lamps are keyed on a TEXTURE, so the maps they touch come from the
+    # rule's own `maps` table rather than from a mapname field. The count in that
+    # table is asserted after placement — see add_panel_lights.
+    panel_by_map: dict[str, list] = {}
+    for p in activePanels:
+        for mn in p.maps:
+            panel_by_map.setdefault(mn, []).append(p)
+            labels.setdefault(mn, []).append(f"panel {p.texture} x{p.maps[mn]}")
+
     for h in activeShafts:
         m = light_by_map.setdefault(h.mapname, {})
         for i in h.sectors:
@@ -2412,7 +2809,8 @@ def main() -> None:
     lumps = read_wad_lumps(WAD)
     items: list[tuple[str, bytes]] = []
     for mapname in dict.fromkeys(
-        [*by_map, *acs_by_map, *light_by_map, *lamp_by_map, *tint_by_map, *comp_by_map]
+        [*by_map, *acs_by_map, *light_by_map, *lamp_by_map, *tint_by_map,
+         *comp_by_map, *panel_by_map]
     ):
         wanted = by_map.get(mapname, {})
         start, end = map_lump_range(lumps, mapname)
@@ -2438,6 +2836,16 @@ def main() -> None:
         fixed, nlamp = add_light_things(fixed, lamps, mapname)
         if nlamp != sum(len(l.heights) * len(l.sectors) for l in lamps):
             raise SystemExit(f"{mapname}: added {nlamp} light things, expected more")
+
+        panels = panel_by_map.get(mapname, [])
+        fixed, npanel, preport = add_panel_lights(fixed, panels, mapname)
+        want_panel = sum(p.maps[mapname] for p in panels)
+        if npanel != want_panel:
+            raise SystemExit(
+                f"{mapname}: placed {npanel} panel light(s) ({', '.join(preport)}), "
+                f"expected {want_panel} — map data or the rule changed, so the "
+                f"count in PANEL_LAMPS.maps is stale. Re-derive it before shipping."
+            )
 
         behavior, nacs = (
             strip_acs_lights(members["BEHAVIOR"], acs_by_map[mapname], mapname)
@@ -2475,6 +2883,7 @@ def main() -> None:
             items.append(("ENDMAP", b""))
         print(f"{mapname}: cleared {n} sectors, relit {nlight} sectors, "
               f"recoloured {ntint} sector(s), added {nlamp} light thing(s), "
+              f"{npanel} panel light(s), "
               f"{nacs} acs call(s) ({', '.join(labels[mapname])})"
               f"{f', re-stripped {n3d} 3D-floor linedef(s)' if n3d else ''}")
 
@@ -2486,7 +2895,7 @@ def main() -> None:
 
     write_wad(OUTWAD, items)
     maps = len({*by_map, *acs_by_map, *light_by_map, *lamp_by_map, *tint_by_map,
-                *comp_by_map})
+                *comp_by_map, *panel_by_map})
     print(f"wrote {OUTWAD} maps={maps} lumps={[nm for nm, _ in items]}")
 
 

@@ -23,6 +23,10 @@ is casting this?*
 - **Sixth, `STATIC_ANIMS`** — an ANIMDEFS animation that paints its own lighting,
   frozen to one frame. Currently all disabled; see the family's section for why
   the one attempt was wrong.
+- **Eighth, `PANEL_LAMPS`** — the second family that **adds**, and the wall-panel
+  counterpart to `LAMPS`. Keyed on a sidedef TEXTURE rather than a sector flat,
+  because Doom 64's computer monitors are wall fixtures and a sector-centre
+  sphere is the wrong shape for one.
 
 ## Before any theory: run the scanner
 
@@ -765,3 +769,140 @@ a fix from a different tool with no error anywhere.
 
 The builder therefore runs `strip_3dfloor` over every map it emits and reports
 the count. Verified: MAP05 goes 1 → 0.
+
+**This got bigger with `PANEL_LAMPS`.** That family brought MAP01, MAP06, MAP08,
+MAP29 and MAP34 into this wad for the first time, and all five are in the 3D-floor
+wad — MAP34 alone has 16 `special=160` linedefs. The guard held: the build reports
+1, 4, 0, 2 and 16 re-stripped respectively. A family that adds new *maps* to the
+wad silently inherits this trap, so check the re-strip counts in the build output
+whenever the map list grows.
+
+## The eighth family: wall panels that need a light ADDED
+
+`LAMPS` puts a light thing at a **sector centre**, keyed on the sector's flat.
+That is right for a ceiling or floor fixture and wrong for a wall panel — Doom
+64's computer monitors are sidedef textures, and rt-lighting-practices.md §4 is
+the rule being applied: match the emitter's shape to what the original depicts.
+
+`PANEL_LAMPS` keys on a sidedef **texture** and places a 9802 `PointLightFlicker`
+a few units off the face. Every parameter is measured from the mod rather than
+chosen, because Retribution already does this on 199 of its 205 light things.
+
+### The survey that found it — SMONBA is the one unwired family
+
+Light things within 72u of each monitor face, all 32 maps:
+
+| family | faces | with a light | the light |
+|---|---|---|---|
+| `SMONAA` | 87 | 87 **100%** | 9802 `#00ff00` green, r=24/20 |
+| `SMONCA` | 20 | 18 **90%** | 9802 `#00ffb4` teal |
+| `SMONDA` | 25 | 25 **100%** | 9802 `#0078ff` blue |
+| `SMONEA` | 6 | 5 **83%** | 9802 `#00ffb4` teal |
+| `SMONLC` | 8 | 8 **100%** | 9800 + 9802 |
+| **`SMONBA`** | **78** | **8 — 10%** | — |
+
+And the 10% is not real: those eight sit at a **median 64 units** from the face,
+i.e. they are the neighbouring SMONAA's light. Every wired family has its light
+at a median of **8**. Under RT that leaves SMONBA showing its `_e` glow, which
+illuminates nothing (rt-lighting-practices.md §12) — *animated but dead*, the same
+symptom pitfall 27 describes for the whole class when `rt_dynlight_flicker` is off.
+
+### The colour comes from the `_e` mask, not from taste
+
+Each family's light matches its own emissive mask, which is the check
+`docs/flame-lighting.md` asks for before lighting any fixture:
+
+| texture | `_e` mean RGB | its light |
+|---|---|---|
+| `SMONAA` | (47, 207, 47) green | `#00ff00` |
+| `SMONBA` | (146, 146, 146) neutral | **white** |
+
+SMONBA's lit element is a 260-pixel white data-readout block, not a coloured CRT.
+
+### Density, also measured
+
+Lights within 24u of the face segment, bucketed by face length, over SMONAA:
+
+| face length | faces | lights/face | per 64u |
+|---|---|---|---|
+| 62 | 4 | 1.00 | 1.03 |
+| 64 | 73 | 1.05 | 1.05 |
+| 128 | 1 | 2.00 | 1.00 |
+| 192 | 9 | 3.00 | 1.00 |
+
+Exactly **one light per 64-unit tile**, at **0.50 of the panel band's height**
+(median over 110 lights), **8 units** off the face.
+
+### Trap 1 — do not light every face; MAP07 is not a monitor wall
+
+62 of the 78 SMONBA faces are on MAP07, where SMONBA is not a monitor at all but a
+continuous 64-tall band at floor 80 / ceiling 144, in runs of 128, 192 and 256 —
+the "64-tall alcoves clad SMONBA/SPACEBK/SPACEBO" recorded above under script 669.
+Applying SMONAA's density there adds **~105 flickering white lights to one map**,
+more than the 199 SMON lights in the entire game. That is rt-lighting-practices.md
+§20 exactly.
+
+Retribution's own authors drew the same line: on MAP07 they wired the four SMONBA
+faces that are standalone panels (lights at 13–20u) and left the clad band dark.
+So `max_len` admits only a single-tile face, and `min_gap` skips any face that
+already has a light — which is what stops those four getting a second one.
+
+Shipped: **38 lights across 8 maps**, not 126.
+
+### Trap 2 — the front sidedef is the RIGHT of `v1→v2`
+
+The offset direction was first resolved by comparing both candidate normals
+against the owning **sector's centroid**, on the reasoning in §13 that geometry
+you can test beats a winding convention you have not verified. It is wrong here:
+**the centroid of a sprawling or L-shaped sector need not lie inside it**, and on
+MAP07's big sector 305 it aimed the light into the wall. A point-in-sector check
+found **25 of 38 lights embedded in solid** — fully occluded, emitting nothing,
+which by eye is identical to the feature never having run.
+
+§13's instinct was still right; only the test was bad. The convention was settled
+by measuring it against the mod's own authored monitor lights:
+
+| texture | `sidefront` → right | → left |
+|---|---|---|
+| `SMONAA` | 102 | 12 (panels facing each other across an alcove, counted twice) |
+| `SMONDA` | 31 | 0 |
+| `SMONCA` | 24 | 0 |
+
+157 of 169. Front is the right normal, `(dy, -dx)/len`, with no dependence on
+sector shape. After the change: **38 of 38 in open space**, and the same
+point-in-sector test passes 157 of 159 of the mod's own lights as a control.
+
+### Brightness is `arg3`, and it is the only per-fixture knob
+
+`rt_dynlight_intensity` is global to every `FDynamicLight` and
+`rt_dynlight_flicker_scale` moves all 199 SMON panels at once (pitfall 28c), so
+neither can dim SMONBA alone. What is left is the thing's own `arg3`, through the
+roll-off in `RT_UploadGzDoomDynamicLights`. At the launcher's intensity 40 /
+flicker_scale 0.25 / blink_floor 0.8 / rsoft 20:
+
+| `arg3/arg4` | trough → crest | |
+|---|---|---|
+| 24/20 | 133 → 167 | SMONAA's value, the green monitors |
+| **32/28** | **100 → 125** | shipped — white reads hotter than green |
+| 40/34 | 80 → 100 | |
+
+Note this is the **one** place a radius above `rt_dynlight_rsoft` is deliberate
+rather than the trap the `Lamp` docstring warns about. That warning predates the
+2026-08-12 fix which made the roll-off divide by the fixture's *nominal* `hi`
+instead of its instantaneous radius; rolling off on a constant can no longer fight
+the blink term, so the pulse cannot invert and a larger `hi` is simply a dimmer
+fixture. `lo` must still stay ≥ `rt_dynlight_minradius` (16) or the light is culled
+at the bottom of its cycle and the panel blinks **off** instead of dimming.
+
+Retune without editing the table: `--panel-radii=24/20`.
+
+### Derive the counts, never write them
+
+Each rule carries a `maps` table of expected light counts, asserted at build time —
+the rule is derived from map geometry, so a map edit silently changes the answer
+and a build failure is the intended way to find out. Derive it with:
+
+    python tools/make_seqlight_fix.py --panels
+
+It scans past MAP32, which is how it found a SMONBA panel on **MAP34** that a
+MAP01–32 survey had missed.

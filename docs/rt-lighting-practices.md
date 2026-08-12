@@ -236,6 +236,9 @@ Derive the direction from geometry you can test instead: compare against the sec
 `centerspot` and flip the sign if it points the wrong way. That is correct regardless of
 how the mapper drew the line.
 
+**But see §32 — the centroid version of that test is itself a trap, and the honest fix is
+to measure the convention rather than to route around it.**
+
 ## 14. Debug output must be aggregated, not truncated
 
 Two failures of the same kind, both of which cost a round trip:
@@ -657,6 +660,41 @@ shading, not lighting).
   light it for real. It is not evidence the paint is earned.
 - The one thing fixture proximity is good for is deciding what to look at first, never
   what to skip.
+
+## 32. "Geometry you can test" has to actually be inside the shape
+
+§13 says: do not trust a winding convention, compare against the sector's own centre and
+flip the sign. `PANEL_LAMPS` (SMONBA wall monitors) followed that advice literally,
+using the mean of the sector's vertices as the centre, and it put **25 of 38 lights
+inside solid geometry** — the exact failure §13 exists to prevent.
+
+The reason is simple and applies to any polygon: **a centroid is not necessarily inside
+the shape.** For an L-shaped room, a ring corridor, or MAP07's sprawling sector 305, the
+vertex mean lands in the middle of the wall — so "point the normal toward the centre"
+points it into the wall.
+
+Worse, the same centroid was in the *verifier*, so tool and check shared the defect and
+would have agreed with each other. What broke the tie was a **control**: run the check
+against fixtures known to be correct — the mod's own 159 authored monitor lights. Had
+those come back "in solid" too, the verifier was the thing at fault.
+
+The actual fix was to measure the convention §13 warned against assuming. Retribution's
+169 authored monitor lights answer it directly: `sidefront` sits on the **right** of
+`v1→v2` in 157 of them. That is a fact about this data, not an assumption, and it has no
+dependence on sector shape.
+
+**Rules:**
+
+- A centroid is a valid interior point only for a convex shape. For point-in-polygon use
+  a **ray cast**, which is correct for non-convex shapes, holes and islands alike.
+- §13's principle is right — prefer testable geometry to an assumed convention — but
+  "testable" means the test has to be *sound*. A cheap proxy for the real question is not
+  a test; it is a second assumption wearing a test's clothes.
+- **When a convention is unavoidable, measure it against authored content.** A mod that
+  already ships hundreds of the fixture is a labelled dataset for exactly this.
+- **Give every verifier a control on known-good data.** A checker that has never been
+  shown a case it must pass, and a case it must fail, is not evidence. This is §10
+  ("instrument to discriminate") applied to the instrument itself.
 
 ## Pending visual confirmation
 

@@ -141,7 +141,7 @@ room — with a **fixture-distance** column derived from GLDEFS+DECORATE (39 pla
 light-bearing actors), so "is there anything in the room the light could come from"
 is a number. Game-wide it finds 1128 candidates.
 
-Repairs go in `tools/make_seqlight_fix.py` — **seven families, one wad** — see
+Repairs go in `tools/make_seqlight_fix.py` — **nine families, one wad** — see
 `docs/sequence-light-chains.md`:
 
 | family | what it does |
@@ -152,12 +152,31 @@ Repairs go in `tools/make_seqlight_fix.py` — **seven families, one wad** — s
 | `SCRIPTED_COMPUTED` | ACS light calls with **computed** args — the invisible class |
 | `SHAFTS` | sectors painted brighter than their room |
 | `TINTS` | sectors painted a different colour from their room |
-| `LAMPS` | the only family that **adds** — a light thing where a fixture is real |
+| `LAMPS` | **adds** — a light thing at a SECTOR centre, keyed on its flat |
+| `PANEL_LAMPS` | **adds** — a light thing per WALL PANEL, keyed on its texture |
 | `STATIC_ANIMS` | ANIMDEFS animations that paint their own lighting (all disabled) |
 
-To make a fixture cast light, add a light **thing** to the map (`LAMPS`); texture
-metadata cannot do it. **Never strip `Light_Stop`** — it turns effects off, and removing
-it leaves them running.
+To make a fixture cast light, add a light **thing** to the map (`LAMPS` /
+`PANEL_LAMPS`); texture metadata cannot do it. **Never strip `Light_Stop`** — it turns
+effects off, and removing it leaves them running.
+
+`PANEL_LAMPS` is the wall-monitor family. Retribution lights its animated panels with a
+9802 `PointLightFlicker` **8 units off the face**, one per 64-unit tile, coloured to
+match the panel's own `_e` mask — never texture metadata. **SMONBA was the one monitor
+family in the game with no light of its own** (8 of 78 faces, and those eight are a
+neighbouring SMONAA's light at a median 64u against 8u everywhere else), so it read as
+animated but dead; it now gets a white flicker, white because its `_e` is neutral
+(146,146,146) where SMONAA's is green. Two traps, both paid for:
+
+- **Only single-tile faces are lit.** 62 of the 78 SMONBA faces are MAP07's clad band —
+  128/192/256-unit runs — and SMONAA's density there would add ~105 flickering lights to
+  one map. That is §20 exactly. `max_len` excludes them, as Retribution's own authors did.
+- **Front sidedef is the RIGHT of `v1→v2`.** A sector-**centroid** sign test put 25 of 38
+  lights inside solid geometry, because a sprawling sector's centroid is not inside it.
+  Measured against the mod's 169 authored monitor lights: 157 sit on the right normal.
+
+Derive the per-map counts with `--panels` (never by hand — it found a SMONBA panel on
+MAP34 that a MAP01–32 survey missed); retune brightness with `--panel-radii=hi/lo`.
 
 ## The moon, and sky light that leaks
 
