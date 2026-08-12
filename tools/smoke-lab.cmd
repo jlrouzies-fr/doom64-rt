@@ -33,6 +33,14 @@ if "%LABMAP%"=="" set "LABMAP=MAP97"
 if "%LABMAP%"=="96" set "LABMAP=MAP96"
 if "%LABMAP%"=="97" set "LABMAP=MAP97"
 if "%LABMAP%"=="95" set "LABMAP=MAP95"
+rem MAP95 is the moonlit room: sky ceiling, no lamps at all, so the MOON -- a
+rem DIRECTIONAL light -- is the only thing in it that can light the smoke. That
+rem is the case nothing else in the lab could test, and it is where the far-fade
+rem bug that blacked out smoke inside a moon shaft was found and confirmed fixed.
+rem Azimuth 225 / altitude 35 puts the shaft across the firing line with a wall
+rem shadow beside it, so "is the smoke lit" is answerable at a glance.
+set "MOON="
+if "%LABMAP%"=="MAP95" set "MOON=+rt_sun 1 +rt_sun_intensity 200 +rt_sun_a 35 +rt_sun_b 225"
 
 set "IWAD=D:\Games\GZDoom\doom2.wad"
 set "BUILD=G:\AI\Doom64-RT\sourcecode\gzdoom-rt\build\RelWithDebInfo"
@@ -82,7 +90,7 @@ rem base pins are exec'd from a file and only the lab's own settings are inline.
   +rt_dynlight_intensity 150 ^
   +rt_smoke_autoweapon %WPN% +rt_smoke_autospawn 25 ^
   +rt_autoshot 60 +rt_autoshot_every 10 +rt_autoquit 200 ^
-  +map %LABMAP% %EXTRA%
+  %MOON% +map %LABMAP% %EXTRA%
 
 echo.
 echo === captured ===
