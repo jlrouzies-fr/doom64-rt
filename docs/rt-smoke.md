@@ -109,12 +109,45 @@ together and a row only states how that weapon differs.
 | weapon | reads as |
 |---|---|
 | Pistol | a 2.5 cm thread off the barrel, 14-parcel trail, slow growth |
-| Shotgun / SSG | a fat cough, 1.3-1.6x, short trail |
-| Chaingun | small and frequent, no trail — at that fire rate a trail is the next shot |
-| Rocket | backblast: big, long-lived |
-| Plasma / BFG / Unmaker | faint. They are not combustion; the flash is the effect |
+| Chaingun | the same thread, shorter and faster — a machine gun is a pistol here |
+| Shotgun / SSG | a SCATTER of small parcels, widely spread. Not one ball |
+| Rocket launcher | **nothing at the muzzle**. The rocket carries it (below) |
+| Plasma / BFG / Unmaker | **nothing**. Not combustion; the muzzle flash is the effect |
 
 `rt_smoke_perweapon 0` gives every gun the same profile, which is the A/B.
+
+**Why the shotgun is sparse rather than fat.** A wide bore does make a cloud, and
+the first version rendered one as a single 0.4 m parcel per shot. It sat in the
+middle of the screen and blocked the view, because the froxel grid cannot give a
+single parcel any internal structure -- it reads as a grey wall, not as smoke.
+Several small parcels thrown wide read as a burst and leave gaps to see through,
+which is both better looking and better to play.
+
+**Why a count multiplier of 0 means zero.** `want` rounds UP so a 0.34 multiplier
+still yields one parcel; an exact 0 short-circuits instead, and arms no trail. A
+weapon with no smoke costs nothing at all.
+
+### The rocket carries its own
+
+A backblast hanging in front of you while the rocket leaves is the wrong read,
+and it obscures the shot you just took. So the launcher's muzzle makes none, and
+the projectile does the work:
+
+    rt_smoke_rocket          master
+    rt_smoke_rocket_every    TICS between trail parcels in flight
+    rt_smoke_rocket_radius   metres, small -- a line of big parcels is a wall
+    rt_smoke_boom            parcels in the burst when it dies
+    rt_smoke_boom_radius     metres
+
+**The death event is DISAPPEARANCE, and that is the part worth remembering.**
+Rockets are tracked by pointer while they live, dropping a parcel every couple
+of tics. When a tracked one is no longer in the thinker list it has exploded, so
+the burst spawns at the last position seen. That needs no hook, no DECORATE edit
+and no ZScript -- which matters, because the projectile class is the WAD's
+(`64Rocket`), not ours. The class match excludes `Launcher` and `Smoke`, since
+`64RocketLauncher` and `64RocketSmokeTrail` both contain "Rocket".
+
+The explosion is the one place a fat cloud is right: it is meant to obscure.
 
 All `RT_CVAR` (`CVAR_ARCHIVE`) except `rt_smoke_debug`, and **all pinned in
 `tools/launch-retribution-rt.cmd`** — a launcher pin overrides the compiled
