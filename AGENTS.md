@@ -228,7 +228,7 @@ feature code to `rt_main.cpp`.
 | `rt_lights_sector.cpp` | Sector lights, gzdoom dynlights (`RT_UploadGzDoomDynamicLights` — pitfalls 22/27/28), lightlevel watch, `rt_sector_emis` threshold |
 | `rt_lights_fixtures.cpp` | Lamps inferred from a TEXTURE: ceiling inset, wall strip, ceiling edge, spin panel, solo bulb, hanging tech, hand glow |
 | `rt_lights_fx.cpp` | Switches, lava, flames (`RT_UploadFlameLights` — see `docs/flame-lighting.md`) |
-| `rt_smoke.cpp` | Puff simulation, rocket trails, monster gun smoke (`RT_MONSTER_GUNS`) + `smoke` CCMD (`docs/rt-smoke.md`) |
+| `rt_smoke.cpp` | Puff simulation + all six smoke sources: weapons, monster guns (`RT_MONSTER_GUNS`), projectiles (`RT_PROJECTILE_SMOKE`), barrels, flames (`RT_AMBIENT_FLAMES`) + `smoke` CCMD (`docs/rt-smoke.md`) |
 | `rt_presets.cpp` | Per-map moon / cloud / tint / fog tables + `moon`, `clouds`, `fog` CCMDs |
 | `rt_weather.cpp` | The storm + `thunder` |
 | `rt_draw.cpp` | `RTRenderState::InternalDraw` — the funnel every primitive passes through |
@@ -271,7 +271,7 @@ declaration cannot drift from its definition. Put nothing in that file except an
 | `tools/test_gallery_emis_qa.cmd` | Auto QA: emis hygiene + 8-yaw wash score (pass/fail). |
 | `tools/ab-fog.cmd` | Illuminated fog A/B, default MAP26. Profiles `full`/`ramp`/`veil`/`ramp2`/`wall`/`deep`/`even`/`flatramp`/`inverse`/`twotone`; flashlight `flsh`/`flshraw`/`flshwide`; isolation `off`/`nolight`/`flat`/`ambient`/`grey`/`thin`/`dense`/`reach20`/`reach90`/`moon`/`debug`. See `docs/rt-fog.md`. |
 | `tools/ab-water.cmd` | Water A/B: `stock`/`styl`/`flat`/`mirror`/`noglow`/`nocaus`/`debug`, default MAP10. Flats are tagged engine-side (`l_waterflag`), no setup needed. See `docs/rt-water.md`. |
-| `tools/ab.cmd smoke-<arm>` | Volumetric smoke A/B (arms are cfgs in `tools/arms/`, NOT command-line strings). `smoke-full`/`fat`/`thin`/`still`/`drift`/`walk`/`glued`; monsters `smoke-monster`/`nomonster`; traps `nearfade`/`blendslow`/`blendraw`; resolution `reach30`/`reach8`; isolation `off`/`nolight`/`debug`; and `fogsafe`/`fogsmoke`, the fog regression. See `docs/rt-smoke.md`. |
+| `tools/ab.cmd smoke-<arm>` | Volumetric smoke A/B (arms are cfgs in `tools/arms/`, NOT command-line strings). `smoke-full`/`fat`/`thin`/`still`/`drift`/`walk`/`glued`; monsters `smoke-monster`/`nomonster`; sources `smoke-flames`/`noflames`/`proj`/`barrel`/`crowd`; traps `nearfade`/`blendslow`/`blendraw`; resolution `reach30`/`reach8`; isolation `off`/`nolight`/`debug`; and `fogsafe`/`fogsmoke`, the fog regression. See `docs/rt-smoke.md`. |
 | `tools/ab-blood.cmd` | Persistent blood A/B: `off`/`on`/`uncapped`/`tight`/`plain`/`wild`/`roll`, default MAP01. The lifetime is DECORATE in the WAD, not a renderer setting. See `docs/blood-persist.md`. |
 
 Important cvars on Retribution launch (do not crank blindly):

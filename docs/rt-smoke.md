@@ -93,6 +93,13 @@ lists a buffer upgrade rather than pretending 32 is enough forever.
     rt_smoke_monster       smoke off a MONSTER's gun too
     rt_smoke_monster_scale how much of it: count AND density together
     rt_smoke_monster_far   metres beyond which a monster's shot makes none
+    rt_smoke_projectile    trails+bursts on TRCR / RBAL / MANF / FIRE
+    rt_smoke_barrel        a burst when an exploding barrel goes off
+    rt_smoke_barrel_scale  how much of it
+    rt_smoke_ambient_fx    a wisp off every FLAME in the level
+    rt_smoke_ambient_scale how much of it
+    rt_smoke_ambient_budget ceiling on LIVE ambient puffs -- read §3.1
+    rt_smoke_ambient_far   metres beyond which a flame makes none
     rt_smoke_far           the volume's reach when smoke has it to itself
     rt_smoke_ambient       unlit floor, smoke-only frames
     rt_smoke_illum         light from ALL lights
@@ -150,6 +157,82 @@ which is both better looking and better to play.
 **Why a count multiplier of 0 means zero.** `want` rounds UP so a 0.34 multiplier
 still yields one parcel; an exact 0 short-circuits instead, and arms no trail. A
 weapon with no smoke costs nothing at all.
+
+### Six sources, and not one of them is a game hook
+
+| source | trigger | where |
+|---|---|---|
+| player weapon | `RT_AddMuzzleFlash`, on the rising edge of `extralight` | `rt_weapon.cpp` |
+| monster gun | the SPRITE FRAME it fires on | `RT_MONSTER_GUNS` |
+| rocket | tracked by pointer; `MF_MISSILE` clearing IS the explosion | `RT_PROJECTILE_SMOKE` |
+| other projectiles | the same, keyed by sprite | `RT_PROJECTILE_SMOKE` |
+| exploding barrel | the SPRITE FRAME `A_Explode` sits on | `RT_BarrelSmoke` |
+| flames | continuous, per actor, on a countdown | `RT_AMBIENT_FLAMES` |
+
+**All six are trigger-free by necessity, not by preference.** Every actor class
+involved belongs to the WAD — `64Rocket`, `64ZombieMan`, `64ExplosiveBarrel`,
+`64BigFire` — so nothing here may require a DECORATE edit or a ZScript. That one
+constraint is why the triggers look so different from each other: each is
+whichever property of the actor happens to be readable from the renderer.
+
+**The sprite frame is the workhorse.** A monster's attack and a barrel's
+explosion are both DECORATE states, invisible to the renderer — but what frame an
+actor is drawing is readable every frame, for free. `POSS F` is the shot, `POSS E`
+is the aim; `BEXP E` is where `A_Explode` sits. Same rule
+`tools/gen_fx_emissives.py` already uses to pick which frames get a muzzle
+emissive, so the light on the sprite and the smoke off the barrel agree by
+construction.
+
+**`MF_MISSILE` is what keeps `FIRE`'s two owners apart.** The sprite belongs to
+both `64MotherFire`, a projectile, and `64BigFire`, the ambient bonfire that
+stands in 117 places across nine maps. The projectile table is consulted only for
+actors carrying the flag, so the bonfires fall through to the ambient table
+instead. Matching `FIRE` without that test would have put a rocket trail on every
+bonfire in the game.
+
+**A projectile's matched row outlives its match.** `RocketMark` stores the row it
+matched on first sight rather than re-deriving it at the burst — because by then
+`MF_MISSILE` is gone and the lookup answers `nullptr`. The death event is
+precisely the moment the actor stops being matchable.
+
+### 3.1 The budget, which ambient smoke would otherwise eat
+
+Everything except flames is an **event**: it happens, it emits, it stops, and the
+budget question answers itself because the player can only fire so fast. A torch
+never stops, and a level holds far more torches than gunmen.
+
+Left alone, ambient smoke would win every contest for a pool slot simply by
+outlasting everything else — and the smoke that would be pushed out is the wisp
+off the gun in your hands. Three mechanisms prevent that, and none is optional:
+
+1. **`rt_smoke_ambient_far` (9 m)** — tighter than the weapon cull, because a
+   torch two rooms away is a slot spent on something the froxel grid cannot
+   resolve anyway.
+2. **`rt_smoke_ambient_budget` (40 of 128)** — a ceiling on how many ambient
+   puffs may be *alive*. Emission stops at the cap rather than pushing other
+   smoke out. An emitter held off keeps its own cadence, so nothing catches up
+   in a burst when a slot frees.
+3. **Ambient puffs are evicted first.** `SmokePuff::ambient` makes the pool's
+   overflow rule prefer them, so a shot finds room even with the flames at their
+   cap.
+
+`smoke` in the console reports the split — `48 live (40 ambient, cap 40)`. Sitting
+*at* the cap is the expected state in a torch-lit room, not a fault.
+
+**The buffer went 32 → 128 for this.** Muzzle smoke alone fits in 32; a room full
+of torches does not. The cap is a uniform-bytes limit (128 puffs takes
+`ShGlobalUniform` to 8160 bytes, under the 16 KB Vulkan guarantees for
+`maxUniformBufferRange`) — while `rt_smoke_budget`, how many are *uploaded*, is a
+shader-time limit, because `smoke_evalAt` runs per froxel. Those are different
+numbers limited by different things, and conflating them is the easy mistake.
+
+**What made a bigger budget affordable** is a one-line early reject in
+`smoke_evalAt`: the ellipsoid is contained in the sphere of radius
+`max(rAlong, rPerp)`, so one dot product rejects a puff before any of the
+divisions and square roots. Exact, not an approximation. The loop's cost becomes
+*puffs near this cell* rather than *puffs uploaded*. The per-puff view direction
+moved engine-side into `smokeShape.yzw` at the same time — it was a `normalize()`
+per puff per froxel and it is constant per puff per frame.
 
 ### The rocket carries its own
 
@@ -224,6 +307,16 @@ See is A–D, Pain is G, death H and up.
 | `PLAY` | 64MarineBot | as the zombieman |
 | `CPOS` | not in Retribution | thinner, shorter — it fires again at once |
 | `SSWV` | not in Retribution | as the chaingun guy |
+| `CYBR` | 64Cyberdemon | arm cannon: big and dirty |
+
+**The Cyberdemon is the odd row in three ways.** It fires on frame **E**, not F —
+F is the frame it *faces* you on. Its Missile state fires three times, which the
+rising-edge test handles for free because DECORATE returns to F between shots.
+And its gun is an arm cannon, not a chest-height rifle:
+`A_CustomMissile( "64CyberRocket", 81, -31, … )` puts it 81 units up and 31 to the
+side of a 160-tall actor, so `MonsterGun` carries `zFrac` and `side` rather than
+assuming the soldiers' geometry. Its *rockets* already smoked — `64CyberRocket`
+matches the rocket row by class name — so this adds only the muzzle.
 
 **Every row carries `trail = 0`, and that is a constraint, not taste.** The trail
 emitter rebuilds its release point from the **player's** viewpoint every few tics
@@ -471,6 +564,11 @@ Shape and emission:
 |---|---|
 | `monster` | monster gun smoke on its own — rockets and the player trail off. Type `notarget` once, then DON'T fire |
 | `nomonster` | the before: `rt_smoke_monster 0`, everything else shipping |
+| `flames` | ambient flame smoke ALONE — every event source off. Stand in a torch-lit room and don't fire |
+| `noflames` | its before |
+| `proj` | TRCR / RBAL / MANF / FIRE trails and bursts, with the player's rocket off so the two cannot be confused |
+| `barrel` | shoot a barrel. The burst must land WITH the bang — twenty seconds late means the trigger went back to the actor's removal, and that is its respawn timer |
+| `crowd` | every source at once in a torch-lit fight. The arm for the POOL: watch whether YOUR smoke still appears |
 | `quick` | the BEFORE for the linger pass: count 3, budget 24, life 1.6, growth 0.7 |
 | `noTrail` | `rt_smoke_trail 0` — a single burst. The BALL, and the proof that a filament is a shape in time (§8) |
 | `edgeonly` | `rt_smoke_repeat 0`. Hold the chaingun: extralight never re-arms, so a whole burst makes one puff |
@@ -667,13 +765,15 @@ genuinely different amounts of medium — and it is **open**.
 - **Puffs are spheres.** Real smoke is not, and at these radii the eye can tell.
   The fix is not more spheres, it is per-froxel noise modulating the density —
   cheap, independent of particle count, and the natural next step.
-- **32 puffs, hard, and the budget now sits ON it.** They ride in the global
-  uniform (1 KB) rather than a storage buffer. `rt_smoke_budget` shipped at 24
-  and is 32 now, so there is no slack left: **a held chaingun saturates the pool
-  and the oldest parcels are culled**, which is the tail you read as lingering.
-  That is the ceiling on "more smoke" today, not any `rt_smoke_*` value. Raising
-  it is a `LightManager` clone plus a descriptor set — and it is now the thing
-  actually needing the capacity, which §7 said to wait for.
+- **128 puffs, hard, and ambient sources are why it is not 32.** They ride in the global
+  uniform (8 KB) rather than a storage buffer, and 128 is where
+  `maxUniformBufferRange`'s guaranteed 16 KB stops being comfortable. Past that
+  it is a `LightManager` clone plus a descriptor set. The BUDGET (48 uploaded) is
+  a separate, shader-time limit — see §3.1, and do not conflate them.
+- **A held chaingun in a torch-lit room still saturates.** The pool prefers to
+  evict ambient puffs, so what gets culled is flame smoke rather than yours —
+  but the flames visibly thin out while you hold the trigger. That is the
+  priority rule working, not a bug, and `smoke` reports the split that proves it.
 - **The volume is camera-fitted.** A puff beyond the far plane is not
   represented at all. For muzzle smoke, which is by definition in front of your
   face, this has not mattered.
@@ -691,11 +791,10 @@ genuinely different amounts of medium — and it is **open**.
   `rt_fog_ambient`, which at the shipping 1 is more than twelve times
   `rt_smoke_ambient`. That is why the fog and the unfogged case need judging
   separately.
-- **Hitscan guns only.** The player's weapons, the rocket (by tracking the
-  projectile) and the five soldier sprites in `RT_MONSTER_GUNS` — see §3. The
-  Spider Mastermind's chaingun is not covered, and no projectile monster is:
-  an imp's fireball is not combustion, so powder smoke would be the wrong effect
-  for the same reason the plasma rifle makes none.
+- **Not every emitter is covered.** The Spider Mastermind's chaingun has no row,
+  and the imp's fireball deliberately has none — it is not combustion, so powder
+  smoke would be the wrong effect for the same reason the plasma rifle makes
+  none. The projectiles that DO smoke are the four burning ones in §3.
 - **A monster's smoke is one or two parcels, never a filament.** The trail
   emitter is bound to the player's viewpoint by construction (§3), so a monster
   cannot have one without its smoke hanging off your camera.
