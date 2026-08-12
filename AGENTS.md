@@ -362,7 +362,20 @@ Clear all enemy `_e` + strip meta: `python tools/clear_enemy_eye_emissives.py` t
     SMONDA panels lit the room — lines 922/937 are 9802 (skipped), line 927 is a **9801
     PointLightPulse**, which is not a flicker type and was never skipped. When N identical
     fixtures behave differently, compare their **thing types** before touching art or meta.
-    A/B: `.\tools\ab-smon.cmd <off|on|steady|dim|bright|marks> [map]`.
+    A/B: `.\tools\ab-smon.cmd <off|loud|on|calm|steady|dim|marks> [map]`.
+28. **Dynlight blink: the roll-off used to fight the blink, and the cap hides both knobs.**
+    Turning 199 monitors on exposed two bugs in `RT_UploadGzDoomDynamicLights`.
+    (a) The inverse-square roll-off divided by the **instantaneous** flickering radius while
+    the blink term multiplied by it, so a 24/20 light had its **crest** divided by
+    `(20/24)²` and its trough untouched — and any blink floor above ~0.36 **inverted** the
+    pulse. It now rolls off on the fixture's **nominal** radius (`hi`), which is constant
+    per light; steady lights are unaffected since `mapRadius == hi` for them.
+    (b) `rt_dynlight_intensity` and the new `rt_dynlight_blink_floor` are **coupled through
+    `rt_dynlight_max`**: at scale 40 a 24/20 light's raw crest is 960, so the 500 cap clips
+    *both* ends for any floor above ~0.52 and the swing flattens to 1.00× — raising the
+    floor silently turns the flicker **off** instead of calming it. The scale must come
+    under the cap first. Shipping pair is **16 / 0.55** (crest 347→267, swing 2.41×→1.82×).
+    Lights of radius ≥32 are cap-limited at both scales and do not change at all.
 
 ## Suggested next work
 
