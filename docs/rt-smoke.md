@@ -96,8 +96,29 @@ lists a buffer upgrade rather than pretending 32 is enough forever.
     rt_smoke_light_near    the near-light fade INSIDE a puff
     rt_smoke_light_far     metres beyond which a light stops lighting smoke
     rt_smoke_illum_blend   temporal blend INSIDE a puff
+    rt_smoke_spp           direct-lighting samples per froxel INSIDE a puff
+    rt_smoke_maxlight      ceiling on in-scattered light INSIDE a puff
     rt_smoke_autospawn     NOARCH; spawn with no weapon, for unattended capture
     rt_smoke_debug         NOARCH; 1 logs the chain, 2..8 are shader probes
+
+Four more belong to the VOLUME rather than to smoke, and therefore change fog
+too. They were added chasing smoke's noise and each fixes something that was
+wrong for fog as well:
+
+    rt_volume_blur          0..1, a 5-tap spatial filter, taken at SAMPLE time
+    rt_volume_dither        per-pixel sample jitter in froxels (stock 2)
+    rt_volume_occlude_emis  attenuate screen emission by the medium
+    rt_volume_type          0 none / 1 froxel / 2 depth-based
+    rt_volume_far           the volume's reach, and therefore its Z resolution
+    rt_volume_scatter       the global medium's density
+    rt_volume_ambient       its unlit floor
+    rt_volume_lintensity    multiplier on scattered light
+    rt_volume_lassymetry    Henyey-Greenstein g
+    rt_volume_history       frames of per-pixel temporal accumulation
+
+`rt_volume_far` is worth knowing about even if you only care about smoke: it
+sets the froxel slice thickness (`far / 64`), which is the resolution limit
+everything in §8 runs into.
 
 ### Per weapon
 
@@ -343,6 +364,32 @@ unfocused window throttles to about one tic a second.
 | `fogsafe` | **the fog regression** (§5). MAP26, must match `ab-fog.cmd ramp` |
 | `fogsmoke` | MAP26, firing. Both media in one volume, and the puff coarser because the fog owns the reach |
 
+Shape and emission:
+
+| arm | what it isolates |
+|---|---|
+| `noTrail` | `rt_smoke_trail 0` — a single burst. The BALL, and the proof that a filament is a shape in time (§8) |
+| `edgeonly` | `rt_smoke_repeat 0`. Hold the chaingun: extralight never re-arms, so a whole burst makes one puff |
+| `novol` | everything the tool changes EXCEPT the smoke, for isolating an arm-side difference |
+
+Noise, and the whiteout:
+
+| arm | what it isolates |
+|---|---|
+| `noblur` | `rt_volume_blur 0` — the unfiltered volume. Judge it while MOVING |
+| `spp1` | one sample per froxel instead of four. The estimate itself, not the filtering |
+| `lowblend` | `rt_smoke_illum_blend 0.08` — ~12 frames of averaging instead of ~5, which is only honest now that the history is reprojected |
+| `noclamp` | `rt_smoke_maxlight 0` and `rt_smoke_light_near 0` — the state that produced the plasma whiteout |
+| `farlight` | `rt_smoke_light_far 0` — every emissive in the room lights the puff again |
+
+Shader probes, kept because this class of bug recurs (§7):
+
+| arm | what it paints |
+|---|---|
+| `probeuni` | BLUE everywhere, reading only the debug field. Bottom of the ladder |
+| `probeall` | GREEN everywhere while puffs exist — tests the count |
+| `probe` | MAGENTA in the froxels a puff covers — tests the positions |
+
 `rt_smoke_debug` prints once a second: live puff count, how many were sent, the
 nearest puff's position, radius and density in metres, the volume's reach and its
 slice thickness. That is what separates *no smoke visible* from *no puffs
@@ -439,7 +486,79 @@ The pistol therefore ships at a 2.5 cm across-view radius, a 14-parcel trail at
 
 ---
 
-## 9. Known limits
+## 9. The noise, and what actually moved it
+
+Smoke is estimated at ONE direct-lighting sample per froxel and one shadow ray.
+The surface path has A-SVGF or DLSS-RR behind it; **the volume has nothing** but
+a temporal blend. So its variance reaches the screen raw, and a bright light
+close to a dense puff is the worst case in the game.
+
+Four things were done, in this order, and the honest scoreboard is:
+
+| change | measured |
+|---|---|
+| `rt_volume_blur` — 5-tap spatial filter at sample time | **−37%** high-frequency energy |
+| reprojected volume history (below) | no measurable change on a STATIC camera, which is expected |
+| `rt_smoke_spp 4` — more samples inside puffs | **−15%** |
+| `rt_smoke_maxlight` — whiteout clamp | saturated pixels **5.3% → 1.4%** |
+
+**The filter had to move.** The obvious home is `CmVolumetricProcess`, and it
+does not work there: that pass writes the image it reads, and is only safe
+because each thread reads exactly the one (x,y) column it writes. Reading a
+neighbour returns whatever another thread already stored — the finished prefix
+sum instead of raw scattering — and the volume collapses. It is taken at SAMPLE
+time instead, in `volume_sampleDithered`, where the texture is read-only. XY
+only: Z is the integration axis and carries the puff's depth extent.
+
+**The history had to be double-buffered before it could be reprojected.** The
+temporal blend read `imageLoad( g_illuminationVolume, cell )` — the same cell
+INDEX as last frame. The grid is camera-attached, so that history is wrong the
+instant you turn. Reprojecting means sampling a neighbour, which is the same
+write-while-reading hazard, so `illumination` is now double-buffered like
+`scattering` already was: storage bound to this frame, sampler to the previous.
+Cells with no history take the new estimate whole rather than blending toward
+black, which would draw a halo at every disocclusion.
+
+**Reprojection fixes camera motion and nothing else.** A moving light — a flying
+plasma bolt — genuinely changes the radiance at a fixed world point, so no
+temporal method can average it. That is why rocket smoke lit by a plasma bolt
+stays the hardest case, and why `rt_smoke_spp` matters: it is the only knob that
+improves the estimate rather than filtering it.
+
+**The whiteout was not noise at all.** A light carried at ~0 m lights the froxels
+around it by inverse square, so the plasma rifle's glow inside a dense cloud
+saturated the screen — the same physics as the flashlight in fog (`rt-fog.md`
+§4), which smoke had deliberately disabled its fade for. `rt_smoke_maxlight`
+bounds the result rather than the cause, keeping the muzzle flash.
+
+### Emissive surfaces were never occluded by the medium
+
+Reported as "the panel lights leak through the smoke", and it is a one-line
+ordering bug in `CmPrepareFinal`: screen emission is added AFTER the volumetric
+composite and OUTSIDE its guard, so an emissive panel shines through fog and
+smoke at full strength. `rt_volume_occlude_emis` multiplies it by the
+transmittance.
+
+**This was a fog bug too**, for as long as fog has existed — every fogged map had
+unoccluded emissives. Turning it on therefore changes those nine maps, and MAP26
+is worth a look.
+
+### The dark outlines are older than the denoising
+
+Geometry seen through smoke is traced by thin dark outlines. They are NOT new:
+the same rectangles are visible around the wall panels in the very first working
+smoke capture, buried in the noise. Denoising revealed them rather than causing
+them.
+
+Ruled out by test, not by argument: the spatial filter (present at
+`rt_volume_blur 0`) and the sample dither (present at `rt_volume_dither 0.4`).
+The emissive fix above removes the bright-edge half. What remains is a silhouette
+compositing artifact — adjacent pixels either side of an edge integrate
+genuinely different amounts of medium — and it is **open**.
+
+---
+
+## 10. Known limits
 
 - **Puffs are spheres.** Real smoke is not, and at these radii the eye can tell.
   The fix is not more spheres, it is per-froxel noise modulating the density —
@@ -466,8 +585,12 @@ The pistol therefore ships at a 2.5 cm across-view radius, a 14-parcel trail at
   `rt_fog_ambient`, which at the shipping 1 is more than twelve times
   `rt_smoke_ambient`. That is why the fog and the unfogged case need judging
   separately.
-- **Player weapons only.** Monsters' guns, rockets and explosions are each an
-  emitter against the same pipeline, and none of them exists yet.
+- **Player weapons only.** Monsters' guns do not smoke. The player's rocket does
+  (§3), by tracking the projectile.
+- **Dark outlines on geometry seen through smoke** (§9), still open.
+- **One sample per froxel is the floor.** `rt_smoke_spp` raises it only inside
+  puffs, which is what makes it affordable; the surrounding volume is still 1 spp
+  with no spatial filter of its own beyond the sample-time taps.
 
 ---
 
