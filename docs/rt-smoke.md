@@ -321,7 +321,37 @@ with `rt_autoshot` and `rt_autoquit`.
 
 ---
 
-## 8. Known limits
+## 8. A filament, and why a sphere could never be one
+
+Asked for a 2 cm wisp off a pistol barrel, the first four attempts all came back
+as a ball. Each failure was a different cause and only the last one is about art.
+
+**A single burst is a ball at any radius.** A filament is a shape in TIME: the
+thin column exists because the barrel keeps breathing while the earlier parcels
+rise away. So a shot arms an emitter (`rt_smoke_trail`) that keeps releasing ONE
+parcel every few tics, world-anchored at the muzzle point. One at a time --
+releasing pairs collapses it back into a clump.
+
+**A sphere cannot be thin in this grid.** The froxel volume's two axes differ by
+a factor of forty: at 1.5 m a cell is 1.7 cm across the screen and 47 cm deep. A
+sphere has one radius, so to be resolvable in depth it needs half a slice, and
+that same 23 cm is then its width on screen — the depth requirement was setting
+the visible size. A puff is now an **ellipsoid stretched along the view**: what
+the profile asked for across the screen, half a slice along the view. The stretch
+is invisible because it points down the axis you are looking along, and the
+density is divided by the same factor so the optical depth is unchanged.
+
+**Real smoke leaves laminar and breaks up later.** `rt_smoke_curl` scales the
+lateral push by the SQUARE of a parcel's age, so the thread is straight for the
+first fraction of a second and only wanders once it has risen. Each parcel
+carries its own phase, or the whole trail waves in unison and reads as a ribbon.
+
+The pistol therefore ships at a 2.5 cm across-view radius, a 16-parcel trail at
+3-tic spacing, and almost no lateral spread at birth.
+
+---
+
+## 9. Known limits
 
 - **Puffs are spheres.** Real smoke is not, and at these radii the eye can tell.
   The fix is not more spheres, it is per-froxel noise modulating the density —
