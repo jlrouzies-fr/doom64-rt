@@ -194,7 +194,7 @@ Three things that will otherwise cost you a day:
 **Flames are a special case — read `docs/flame-lighting.md` before touching any
 torch, fire or candle sprite.** All 84 of them (`TL*` `TS*` `A030` `A031` `A032`
 `GTCH` `?FLM` `CAND`) carry `lightIntensity: 0` on purpose and are lit by
-`RT_UploadFlameLights()` in `rt_main.cpp` instead, because texture meta can express
+`RT_UploadFlameLights()` in `rt_lights_fx.cpp` instead, because texture meta can express
 neither the GLDEFS offset up onto the flame nor a flicker. Consequences that bite:
 `rt_flame_light_on 0` means those flames cast **nothing** (use
 `rt_flame_light_flicker 0` for a steady light), and `CAND` is intentionally a red
@@ -214,6 +214,39 @@ light on amber art, so it fails a naive art-vs-light hue audit.
 | `sourcecode/prboom-plus-rt/` | Secondary RTGL1 reference |
 | `tools/` | Helper scripts + gallery packs |
 | `retribution-asset-inventory.md` | Phase 1 inventory |
+
+## RT renderer source layout — `sourcecode/gzdoom-rt/src/common/rendering/rt/`
+
+**`rt_main.cpp` is no longer the whole renderer.** It was 15,072 lines and every
+feature lived in it; as of branch **`fileSplit`** it is 2,967 and the features are
+in their own files. Go straight to the one that owns your change — do not add new
+feature code to `rt_main.cpp`.
+
+| File | Owns |
+|---|---|
+| `rt_main.cpp` | Frame loop (`RT_BeginFrame` / `RT_DrawFrame`), `Win32RTVideo`, upscaler + DLSS/FSR cvar mapping, `whatsthat`, `rt_dump_*` |
+| `rt_lights_sector.cpp` | Sector lights, gzdoom dynlights (`RT_UploadGzDoomDynamicLights` — pitfalls 22/27/28), lightlevel watch, `rt_sector_emis` threshold |
+| `rt_lights_fixtures.cpp` | Lamps inferred from a TEXTURE: ceiling inset, wall strip, ceiling edge, spin panel, solo bulb, hanging tech, hand glow |
+| `rt_lights_fx.cpp` | Switches, lava, flames (`RT_UploadFlameLights` — see `docs/flame-lighting.md`) |
+| `rt_smoke.cpp` | Puff simulation + `smoke` CCMD (`docs/rt-smoke.md`) |
+| `rt_presets.cpp` | Per-map moon / cloud / tint / fog tables + `moon`, `clouds`, `fog` CCMDs |
+| `rt_weather.cpp` | The storm + `thunder` |
+| `rt_draw.cpp` | `RTRenderState::InternalDraw` — the funnel every primitive passes through |
+| `rt_weapon.cpp` | Flashlight, muzzle flash, gun glow (`rt_mzlflsh*`, `rt_gunglow`) |
+| `rt_export.cpp` | Static-scene exportability predicates (public face is `rt_helpers.h`) |
+| `rt_titles.cpp` | Title cards, fullscreen images, fluid spawn |
+| `rt_renderstate.h` | `RTFrameBuffer` + `RTRenderState` declarations |
+| `rt_buffers.h` | Vertex / index / texture buffer classes |
+| `rt_internal.h` | Shared internals in `namespace rtx` — `RG_CHECK`, `ONEGAMEUNIT_IN_METERS`, `RT_SectorHue`, colour helpers, the light-ID bases |
+| `rt_cvars.inc` | **All 451 cvars.** Add one here and nowhere else |
+
+**Adding a cvar:** one line in `rt_cvars.inc`. It is an X-macro list included
+twice — `rt_cvars.h` expands it to externs, `rt_cvars.cpp` to definitions — so a
+declaration cannot drift from its definition. Put nothing in that file except an
+`RT_CVAR*` invocation or a comment; both faces have to swallow every line.
+
+**Adding a file:** register it in `src/CMakeLists.txt` under `RT_SOURCES`, include
+`rt_internal.h`, and say `using namespace rtx;` once at the top.
 
 ## Hard rules
 
@@ -383,6 +416,22 @@ Clear all enemy `_e` + strip meta: `python tools/clear_enemy_eye_emissives.py` t
     `PointLight`s and never reach it. Shipped: `intensity 40` (untouched) +
     `flicker_scale 0.25` + `blink_floor 0.8` → monitors **133..167, swing 1.25×**, every
     steady light back at its original value.
+
+29. **An anonymous namespace is why `rt_main.cpp` grew to 15,072 lines — do not
+    start another one.** Nearly everything in that file sat inside `namespace { }`:
+    the 4,200-line light block, both renderer classes, every helper. That is
+    *internal linkage*, so no second translation unit can see or define any of it,
+    and every attempt to move a feature out failed at the link. Shared code now
+    lives in `rt_internal.h` under **`namespace rtx`** (a named one, because
+    `RG_CHECK` and `ONEGAMEUNIT_IN_METERS` at global scope across the whole gzdoom
+    link is asking for a collision), and each RT file says `using namespace rtx;`
+    once. If a new helper is needed in more than one RT file, put it in `rt_internal.h`
+    as `inline` — not `static` in a .cpp.
+    Two live traps from that migration: a file-local `pi()` silently **shadowed**
+    gzdoom's `namespace pi`, but an `rtx::` one pulled in by a using-directive is
+    merely **ambiguous** with it, so it is `rt_pi()` now; and `RT_CalcPowerupFlags()`
+    is deliberately still file-local to `rt_main.cpp` — only the `RT_POWERUP_FLAG_*`
+    bits are shared.
 
 ## Suggested next work
 
