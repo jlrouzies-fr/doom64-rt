@@ -488,19 +488,50 @@ SHAFTS = [
         enabled=True,
         note="C35,C3F hall x1, 576x384u -- the largest one. Sole neighbour 90 at 180; nearest light-bearing actor 160u away, outside it.",
     ),
-    # DO NOT SWEEP the 20-sector region [0, 1, 5..9, 100..105, 107..109, 254, 255,
-    # 263, 278] that scan_painted_light.py reports on MAP22 *after* these repairs.
-    # It is not a defect and it is not new: stripping the 23 sectors above drops the
-    # map median 200 -> 180, so the emission threshold drops 240 -> 220 and this
-    # region crosses it. 17 of its 20 sectors have an F_SKY ceiling -- it is the open
-    # courtyard, and under RT the moon lights it for real. The scanner also refuses to
-    # emit an entry for it ("mixed from_light [230, 255] -- split first"), which is the
-    # same signal the PANEL SWEEP note recorded for MAP32's 28-sector region: a region
-    # this size is not a panel and wants looking at rather than sweeping.
+    # ---- MAP22 COURTYARD ------------------------------------------------------
+    # The open courtyard: 2456x1648u, 19 sectors at 255 (17 of them F_SKY1) plus
+    # sector 1 at 230. This is what the level22-1/-2 screenshots show -- flat, evenly
+    # bright grey walls with dark ground at their base, under a dim red sky.
     #
-    # General trap: every repair lowers the median, which lowers the threshold, which
-    # can expose a fresh 'element' on the next scan. Re-scanning after a fix does not
-    # give you the same map with less paint on it.
+    # It was initially left alone here on the grounds that a sky ceiling means the
+    # moon lights it for real. That is wrong on this map twice over:
+    #
+    #   - MAP22's moon is off ENTIRELY, disc and light, in RT_MOON_PRESETS. It is a
+    #     fire-sky map; the burning dome does the lighting, arriving from every
+    #     azimuth at once (rt_presets.cpp, "The five fire-sky maps").
+    #   - That dome light is real, so the paint is a SECOND, sourceless copy of it --
+    #     §31 again, the same shape as the 64BigFire inside the MAP12 cages. A sky
+    #     ceiling is evidence the paint is REDUNDANT, not that it is earned.
+    #
+    # And the paint is not passive: the earlier repairs on this map dropped the median
+    # 200 -> 180 and the threshold 240 -> 220, so at 255/230 these sectors are now
+    # ABOVE it and SELF-EMIT (rt_sector_emis). That self-emission is the flat glow.
+    #
+    # to_light is 200, which is not a guess: the brightest bordering sector is 106,
+    # itself an open-sky F_SKY1 sector at 200 that the scanner does NOT flag. The
+    # courtyard's own neighbour is the reference for what an unpainted open-sky sector
+    # looks like here. 200 also sits below the 220 threshold, so the self-emission
+    # stops, while the courtyard stays the brightest thing outside it -- lit by the
+    # dome rather than by itself.
+    #
+    # Split in two because the scanner refuses a mixed from_light ("[230, 255] --
+    # split first"): a single entry would have to lie about one of the two levels.
+    Shaft(
+        "MAP22", [0, 5, 6, 7, 8, 9, 100, 101, 102, 103, 104, 105, 107, 108, 109,
+                  254, 255, 263, 278],
+        from_light=255, to_light=200,
+        enabled=True,
+        note="Open courtyard x19 (17 F_SKY1) -- painted 255 under a fire sky that already lights it. to_light 200 matches bordering open-sky sector 106 and drops it under the 220 emission threshold.",
+    ),
+    Shaft(
+        "MAP22", [1], from_light=230, to_light=200,
+        enabled=True,
+        note="Courtyard x1 at 230, the one non-sky sector in the same region -- levelled with the rest of the courtyard.",
+    ),
+    # General trap this exposed: every repair lowers the median, which lowers the
+    # threshold, which can bring a fresh region above it. Re-scanning after a fix does
+    # not give you the same map with less paint on it, so the scan has to be re-run
+    # until it is quiet rather than once.
 
     Shaft(
         "MAP23", [255, 256, 292, 326], from_light=255, to_light=160,
