@@ -33,6 +33,12 @@ if "%LABMAP%"=="" set "LABMAP=MAP97"
 if "%LABMAP%"=="96" set "LABMAP=MAP96"
 if "%LABMAP%"=="97" set "LABMAP=MAP97"
 if "%LABMAP%"=="95" set "LABMAP=MAP95"
+rem MAP94: a normal-sized room with four small SFLATAS lamp PANES in an
+rem otherwise plain ceiling, and no other light in the map. The big rooms tile a
+rem lamp flat across a whole 512x512 ceiling, which Doom 64 never does and which
+rem makes the per-bulb light count explode past any cap -- so "one light per
+rem bulb" measured DARKER there. This is the room to judge the panes on.
+if "%LABMAP%"=="94" set "LABMAP=MAP94"
 rem MAP95 is the moonlit room: sky ceiling, no lamps at all, so the MOON -- a
 rem DIRECTIONAL light -- is the only thing in it that can light the smoke. That
 rem is the case nothing else in the lab could test, and it is where the far-fade

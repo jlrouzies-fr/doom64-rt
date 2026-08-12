@@ -547,11 +547,11 @@
     },
     {
       "textureName": "SFLATAQ",
-      "emissiveMult": 0.0
+      "emissiveMult": 20.0
     },
     {
       "textureName": "SFLATAS",
-      "emissiveMult": 0.0
+      "emissiveMult": 20.0
     },
     {
       "textureName": "SMONF",

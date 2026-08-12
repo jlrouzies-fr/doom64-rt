@@ -312,6 +312,95 @@ def build_textmap(warm: bool = False, sky: bool = False) -> str:
 # yet and the game dies during G_ParseMapInfo with nothing useful in the log.
 
 
+# ---------------------------------------------------------------------------
+def build_panes_textmap() -> str:
+    """MAP94 -- SFLATAS lamp PANES in an otherwise plain ceiling.
+
+    The other rooms tile a lamp flat across a 512x512 ceiling, which is not a
+    thing Doom 64 ever does and which broke every measurement taken on it: at one
+    light per painted bulb that single pane wants 1024 lights, so the cap trimmed
+    most of them away and "brighter placement" measured DARKER. Real lamp panes
+    are small and there are a few of them.
+
+    So: a normal room (640x640 units, ~20x20 m) with a 5 m ceiling, plain except
+    for four 128x128 SFLATAS panes. SFLATAS tiles 2x2 bulbs per 64-unit tile, so
+    a pane is 4x4 = 16 bulbs and all four together want 64 lights -- a number the
+    cap can actually deliver, which is the whole point of testing on this map
+    instead of the big one.
+
+    NO analytic light things and NO muzzle lamp. Every other room in this lab
+    plants fixtures to guarantee something is lit; here the panes' own lattice is
+    the only light source in the map, because the question is what THEY deliver.
+    """
+    parts = ['namespace = "zdoom";']
+
+    RW = RD = 640
+    CH = 160          # 5 m
+    PANE = 128
+    # Pane centres, inset from the walls so a pane is never clipped by one.
+    centres = [(RW * fx, RD * fy) for fx in (0.30, 0.70) for fy in (0.30, 0.70)]
+
+    # Room outline, CLOCKWISE -- see build_textmap for why this is not cosmetic.
+    for x, y in [(0, 0), (0, RD), (RW, RD), (RW, 0)]:
+        parts.append(blk("vertex", x=float(x), y=float(y)))
+    # Each pane's outline, also clockwise, so its linedefs' FRONT faces the pane.
+    for cx, cy in centres:
+        h = PANE / 2.0
+        for x, y in [(cx - h, cy - h), (cx - h, cy + h),
+                     (cx + h, cy + h), (cx + h, cy - h)]:
+            parts.append(blk("vertex", x=float(x), y=float(y)))
+
+    # Sector 0 = the room, plain ceiling. lightlevel 64 rather than the beige
+    # room's 200: a high painted lightlevel puts a floor under everything and
+    # would hide exactly the contribution being measured.
+    parts.append(blk("sector", heightfloor=0, heightceiling=CH,
+                     texturefloor=FLOOR, textureceiling=CEIL, lightlevel=64))
+    # Sectors 1..4 = the panes. Same heights as the room, so nothing steps and
+    # the pane reads as part of the ceiling rather than as a recess.
+    for _ in centres:
+        parts.append(blk("sector", heightfloor=0, heightceiling=CH,
+                         texturefloor=FLOOR, textureceiling="SFLATAS",
+                         lightlevel=64))
+
+    # Room walls: one-sided, front = the room.
+    for _ in range(4):
+        parts.append(blk("sidedef", sector=0, texturemiddle=WALL))
+    for i in range(4):
+        parts.append(blk("linedef", v1=i, v2=(i + 1) % 4, sidefront=i,
+                         blocking=True))
+
+    # Pane borders: TWO-SIDED and untextured. The two sectors share floor and
+    # ceiling heights, so there is no gap for a texture to show in -- an upper or
+    # lower here would render as a black band hanging in the ceiling.
+    side = 4
+    for p, _ in enumerate(centres):
+        v0 = 4 + p * 4
+        for e in range(4):
+            parts.append(blk("sidedef", sector=1 + p))   # front: the pane
+            parts.append(blk("sidedef", sector=0))       # back:  the room
+            parts.append(blk("linedef",
+                             v1=v0 + e, v2=v0 + (e + 1) % 4,
+                             sidefront=side, sideback=side + 1,
+                             twosided=True))
+            side += 2
+
+    # Player in a corner-ish spot facing the panes, far enough back that all four
+    # are in frame at once.
+    parts.append(blk("thing", x=float(RW // 2), y=float(64), angle=90, type=1,
+                     skill1=True, skill2=True, skill3=True, skill4=True,
+                     skill5=True, single=True, coop=True, dm=True))
+    # Same launcher + ammo drop as the other rooms; 2003 is the launcher, 2046 a
+    # rocket box. Offset slightly because a pickup exactly under the spawn is not
+    # always collected before the first autofire tic.
+    for kind, dx in ((2003, 0.0), (2046, 24.0), (2046, -24.0)):
+        parts.append(blk("thing", x=float(RW // 2) + dx, y=float(64), angle=0,
+                         type=kind,
+                         skill1=True, skill2=True, skill3=True, skill4=True,
+                         skill5=True, single=True, coop=True, dm=True))
+
+    return "\n".join(parts)
+
+
 def build_mapinfo() -> bytes:
     txt = (
         "map MAP97 \"RT Smoke Lab\"\n"
@@ -346,6 +435,9 @@ def main() -> None:
             ("ENDMAP", b""),
             ("MAP96", b""),
             ("TEXTMAP", build_textmap(True).encode("ascii")),
+            ("ENDMAP", b""),
+            ("MAP94", b""),
+            ("TEXTMAP", build_panes_textmap().encode("ascii")),
             ("ENDMAP", b""),
             ("MAP95", b""),
             ("TEXTMAP", build_textmap(False, True).encode("ascii")),
