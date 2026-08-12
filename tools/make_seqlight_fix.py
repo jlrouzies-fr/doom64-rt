@@ -805,6 +805,102 @@ SHAFTS = [
         enabled=True,
         note="HELLAE panel x1 -- same fixture already confirmed and repaired elsewhere; see the PANEL SWEEP note above.",
     ),
+
+    # ---- MAP24 REVIEW ---------------------------------------------------------
+    # 13 elements, 14 sectors. Reported as screen/acslevel24.png -- a freestanding
+    # block lit evenly on all three visible faces in a black room -- and confirmed
+    # from the game rather than the screenshot:
+    #
+    #   whatsthat: sector 68  lightlevel 255  tag 0  middle texture 'H12'
+    #              threshold 200 -> ABOVE: this surface SELF-EMITS
+    #              brightest neighbour: sector 13 at 170  (delta +85)
+    #
+    # tag 0, so the block is static paint and not the ACS the filename guessed at --
+    # though MAP24 does carry real ACS light calls, handled in SCRIPTED below.
+    #
+    # screen/lightertexturelevel24.png is the same defect seen from the other side:
+    #     whatsthat: sector 54  lightlevel 140 -> below: not self-emitting
+    #                brightest neighbour: sector 67 at 255  (delta -115)
+    # Sector 54 is innocent; its neighbour 67 is the emitter, and [66, 67] below is
+    # the entry that fixes it. A surface can be washed by the sector NEXT to it.
+    #
+    # SECTOR 87 IS DELIBERATELY EXCLUDED. It is 64x64 with a CTEL1 floor and ceiling
+    # and looks exactly like the panels above, but a teleport DESTINATION thing
+    # (type 14) stands in it -- it is a working teleporter, and teleporters are meant
+    # to read as lit. Its pulse is Light_Glow on tag 20, also left alone below.
+    #
+    # That test is worth keeping: is_emitter_family() is applied to SIDEDEF textures
+    # only, so a pad whose identity is its FLAT is invisible to it. Auditing every
+    # enabled Shaft for a teleport destination found exactly one bad case in the whole
+    # table, MAP33:46 (SPORT1 + a type-14 dest), which predates this review and is
+    # noted rather than changed here. The CTEL1 sectors on MAP23, MAP13 and MAP11 all
+    # came back clean -- no destination -- so they are alcoves, not pads, and their
+    # repairs stand.
+    Shaft(
+        "MAP24", [66, 67], from_light=255, to_light=140,
+        enabled=True,
+        note="H127 x2, 252x100u; nearest light-bearing actor 108u.",
+    ),
+    Shaft(
+        "MAP24", [19], from_light=255, to_light=170,
+        enabled=True,
+        note="HELLAA x1, 192x192u; nearest light-bearing actor 534u. sky 1/1.",
+    ),
+    Shaft(
+        "MAP24", [22], from_light=255, to_light=170,
+        enabled=True,
+        note="HELLAA x1, 192x192u; nearest light-bearing actor 1181u. sky 1/1.",
+    ),
+    Shaft(
+        "MAP24", [34], from_light=220, to_light=170,
+        enabled=True,
+        note="H129,H55,H931 x1, 896x896u; nearest light-bearing actor 2009u.",
+    ),
+    Shaft(
+        "MAP24", [50], from_light=255, to_light=140,
+        enabled=True,
+        note="H127 x1, 512x640u; nearest light-bearing actor 254u.",
+    ),
+    Shaft(
+        "MAP24", [51], from_light=255, to_light=140,
+        enabled=True,
+        note="H113,H21 x1, 600x600u; nearest light-bearing actor 457u. sky 1/1.",
+    ),
+    Shaft(
+        "MAP24", [68], from_light=255, to_light=170,
+        enabled=True,
+        note="H12 x1, 296x304u; nearest light-bearing actor 246u. sky 1/1.",
+    ),
+    Shaft(
+        "MAP24", [77], from_light=255, to_light=160,
+        enabled=True,
+        note="H11 x1, 64x64u; nearest light-bearing actor 1313u.",
+    ),
+    Shaft(
+        "MAP24", [78], from_light=255, to_light=160,
+        enabled=True,
+        note="H11 x1, 64x64u; nearest light-bearing actor 1187u.",
+    ),
+    Shaft(
+        "MAP24", [79], from_light=255, to_light=160,
+        enabled=True,
+        note="H11 x1, 64x64u; nearest light-bearing actor 927u.",
+    ),
+    Shaft(
+        "MAP24", [102], from_light=255, to_light=160,
+        enabled=True,
+        note="H52 x1, 480x608u; nearest light-bearing actor 1144u.",
+    ),
+    Shaft(
+        "MAP24", [120], from_light=255, to_light=160,
+        enabled=True,
+        note="H52 x1, 66x66u; nearest light-bearing actor 1091u.",
+    ),
+    Shaft(
+        "MAP24", [122], from_light=255, to_light=160,
+        enabled=True,
+        note="H36 x1, 28x40u; nearest light-bearing actor 2u.",
+    ),
     # The same defect as the shafts below, on a different shape of sector: a wall
     # element painted bright while the room it sits in is not. No special, no ACS --
     # both were surveyed for MAP13 and neither covers these (scan_light_specials 13
@@ -1264,6 +1360,27 @@ ACS_LIGHT_SPECIALS = {
 
 
 SCRIPTED = [
+    # MAP24, script 669 (type OPEN, so it runs at load, unconditionally). Found by the
+    # opcode-pair scan and independently decoded by scan_light_specials.py -- two
+    # methods agreeing is why these go in the exact-argument Scripted family rather
+    # than ScriptedComputed.
+    Scripted(
+        "MAP24", 669, 114, (19, 255, 200, 35), enabled=True,
+        note="THE REPORTED ONE (screen/level24anotheracs.png). Glow 255<->200 on tag "
+             "19 = sectors 19 and 22, two 192x192 open-sky areas with nothing within "
+             "534u. A sourceless breath over an outdoor area, the MAP13 shape. Note "
+             "the SHAFTS entries alone would not have fixed this: Light_Glow drives "
+             "the sector's lightlevel at RUNTIME and overrides whatever is stored, so "
+             "lowering the paint without stripping the call changes nothing on screen.",
+    ),
+    Scripted(
+        "MAP24", 669, 114, (20, 255, 180, 35), enabled=False,
+        note="SURVEYED, NOT STRIPPED. Glow 255<->180 on tag 20 = sectors 73 and 87. "
+             "Sector 87 has a teleport destination (thing type 14) standing in it, so "
+             "this is a working teleporter's authored pulse and stripping it would be "
+             "the CRTRAKA mistake. Sector 73 (HTELA, no destination) shares the tag "
+             "and rides along; it is left alone rather than break the teleporter.",
+    ),
     # MAP13 script 669 OPEN. Found only after building rt_tex_probe, which showed the
     # CTEL alcove's lightlevel sweeping 202..255 at runtime while the map data said 180
     # -- proof the animation was neither the texture nor the stored lightlevel. An
