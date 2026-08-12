@@ -29,6 +29,10 @@ from pathlib import Path
 
 ROOT = Path(r"G:\AI\Doom64-RT")
 LAB = ROOT / "tools" / "smoke-lab.cmd"
+# 96 = the bright beige room, 97 = the dark cool one. Colour questions
+# belong on 96: a grey puff on a dark blue wall is easy, and that is
+# precisely why the beige case went unnoticed for so long.
+LABMAP = "97"
 WORK = ROOT / "tools" / "_smokelab"
 OUT = WORK / "gallery.png"
 
@@ -36,29 +40,13 @@ OUT = WORK / "gallery.png"
 # shipping value, so a row states only how it differs -- the same convention
 # RT_SMOKE_PROFILES uses.
 CANDIDATES: list[tuple[str, dict[str, str]]] = [
-    # THE PARCEL SIZE IS THE WHOLE QUESTION HERE.
-    #
-    # The packer pads a puff's ALONG-view radius up to half a froxel slice
-    # (23.4 cm at rt_volume_far 30) so the grid can resolve it at all, and
-    # divides the density by the same factor to keep the optical depth honest.
-    # A 2.5 cm pistol wisp therefore keeps only 10% of its density, while a
-    # 40 cm barrel burst keeps all of it -- which is why one is a big grey cloud
-    # and the other takes the room's colour and disappears.
-    #
-    # rt_smoke_radius is the global; the pistol row multiplies it by 0.07, so
-    # these values map to parcel radii of roughly 2.5 / 10 / 17 / 24 / 32 cm.
-    ("A  shipping now  (2.5 cm parcels)", {}),
-    ("B  10 cm parcels", {"rt_smoke_radius": "1.5"}),
-    ("C  17 cm parcels", {"rt_smoke_radius": "2.5"}),
-    ("D  24 cm - at the froxel floor, no thinning", {"rt_smoke_radius": "3.4"}),
-    ("E  24 cm + grey", {"rt_smoke_radius": "3.4", "rt_smoke_color": "B4B4B4"}),
-    ("F  32 cm parcels", {"rt_smoke_radius": "4.5"}),
-    ("G  17 cm + grey + denser", {"rt_smoke_radius": "2.5",
-                                  "rt_smoke_color": "B4B4B4",
-                                  "rt_smoke_density": "22"}),
-    ("H  24 cm + grey + more self-visible", {"rt_smoke_radius": "3.4",
-                                             "rt_smoke_color": "B4B4B4",
-                                             "rt_smoke_ambient": "1.0"}),
+    # Does absorption ruin the DARK room? It cuts the lit glow there, which is
+    # the case smoke already looked fine in, so this is the regression check for
+    # the bright-room fix rather than a choice.
+    ("A  dark room, no absorption", {"rt_smoke_absorb": "0"}),
+    ("B  dark room, absorb 1.5", {"rt_smoke_absorb": "1.5"}),
+    ("C  dark room, absorb 3  (shipping)", {}),
+    ("D  dark room, absorb 6", {"rt_smoke_absorb": "6"}),
 ]
 
 # Applied to EVERY candidate, so the comparison stays fair while removing a lab
@@ -68,7 +56,7 @@ CANDIDATES: list[tuple[str, dict[str, str]]] = [
 # candidate above ~17 cm clipped to a featureless blob. Dimming the lamp puts
 # the range back on screen. It is not a smoke setting and must not be read as
 # one; it only makes the sizes comparable.
-BASE: dict[str, str] = {"rt_dynlight_intensity": "55"}
+BASE: dict[str, str] = {}
 
 # The crop the plume lands in, found by differencing runs. Generous enough to
 # survive a puff drifting a little between candidates.
@@ -86,7 +74,7 @@ def capture(overrides: dict[str, str], tic: int, dest: Path) -> bool:
     # comes out mangled and the batch file never runs -- which shows up here as
     # every candidate silently failing to capture. The path has no spaces.
     cmd = (
-        f"{LAB} 1 -- {extra} "
+        f"{LAB} 1 {LABMAP} -- {extra} "
         f"+rt_autoshot {tic} +rt_autoshot_every 0 +rt_autoquit {tic + 20}"
     )
     subprocess.run(["cmd", "/c", cmd], cwd=ROOT, capture_output=True, text=True)

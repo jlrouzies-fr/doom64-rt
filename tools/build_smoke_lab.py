@@ -55,6 +55,10 @@ OUT_MAPINFO = ROOT / r"Doom64-Retribution\d64r-smokelab-mapinfo.pk3"
 WALL = "STONE2"
 FLOOR = "FLOOR0_1"
 CEIL = "CEIL1_1"
+# The BEIGE room's ceiling: Retribution's lit panel flat, so the bright room is
+# lit the way the game's actually are -- a ceiling of light panels -- rather than
+# by a lamp standing in for them.
+CEIL_LIT = "SFLATAQ"
 
 CEIL_H = 256          # tall: a rising puff must never reach it (see docstring)
 FLOOR_H = 0
@@ -96,7 +100,13 @@ def blk(kind: str, **f) -> str:
     return "\n".join(out)
 
 
-def build_textmap() -> str:
+def build_textmap(warm: bool = False) -> str:
+    """warm=False -> MAP97, a dark cool room. warm=True -> MAP96, a BRIGHT BEIGE
+    one, which is the case a dark blue lab cannot answer: reported from play as
+    "a room full of ceiling lights where the gun smoke takes the room colour and
+    is very hard to see". Judging smoke only against dark walls is how that went
+    unnoticed -- a grey puff on a dark blue wall is easy, and on a lit beige wall
+    it is the actual problem."""
     parts = ['namespace = "zdoom";']
 
     # ---- one rectangular room -------------------------------------------
@@ -129,8 +139,13 @@ def build_textmap() -> str:
             heightfloor=FLOOR_H,
             heightceiling=CEIL_H,
             texturefloor=FLOOR,
-            textureceiling=CEIL,
-            lightlevel=0,
+            textureceiling=(CEIL_LIT if warm else CEIL),
+            # The beige room is PAINTED bright as well as lit. A ceiling of
+            # light panels in this game comes with a high sector lightlevel, and
+            # that floor under everything is a real part of why smoke
+            # disappears there -- leaving it at 0 would have tested a room that
+            # merely has lamps in it, which is not the reported case.
+            lightlevel=(200 if warm else 0),
         )
     )
 
@@ -214,10 +229,32 @@ def build_textmap() -> str:
                 y=float(ROOM_D - 40),
                 height=110.0,
                 angle=0, type=T_POINTLIGHT,
-                arg0=40, arg1=90, arg2=255, arg3=20,
+                arg0=(255 if warm else 40),
+                arg1=(228 if warm else 90),
+                arg2=(180 if warm else 255),
+                arg3=(24 if warm else 20),
                 skill1=True, skill2=True, skill3=True, skill4=True, skill5=True,
                 single=True, coop=True, dm=True)
         )
+
+    # THE CEILING LIGHTS, beige room only. A GRID of them under the SFLATAQ
+    # panels, because the reported case is "a room full of ceiling lights" --
+    # smoke that reads fine against one lamp in the dark can vanish completely
+    # under an even wash from above, which lights the puff and the wall behind
+    # it by the same amount and leaves no contrast anywhere.
+    if warm:
+        for gx in range(4):
+            for gy in range(5):
+                parts.append(
+                    blk("thing",
+                        x=float(ROOM_W * (gx + 0.5) / 4.0),
+                        y=float(ROOM_D * (gy + 0.5) / 5.0),
+                        height=float(CEIL_H - 16),
+                        angle=0, type=T_POINTLIGHT,
+                        arg0=255, arg1=244, arg2=224, arg3=20,
+                        skill1=True, skill2=True, skill3=True, skill4=True,
+                        skill5=True, single=True, coop=True, dm=True)
+                )
 
     # A STAND-IN FOR THE MUZZLE FLASH, and the lab is useless without it.
     #
@@ -267,11 +304,17 @@ def build_mapinfo() -> bytes:
 
 
 def main() -> None:
-    textmap = build_textmap().encode("ascii")
+    # BOTH rooms in one wad. MAP97 dark and cool, MAP96 bright and beige -- the
+    # same geometry and the same spawn, so a capture in one crops identically to
+    # a capture in the other and the only difference is what the smoke is seen
+    # against.
     wad = write_wad(
         [
             ("MAP97", b""),
-            ("TEXTMAP", textmap),
+            ("TEXTMAP", build_textmap(False).encode("ascii")),
+            ("ENDMAP", b""),
+            ("MAP96", b""),
+            ("TEXTMAP", build_textmap(True).encode("ascii")),
             ("ENDMAP", b""),
         ]
     )

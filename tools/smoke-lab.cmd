@@ -27,6 +27,11 @@ rem ---------------------------------------------------------------------------
 
 set "WPN=%~1"
 if "%WPN%"=="" set "WPN=1"
+rem Second arg picks the room: 97 (dark, cool) or 96 (bright beige).
+set "LABMAP=%~2"
+if "%LABMAP%"=="" set "LABMAP=MAP97"
+if "%LABMAP%"=="96" set "LABMAP=MAP96"
+if "%LABMAP%"=="97" set "LABMAP=MAP97"
 
 set "IWAD=D:\Games\GZDoom\doom2.wad"
 set "BUILD=G:\AI\Doom64-RT\sourcecode\gzdoom-rt\build\RelWithDebInfo"
@@ -47,7 +52,7 @@ for /f "delims=" %%T in ('powershell -NoProfile -Command "Get-Date -Format yyyyM
 set "RUN=%SHOTS%\%STAMP%-w%WPN%"
 mkdir "%RUN%"
 
-echo === smoke lab: weapon profile %WPN% ===
+echo === smoke lab: weapon profile %WPN%, %LABMAP% ===
 echo     shots -^> %RUN%
 if defined EXTRA echo     extra: %EXTRA%
 echo.
@@ -76,7 +81,7 @@ rem base pins are exec'd from a file and only the lab's own settings are inline.
   +rt_dynlight_intensity 150 ^
   +rt_smoke_autoweapon %WPN% +rt_smoke_autospawn 25 ^
   +rt_autoshot 60 +rt_autoshot_every 10 +rt_autoquit 200 ^
-  +map MAP97 %EXTRA%
+  +map %LABMAP% %EXTRA%
 
 echo.
 echo === captured ===
