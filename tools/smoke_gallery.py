@@ -40,13 +40,14 @@ OUT = WORK / "gallery.png"
 # shipping value, so a row states only how it differs -- the same convention
 # RT_SMOKE_PROFILES uses.
 CANDIDATES: list[tuple[str, dict[str, str]]] = [
-    # Does absorption ruin the DARK room? It cuts the lit glow there, which is
-    # the case smoke already looked fine in, so this is the regression check for
-    # the bright-room fix rather than a choice.
-    ("A  dark room, no absorption", {"rt_smoke_absorb": "0"}),
-    ("B  dark room, absorb 1.5", {"rt_smoke_absorb": "1.5"}),
-    ("C  dark room, absorb 3  (shipping)", {}),
-    ("D  dark room, absorb 6", {"rt_smoke_absorb": "6"}),
+    # WHERE THE SMOKE LEAVES THE GUN. rt_smoke_muzzle_u raises the birth point
+    # above the muzzle flash's, which is placed low for LIGHTING (-0.9 m) rather
+    # than at a barrel. Too high and the smoke reads as coming off the raised
+    # gun of the firing animation instead of out of the muzzle.
+    ("A  muzzle_u 0.30  (shipping now)", {}),
+    ("B  muzzle_u 0.15", {"rt_smoke_muzzle_u": "0.15"}),
+    ("C  muzzle_u 0.00 - the flash's own height", {"rt_smoke_muzzle_u": "0"}),
+    ("D  muzzle_u -0.15", {"rt_smoke_muzzle_u": "-0.15"}),
 ]
 
 # Applied to EVERY candidate, so the comparison stays fair while removing a lab
@@ -60,7 +61,7 @@ BASE: dict[str, str] = {}
 
 # The crop the plume lands in, found by differencing runs. Generous enough to
 # survive a puff drifting a little between candidates.
-CROP = (900, 420, 1560, 1060)
+CROP = (880, 480, 1660, 1369)
 
 
 def capture(overrides: dict[str, str], tic: int, dest: Path) -> bool:
