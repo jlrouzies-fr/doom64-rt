@@ -90,6 +90,9 @@ lists a buffer upgrade rather than pretending 32 is enough forever.
     rt_smoke_trail         scale on the per-weapon trail (0 = single burst)
     rt_smoke_curl          lateral turbulence, m/s^2 at one second of age
     rt_smoke_perweapon     apply RT_SMOKE_PROFILES
+    rt_smoke_monster       smoke off a MONSTER's gun too
+    rt_smoke_monster_scale how much of it: count AND density together
+    rt_smoke_monster_far   metres beyond which a monster's shot makes none
     rt_smoke_far           the volume's reach when smoke has it to itself
     rt_smoke_ambient       unlit floor, smoke-only frames
     rt_smoke_illum         light from ALL lights
@@ -122,7 +125,7 @@ everything in §8 runs into.
 
 ### Per weapon
 
-`RT_SMOKE_PROFILES` in `rt_main.cpp` bends those defaults per ready weapon,
+`RT_SMOKE_PROFILES` in `rt_smoke.cpp` bends those defaults per ready weapon,
 matched by class-name substring the way `MuzzleFlashTintFor` picks the flash
 colour. The rows are **multipliers**, so tuning a cvar still moves every weapon
 together and a row only states how that weapon differs.
@@ -168,12 +171,82 @@ and no ZScript -- which matters, because the projectile class is the WAD's
 (`64Rocket`), not ours. The class match excludes `Launcher` and `Smoke`, since
 `64RocketLauncher` and `64RocketSmokeTrail` both contain "Rocket".
 
-The explosion is the one place a fat cloud is right: it is meant to obscure.
+The explosion is the one place a fat cloud is right: it is meant to obscure —
+but only just. Ten dense parcels was the noisiest thing in the game by
+construction, each an independent one-sample estimate stacked on the others, so
+the burst is five at 0.34 m and the trail parcel lives 1.0 s at 0.45 density.
+
+**The trail is shortened with its LIFE, never with its radius.** The parcels are
+dropped every tic and a rocket covers ~0.6 m a tic, so a radius below ~0.15 m
+turns a line into a dotted line of the same length. Life is what sets how far
+back the plume reaches.
 
 All `RT_CVAR` (`CVAR_ARCHIVE`) except `rt_smoke_debug`, and **all pinned in
-`tools/launch-retribution-rt.cmd`** — a launcher pin overrides the compiled
-default, so a value left in the ini by an `ab-smoke.cmd` arm would otherwise
-follow you into normal play.
+`tools/d64rt-pins.cfg`** — a launcher pin overrides the compiled default, so a
+value left in the ini by an arm would otherwise follow you into normal play.
+
+**And a pin that disagrees with the default silently wins.** The rocket numbers
+above were lowered once already and never took effect in play, because
+`d64rt-pins.cfg` still held the pre-reduction `rt_smoke_boom 10` /
+`rt_smoke_boom_radius 0.45`. Changing a compiled default is half the change; the
+other half is the pin, and the pin is the one the game reads.
+
+### The monsters shoot back, and now their guns smoke
+
+`rt_smoke_monster`. The player's pistol breathed a wisp while the zombieman
+firing at him did not, which reads as the effect belonging to the HUD rather than
+to the world.
+
+**There is no code hook to hang this on, and that is the interesting part.** A
+monster's attack is a DECORATE state; `A_PosAttack` is called by the playsim and
+leaves nothing the renderer can see. What the renderer *can* read, every frame,
+for free, is which sprite frame an actor is drawing:
+
+    Missile:
+        POSS E 10 A_FaceTarget     <- the aim frame. No smoke.
+        POSS F  8                  <- THE SHOT.
+        POSS E  8
+
+So the trigger is `(sprite, frame)` and the event is **entering** frame F —
+exactly the rule `tools/gen_fx_emissives.py` already uses to decide which frames
+get a muzzle emissive, so the light on the sprite and the smoke off the barrel
+agree by construction. No DECORATE edit, no ZScript: the same reason the rocket
+is tracked by disappearance rather than by a death hook, and for the same cause
+(these classes are the WAD's, not ours). Frame F is unambiguous on every row —
+See is A–D, Pain is G, death H and up.
+
+`RT_MONSTER_GUNS` in `rt_smoke.cpp`:
+
+| sprite | actor | reads as |
+|---|---|---|
+| `POSS` | 64ZombieMan, 64TargetRangeZombieMan | one small parcel off the rifle |
+| `SPOS` | 64ShotgunGuy | a scatter, like the player's shotgun |
+| `PLAY` | 64MarineBot | as the zombieman |
+| `CPOS` | not in Retribution | thinner, shorter — it fires again at once |
+| `SSWV` | not in Retribution | as the chaingun guy |
+
+**Every row carries `trail = 0`, and that is a constraint, not taste.** The trail
+emitter rebuilds its release point from the **player's** viewpoint every few tics
+(§8 — the emitter tracks, the smoke trails), because it exists to keep a filament
+coming off the gun *you* are holding. Give a monster a trail and its smoke hangs
+off your camera. A monster shot is therefore one or two parcels and done — which
+is also what the budget wants when six of them are firing at once.
+
+**`rt_smoke_monster_far` is not a cosmetic cull.** The puff pool overflows
+**oldest-out** while the upload keeps the **nearest** puffs, so a firefight across
+the map would quietly push the smoke off your own barrel out of the array. At 18 m
+a distant shot is not represented by the froxel volume anyway.
+
+The muzzle point is derived from the actor rather than hardcoded — 0.58 of its
+height, a little past its own radius, along its yaw — because Retribution's
+soldiers are 80 units tall where the stock ones are 56. Monsters aim with
+`A_FaceTarget`, which is yaw only, so there is no pitch to follow even when the
+shot itself has slope.
+
+Not covered: the Spider Mastermind's chaingun, and every projectile monster (an
+imp's fireball is not combustion). Player bodies are skipped outright — the local
+player's shot already went through `RT_AddMuzzleFlash` with a real weapon profile
+and a traced muzzle position, and that path owns every player.
 
 ### Four of them are not obvious
 
@@ -326,7 +399,7 @@ the near-light fade that §4 modifies.
 
 ## 6. Testing
 
-`.	oolsb.cmd <arm> [map] [-- +cvar value ...]`. Arms are config files in
+`.\tools\ab.cmd <arm> [map] [-- +cvar value ...]`. Arms are config files in
 `tools/arms/*.cfg`, exec'd after the base pins so they win; `ab.cmd list` shows
 them. Fire at a wall in a dark room.
 
@@ -368,6 +441,8 @@ Shape and emission:
 
 | arm | what it isolates |
 |---|---|
+| `monster` | monster gun smoke on its own — rockets and the player trail off. Type `notarget` once, then DON'T fire |
+| `nomonster` | the before: `rt_smoke_monster 0`, everything else shipping |
 | `noTrail` | `rt_smoke_trail 0` — a single burst. The BALL, and the proof that a filament is a shape in time (§8) |
 | `edgeonly` | `rt_smoke_repeat 0`. Hold the chaingun: extralight never re-arms, so a whole burst makes one puff |
 | `novol` | everything the tool changes EXCEPT the smoke, for isolating an arm-side difference |
@@ -585,8 +660,14 @@ genuinely different amounts of medium — and it is **open**.
   `rt_fog_ambient`, which at the shipping 1 is more than twelve times
   `rt_smoke_ambient`. That is why the fog and the unfogged case need judging
   separately.
-- **Player weapons only.** Monsters' guns do not smoke. The player's rocket does
-  (§3), by tracking the projectile.
+- **Hitscan guns only.** The player's weapons, the rocket (by tracking the
+  projectile) and the five soldier sprites in `RT_MONSTER_GUNS` — see §3. The
+  Spider Mastermind's chaingun is not covered, and no projectile monster is:
+  an imp's fireball is not combustion, so powder smoke would be the wrong effect
+  for the same reason the plasma rifle makes none.
+- **A monster's smoke is one or two parcels, never a filament.** The trail
+  emitter is bound to the player's viewpoint by construction (§3), so a monster
+  cannot have one without its smoke hanging off your camera.
 - **Dark outlines on geometry seen through smoke** (§9), still open.
 - **One sample per froxel is the floor.** `rt_smoke_spp` raises it only inside
   puffs, which is what makes it affordable; the surrounding volume is still 1 spp
