@@ -100,7 +100,7 @@ def blk(kind: str, **f) -> str:
     return "\n".join(out)
 
 
-def build_textmap(warm: bool = False) -> str:
+def build_textmap(warm: bool = False, sky: bool = False) -> str:
     """warm=False -> MAP97, a dark cool room. warm=True -> MAP96, a BRIGHT BEIGE
     one, which is the case a dark blue lab cannot answer: reported from play as
     "a room full of ceiling lights where the gun smoke takes the room colour and
@@ -139,7 +139,11 @@ def build_textmap(warm: bool = False) -> str:
             heightfloor=FLOOR_H,
             heightceiling=CEIL_H,
             texturefloor=FLOOR,
-            textureceiling=(CEIL_LIT if warm else CEIL),
+            # MAP95 opens the ceiling to the sky so the MOON -- a DIRECTIONAL
+            # light -- can reach the smoke. Nothing else in the lab could test a
+            # directional at all, and "smoke is black in a moon shaft" was a
+            # reported bug that needed its own room.
+            textureceiling=("F_SKY1" if sky else (CEIL_LIT if warm else CEIL)),
             # The beige room is PAINTED bright as well as lit. A ceiling of
             # light panels in this game comes with a high sector lightlevel, and
             # that floor under everything is a real part of why smoke
@@ -238,7 +242,7 @@ def build_textmap(warm: bool = False) -> str:
     # here is warm and pale (rt_smoke_color 9E9689 lit by a warm muzzle lamp),
     # so the backdrop is its opposite: the puff separates in CHROMA as well as
     # in brightness, and a thin one still reads.
-    for i in range(6):
+    for i in range(0 if sky else 6):
         parts.append(
             blk("thing",
                 x=float(ROOM_W * (i + 0.5) / 6.0),
@@ -258,7 +262,7 @@ def build_textmap(warm: bool = False) -> str:
     # smoke that reads fine against one lamp in the dark can vanish completely
     # under an even wash from above, which lights the puff and the wall behind
     # it by the same amount and leaves no contrast anywhere.
-    if warm:
+    if warm and not sky:
         for gx in range(4):
             for gy in range(5):
                 parts.append(
@@ -290,7 +294,8 @@ def build_textmap(warm: bool = False) -> str:
     # rather than flashing, which is deliberate -- a flash lasting 2-3 frames
     # makes every screenshot a lottery, and the thing being judged here is the
     # shape of the plume, not the timing of the light.
-    parts.append(
+    if not sky:
+      parts.append(
         blk("thing", x=float(ROOM_W // 2 - 24), y=float(ROOM_D - 400), height=52.0,
             angle=0, type=T_POINTLIGHT, arg0=255, arg1=190, arg2=110, arg3=20,
             skill1=True, skill2=True, skill3=True, skill4=True, skill5=True,
@@ -341,6 +346,9 @@ def main() -> None:
             ("ENDMAP", b""),
             ("MAP96", b""),
             ("TEXTMAP", build_textmap(True).encode("ascii")),
+            ("ENDMAP", b""),
+            ("MAP95", b""),
+            ("TEXTMAP", build_textmap(False, True).encode("ascii")),
             ("ENDMAP", b""),
         ]
     )

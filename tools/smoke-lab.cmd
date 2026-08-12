@@ -32,6 +32,7 @@ set "LABMAP=%~2"
 if "%LABMAP%"=="" set "LABMAP=MAP97"
 if "%LABMAP%"=="96" set "LABMAP=MAP96"
 if "%LABMAP%"=="97" set "LABMAP=MAP97"
+if "%LABMAP%"=="95" set "LABMAP=MAP95"
 
 set "IWAD=D:\Games\GZDoom\doom2.wad"
 set "BUILD=G:\AI\Doom64-RT\sourcecode\gzdoom-rt\build\RelWithDebInfo"
