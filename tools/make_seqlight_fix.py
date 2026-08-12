@@ -538,6 +538,268 @@ SHAFTS = [
         enabled=True,
         note="C22 panel x4 -- same fixture already confirmed and repaired elsewhere; see the PANEL SWEEP note above.",
     ),
+
+    # ---- MAP23 REVIEW ---------------------------------------------------------
+    # 48 elements, 72 sectors -- the level23panellit.png case: a carved relief panel
+    # glowing in a pitch-black room with the wall it is bolted to left black. A real
+    # fixture cannot light a panel and leave its own wall dark, so the panel is
+    # self-emitting (rt_sector_emis) rather than lit.
+    #
+    # The whole set was checked the same way as MAP22, and it is unusually clean:
+    #   - NONE of the 48 has a sky ceiling, so the MAP22 courtyard mistake (paint that
+    #     turned out to be redundant against real fire-sky dome light) cannot recur.
+    #   - NONE carries an authored _e in rt/mat_dev, asserted while generating these,
+    #     so none is a real emitter being stripped.
+    #   - All are at 255 against a 140-200 host, and 43 of the 48 are a single sector.
+    #     Sizes run 1x16 to 64x64: door tracks, trim bands, recesses and panels.
+    #
+    # Two are worth naming because they are not panel-shaped:
+    #   [71, 129..134, 144]   448x128u, 8 sectors, host 160, nothing within 649u.
+    #   [34, 258, 259, 290]   832x688u, a room, host 200 -- but a light-bearing actor
+    #                         sits 72u away, so RT lights it for real and the paint is
+    #                         the redundant second copy (§31).
+    # Entries generated from the scanner rather than transcribed, so the sector lists
+    # and to_light values are the scan's own output.
+    Shaft(
+        "MAP23", [71, 129, 130, 131, 132, 133, 134, 144], from_light=255, to_light=160,
+        enabled=True,
+        note="H127,H130,H24 x8, 448x128u; nearest light-bearing actor 649u.",
+    ),
+    Shaft(
+        "MAP23", [116, 159, 160, 161, 170, 227, 228], from_light=255, to_light=180,
+        enabled=True,
+        note="C53,H131,H31 x7, 24x448u; nearest light-bearing actor 638u.",
+    ),
+    Shaft(
+        "MAP23", [76, 87, 88, 328, 329], from_light=255, to_light=180,
+        enabled=True,
+        note="C53,H131,H31 x5, 24x64u; nearest light-bearing actor 409u.",
+    ),
+    Shaft(
+        "MAP23", [77, 78, 85, 86, 111], from_light=255, to_light=180,
+        enabled=True,
+        note="C53,H131,H31 x5, 24x64u; nearest light-bearing actor 409u.",
+    ),
+    Shaft(
+        "MAP23", [34, 258, 259, 290], from_light=255, to_light=200,
+        enabled=True,
+        note="C53,H119,H15 x4, 832x688u; nearest light-bearing actor 72u.",
+    ),
+    Shaft(
+        "MAP23", [73], from_light=255, to_light=140,
+        enabled=True,
+        note="C53 x1, 1x16u; nearest light-bearing actor 564u.",
+    ),
+    Shaft(
+        "MAP23", [82], from_light=255, to_light=180,
+        enabled=True,
+        note="C53 x1, 48x48u; nearest light-bearing actor 23u.",
+    ),
+    Shaft(
+        "MAP23", [83], from_light=255, to_light=180,
+        enabled=True,
+        note="C53 x1, 48x48u; nearest light-bearing actor 23u.",
+    ),
+    Shaft(
+        "MAP23", [94], from_light=255, to_light=160,
+        enabled=True,
+        note="H531 x1, 128x52u; nearest light-bearing actor 56u.",
+    ),
+    Shaft(
+        "MAP23", [96], from_light=255, to_light=160,
+        enabled=True,
+        note="H531 x1, 128x128u; nearest light-bearing actor 56u.",
+    ),
+    Shaft(
+        "MAP23", [98], from_light=255, to_light=160,
+        enabled=True,
+        note="H531 x1, 56x128u; nearest light-bearing actor 56u.",
+    ),
+    Shaft(
+        "MAP23", [100], from_light=255, to_light=160,
+        enabled=True,
+        note="H531 x1, 56x128u; nearest light-bearing actor 56u.",
+    ),
+    Shaft(
+        "MAP23", [112], from_light=255, to_light=140,
+        enabled=True,
+        note="C53,CYTRAKA x1, 1x16u; nearest light-bearing actor 564u.",
+    ),
+    Shaft(
+        "MAP23", [120], from_light=255, to_light=140,
+        enabled=True,
+        note="C53,CYTRAKA x1, 1x16u; nearest light-bearing actor 564u.",
+    ),
+    Shaft(
+        "MAP23", [122], from_light=255, to_light=160,
+        enabled=True,
+        note="H112,H15 x1, 64x8u; nearest light-bearing actor 37u.",
+    ),
+    Shaft(
+        "MAP23", [123], from_light=255, to_light=160,
+        enabled=True,
+        note="H112,H15 x1, 64x8u; nearest light-bearing actor 229u.",
+    ),
+    Shaft(
+        "MAP23", [125], from_light=255, to_light=160,
+        enabled=True,
+        note="H112,H261 x1, 64x8u; nearest light-bearing actor 417u.",
+    ),
+    Shaft(
+        "MAP23", [126], from_light=255, to_light=160,
+        enabled=True,
+        note="H112,H261 x1, 8x64u; nearest light-bearing actor 453u.",
+    ),
+    Shaft(
+        "MAP23", [127], from_light=255, to_light=160,
+        enabled=True,
+        note="H112,H261 x1, 64x8u; nearest light-bearing actor 316u.",
+    ),
+    Shaft(
+        "MAP23", [128], from_light=255, to_light=160,
+        enabled=True,
+        note="H112,H261 x1, 8x64u; nearest light-bearing actor 253u.",
+    ),
+    Shaft(
+        "MAP23", [137], from_light=255, to_light=200,
+        enabled=True,
+        note="C53 x1, 8x32u; nearest light-bearing actor 40u.",
+    ),
+    Shaft(
+        "MAP23", [141], from_light=255, to_light=200,
+        enabled=True,
+        note="C53,H131 x1, 32x8u; nearest light-bearing actor 40u.",
+    ),
+    Shaft(
+        "MAP23", [152], from_light=255, to_light=200,
+        enabled=True,
+        note="C53 x1, 32x8u; nearest light-bearing actor 40u.",
+    ),
+    Shaft(
+        "MAP23", [153], from_light=255, to_light=200,
+        enabled=True,
+        note="C53,CBTRAKA x1, 16x8u; nearest light-bearing actor 0u.",
+    ),
+    Shaft(
+        "MAP23", [154], from_light=255, to_light=200,
+        enabled=True,
+        note="C53,CYTRAKA x1, 8x16u; nearest light-bearing actor 0u.",
+    ),
+    Shaft(
+        "MAP23", [155], from_light=255, to_light=200,
+        enabled=True,
+        note="C53 x1, 16x8u; nearest light-bearing actor 0u.",
+    ),
+    Shaft(
+        "MAP23", [156], from_light=255, to_light=200,
+        enabled=True,
+        note="C53 x1, 16x8u; nearest light-bearing actor 0u.",
+    ),
+    Shaft(
+        "MAP23", [157], from_light=255, to_light=200,
+        enabled=True,
+        note="C53,CYTRAKA x1, 8x16u; nearest light-bearing actor 0u.",
+    ),
+    Shaft(
+        "MAP23", [158], from_light=255, to_light=200,
+        enabled=True,
+        note="C53,CBTRAKA x1, 16x8u; nearest light-bearing actor 0u.",
+    ),
+    Shaft(
+        "MAP23", [172], from_light=255, to_light=180,
+        enabled=True,
+        note="H21 x1, 64x64u; nearest light-bearing actor 233u.",
+    ),
+    Shaft(
+        "MAP23", [173], from_light=255, to_light=180,
+        enabled=True,
+        note="H21 x1, 64x64u; nearest light-bearing actor 233u.",
+    ),
+    Shaft(
+        "MAP23", [191], from_light=255, to_light=180,
+        enabled=True,
+        note="C35,H991 x1, 64x16u; nearest light-bearing actor 390u.",
+    ),
+    Shaft(
+        "MAP23", [192], from_light=255, to_light=180,
+        enabled=True,
+        note="C35,H991 x1, 64x16u; nearest light-bearing actor 264u.",
+    ),
+    Shaft(
+        "MAP23", [193], from_light=255, to_light=180,
+        enabled=True,
+        note="C53 x1, 32x8u; nearest light-bearing actor 608u.",
+    ),
+    Shaft(
+        "MAP23", [194], from_light=255, to_light=180,
+        enabled=True,
+        note="C53 x1, 32x8u; nearest light-bearing actor 553u.",
+    ),
+    Shaft(
+        "MAP23", [220], from_light=255, to_light=140,
+        enabled=True,
+        note="C53,CBTRAKA x1, 1x16u; nearest light-bearing actor 565u.",
+    ),
+    Shaft(
+        "MAP23", [221], from_light=255, to_light=140,
+        enabled=True,
+        note="C53 x1, 1x16u; nearest light-bearing actor 564u.",
+    ),
+    Shaft(
+        "MAP23", [222], from_light=255, to_light=140,
+        enabled=True,
+        note="C53,CBTRAKA x1, 1x16u; nearest light-bearing actor 566u.",
+    ),
+    Shaft(
+        "MAP23", [229], from_light=255, to_light=140,
+        enabled=True,
+        note="C53,CYTRAKA x1, 1x16u; nearest light-bearing actor 564u.",
+    ),
+    Shaft(
+        "MAP23", [231], from_light=255, to_light=140,
+        enabled=True,
+        note="C53 x1, 32x8u; nearest light-bearing actor 430u.",
+    ),
+    Shaft(
+        "MAP23", [232], from_light=255, to_light=140,
+        enabled=True,
+        note="C53 x1, 1x16u; nearest light-bearing actor 564u.",
+    ),
+    Shaft(
+        "MAP23", [233], from_light=255, to_light=160,
+        enabled=True,
+        note="C53 x1, 32x8u; nearest light-bearing actor 1302u.",
+    ),
+    Shaft(
+        "MAP23", [257], from_light=255, to_light=160,
+        enabled=True,
+        note="H15 x1, 64x64u; nearest light-bearing actor 640u.",
+    ),
+    Shaft(
+        "MAP23", [260], from_light=255, to_light=140,
+        enabled=True,
+        note="C53,CBTRAKA x1, 1x16u; nearest light-bearing actor 566u.",
+    ),
+    Shaft(
+        "MAP23", [262], from_light=255, to_light=180,
+        enabled=True,
+        note="C53,H991 x1, 64x12u; nearest light-bearing actor 81u.",
+    ),
+    Shaft(
+        "MAP23", [272], from_light=255, to_light=140,
+        enabled=True,
+        note="C53 x1, 8x32u; nearest light-bearing actor 0u.",
+    ),
+    Shaft(
+        "MAP23", [273], from_light=255, to_light=140,
+        enabled=True,
+        note="C53 x1, 8x32u; nearest light-bearing actor 0u.",
+    ),
+    Shaft(
+        "MAP23", [287], from_light=255, to_light=180,
+        enabled=True,
+        note="C53,H31 x1, 64x8u; nearest light-bearing actor 309u.",
+    ),
     Shaft(
         "MAP24", [72], from_light=255, to_light=170,
         enabled=True,
