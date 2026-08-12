@@ -20,6 +20,9 @@ rem Full console transcript (incl. startup) -> shareable log. `logfile` is
 rem whitelisted to run at GS_STARTUP (c_dispatch.cpp), so it captures
 rem everything from boot, including RTGL -rtdebug output.
 set "LOGF=G:\AI\Doom64-RT\rt-console.log"
+rem The ~325 STATIC cvar pins, exec'd rather than passed as "+name value" pairs.
+rem See the note above the start command for why.
+set "PINS=G:\AI\Doom64-RT\tools\d64rt-pins.cfg"
 
 rem Usage: launch-retribution-rt.cmd [1-34] [debug] [-- +cvar val ...]
 rem   Optional map number (default 1) → +map map01 … map34
@@ -567,118 +570,21 @@ rem beside a SMON panel and 6 anything else, so this turns on the monitors and v
 rem nothing else. The cvar's own doc defers ceiling head lights to rt_ceiling_lamps, and
 rem that family is pinned 0 below -- so nothing gets double-lit either.
 rem Compare arms with .\tools\ab-smon.cmd (2026-08-11).
+rem The ~325 STATIC cvar pins now live in tools/d64rt-pins.cfg and are applied
+rem with +exec. They used to be spelled out here as "+name value" pairs, which
+rem made this command line 8016 characters -- and cmd.exe truncates at 8191, so
+rem the "-- +cvar" passthrough at the very end was silently dropped, along with
+rem the last few pins. An A/B arm then ran with default values while looking
+rem like it had applied its own. Keep this line short.
+rem
+rem Order matters and is preserved: the pins (including god/notarget) run BEFORE
+rem +map, exactly as they did inline, and %EXTRA% runs LAST so an arm still wins.
 start "" gzdoom.exe ^
-  -iwad "%IWAD%" ^
-  -file "%MOD%" "%BM%" "%SKUL%" "%FLSH%" "%MUS%" "%FIX3D%" "%SEQL%" "%BULBTEX%" "%CTELFIX%" "%SKY%" -file "%LAVAFX%" "%BLOODFX%" ^
-  -rtnolauncher -width 1280 -height 720 %RTDEBUG% ^
+  -iwad "%IWAD%" -file "%MOD%" "%BM%" "%SKUL%" "%FLSH%" "%MUS%" "%FIX3D%" "%SEQL%" "%BULBTEX%" "%CTELFIX%" "%SKY%" -file "%LAVAFX%" "%BLOODFX%" -rtnolauncher -width 1280 -height 720 %RTDEBUG% ^
   +logfile "%LOGF%" ^
-  +vid_fullscreen 0 +win_x -1 +win_y %WINY% +queryiwad false +sv_cheats 1 +god +notarget +map %MAPLUMP% ^
-  +rt_mod_compat 1 +r_drawvoxels 0 ^
-  +d64_enterfade 0 +d64_exitfade 0 ^
-  +rt_fluid false +rt_autoexport false ^
-  +rt_upscale_dlss 2 +rt_upscale_fsr2 0 +rt_rayreconstr 0 +rt_framegen 0 ^
-  +gl_noskyboxes false ^
-  +rt_sky 25 +rt_sky_always true +rt_sky_nowalls 0 ^
-  +rt_sun 1 +rt_sun_intensity 90 +rt_sun_a 25 +rt_sun_b 135 +rt_sun_color B4C8FF +rt_sun_angdiam 0.5 ^
-  +rt_moon_geo 1 +rt_moon_geo_size 12 ^
-  +rt_moon_presets 1 ^
-  +rt_clouds 0 +rt_clouds_presets 1 +rt_clouds_shells 6 +rt_clouds_horizon 9 +rt_clouds_curve 0.55 ^
-  +rt_clouds_thick 0.7 +rt_clouds_tiles 6 +rt_clouds_alpha 0.9 +rt_clouds_dark 0.45 ^
-  +rt_clouds_wind 0.014 +rt_clouds_wind_dir 30 +rt_clouds_shear 0.09 +rt_clouds_occlude 1 +rt_clouds_transmit 0.22 +rt_clouds_tint B4C0DC +rt_clouds_flash 2.2 ^
-  +rt_lightning 1 +rt_lightning_intensity 2200 +rt_lightning_color C8D8FF ^
-  +rt_lightning_decay 0.18 +rt_lightning_strokes 3 +rt_lightning_angdiam 6 ^
-  +rt_lightning_alt_min 15 +rt_lightning_alt_max 40 ^
-  +rt_lightning_bolt 1 +rt_lightning_bolt_size 55 ^
-  +rt_lightning_sectorflash 1 +rt_lightning_debug 0 ^
-  +rt_fog 1 +rt_fog_presets 1 +rt_fog_color 000000 +rt_fog_density 0.01 +rt_fog_density_mult 0.3 ^
-  +rt_fog_density_far 10 +rt_fog_color_far 000000 +rt_fog_curve 1 ^
-  +rt_fog_far 45 +rt_fog_ambient 1 +rt_fog_lightmult 1 +rt_fog_light_near 2 +rt_fog_illum 1 ^
-  +rt_mzlflsh 1 +rt_volume_type 1 +rt_volume_far 30 +rt_volume_scatter 1 +rt_volume_ambient 0.2 ^
-  +rt_smoke 1 +rt_smoke_density 6 +rt_smoke_color 9E9689 +rt_smoke_count 3 +rt_smoke_budget 24 ^
-  +rt_smoke_life 1.6 +rt_smoke_radius 0.35 +rt_smoke_growth 0.7 ^
-  +rt_smoke_speed 1.8 +rt_smoke_spread 0.55 +rt_smoke_rise 0.65 +rt_smoke_drag 1.9 ^
-  +rt_smoke_inherit 0.85 +rt_smoke_offset 0.7 +rt_smoke_repeat 5 ^
-  +rt_smoke_far 14 +rt_smoke_ambient 0.08 +rt_smoke_illum 1 ^
-  +rt_smoke_light_near 0 +rt_smoke_illum_blend 0.4 ^
-  +rt_sun_leak_debug 0 +rt_sun_require_sky 1 ^
-  +rt_classic 0 ^
-  +rt_flsh 0 +rt_flsh_intensity 156 +rt_flsh_angle 42 +rt_flsh_pitch 22 ^
-  +rt_flsh_u -0.58 +rt_flsh_r -0.3 +rt_flsh_f 0 +rt_flsh_radius 0.02 ^
-  +rt_flsh_battery 1 +rt_flsh_on_secs 30 +rt_flsh_die_secs 4 +rt_flsh_off_secs 5 ^
-  +rt_flsh_idle_recharge 0.25 ^
-  +rt_flsh_color ffbe82 ^
-  +rt_gunglow 1 +rt_gunglow_intensity 90 +rt_gunglow_color 3355FF ^
-  +rt_gunglow_radius 0.07 +rt_gunglow_f 0 +rt_gunglow_u 0 +rt_gunglow_pullback 0.5 ^
-  +rt_gunglow_bob 0.012 +rt_gunglow_flicker 0.22 +rt_gunglow_fire_boost 2.2 ^
-  +rt_wpn_solid_bright 1 +rt_wpn_debug 0 ^
-  +rt_mzlflsh_perweapon 1 +rt_mzlflsh_color_plasma 3355FF +rt_mzlflsh_color_bfg A0FFA0 ^
-  +rt_mzlflsh_color_unmaker FF1111 +rt_mzlflsh_color_chaingun 9677FF ^
-  +rt_mzlflsh_luma_compensate 1 ^
-  +rt_tnmp_ev100_min 2 +rt_tnmp_ev100_max 7.7 ^
-  +rt_lightlevel_min 80 +rt_lightlevel_max 230 +rt_lightlevel_exp 2 ^
-  +rt_illum_sens_direct 1 +rt_illum_sens_indirect 0.75 +rt_illum_sens_spec 1 ^
-  +rt_shadowrays 4 ^
-  +rt_emis_mapboost 200 +rt_emis_additive_dflt 0.15 +rt_emis_maxscrcolor 3 ^
-  +rt_sector_tint_lights 0.85 +rt_sector_tint_albedo 1.0 +rt_sector_tint_presets 1 ^
-  +rt_sector_emis 0.35 +rt_sector_emis_minlight 160 +rt_sector_emis_margin 40 +rt_sector_emis_debug 0 ^
-  +rt_sector_lights 0 +rt_sector_flicker 0 ^
-  +rt_dynlight 1 +rt_dynlight_flicker 1 +rt_dynlight_intensity 40 +rt_dynlight_max 500 +rt_dynlight_rsoft 20 +rt_dynlight_stack_atten 1 +rt_dynlight_minradius 16 ^
-  +rt_dynlight_debug 0 +rt_dynlight_debug_marks 0 +rt_wall_tex_debug 0 +rt_dynlight_radius 0.08 ^
-  +rt_ceiling_lamps 0 +rt_ceiling_lamp_intensity 0 +rt_ceiling_lamp_radius 0.10 ^
-  +rt_ceiling_lamp_off 0.12 +rt_ceiling_lamp_fade 40 +rt_ceiling_lamp_maxspan 128 ^
-  +rt_hang_lamps 1 +rt_hang_lamp_intensity 220 +rt_hang_lamp_radius 0.09 +rt_hang_lamp_zofs 4 ^
-  +rt_pole_lamp_intensity 300 +rt_pole_lamp_zfrac 0.88 ^
-  +rt_wall_strips 1 +rt_wall_strip_intensity 180 +rt_wall_strip_minlight 120 ^
-  +rt_wall_strip_seglen 64 +rt_wall_strip_radius 0.35 +rt_wall_strip_max 128 +rt_wall_strip_debug 0 +rt_wall_strip_debug_marks 0 ^
-  +rt_ceiling_edge_lamps 1 +rt_ceiling_edge_intensity 180 +rt_ceiling_edge_seglen 64 ^
-  +rt_ceiling_edge_radius 0.35 +rt_ceiling_edge_zofs 10 +rt_ceiling_edge_inset 10 ^
-  +rt_ceiling_edge_max 320 +rt_ceiling_edge_maxdist 3072 ^
-  +rt_ceiling_edge_lattice 1 ^
-  +rt_ceiling_edge_debug 0 +rt_ceiling_edge_debug_marks 0 ^
-  +rt_faux_lamps 1 +rt_faux_lamp_color 3C5078 +rt_faux_lamp_intensity 500 ^
-  +rt_faux_lamp_max 256 +rt_faux_lamp_stride 2 ^
-  +rt_spin_panels 1 +rt_spin_panel_color DC0602 +rt_spin_panel_intensity 200 ^
-  +rt_spin_panel_radius 0.06 +rt_spin_panel_orbit 26.6 +rt_spin_panel_zofs 16 ^
-  +rt_spin_panel_yaw 0 +rt_spin_panel_cw 1 +rt_spin_panel_max 64 +rt_spin_panel_debug 0 ^
-  +rt_solo_lamps 1 +rt_solo_lamp_color FFFFFF +rt_solo_lamp_intensity 45 ^
-  +rt_solo_lamp_radius 0.06 +rt_solo_lamp_zofs 8 +rt_solo_lamp_max 384 +rt_solo_lamp_stride 1 ^
-  +rt_flame_light_on 1 +rt_flame_light_scale 1.0 +rt_flame_light_radius 0.09 ^
-  +rt_flame_light_flicker 0.15 +rt_flame_light_speed 0.25 +rt_flame_light_wobble 2.0 ^
-  +rt_flame_light_maxdist 3072 +rt_flame_light_max 64 +rt_flame_light_debug 0 ^
-  +rt_switch_lights 1 +rt_switch_light_intensity 60 +rt_switch_light_radius 0.06 ^
-  +rt_switch_light_ofs 2 +rt_switch_light_zofs 0 +rt_switch_light_maxdist 2048 ^
-  +rt_switch_light_max 48 ^
-  +rt_light_mark_intensity 25 +rt_light_mark_max 24 ^
-  +rt_translucent_minalpha 0.72 ^
-  +rt_spectre_alpha 0.20 +rt_nightmareimp_alpha 0.35 +rt_spectre_corpse_solid 1 +rt_ghost_solid 0 +rt_illum_volume 0 +rt_ghost_lightscale 1 ^
-  +rt_rr_temporal 0 ^
-  +rt_rr_disocc 1 +rt_rr_disocc_ratio 3.0 +rt_rr_disocc_mindelta 0.01 +rt_rr_disocc_show 0 ^
-  +rt_rr_reset_on_lightcut 1 +rt_rr_reset_on_dynlight 1 +rt_rr_reset_delta 0.5 +rt_rr_reset_min_ms 250 ^
-  +rt_rr_reset_hold 0 +rt_rr_reset_now 0 +rt_rr_reset_debug 0 ^
-  +rt_restir_initial 32 ^
-  +rt_lava_gi 20 +rt_lava_debug 0 +rt_lava_tint_r 255 +rt_lava_tint_g 60 +rt_lava_tint_b 76 ^
-  +rt_lava_emis 1 +rt_lava_flow 0 +rt_lava_flow_speed 0.03 +rt_lava_flow_scale 0.12 ^
-  +rt_lava_flow_pixel 0.25 +rt_lava_pulse 0.1 +rt_lava_pulse_speed 0.35 ^
-  +rt_lava_light_on 0 +rt_lava_light_intensity 1800 +rt_lava_light_spacing 96 ^
-  +rt_lava_light_radius 0.3 +rt_lava_light_z 40 +rt_lava_light_max 256 +rt_lava_light_dist 2048 ^
-  +rt_lava_light_r 255 +rt_lava_light_g 90 +rt_lava_light_b 20 +rt_lava_light_debug 0 ^
-  +rt_gore_life 0 +rt_gore_max 1500 +rt_gore_scale_var 0.35 +rt_gore_roll 0 ^
-  +rt_water_style 1 +rt_water_liquids 1 ^
-  +rt_water_tint_r 1 +rt_water_tint_g 1 +rt_water_tint_b 15 ^
-  +rt_water_crest_r 140 +rt_water_crest_g 204 +rt_water_crest_b 255 ^
-  +rt_nukage_tint_r 2 +rt_nukage_tint_g 15 +rt_nukage_tint_b 4 ^
-  +rt_nukage_crest_r 153 +rt_nukage_crest_g 255 +rt_nukage_crest_b 115 ^
-  +rt_sludge_tint_r 15 +rt_sludge_tint_g 9 +rt_sludge_tint_b 2 ^
-  +rt_sludge_crest_r 255 +rt_sludge_crest_g 204 +rt_sludge_crest_b 115 ^
-  +rt_blood_tint_r 15 +rt_blood_tint_g 2 +rt_blood_tint_b 2 ^
-  +rt_blood_crest_r 255 +rt_blood_crest_g 115 +rt_blood_crest_b 102 ^
-  +rt_water_caustic 1.5 +rt_water_reflmin 0.1 +rt_water_reflmax 0.75 +rt_water_rough 0.1 ^
-  +rt_water_glow 0.15 +rt_water_veinref 0.1 ^
-  +rt_water_wavestren 0.4 +rt_water_wavespeed 0.2 +rt_water_areascale 0.35 ^
-  +rt_water_caustics 1.2 +rt_water_caustic_scale 0.8 +rt_water_caustic_speed 0.35 ^
-  +rt_water_caustic_dist 512 +rt_water_caustic_rise 64 +rt_water_caustic_slant 0.6 +rt_water_caustic_wall 4.0 ^
-  +rt_water_debug 0 ^
-  +rt_normalmap_stren 1 +rt_heightmap_stren 1 %EXTRA%
+  +win_y %WINY% ^
+  +exec "%PINS%" ^
+  +map %MAPLUMP% %EXTRA%
 exit /b 0
 
 :badmap

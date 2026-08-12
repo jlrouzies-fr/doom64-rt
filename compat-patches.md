@@ -983,3 +983,17 @@ The launcher's own trailing pins are cut too: `+rt_water_debug`,
 Workaround used for the smoke work: invoke `gzdoom.exe` directly with a short
 argument list. The real fix is to move the pin block into a generated `.cfg` and
 `+exec` it, which is not yet done.
+
+**Correction (2026-08-12).** The claim above that no `ab-*.cmd` arm had ever
+applied its cvars is wrong. Before the smoke pins the command line was 7516
+characters, leaving 675 for an arm — enough, and the arms worked. Adding 500
+characters of `rt_smoke_*` pins cut the headroom to 175 and is what broke them.
+The failure mode is growth, not a standing defect.
+
+Fixed properly rather than trimmed: the ~325 static pins moved to
+`tools/d64rt-pins.cfg`, applied with `+exec` before `+map`. The command line is
+now **885 characters** with 7306 of headroom. A/B arms are config files too —
+`tools/arms/*.cfg`, run with `.\tools\ab.cmd <arm> [map] [-- +cvar ...]`, exec'd
+after the pins so an arm still wins. Verified end to end: `ab.cmd smoke-probeuni`
+reports `DEBUGMODE=4` and paints the screen blue (98.5% blue-dominant), the exact
+arm that silently failed three times as a command-line string.
