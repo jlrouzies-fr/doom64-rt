@@ -91,6 +91,8 @@ lists a buffer upgrade rather than pretending 32 is enough forever.
     rt_smoke_curl          lateral turbulence, m/s^2 at one second of age
     rt_smoke_perweapon     apply RT_SMOKE_PROFILES
     rt_smoke_muzzle_u      METRES to raise the smoke's birth point -- see below
+    rt_smoke_absorb        how much smoke ABSORBS -- read section 3.2 first
+    rt_smoke_tint          how hard a puff keeps its own colour, 0..1
     rt_smoke_stylize       PIXEL-ART banding of the puff falloff, 0..1
     rt_smoke_stylize_steps how many bands
     rt_smoke_stylize_grid  METRES of world-space voxel snapping, 0 = off
@@ -453,6 +455,58 @@ not move, and the puff stays on the traced segment, so it cannot be pushed insid
 the wall the trace just pulled it out of. `rt_smoke_offset` (0.8) sets how far
 along that segment it lands.
 
+### 3.2 Why smoke was invisible in a lit room
+
+Reported from play: a room full of ceiling lights, a barrel explodes and leaves a
+big grey cloud you cannot miss; the gun fires in the same room and its smoke
+takes the **room's colour** and cannot be seen unless a flashlight is pointed
+straight at it.
+
+**The froxel stores `rgb` = the light the medium ADDS and `a` = EXTINCTION, and
+`absorbtion` was hardcoded to `0.0`.** So the medium is purely *scattering*: it
+gives back exactly as much light as it takes away. In a dark room that addition
+is the whole effect and smoke looks fine. Under an even ceiling wash the two
+cancel, and a thin puff ends up with no contrast in either direction — neither
+brighter nor darker than the wall behind it. A barrel's burst survives only
+because its density is 8x higher (3.3).
+
+`rt_smoke_absorb` (3.0) adds the missing fraction, scaled by puff density. Real
+powder smoke is sooty; its single-scattering albedo is well under 1. Absorption
+darkens what is **behind** a puff without adding light, which is the only way
+smoke can read against a background brighter than itself. Fog is untouched — it
+is gated on smoke density, so a cell with no smoke stores what it always did.
+
+**It is inert in the dark, and that is worth knowing before tuning it.**
+Absorption can only remove light *passing through* the puff; with nothing behind
+it there is nothing to remove. Measured in a pure dark room (`rt_dynlight 0`) at
+absorb 0 / 3 / 6: mean luminance 2.46 / 2.47 / 2.46, max 62 / 63 / 63 —
+identical. Smoke stays visible there on its self-ambient floor and the muzzle
+flash. So this knob adds contrast in lit rooms and costs nothing in dark ones.
+
+**The colour half is separate.** `smoke_blendTint` is a *density-weighted*
+average of the puff's albedo and the medium's, so a thin puff comes out mostly
+the room's colour. `rt_smoke_tint` (0.8) biases a smoke cell back toward its own
+albedo. It is the right knob for "smoke should look grey" and it is **not** what
+made it visible — absorption was. A whole gallery of colour and density
+candidates came back invisible in the bright room before that was understood.
+
+### 3.3 The parcel-size cliff
+
+A puff smaller than **half a froxel slice** (23.4 cm at `rt_volume_far` 30) has
+its along-view radius padded up to that floor, and its density divided by the
+same factor to keep the optical depth honest. Anything under the floor pays it:
+
+| source | parcel radius | thinning | effective density |
+|---|---|---|---|
+| pistol | 2.5 cm | x0.105 | 1.32 |
+| shotgun | 10.5 cm | x0.448 | 3.45 |
+| barrel | 40 cm | x1.000 | 11.20 |
+
+That 8.5x gap is why one reads as a grey cloud and the other did not. **It was
+fixed optically (3.2), not by making the parcels bigger** — 10.5 cm parcels were
+tried and rejected in play: the pistol's wisp is meant to be a thread, and a
+thread is a shape in *time* (section 8), not a matter of each parcel being large.
+
 ### Pixel-art stylization
 
 Doom 64's art is entirely hard-edged pixels. The froxel volume gives a puff a
@@ -596,6 +650,34 @@ the near-light fade that §4 modifies.
 ---
 
 ## 6. Testing
+
+**Judge smoke in the LAB, not in a level.** `python tools/build_smoke_lab.py`
+builds two rooms with identical geometry and spawn:
+
+- **MAP97** — dark and cool. Shape questions: filament, rise, spread.
+- **MAP96** — bright beige, `SFLATAQ` ceiling panels over a grid of lights, the
+  sector painted to lightlevel 200. **Colour and visibility questions belong
+  here**: a grey puff on a dark wall is the easy case, which is exactly why
+  "invisible in a lit room" went unreproduced for several rounds.
+
+`tools/smoke-lab.cmd [weapon] [96|97]` captures one unattended;
+`tools/smoke-sweep.cmd` walks one cvar at a fixed tic; `python
+tools/smoke_gallery.py` renders a set of **named candidate looks** into one
+labelled PNG, so a look can be picked rather than remembered.
+
+Four ways the lab itself produced confident false readings, all now written into
+`build_smoke_lab.py` as comments:
+
+1. **Counter-clockwise winding** faces every one-sided wall outward — the player
+   stands in the void and the screen is sky.
+2. **Nothing lighting the smoke.** `rt_smoke_autospawn` bypasses
+   `RT_AddMuzzleFlash`, so a deliberately dark firing line showed an empty room
+   even with 30 puffs confirmed uploaded *and* confirmed covering froxels by the
+   shader probe. "I can't see it" meant "nothing is lighting it".
+3. **A grey wall.** Grey smoke on grey stone washed white: a four-value sweep
+   came back identical because the backdrop hid all of it.
+4. **A crop that excluded the gun**, while the question was where smoke leaves
+   the barrel. The crop has to contain whatever is being asked about.
 
 `.\tools\ab.cmd <arm> [map] [-- +cvar value ...]`. Arms are config files in
 `tools/arms/*.cfg`, exec'd after the base pins so they win; `ab.cmd list` shows
