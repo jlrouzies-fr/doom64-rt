@@ -19,14 +19,17 @@ rem near -> far over a reach, with the curve that shapes it. The transmittance
 rem ladders are computed, not guessed: tau(t) = 0.064*[d0*t + (d1-d0)*t^(k+1)/(k+1)]
 rem over the volume's 64 slices, T = exp(-tau).
 rem
-rem   full      THE SHIPPING ROW via RT_FOG_PRESETS. MAP26 only; every other map
-rem             gets nothing. This is what a player sees.
+rem   full      THE SHIPPING ROW via RT_FOG_PRESETS. MAP25, MAP26 and MAP31 only
+rem             -- the three cyan VOIDSKY maps, which share one medium; every
+rem             other map gets nothing. This is what a player sees.
 rem   ramp      the shipping profile forced onto ANY map: 0.01 -> 10, curve 2.4,
 rem             reach 32 m. A luminous VEIL rather than an occluder -- it hides
 rem             nothing, and with rt_fog_ambient 1 the medium glows on its own
-rem             while the level's lights modulate it. On MAP26 it should be
-rem             indistinguishable from `full`; if it is not, the preset table did
-rem             not apply, and that makes this a free check that the row is live.
+rem             while the level's lights modulate it. On any of the three listed
+rem             maps it should be indistinguishable from `full`; if it is not,
+rem             the preset table did not apply, and that makes this a free check
+rem             that a row is live -- `ab-fog.cmd full 25` against
+rem             `ab-fog.cmd ramp 25`, and the same pair on 31.
 rem             T at 128/256/512/768/1024 units: 1.00 1.00 0.98 0.93 0.83
 rem   veil      the lightest that still reads as fog: 3 -> 70, curve 2.0, 40 m.
 rem             Air, not weather. Use when the level's own geometry should carry
@@ -43,7 +46,7 @@ rem             longer distance. For big outdoor-ish rooms where 32 m closes too
 rem             early. Same near air, later wall.
 rem             T: 0.97 0.95 0.87 0.74 0.54
 rem   even      no ramp at all -- the map's own MAPINFO density, uniform, which
-rem             is what every map that is not MAP26 would get if it were listed.
+rem             is what a newly listed map would get before it is tuned.
 rem             The baseline the ramp is an argument against, and the numbers say
 rem             why: T 0.71 at 128 units, i.e. nearly a third of the wall two
 rem             metres from your face is already fog.

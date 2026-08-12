@@ -110,6 +110,30 @@ level, and it is not free. A map gets fog because someone looked at it.
 | map | fog | why |
 |---|---|---|
 | MAP26 | on, ramped 0.01 → 10 over 32 m at curve 2.4 | *Hardcore.* The map this was built for, and the one with a reference shot. Colour inherited from its own `fade` `00 56 56`; density, far density, ambient, reach and curve all **stated in the row**, the way `RT_MOON_PRESETS` states MAP13's azimuth. `illum` forced on — see §5. |
+| MAP25 | the same medium, by name | *Cat and Mouse.* Its MAPINFO carries the **same** fog as MAP26 verbatim — `fade` `00 56 56` at `fogdensity 200` — under the same flat-teal `VOIDSKY`, and its moon is off the same way (§5). Those are the three things the MAP26 profile depends on, so it gets that profile rather than a tuned-alike copy of it. |
+| MAP31 | the same medium, by name | *The secret map,* and the third and last `VOIDSKY` map. Identical on all three counts again, so the same row and the same moon change. |
+
+### The three cyan maps are one family
+
+That is worth stating as a fact about the game rather than three separate
+judgements, because it was **checked in the WAD, not eyeballed**: the sky here is
+a skybox *room*, and every map's MAPINFO `sky1` says `ISUCK`, so the sky cannot
+be identified from MAPINFO at all. Scanning the `TEXTMAP` lumps for the `VOIDSKY`
+texture finds exactly **MAP25, MAP26 and MAP31** in the main campaign — and those
+same three are the only maps whose `fade` is `00 56 56` at `fogdensity 200`.
+Same sky, same authored fog, same moon treatment, one medium.
+
+(`VOIDSKY` also appears in three bonus-episode maps — `ABS05`, `OUT03`, `OUT10` —
+but two of those fade dark red and the third has no fade at all, so the texture
+is doing something else there. Look before assuming.)
+
+The three rows share the numbers through **`RT_FOG_MEDIUM_MAP26`**, a nine-value
+paste defined just above the table, for the reason the colour is inherited
+rather than restated: a second literal copy is the one that goes stale the first
+time the profile is retuned, and the maps then drift while all of them claim to
+match. A map wanting a *different* look writes its own row out in full — the
+shared medium is only for "the same medium", and being a compile-time paste it
+leaves the `fog` CCMD printing an ordinary paste-ready row.
 
 ### The MAP26 profile
 
@@ -313,27 +337,38 @@ and nothing else — surfaces still receive the light physically.
 
 ---
 
-## 5. MAP26's moon is off, and that is part of this
+## 5. The moon is off on all three fogged maps, and that is part of this
 
-`RT_MOON_PRESETS` already hid MAP26's moon **disc**: it is one of the three
-`VOIDSKY` maps, whose skybox is a plain box of flat dark teal with no starfield,
-no cloud and no horizon — a moon hanging in it is the one object on screen with
-no reason to be there.
+`RT_MOON_PRESETS` already hid the moon **disc** on MAP25, MAP26 and MAP31: they
+are the three `VOIDSKY` maps, whose skybox is a plain box of flat dark teal with
+no starfield, no cloud and no horizon — a moon hanging in it is the one object on
+screen with no reason to be there.
 
-MAP26 now also turns the moon's **light** off (`intensity 0`), which MAP25 and
-MAP31 do not. Two reasons, and both are about the fog:
+All three now also turn the moon's **light** off (`intensity 0`). Two reasons,
+and both are about the fog:
 
 - **A directional light is the one thing that wrecks a fogged level.** It rakes
   the froxel volume from a single bearing, so the fog reads as a lit slab with a
   hard edge across it instead of as the even medium the map was authored around.
-- **There was nothing legitimate to arrive through.** MAP26's rooms have no
-  opening the moon could honestly come through, so under `rt_sun_require_sky`
-  most of what it delivered was leak in the first place — see
-  `docs/moon-and-sky-leaks.md`.
+- **There was nothing legitimate to arrive through.** None of these maps' rooms
+  have an opening the moon could honestly come through, so under
+  `rt_sun_require_sky` most of what it delivered was leak in the first place —
+  see `docs/moon-and-sky-leaks.md`.
 
 The fog's light now comes from the level's own lamps and lava, which is where it
 should have come from. `tools/ab-fog.cmd moon` puts the moon back for the
 comparison, rather than leaving the decision asserted.
+
+This is also what makes the shared medium legitimate rather than a coincidence of
+colour: `illum 1` is load-bearing on all three, because with the moon off the
+single-light path leaves the fog with **no source at all** (§2).
+
+**The two tables have to move together, and that is the thing to preserve.**
+Taking a directional light away has a real cost — on a map with F_SKY1 openings,
+rooms lit through them flatten — and what fills the space here is the fog's own
+in-scattered floor, `rt_fog_ambient 1`. So an `intensity 0` moon row *without* a
+fog row would leave a map simply darker, with nothing put back. Whichever way a
+fourth map is added, add both.
 
 ---
 
@@ -348,7 +383,7 @@ the formula above rather than eyeballed.
 
 | arm | ramp | T |
 |---|---|---|
-| `full` | the shipping row, via the preset table (MAP26 only) | 1.00 1.00 0.98 0.93 0.83 |
+| `full` | the shipping row, via the preset table (MAP25 / MAP26 / MAP31 only) | 1.00 1.00 0.98 0.93 0.83 |
 | `ramp` | the same profile forced onto any map — 0.01 → 10, curve 2.4, 32 m | as above |
 | `veil` | 3 → 70, curve 2.0, 40 m. Air, not weather | 0.98 0.95 0.85 0.65 0.41 |
 | `ramp2` | 6 → 320, curve 3.0, 32 m. Same clear air, harder wall | 0.95 0.89 0.60 0.15 0.00 |
@@ -359,9 +394,13 @@ the formula above rather than eyeballed.
 | `inverse` | backwards: thick around you, clear beyond | |
 | `twotone` | the ramp with the tint split as well | |
 
-On MAP26, `ramp` and `full` should be **indistinguishable** — they are the same
-numbers by two different routes. If they are not, the preset table did not apply,
-which makes this a free check that the row is live.
+On any of the three listed maps, `ramp` and `full` should be
+**indistinguishable**: they are the same numbers by two different routes. If they
+are not, the preset table did not apply, which makes this a free check that a row
+is live — and on the two newer rows it is the check that they are live at all:
+
+    .\tools\ab-fog.cmd full 25   against   .\tools\ab-fog.cmd ramp 25
+    .\tools\ab-fog.cmd full 31   against   .\tools\ab-fog.cmd ramp 31
 
 `even` and `flatramp` are the two failures this profile was arrived at through,
 kept for that reason: `even` is a uniform MAPINFO-derived medium (**0.71 at 128
@@ -432,8 +471,14 @@ to be inert for a whole round trip.
   teal and the fog colour is its own `fade` — but a map with a painted sky and a
   strong fog colour would have that sky replaced by the fog, and that is the
   first thing to check when listing one.
-- **Eight fogged maps are still unlisted** (§3), and their `fade` colours differ
-  (brown, dark red). Each is one row and a look.
+- **Six fogged maps are still unlisted** (§3), and the cheap ones are gone: the
+  cyan `VOIDSKY` family is complete, so what is left differs in colour, in
+  density, or in both, and **none of it should be given `RT_FOG_MEDIUM_MAP26`
+  without being looked at**. MAP17 `3C 14 0A`, MAP27 `80 1E 00`, and in the bonus
+  episodes RTR03 (cyan, but density **64** — a third of the others, so not the
+  same medium), RTR04 `80 1E 00`, ABS05 and OUT10 `64 00 00` at 180. A warm fog
+  is also the case §8's sky warning is about: these maps do not have a flat teal
+  void behind them.
 - **Cost is a shadow ray per froxel cell** with `rt_fog_illum 1`. Measure before
   adding rows, not after.
 
