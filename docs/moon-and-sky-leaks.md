@@ -233,6 +233,123 @@ the magenta diagnostic sky — which is why `require_sky` did nothing to it.
 
 ---
 
+## 5.1 A third leak, and the only one that moves when you turn
+
+*(Numbered 5.1 rather than 6 so the section references in `AGENTS.md` and the
+other docs keep pointing where they did.)*
+
+**Symptom: the leak changes as you rotate on the spot — "as if a wall behind me
+gets culled".** It does. The wall is in the map and is *missing from the
+acceleration structure*, which is a different failure from everything above and
+is not fixable by anything in §2.
+
+gzdoom feeds RTGL1 from the same BSP walk it uses to rasterize, so the tracer
+only knows about geometry that walk submitted, and the walk is frustum- and
+BSP-culled. `hw_bsp.cpp` compensates with a **second, unculled walk** whose
+breadth is `rt_cpu_cullmode` — mode 0 runs both walks per frame, which is why
+that cvar is marked *"IMPACTS CPU PERFORMANCE HEAVILY"*:
+
+| `rt_cpu_cullmode` | what reaches the acceleration structure |
+|---|---|
+| **0** (default) | visible sectors + **every neighbour** of a visible sector, plus everything within `rt_cpu_nocullradius` (default **10 m = 320 map units**) |
+| 1 | stock GZDoom culling — visible only. The leakiest |
+| 2 | the whole map, no culling |
+
+So a wall is absent when it is all three of: not visible, not adjacent to
+anything visible, and beyond 320 units. Turning changes the visible set, so it
+changes the absent set, so the leak **breathes with the camera**. Nothing in the
+sky-leak family can do that — sky geometry is submitted unconditionally
+(`rt_sky_always`, which exists for this exact reason: *"always submit sky
+geometry (even if it's not visible in primary view)"*).
+
+**`rt_sun_require_sky` is irrelevant here, in both directions.** It gates the
+directional light only, and a ray leaving through a missing wall reaches no sky
+either, so the moon was already being rejected. What still comes through the hole
+is **the next room's own lamps**, the **dome** on ray miss (§5), and indirect
+bounce. `tools/ab.cmd cull-dark` kills both sky sources and is what separates
+them.
+
+    .\tools\ab.cmd cull-stock 02     the baseline -- turn on the spot
+    .\tools\ab.cmd cull-dark  02     rt_sun 0 + rt_sky 0: is it the level's lamps?
+    .\tools\ab.cmd cull-wide  02     radius 10 m -> 40 m. The cheap fix
+    .\tools\ab.cmd cull-all   02     cullmode 2, whole map. THE DECIDER
+
+**All four arms run with the inferred ceiling and strip lamps off**
+(`rt_ceiling_lamps 0` + `rt_ceiling_edge_lamps 0` + `rt_wall_strips 0`). Those
+are engine-placed analytic lights inferred from a *texture*
+(`rt_lights_fixtures.cpp`), which makes them both the loudest candidate for a
+wash coming through a hole and the easiest thing to mistake for one. So
+`cull-stock` is deliberately **not** the play configuration — it is the play
+configuration minus those two families, which is what the other three need to be
+compared against. Add `-- +rt_ceiling_lamps 1 +rt_ceiling_edge_lamps 1
++rt_wall_strips 1` to any arm to put them back for a run.
+
+**Turning those two families off does not darken a Doom 64 room, and that is not
+a bug in the arms.** `screen/stilllight.png` is MAP02 with all three at 0 and the
+corridor still fully lit. Those cvars govern only lamps the *engine* invents from
+a texture (`rt_lights_fixtures.cpp`). What actually lights that corridor,
+measured from MAP02's own `TEXTMAP`:
+
+| source | count in MAP02 | cvar |
+|---|---|---|
+| map light **things** | **83** — 48 × 9800 `PointLight`, 35 × 9802 `PointLightFlicker` | `rt_dynlight` |
+| sectors whose painted brightness **self-emits** | **153** at lightlevel ≥ 160, **74** of them ≥ 220 | `rt_sector_emis` (0.35, floor 160) |
+
+The glowing ceiling insets in that shot are largely the second one — Doom 64
+paints its lamp recesses bright and `rt_sector_emis` turns painted brightness
+into real emission, so there is no "fixture light" to switch off. And the cull
+arms hold `rt_dynlight 1` deliberately, which keeps all 83 things burning.
+
+`tools/ab.cmd cull-black` is the arm that ends the ambiguity: **every** source
+off, so the correct outcome is a black room. If it is not black, nothing in these
+cfgs is reaching the game and no other result in the suite means anything —
+verify that before changing another cvar.
+
+**Result, 2026-08-12: `cull-black` is black and shows no leak on MAP02.** So the
+cfgs do apply, and with every source off there is nothing to leak — which is the
+expected reading and, more usefully, the confirmed floor the bisect stands on.
+
+### The bisect: cull-black plus exactly one source
+
+Each of these is `cull-black` with a single family restored to its play value, so
+whichever one brings the wash back owns it:
+
+    .\tools\ab.cmd cull-emis 02      + rt_sector_emis 0.35   (the 153 painted sectors)
+    .\tools\ab.cmd cull-dyn  02      + rt_dynlight 1         (the 83 map light things)
+
+Then, on whichever one reproduces it, widen the guaranteed shell **without
+editing a file** — `ab.cmd` appends anything after `--` and it wins:
+
+    .\tools\ab.cmd cull-emis 02 -- +rt_cpu_nocullradius 40
+
+Wash stops moving with your heading → geometry culling is the carrier and the
+radius is the fix. Wash moves exactly as before → culling is innocent for that
+source, and the cause is elsewhere.
+
+The two failures look different, which is itself diagnostic. A **self-emitting
+surface** has no position to occlusion-test — it is emission gathered by whatever
+ray lands on it, so a ray through a missing wall simply finds the bright sector
+behind it, and the result is a general lift. A **map light thing** is analytic
+with a real shadow ray, so the leak has a *direction*: it points at the fixture
+in the next room.
+
+**Zeroing `rt_ceiling_lamps` alone does nothing visible in a big hall.**
+`rt_ceiling_edge_lamps` is a separate path — bulbs around the *perimeter* of a
+lamp ceiling, "independent of `rt_ceiling_lamps`" by design, because the centre
+sphere is skipped in any sector wider than `rt_ceiling_lamp_maxspan`. Turn off
+one and the halls keep their edge bulbs; the arms zero both.
+
+`cull-all` is decisive rather than shippable: if the leak survives it, geometry
+was never the cause and this line of enquiry is closed in one run. It is not a
+default because `rt_main.cpp` refuses to pick mode 2 for mod maps on its own —
+*"uncull-all (mode 2) on large UDMF mods freezes the main thread for a long time
+(looks hung; needs force-close)"* — and Retribution is a large UDMF mod. An
+explicit `rt_cpu_cullmode 2` from a cfg is not covered by that guard, so expect a
+long stall at load and do not leave it in the pins. Prefer whatever smallest
+change also fixes it, normally the radius.
+
+---
+
 ## 6. Files
 
 | file | role |
@@ -241,6 +358,8 @@ the magenta diagnostic sky — which is why `require_sky` did nothing to it.
 | `tools/pack_rt_sky.py` | packs `d64r-rt-sky.pk3` |
 | `tools/scan_sky_apertures.py` | measures sky-hack gaps; the negative result above |
 | `tools/ab-moon.cmd`, `ab-moonsize.cmd`, `ab-skyleak.cmd` | pre-set A/B arms |
+| `tools/arms/cull-*.cfg` | the §5.1 geometry-culling arms (`ab.cmd cull-stock` / `-dark` / `-wide` / `-all`) |
+| `hw_bsp.cpp` | the second, unculled BSP walk — `rt_cullmode`, `rt_nocull`, `rt_segdrawn` (§5.1) |
 | `rt_main.cpp` | `rt_sun_*`, `rt_moon_*`, `RT_MOON_PRESETS`, `moon` / `rt_sky_here` CCMDs, `RT_MoonSkyPitchOffset` |
 | `r_sky.cpp` | sky yaw tracking in `R_UpdateSky` |
 | `hw_skydome.cpp` | sky pitch offset in `SetupMatrices` |

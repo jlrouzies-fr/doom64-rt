@@ -115,7 +115,19 @@ rem                 (-256,768) -- these are the ones going green from spill.
 rem          SMONDA x3 at (-1456,2368) (-1408,2160) (-1360,2368)
 rem   MAP02  the densest set in the game, 35 lights.
 rem
-rem Usage: ab-smon.cmd <off|loud|mid|on|steady|dimmer|marks> [1-32]
+rem   static      SHIPPED for the SMONBA readout panels: 20/16 9804s at
+rem               rndflicker_floor 0.3 -> 60..200, a 3.3x swing re-randomised
+rem               every 2 tics. Crest 200 is the BRIGHTEST a fixture can be here
+rem               (hi*10, and the rsoft roll-off bites the moment hi passes 20),
+rem               against SMONAA's 167 and the first SMONBA pass's 125.
+rem   statichard  floor 0.1 -> 20..200, 10x. Nearly cuts out at the trough.
+rem   staticcalm  floor 0.6 -> 120..200, 1.67x.
+rem   staticoff   floor 1.0 -> flat 200. Isolates "is it too bright" from "is the
+rem               flicker too much", which is the pair that keeps getting
+rem               conflated. Still 20% brighter than SMONAA.
+rem
+rem Usage: ab-smon.cmd <off|loud|mid|on|steady|dimmer|marks
+rem                    |static|statichard|staticcalm|staticoff> [1-32]
 rem ---------------------------------------------------------------------------
 
 set "ARM=%~1"
@@ -133,7 +145,7 @@ rem rt_dynlight_intensity stays at 40 in EVERY arm. It is global to every
 rem FDynamicLight, so varying it here would dim doors and torches along with the
 rem monitors -- which is exactly the mistake that produced rt_dynlight_flicker_scale.
 rem The arms vary that flicker-only scale instead.
-set "COMMON=+rt_dynlight 1 +rt_dynlight_intensity 40 +rt_dynlight_max 500 +rt_dynlight_stack_atten 1 +rt_dynlight_minradius 16 +rt_dynlight_radius 0.08 +rt_dynlight_rsoft 20 +rt_dynlight_debug 0 +rt_dynlight_debug_marks 0"
+set "COMMON=+rt_dynlight 1 +rt_dynlight_intensity 40 +rt_dynlight_max 500 +rt_dynlight_stack_atten 1 +rt_dynlight_minradius 16 +rt_dynlight_radius 0.08 +rt_dynlight_rsoft 20 +rt_dynlight_debug 0 +rt_dynlight_debug_marks 0 +rt_dynlight_rndflicker_floor 0.3"
 
 if /i "%ARM%"=="off"    set "ARGS=%COMMON% +rt_dynlight_flicker 0 +rt_dynlight_flicker_scale 0.25 +rt_dynlight_blink_floor 0.8"
 if /i "%ARM%"=="loud"   set "ARGS=%COMMON% +rt_dynlight_flicker 1 +rt_dynlight_flicker_scale 1.0  +rt_dynlight_blink_floor 0.15"
@@ -142,6 +154,17 @@ if /i "%ARM%"=="on"     set "ARGS=%COMMON% +rt_dynlight_flicker 1 +rt_dynlight_f
 if /i "%ARM%"=="steady" set "ARGS=%COMMON% +rt_dynlight_flicker 1 +rt_dynlight_flicker_scale 0.25 +rt_dynlight_blink_floor 1.0"
 if /i "%ARM%"=="dimmer" set "ARGS=%COMMON% +rt_dynlight_flicker 1 +rt_dynlight_flicker_scale 0.175 +rt_dynlight_blink_floor 0.8"
 if /i "%ARM%"=="marks"  set "ARGS=%COMMON% +rt_dynlight_flicker 1 +rt_dynlight_flicker_scale 0.25 +rt_dynlight_blink_floor 0.8 +rt_dynlight_debug 1 +rt_dynlight_debug_marks 1"
+
+rem --- the SMONBA static panels (9804 RandomFlicker) -------------------------
+rem These vary rt_dynlight_rndflicker_floor ONLY. It touches nothing but the 48
+rem SMONBA readout lights, because they are the only 9804s in the game -- the
+rem 9802 wall keeps blink_floor 0.8 in every arm below, so the green/teal/blue
+rem monitors are identical across all four and only the white ones change.
+rem On a 20/16 fixture, crest is a fixed 200 and the floor sets the trough:
+if /i "%ARM%"=="static"     set "ARGS=%COMMON% +rt_dynlight_flicker 1 +rt_dynlight_flicker_scale 0.25 +rt_dynlight_blink_floor 0.8 +rt_dynlight_rndflicker_floor 0.3"
+if /i "%ARM%"=="statichard" set "ARGS=%COMMON% +rt_dynlight_flicker 1 +rt_dynlight_flicker_scale 0.25 +rt_dynlight_blink_floor 0.8 +rt_dynlight_rndflicker_floor 0.1"
+if /i "%ARM%"=="staticcalm" set "ARGS=%COMMON% +rt_dynlight_flicker 1 +rt_dynlight_flicker_scale 0.25 +rt_dynlight_blink_floor 0.8 +rt_dynlight_rndflicker_floor 0.6"
+if /i "%ARM%"=="staticoff"  set "ARGS=%COMMON% +rt_dynlight_flicker 1 +rt_dynlight_flicker_scale 0.25 +rt_dynlight_blink_floor 0.8 +rt_dynlight_rndflicker_floor 1.0"
 
 if not defined ARGS (
   echo Usage: %~nx0 ^<off^|loud^|mid^|on^|steady^|dimmer^|marks^> [1-32]

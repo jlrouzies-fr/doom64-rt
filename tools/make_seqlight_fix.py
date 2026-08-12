@@ -1407,6 +1407,38 @@ SCRIPTED = [
              "the sector's lightlevel at RUNTIME and overrides whatever is stored, so "
              "lowering the paint without stripping the call changes nothing on screen.",
     ),
+    # MAP01, script 669 (OPEN). Reported as screen/level1ACSblink.png and confirmed
+    # from the game, caught mid-pulse:
+    #
+    #   whatsthat: sector 31  lightlevel 226  tag 5  middle texture 'SPACEAF'
+    #              threshold 200 -> ABOVE: this surface SELF-EMITS
+    #              brightest neighbour: sector 2 at 140  (delta +86)
+    #
+    # 226 is neither end of the cycle -- it is the glow caught between 200 and 255,
+    # which is what makes this an animation rather than paint.
+    #
+    # No Shaft goes with this one, and that is the point. Sectors 31 and 33 STORE
+    # lightlevel 200, and MAP01's threshold is exactly 200, so at their stored value
+    # l_worldemissive returns 0 (ll <= minLight). The glow exists only while the ACS
+    # drives them above it. Strip the call and the panels stop emitting on their own,
+    # with no lightlevel edit at all.
+    Scripted(
+        "MAP01", 669, 114, (5, 255, 200, 35), enabled=True,
+        note="THE REPORTED ONE (screen/level1ACSblink.png). Glow 255<->200 over 35 "
+             "tics on tag 5 = sectors 31 and 33, two 96x96 SPACEAF panels whose only "
+             "neighbour is sector 2 at 140. A sourceless breath, the MAP13 shape. "
+             "Stripping it is sufficient by itself: the stored 200 sits AT the "
+             "emission threshold, so the panels go quiet without touching the map's "
+             "lightlevels.",
+    ),
+    Scripted(
+        "MAP01", 669, 116, (19, 255, 150, 3, 5), enabled=False,
+        note="SURVEYED, NOT STRIPPED. Strobe 255<->150 on tag 19 = sector 148, a "
+             "32x32 SPACEAG panel with no neighbours at all, and not what was "
+             "reported. It does emit at the crest (255 > 200) so it is a candidate "
+             "if the blinking is still visible somewhere else on the map; listed so "
+             "the next reader knows MAP01 has more than the one call above.",
+    ),
     Scripted(
         "MAP24", 669, 114, (20, 255, 180, 35), enabled=False,
         note="SURVEYED, NOT STRIPPED. Glow 255<->180 on tag 20 = sectors 73 and 87. "
@@ -2126,16 +2158,24 @@ class PanelLamp:
         intensity = hi * rt_dynlight_intensity * flicker_scale * blink   (cap 500)
         if hi > rt_dynlight_rsoft:  intensity *= (rsoft / hi)^2
 
-    At the launcher's intensity 40 / flicker_scale 0.25 / blink_floor 0.8 /
-    rsoft 20:
+    At the launcher's intensity 40 / flicker_scale 0.25 / rsoft 20, i.e.
+    intensity = hi * 10 * blink:
 
-        hi/lo      trough -> crest
-        24/20        133  ->  167     SMONAA's value, the green monitors
-        32/28        100  ->  125     <- shipped: ~75% of SMONAA
-        40/34         80  ->  100
+        hi/lo    floor   trough -> crest    swing
+        24/20     0.8      133  ->  167     1.25x   SMONAA, the green 9802 monitors
+        32/28     0.8      100  ->  125     1.25x   the first SMONBA pass
+        20/16     0.3       60  ->  200     3.3x    <- SHIPPED
+        40/34     0.8       80  ->  100     1.25x
 
-    White reads hotter than green at equal intensity, so matching SMONAA
-    numerically would overshoot; 32/28 is the "not too strong" ask.
+    hi=20 is the BRIGHTEST a fixture can be here, which is not obvious: intensity
+    rises as hi*10 but the rt_dynlight_rsoft roll-off starts dividing by
+    (20/hi)^2 the moment hi exceeds 20, so the product peaks exactly at the rsoft
+    boundary. 21 already gives 190, and the 32 the first pass shipped gives 125.
+    Going brighter than 200 is not a job for this table at all -- it needs
+    rt_dynlight_intensity or rt_dynlight_flicker_scale, both global.
+
+    The 0.3 floor comes from rt_dynlight_rndflicker_floor and is reachable only
+    because these are 9804: see thing_type below.
 
     Note this is the ONE place where a radius above rt_dynlight_rsoft is a
     deliberate choice rather than the trap the Lamp docstring warns about. That
@@ -2148,7 +2188,8 @@ class PanelLamp:
     """
 
     def __init__(self, texture: str, maps: dict[str, int], color: tuple[int, int, int],
-                 hi: int, lo: int, tile: float, min_len: float, max_len: float,
+                 hi: int, lo: int, thing_type: int, period_tics: int,
+                 tile: float, min_len: float, max_len: float,
                  offset: float, screen_v: float, screen_h: float, min_gap: float,
                  enabled: bool, note: str):
         self.texture = texture.upper()
@@ -2156,6 +2197,8 @@ class PanelLamp:
         self.color = color
         self.hi = hi
         self.lo = lo
+        self.thing_type = thing_type
+        self.period_tics = period_tics
         self.tile = tile
         self.min_len = min_len
         self.max_len = max_len
@@ -2181,7 +2224,21 @@ PANEL_LAMPS = [
         # MAP34's 256 band gets four. See the SPACING note in add_panel_lights.
         maps={"MAP01": 1, "MAP03": 3, "MAP05": 5, "MAP06": 4,
               "MAP07": 22, "MAP08": 1, "MAP29": 8, "MAP34": 4},
-        color=(255, 255, 255), hi=32, lo=28,
+        color=(255, 255, 255),
+        # 9804 PointLightFlickerRandom, NOT the 9802 the rest of the game uses.
+        # 9802 is a BINARY toggle between arg3 and arg4; 9804 picks a random radius
+        # across the whole range and holds it for `angle` tics, which at 2 tics is a
+        # noise signal -- what a screen full of static looks like. It also unlocks
+        # rt_dynlight_rndflicker_floor (0.3, a 3.3x swing) instead of the global
+        # rt_dynlight_blink_floor (0.8, 1.25x) that the 199-panel 9802 wall needs.
+        # Retribution ships no 9804 anywhere, so this class is ours alone.
+        thing_type=9804, period_tics=2,
+        # arg3 LOW / arg4 HIGH: GZDoom's RandomFlicker computes its range as
+        # secondary - primary, so the order matters here where it does not for 9802.
+        # hi=20 is the brightest a fixture can be: intensity is hi * 10 and the
+        # rt_dynlight_rsoft roll-off starts biting the moment hi exceeds 20, so 20
+        # peaks at 200 while the old 32 peaked at 125.
+        hi=20, lo=16,
         tile=64.0, min_len=40.0, max_len=72.0,
         # Where the SCREEN is inside the 64x64 tile, as fractions of the tile
         # measured from its bottom-left. Straight off the _e mask's lit centroid
@@ -2523,16 +2580,20 @@ def add_panel_lights(
             f"y = {py:.3f};\n"
             # UDMF `height` is relative to the sector FLOOR, not absolute.
             f"height = {zworld - fh:.3f};\n"
-            "angle = 0;\n"
-            # 9802 PointLightFlicker, the type the mod uses for every animated
-            # wall monitor (199 of its 205 light things). rt_dynlight_flicker
-            # must stay on or the whole class is skipped — pitfall 27.
-            "type = 9802;\n"
+            # GZDoom reads the flicker period off the thing's ANGLE (specialf1):
+            # tics to hold each random value for 9804, duty cycle out of 360 for
+            # 9802. It is not a bearing.
+            f"angle = {panel.period_tics};\n"
+            # rt_dynlight_flicker gates BOTH 9802 and 9804 — with it off the whole
+            # class is skipped before upload and these cast nothing (pitfall 27).
+            f"type = {panel.thing_type};\n"
             f"arg0 = {r};\n"
             f"arg1 = {g};\n"
+            # arg3 is the LOW radius and arg4 the HIGH for 9804, which computes its
+            # range as arg4 - arg3. (9802 treats them as an unordered pair.)
             f"arg2 = {b};\n"
-            f"arg3 = {panel.hi};\n"
-            f"arg4 = {panel.lo};\n"
+            f"arg3 = {min(panel.hi, panel.lo)};\n"
+            f"arg4 = {max(panel.hi, panel.lo)};\n"
             "skill1 = true;\nskill2 = true;\nskill3 = true;\n"
             "skill4 = true;\nskill5 = true;\n"
             "single = true;\ncoop = true;\n"

@@ -69,6 +69,11 @@ every `ab-blood.cmd` arm.
 | `rt_gore_max` | `1500` | hard cap on live splats, oldest destroyed first. `0` = unlimited. |
 | `rt_gore_scale_var` | `0.35` | ± size jitter. `0` = every splat identical. |
 | `rt_gore_roll` | `false` | random billboard roll. |
+| `rt_gore_burst` | `true` | explosion splash (below). |
+| `rt_gore_burst_count` | `5` | splats at reference damage 40; scales 0.5×–2× with actual damage. |
+| `rt_gore_burst_speed` | `4.0` | outward horizontal speed, map units/tic. |
+| `rt_gore_burst_lift` | `3.0` | upward kick; each splat gets `FRandom(lift*0.4, lift)`. |
+| `rt_gore_burst_debug` | `false` | one `Console.Printf` per burst — the is-it-live instrument. |
 
 **Do not confuse `rt_gore_*` with `rt_blood_tint_*`.** The latter is the blood
 *liquid surface* (see `docs/rt-water.md`) and has nothing to do with splats.
@@ -83,6 +88,61 @@ nobody bounded. 1500 recycles the oldest, which at that count is essentially
 never in view. `ab-blood.cmd tight` (cap 300) makes the recycle pop visible so
 the number can be judged rather than guessed; `ab-blood.cmd uncapped` is the
 honest perf read.
+
+## Explosive kills — `rt_gore_burst*`
+
+Shooting an enemy left splats; blowing the same enemy up with a rocket or a
+barrel left **nothing**. That is not a renderer setting and not a Retribution
+authoring choice — it is stock GZDoom:
+
+- Blood actors are spawned **only by attack code**, never by damage code.
+  `P_DamageMobj` (`p_interaction.cpp`) contains no blood at all.
+- Hitscan reaches blood through the actor virtual `SpawnLineAttackBlood`
+  (`attacks.zs:742`), called from `P_LineAttack`.
+- `P_RadiusAttack` (`p_map.cpp:6117`) calls `P_DamageMobj(..., DMG_EXPLOSION)`
+  and then **only `P_TraceBleed`**, which makes a wall *decal* and spawns no
+  actor. Crushing is the same.
+- A missile's direct impact only splatters with `+BLOODSPLATTER`, which
+  `64Rocket` does not have. But a rocket detonates on contact, so the victim
+  takes the radius hit at distance 0 — **`DMG_EXPLOSION` alone covers rockets
+  and barrels both.**
+
+`RTBloodPersistHandler.WorldThingDamaged` is the hook, because that event is the
+one that carries `DamageFlags`. It fires from both the fatal and non-fatal paths
+in `P_DamageMobj`, so an enemy killed outright by the blast still bursts.
+
+**Two spawn paths, on purpose.** One `t.SpawnBlood(...)` — the engine path, and
+the only thing that emits the RT fluid particles (`RT_SpawnBlood_Thing`,
+`p_mobj.cpp:6140`), which has no ZScript export. Then N splats spawned
+*directly*, because the look is *thrown outward, then falls* and that needs a
+per-splat `Vel` — and `SpawnBlood()` returns nothing. Setting the velocity from
+`WorldThingSpawned` instead does **not** work: that event fires from
+`AActor::CallPostBeginPlay`, which the thinker list runs on a later pass, not
+synchronously inside `Spawn()`, so any "burst is active" latch is already stale
+when the event arrives. The direct spawns use
+`Actor.Spawn(t.GetBloodType(0), pos, NO_REPLACE)` — `GetBloodType` has already
+walked `Blood → 64Blood → RTBloodPersist`, exactly as `P_SpawnBlood` does.
+
+Both kinds land in the existing `WorldThingSpawned`, so the jitter, `bXFLIP`,
+the FIFO and `rt_gore_max` apply with **no change to that method**, and the
+`RTBloodPersist` Spawn state still throws its 1–3 satellites — free scatter.
+
+Guards, in order: cvar off; not `DMG_EXPLOSION`; `bNoBlood`/`bDormant`/
+`bInvulnerable` (the same test `SpawnLineAttackBlood` makes — `+NOBLOOD` appears
+exactly once in the Retribution DECORATE, on `64LostSoul`, so souls stay
+bloodless); `GetBloodType(0) == null`, which is what silently excludes barrels
+and decorations with no class list to maintain; players, to keep a splash out of
+the first-person camera; and a **same-actor same-tic dedupe**, because a rocket
+delivers impact and radius damage in one tic and a monster between two barrels
+gets two chain blasts.
+
+Judge it with `.\tools\ab-blood.cmd boom 1` (debug on): a barrel next to zombies,
+a rocket into an imp (the dedupe should give one splash, not two), and a rocket
+into a Lost Soul (must stay bloodless). A barrel with nothing near it producing
+no blood is the **negative control**, not a failure. `noboom` is the flip,
+`bigboom` brackets count/speed from above. A splat can land on a ledge or stick
+against a wall mid-air; the lever for that is `rt_gore_burst_speed` down, not a
+new clamp.
 
 ## Open question
 

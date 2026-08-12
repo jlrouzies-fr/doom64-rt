@@ -997,3 +997,50 @@ now **885 characters** with 7306 of headroom. A/B arms are config files too —
 after the pins so an arm still wins. Verified end to end: `ab.cmd smoke-probeuni`
 reports `DEBUGMODE=4` and paints the screen blue (98.5% blue-dominant), the exact
 arm that silently failed three times as a command-line string.
+
+## A second blink floor, for RandomFlicker only (2026-08-12)
+
+**`rt_dynlight_rndflicker_floor`, default 0.3, in `rt_lights_sector.cpp`
+(`RT_UploadGzDoomDynamicLights`) and `rt_cvars.inc`.**
+
+The SMONBA readout panels are meant to read as a screen full of TV static:
+strong, and flickering hard. Neither was reachable, for two separate reasons,
+and the first is the interesting one.
+
+**`rt_dynlight_blink_floor` is global to every flicker/pulse light.** It sits at
+0.8 because 199 SMON panels blink at once and anything livelier reads as a
+strobing wall (pitfall 28). That single number therefore also forbids any *one*
+fixture family from swinging harder — and no map-thing value can escape it,
+because the blink term is `floor + (1-floor)*t` with `t` normalised over the
+fixture's own radius range. Widening `arg3`/`arg4` changes the fixture's
+brightness, never its swing.
+
+The escape hatch is that Retribution uses **9800 (989), 9801 (14) and 9802 (205)
+but not a single 9804**. So `RandomFlickerLight` is an empty class in this game,
+and giving it its own floor cannot move an existing fixture. That was checked
+across all 39 map lumps before the split was written, not assumed.
+
+The two GZDoom types also differ in kind, which matters here (`a_dynlight.cpp`
+`Tick`):
+
+| type | behaviour | `angle` (`specialf1`) means |
+|---|---|---|
+| 9802 `FlickerLight` | **binary** — radius is `arg3` *or* `arg4`, re-rolled every tic | duty cycle out of 360 |
+| 9804 `RandomFlickerLight` | **continuous** — a random radius across the range, held | tics to hold each value |
+
+A binary toggle at 1.25x is machinery; a continuous random signal at 3.3x,
+re-rolled every 2 tics, is static. Only 9804 can express the second.
+
+**The brightness ceiling is not where you would guess.** Intensity is
+`hi * rt_dynlight_intensity * flicker_scale * blink`, then rolled off by
+`(rsoft/hi)^2` once `hi` exceeds `rt_dynlight_rsoft`. Those pull opposite ways,
+so the product **peaks exactly at `hi == rsoft`** — 20 here, giving 200. `hi=21`
+already gives 190, and the `hi=32` the first SMONBA pass shipped gives 125. The
+fix was to move the panels *down* from 32 to 20 to make them brighter, which is
+the same "radius is not brightness" trap as pitfall 26, one level along.
+
+Shipped: 48 SMONBA panels as 9804, `arg3/arg4` 16/20, `angle` 2, white, at
+`rndflicker_floor` 0.3 → **60..200 at a 3.3x swing**, against SMONAA's steady
+133..167. Pinned in `tools/d64rt-pins.cfg`; arms `ab-smon.cmd
+static|statichard|staticcalm|staticoff`, which vary only this cvar and so leave
+every 9802 monitor identical between them.

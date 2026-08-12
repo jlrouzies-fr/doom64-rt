@@ -189,6 +189,21 @@ for:
 Derive the per-map counts with `--panels` (never by hand — it found a SMONBA panel on
 MAP34 that a MAP01–32 survey missed); retune brightness with `--panel-radii=hi/lo`.
 
+**SMONBA is the game's only `9804` `PointLightFlickerRandom`, and that is deliberate.**
+`rt_dynlight_blink_floor` (0.8) is global to every flicker light, so it cannot let one
+family swing harder — but Retribution ships 9800/9801/9802 and **no 9804 at all**, so
+that class got its own floor, `rt_dynlight_rndflicker_floor` (0.3), which by construction
+cannot disturb an existing fixture. 9802 is a *binary* toggle; 9804 holds a *random*
+radius for `angle` tics, which at 2 tics is a noise signal — TV static. Two consequences:
+
+- **Peak brightness is at `hi == rt_dynlight_rsoft`, not above it.** Intensity goes as
+  `hi` but is rolled off by `(rsoft/hi)²` past `rsoft`, so the product peaks at 20 → 200.
+  `hi=32` gives 125. The panels were made brighter by moving their radius **down**.
+- The thing's `angle` is a **period, not a bearing**, for 9801/9802/9804 alike.
+
+A/B: `.\tools\ab-smon.cmd <static|statichard|staticcalm|staticoff> [map]` — these vary
+only `rt_dynlight_rndflicker_floor`, so every 9802 monitor is identical between them.
+
 ## The moon, and sky light that leaks
 
 **Read `docs/moon-and-sky-leaks.md` before touching `rt_sun_*`, `rt_moon_*` or
@@ -214,6 +229,13 @@ Three things that will otherwise cost you a day:
   path leaves them untouched and looks inert.
 - **Aperture-size gating does not work here** and has been measured, twice. See
   §4 of the doc before proposing it again.
+- **A leak that MOVES WHEN YOU TURN is not a sky leak at all** — it is geometry
+  culling, and no `rt_sun_*` cvar can touch it. gzdoom feeds the tracer from its
+  rasterizer BSP walk, so a wall that is not visible, not adjacent to a visible
+  sector, and beyond `rt_cpu_nocullradius` (10 m) is simply absent from the
+  acceleration structure, and the next room's lamps shine through where it should
+  be. `rt_cpu_cullmode` / `rt_cpu_nocullradius`, doc §5.1, arms
+  `.\tools\ab.cmd cull-stock|cull-dark|cull-wide|cull-all`.
 
 ## Sprites that emit light
 

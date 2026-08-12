@@ -34,6 +34,30 @@ subsector, so RTGL1 never sees them -- but an unbounded queue over a long map
 is still a queue nobody bounded. rt_gore_max 1500 recycles the oldest; set it
 to 0 for genuinely unlimited.
 
+THE EXPLOSION HALF (rt_gore_burst*). Rockets and barrels left no blood at all,
+and that is stock GZDoom, not Retribution: blood actors are spawned only by
+ATTACK code, never by damage code. P_RadiusAttack calls P_DamageMobj plus
+P_TraceBleed, and P_TraceBleed makes a wall decal -- it spawns no actor. So an
+explosive kill went through no code path that could produce a splat.
+
+WorldThingDamaged is the hook, because it carries DamageFlags: DMG_EXPLOSION
+(2048) covers rockets AND barrels, since a rocket detonates on contact and the
+victim takes the radius hit at distance 0.
+
+The burst does two different things on purpose:
+
+  1. ONE t.SpawnBlood() -- the engine path, and the only thing that emits the
+     RT fluid particles (RT_SpawnBlood_Thing, called at p_mobj.cpp:6140). It has no
+     ZScript export and cannot be reproduced by hand.
+  2. N splats spawned DIRECTLY, so each can be given a Vel. SpawnBlood()
+     returns nothing, and setting the velocity from WorldThingSpawned instead
+     does not work: that event fires from AActor::CallPostBeginPlay, which the
+     thinker list runs on a LATER pass, not synchronously inside Spawn(). Any
+     "burst is active" latch would already be stale when the event arrived.
+
+Both kinds land in the existing WorldThingSpawned, so the jitter, the FIFO and
+rt_gore_max apply with no change to that method.
+
 Usage:
     tools\\.venv-ai\\Scripts\\python.exe tools/gen_blood_persist.py           # report
     tools\\.venv-ai\\Scripts\\python.exe tools/gen_blood_persist.py --apply
@@ -79,6 +103,27 @@ server noarchive float rt_gore_scale_var = 0.35;
 // HWSprite::Process, upstream of the RT upload, so RTGL1 should receive
 // already-rotated geometry -- but that has not been eyeballed in game yet.
 server noarchive bool rt_gore_roll = false;
+
+// --- the explosion half -------------------------------------------------
+// Rockets and barrels leave no blood in stock GZDoom: P_RadiusAttack never
+// calls P_SpawnBlood. These throw a splash of the SAME splats outward from the
+// victim, which arc down and settle exactly like the hitscan ones.
+
+// Master switch for the explosion splash.
+server noarchive bool rt_gore_burst = true;
+
+// Splats at the reference damage (40). Scales 0.5x-2x with actual damage.
+server noarchive int rt_gore_burst_count = 5;
+
+// Outward horizontal speed, map units per tic.
+server noarchive float rt_gore_burst_speed = 4.0;
+
+// Upward kick. Each splat gets FRandom(lift*0.4, lift).
+server noarchive float rt_gore_burst_lift = 3.0;
+
+// One Console.Printf per burst. THE instrument for "is this actually live" --
+// nothing printed means the feature is not running, whatever the screen shows.
+server noarchive bool rt_gore_burst_debug = false;
 """
 
 
@@ -169,6 +214,14 @@ class RTBloodPersistHandler : EventHandler
 	Array<int>   born;      // level.time when each was spawned, same indexing
 
 	CVar cLife, cMax, cScaleVar, cRoll;
+	CVar cBurst, cBurstCount, cBurstSpeed, cBurstLift, cBurstDebug;
+
+	// Same-actor, same-tic dedupe for the explosion burst. A rocket delivers
+	// its direct impact damage and its radius damage in ONE tic, and a monster
+	// standing between two barrels gets both chain blasts; without this every
+	// such victim bursts twice.
+	Actor lastBurstThing;
+	int   lastBurstTime;
 
 	private void ResolveCVars()
 	{
@@ -176,6 +229,12 @@ class RTBloodPersistHandler : EventHandler
 		if (cMax == null)      { cMax      = CVar.FindCVar("rt_gore_max"); }
 		if (cScaleVar == null) { cScaleVar = CVar.FindCVar("rt_gore_scale_var"); }
 		if (cRoll == null)     { cRoll     = CVar.FindCVar("rt_gore_roll"); }
+
+		if (cBurst == null)      { cBurst      = CVar.FindCVar("rt_gore_burst"); }
+		if (cBurstCount == null) { cBurstCount = CVar.FindCVar("rt_gore_burst_count"); }
+		if (cBurstSpeed == null) { cBurstSpeed = CVar.FindCVar("rt_gore_burst_speed"); }
+		if (cBurstLift == null)  { cBurstLift  = CVar.FindCVar("rt_gore_burst_lift"); }
+		if (cBurstDebug == null) { cBurstDebug = CVar.FindCVar("rt_gore_burst_debug"); }
 	}
 
 	private int LifeTics()  { ResolveCVars(); return (cLife != null) ? cLife.GetInt() : 0; }
@@ -186,6 +245,83 @@ class RTBloodPersistHandler : EventHandler
 		// The actors are gone with the old level; the arrays are not.
 		splats.Clear();
 		born.Clear();
+
+		lastBurstThing = null;
+		lastBurstTime  = -1;
+	}
+
+	// EXPLOSIVE KILLS. Blood actors are spawned only by ATTACK code in GZDoom,
+	// never by damage code: P_RadiusAttack calls P_DamageMobj and then only
+	// P_TraceBleed, which makes a wall decal and spawns no actor. So rockets
+	// and barrels produced nothing at all. DMG_EXPLOSION covers both, since a
+	// rocket detonates on contact and the victim takes the radius hit at
+	// distance 0.
+	override void WorldThingDamaged(WorldEvent e)
+	{
+		Actor t = e.Thing;
+		if (t == null) { return; }
+
+		ResolveCVars();
+		if (cBurst == null || !cBurst.GetBool()) { return; }
+		if ((e.DamageFlags & DMG_EXPLOSION) == 0) { return; }
+
+		// The first three mirror SpawnLineAttackBlood's own test, so an actor
+		// that bleeds nothing to a bullet bleeds nothing to a rocket either.
+		// In the whole Retribution DECORATE, +NOBLOOD appears exactly once --
+		// on 64LostSoul -- and that is what keeps souls bloodless here too.
+		if (t.bNoBlood || t.bDormant || t.bInvulnerable) { return; }
+
+		// This is what silently excludes barrels, decorations and everything
+		// else that does not bleed. No class list to maintain.
+		Class<Actor> bloodcls = t.GetBloodType(0);
+		if (bloodcls == null) { return; }
+
+		// Deterministic and netsafe, and it keeps a splash out of the
+		// first-person camera.
+		if (t.player != null) { return; }
+
+		if (t == lastBurstThing && level.time == lastBurstTime) { return; }
+		lastBurstThing = t;
+		lastBurstTime  = level.time;
+
+		int baseCount = (cBurstCount != null) ? cBurstCount.GetInt() : 5;
+		int n = int(round(baseCount * clamp(double(e.Damage) / 40.0, 0.5, 2.0)));
+		if (n < 0) { n = 0; }
+
+		if (cBurstDebug != null && cBurstDebug.GetBool())
+		{
+			Console.Printf("RTBloodBurst: %s dmg %d -> %d splats", t.GetClassName(), e.Damage, n);
+		}
+
+		// The engine path, once. It is the only thing that emits the RT fluid
+		// particles (RT_SpawnBlood_Thing), which has no ZScript export.
+		t.SpawnBlood(t.pos + (0, 0, t.height * 0.5), e.DamageAngle, e.Damage);
+
+		double spd  = (cBurstSpeed != null) ? cBurstSpeed.GetFloat() : 4.0;
+		double lift = (cBurstLift  != null) ? cBurstLift.GetFloat()  : 3.0;
+
+		for (int i = 0; i < n; i++)
+		{
+			double ang = FRandom[RTBlood](0.0, 360.0);
+			double rad = FRandom[RTBlood](0.0, t.radius);
+			Vector3 at = (t.pos.X + cos(ang) * rad,
+			              t.pos.Y + sin(ang) * rad,
+			              t.pos.Z + FRandom[RTBlood](0.25, 0.8) * t.height);
+
+			// NO_REPLACE: GetBloodType already walked the replacement chain
+			// Blood -> 64Blood -> RTBloodPersist, exactly as P_SpawnBlood does.
+			Actor b = Actor.Spawn(bloodcls, at, NO_REPLACE);
+			if (b == null) { continue; }
+
+			if (!b.bDontTranslate) { b.Translation = t.BloodTranslation; }
+
+			// 64Blood has Gravity 0.65, and gravity lives in Actor::Tick rather
+			// than in the state machine, so these arc and settle on their own --
+			// the same reason the hitscan splats already fall correctly.
+			double s = spd * FRandom[RTBlood](0.5, 1.0);
+			b.Vel   = (cos(ang) * s, sin(ang) * s, FRandom[RTBlood](lift * 0.4, lift));
+			b.Angle = ang;
+		}
 	}
 
 	override void WorldThingSpawned(WorldEvent e)
@@ -283,6 +419,9 @@ def build(dry: bool) -> int:
         print(f"   {name:<9} {len(text):>5} bytes")
     print("   DECORATE: 3 replacements, each Spawn ending on 'BLUD A -1'")
     print("   ZSCRIPT:  RTBloodPersistHandler -- scale/flip/roll jitter + FIFO cap")
+    print("             + WorldThingDamaged explosion burst (DMG_EXPLOSION)")
+    print(f"   CVARINFO: {CVARINFO.count('server noarchive')} cvars"
+          f" ({CVARINFO.count('rt_gore_burst')} burst mentions)")
 
     if dry:
         print("\nPass --apply to write the pk3.")

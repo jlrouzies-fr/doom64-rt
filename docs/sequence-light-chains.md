@@ -925,11 +925,47 @@ neither can dim SMONBA alone. What is left is the thing's own `arg3`, through th
 roll-off in `RT_UploadGzDoomDynamicLights`. At the launcher's intensity 40 /
 flicker_scale 0.25 / blink_floor 0.8 / rsoft 20:
 
-| `arg3/arg4` | trough → crest | |
+| `arg3/arg4` | floor | trough → crest | swing |
+|---|---|---|---|
+| 24/20 | 0.8 | 133 → 167 | 1.25× — SMONAA, the green 9802 monitors |
+| 32/28 | 0.8 | 100 → 125 | 1.25× — the first SMONBA pass |
+| **20/16** | **0.3** | **60 → 200** | **3.3× — shipped** |
+| 40/34 | 0.8 | 80 → 100 | 1.25× |
+
+**`hi = 20` is the brightest a fixture can be, which is counter-intuitive.**
+Intensity rises as `hi × 10`, but the `rt_dynlight_rsoft` roll-off divides by
+`(20/hi)²` the moment `hi` passes 20 — so the product **peaks exactly at the
+`rsoft` boundary**. 21 already gives 190; the 32 the first pass shipped gives
+125. The panels were made brighter by moving their radius **down**. That is
+pitfall 26's "radius is not brightness" one level along.
+
+### The flicker: 9804, and why it had to be a new class
+
+`rt_dynlight_blink_floor` is **global to every flicker and pulse light**, and it
+sits at 0.8 because 199 SMON panels blink at once and anything livelier reads as
+a strobing wall. So it also forbids any *one* family from swinging harder, and no
+map-thing value escapes it — the blink term is `floor + (1-floor)·t` with `t`
+normalised over the fixture's own radius range, so widening `arg3`/`arg4` changes
+brightness and never swing.
+
+The escape hatch: Retribution uses **9800 (989), 9801 (14) and 9802 (205) and not
+a single 9804.** `RandomFlickerLight` is an empty class in this game, so giving it
+its own floor (`rt_dynlight_rndflicker_floor`, 0.3) cannot move any existing
+fixture. Checked across all 39 map lumps before the split was written.
+
+The two types also differ in kind, not just rate (`a_dynlight.cpp` `Tick`):
+
+| type | behaviour | `angle` (`specialf1`) |
 |---|---|---|
-| 24/20 | 133 → 167 | SMONAA's value, the green monitors |
-| **32/28** | **100 → 125** | shipped — white reads hotter than green |
-| 40/34 | 80 → 100 | |
+| 9802 `FlickerLight` | **binary** — radius is `arg3` *or* `arg4`, re-rolled each tic | duty cycle out of 360 |
+| 9804 `RandomFlickerLight` | **continuous** — a random radius across the range, held | tics to hold each value |
+
+A binary toggle at 1.25× is machinery. A continuous random signal at 3.3×,
+re-rolled every 2 tics, is static — and only 9804 can express it. Note `angle` is
+a **period, not a bearing**, on all three animated light types.
+
+Arms: `ab-smon.cmd static | statichard | staticcalm | staticoff`, which vary only
+`rt_dynlight_rndflicker_floor` and so leave every 9802 monitor identical.
 
 Note this is the **one** place a radius above `rt_dynlight_rsoft` is deliberate
 rather than the trap the `Lamp` docstring warns about. That warning predates the
