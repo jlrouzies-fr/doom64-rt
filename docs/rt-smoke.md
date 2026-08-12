@@ -85,14 +85,36 @@ lists a buffer upgrade rather than pretending 32 is enough forever.
     rt_smoke_rise          buoyancy, m/s^2
     rt_smoke_drag          velocity damping per second
     rt_smoke_inherit       fraction of the PLAYER's velocity, 0..1
-    rt_smoke_offset        metres ahead of the muzzle
+    rt_smoke_offset        FRACTION along the traced eye->muzzle segment
     rt_smoke_repeat        min TICS between spawns while the trigger is held
+    rt_smoke_trail         scale on the per-weapon trail (0 = single burst)
+    rt_smoke_curl          lateral turbulence, m/s^2 at one second of age
+    rt_smoke_perweapon     apply RT_SMOKE_PROFILES
     rt_smoke_far           the volume's reach when smoke has it to itself
     rt_smoke_ambient       unlit floor, smoke-only frames
     rt_smoke_illum         light from ALL lights
     rt_smoke_light_near    the near-light fade INSIDE a puff
+    rt_smoke_light_far     metres beyond which a light stops lighting smoke
     rt_smoke_illum_blend   temporal blend INSIDE a puff
-    rt_smoke_debug         NOARCH; what was actually sent
+    rt_smoke_autospawn     NOARCH; spawn with no weapon, for unattended capture
+    rt_smoke_debug         NOARCH; 1 logs the chain, 2..8 are shader probes
+
+### Per weapon
+
+`RT_SMOKE_PROFILES` in `rt_main.cpp` bends those defaults per ready weapon,
+matched by class-name substring the way `MuzzleFlashTintFor` picks the flash
+colour. The rows are **multipliers**, so tuning a cvar still moves every weapon
+together and a row only states how that weapon differs.
+
+| weapon | reads as |
+|---|---|
+| Pistol | a 2.5 cm thread off the barrel, 14-parcel trail, slow growth |
+| Shotgun / SSG | a fat cough, 1.3-1.6x, short trail |
+| Chaingun | small and frequent, no trail — at that fire rate a trail is the next shot |
+| Rocket | backblast: big, long-lived |
+| Plasma / BFG / Unmaker | faint. They are not combustion; the flash is the effect |
+
+`rt_smoke_perweapon 0` gives every gun the same profile, which is the A/B.
 
 All `RT_CVAR` (`CVAR_ARCHIVE`) except `rt_smoke_debug`, and **all pinned in
 `tools/launch-retribution-rt.cmd`** — a launcher pin overrides the compiled
@@ -250,9 +272,26 @@ the near-light fade that §4 modifies.
 
 ## 6. Testing
 
-`tools/ab-smoke.cmd <arm> [map]`, default MAP01 — an unfogged map, where smoke
-has the volume to itself and `rt_smoke_far` decides the resolution. Fire at a
-wall in a dark room.
+`.	oolsb.cmd <arm> [map] [-- +cvar value ...]`. Arms are config files in
+`tools/arms/*.cfg`, exec'd after the base pins so they win; `ab.cmd list` shows
+them. Fire at a wall in a dark room.
+
+**Do not add an arm as a command-line string.** That is what
+`launch-retribution-rt.cmd` used to do with its ~325 pins, and the assembled line
+hit cmd.exe's 8191-character limit — the passthrough sits at the end, so arms were
+silently dropped and ran on defaults while the tool printed the values it
+believed it had set. Three debugging runs were lost to a probe that never
+activated. Pins now live in `tools/d64rt-pins.cfg`.
+
+For an unattended capture, which is how all of this was verified:
+
+```
+gzdoom.exe -iwad <doom2.wad> -file <D64RTR_v15.WAD> +logfile <path> +map map03            +rt_smoke_autospawn 30 +i_pauseinbackground 0            +rt_autoshot 110 +rt_autoquit 160
+```
+
+`rt_smoke_autospawn` spawns parcels with no weapon and no trigger, so the render
+path can be exercised without input; `i_pauseinbackground 0` matters because an
+unfocused window throttles to about one tic a second.
 
 | arm | what it isolates |
 |---|---|
