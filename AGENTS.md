@@ -322,6 +322,12 @@ declaration cannot drift from its definition. Put nothing in that file except an
 - Prefer IWAD `D:\Games\GZDoom\doom2.wad` (Steam size 14604584). Avoid `D:\Games\Doom RT\DOOM2.WAD` (different size).
 - Keep RT materials in `Retribution-RT-Materials/` (or a pk3 overlay) — never edit Retribution originals in place.
 - Runtime mats the engine reads live under `sourcecode/gzdoom-rt/build/RelWithDebInfo/rt/` (gitignored). After regenerating, sync into that tree **and** `Retribution-RT-Materials/` when committing.
+- **`rt/data/textures.json` is part of that sync, and for a year it was not.** The authored
+  global meta is ~236 KB; the stock gzdoom-rt package ships a 30 KB one. Because the live
+  build tree is gitignored, a fresh clone silently got the **stock** file plus 427 missing
+  `_e` masks — every world emissive fell back to defaults and ceiling lamps read as
+  overbright. Nothing errors; the meta simply has fewer entries. After any generator run,
+  check `git status Doom64-Retribution/Retribution-RT-Materials/` is not empty.
 - Log engine patches in `compat-patches.md`. Update plan Status when phases move.
 - Phase 3 (`material-authoring-spec.md`) gates bulk Phase 4 authoring.
 
