@@ -29,7 +29,7 @@ OUT = r"G:\ai\Doom64-RT\Doom64-Retribution\d64r-mugshot.pk3"
 # Where the face sits in the 320x240 HUD: the gap between the key icons
 # (which end at x=88) and the centred 3-digit ammo counter (which starts
 # around x=137). y=207 lines the frame's top up with the HEALTH/ARMOR labels.
-FACE_X, FACE_Y = 132, -35
+FACE_X, FACE_Y = 105, -35
 
 
 def read_sbarinfo():
@@ -83,7 +83,8 @@ def inject_mugshot(sbar, pad=0):
 #   positive x = units from the left edge, negative x = units from the right
 #   negative y = units up from the bottom
 LABEL_Y, VALUE_Y = -32, -23   # were 208 / 217 in the 240-tall box
-HEALTH_X = 100                # left group (clear of the BATTERY column)
+HEALTH_X = 84                 # left group, packed. Measured in game: this balances the
+                              # gaps either side (BATTERY->HEALTH ~10u, HEALTH->face ~11u).
 AMMO_X = -24                  # right group, rightmost
 ARMOR_X = -70
 KEY_X = (-134, -120, -106)    # red | blue | yellow

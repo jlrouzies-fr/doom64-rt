@@ -515,6 +515,19 @@ Clear all enemy `_e` + strip meta: `python tools/clear_enemy_eye_emissives.py` t
     live with `rt_tex_translations_debug 1`; no lines means it is not.
     See `docs/blood-persist.md`.
 
+31. **`rt/wad` loads LAST, after every `-file` PWAD — so menu/UI art in a pk3
+    cannot win.** `GetCmdLineFiles` (`d_main.cpp:1963`) appends `rt/wad`
+    unconditionally after the `-file` list. RT ships its own plain-Doom-font
+    `M_LOADG`/`M_SAVEG`/`M_QUITG` and they overrode Retribution's Doom 64
+    patches; `M_NGAME`/`M_OPTION`/`M_SKULL1` stayed D64 only because RT ships no
+    copy of those. The tracked master for `rt/wad` content is
+    **`rt-wad-overlay/`** (both real trees are gitignored), mirrored by
+    `tools/sync-rt-wad.py`. Note the menu items are `PatchItem`s: a missing
+    patch draws **nothing**, it does not fall back to text.
+    Retribution's menu patches are plain `DBIGFONT` renders — `tools/gen_d64_menu_title.py`
+    reproduces seven of them at 0 mismatching pixels and can synthesise any new
+    word in the same face. See `compat-patches.md` (2026-08-13).
+
 ## Suggested next work
 
 1. **`RAYRECONSTRUCTION.md`** — RR is working and the worm artifact is solved (a stuck cvar, not a renderer bug). Open levers: `rt_spp_direct`/`rt_spp_indirect`, `rt_restir_initial`.

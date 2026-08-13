@@ -1,0 +1,3 @@
+// Noarch: this is a presentation toggle, not an A/B knob, but it must not be
+// baked into the ini either -- the launcher owns the value.
+server nosave bool rt_titlelogo = true;

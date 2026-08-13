@@ -16,6 +16,7 @@ set "SKY=G:\AI\Doom64-RT\Doom64-Retribution\d64r-rt-sky.pk3"
 set "LAVAFX=G:\AI\Doom64-RT\Doom64-Retribution\d64r-lava-fx.pk3"
 set "BLOODFX=G:\AI\Doom64-RT\Doom64-Retribution\d64r-blood-persist.pk3"
 set "WIDEGFX=G:\AI\Doom64-RT\Doom64-Retribution\d64r-widescreen-gfx.pk3"
+set "TITLOGO=G:\AI\Doom64-RT\Doom64-Retribution\d64r-rt-titlelogo.pk3"
 rem Doomguy mugshot. Must load AFTER %MOD%: it carries a full copy of
 rem Retribution's SBARINFO (plus the DrawMugShot), and SBARINFO replaces
 rem wholesale, so whichever copy loads last is the entire HUD.
@@ -614,7 +615,7 @@ rem
 rem Order matters and is preserved: the pins (including god/notarget) run BEFORE
 rem +map, exactly as they did inline, and %EXTRA% runs LAST so an arm still wins.
 start "" gzdoom.exe ^
-  -iwad "%IWAD%" -file "%MOD%" "%BM%" "%SKUL%" "%FLSH%" "%MUS%" "%FIX3D%" "%SEQL%" "%BULBTEX%" "%CTELFIX%" "%SKY%" -file "%LAVAFX%" "%BLOODFX%" "%WIDEGFX%" "%MUGSHOT%" -rtnolauncher -width 1280 -height 720 %RTDEBUG% ^
+  -iwad "%IWAD%" -file "%MOD%" "%BM%" "%SKUL%" "%FLSH%" "%MUS%" "%FIX3D%" "%SEQL%" "%BULBTEX%" "%CTELFIX%" "%SKY%" -file "%LAVAFX%" "%BLOODFX%" "%WIDEGFX%" "%MUGSHOT%" "%TITLOGO%" -rtnolauncher -width 1280 -height 720 %RTDEBUG% ^
   +logfile "%LOGF%" ^
   +win_y %WINY% ^
   +exec "%PINS%" ^

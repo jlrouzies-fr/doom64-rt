@@ -174,6 +174,43 @@ def split_blob(mask, k):
     return out
 
 
+def grow_hair(blob, alpha, strict, soft=100, iters=3):
+    """Hysteresis: extend a head into adjacent SOFTER alpha, upper half only.
+
+    The strict threshold is what keeps neighbouring heads apart, but it also
+    shaves the top of the hair, because that is exactly where the cut-out went
+    semi-transparent. Two frames showed it plainly: STFEVL0's crown sits at
+    alpha ~124 and was simply excluded, and STFGOD0's is opaque (248) but
+    DETACHED, so the largest-component pick dropped it. Both rendered with a
+    flat, chopped skull.
+
+    Growth is limited to rows above the blob's vertical midpoint so it cannot
+    reach the removebg drop shadow, which sits under the chin and is the reason
+    the strict threshold exists in the first place."""
+    ys, xs = np.where(blob)
+    mid = (ys.min() + ys.max()) // 2
+    soft_px = (alpha > soft)
+    cur = blob.copy()
+    h, w = blob.shape
+    for _ in range(iters):
+        # UPWARD only. Growing sideways as well sprouted stray nubs off the
+        # ears, and every extra row of mask height makes the aspect-preserving
+        # fit scale the whole head down - so this stays as small as it can be
+        # while still rounding the crown.
+        # up[y] must be true where the mask exists at y+1, i.e. the row ABOVE
+        # the current edge. Writing up[1:] = cur[:-1] marks the row BELOW and
+        # silently does nothing here, since growth is capped to the upper half.
+        up = np.zeros_like(cur)
+        up[:-1] = cur[1:]
+        band = np.zeros_like(cur)
+        band[:mid] = True
+        add = up & soft_px & band & ~cur
+        if not add.any():
+            break
+        cur |= add
+    return cur
+
+
 def segment_sheet(sheet_rgb, alpha=None, rows=6, dark=10, min_area=400, alpha_thr=200):
     """Locate every head in the sheet as its own connected blob.
 
@@ -200,6 +237,9 @@ def segment_sheet(sheet_rgb, alpha=None, rows=6, dark=10, min_area=400, alpha_th
     blobs = components(mask, min_area)
     if not blobs:
         raise SystemExit("no heads found in sheet")
+
+    if alpha is not None:
+        blobs = [grow_hair(b, alpha, alpha_thr) for b in blobs]
 
     info = []
     for b in blobs:

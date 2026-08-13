@@ -1,0 +1,123 @@
+version "4.10"
+
+// DOOM 64 RAY TRACED title card.
+//
+// Drawn over TITLEMAP -- Retribution's title screen is a real map (the zooming
+// "DOOM" geometry with the monster fight), which is why this works at all:
+// DrawTopStuff, and so RenderOverlay, is dispatched for GS_TITLELEVEL as well
+// as GS_LEVEL (d_main.cpp:1008). A static picture screen would give us no hook.
+//
+// This does NOT cover the ~4s black gap at startup. That is RTGL1 building its
+// pipelines inside V_Init2, before any frame is presented and long before
+// ZScript is drawing anything -- see the RT_BOOT timings. This card starts at
+// the first title frame, i.e. once the menu map is already up.
+
+class D64RtTitleLogo : EventHandler
+{
+	// Envelope, in tics (35/sec). maptime 0 is the first tic of the title map,
+	// so the card restarts every time you come back to the menu.
+	const T_HOLDOFF = 10;	// let the map draw one beat before the card appears
+	const T_FADEIN  = 35;	// 1.0s
+	const T_HOLD    = 210;	// 6.0s
+	const T_FADEOUT = 45;	// ~1.3s   -> ~8.4s total
+
+	// The sting goes through the MUSIC system, not S_StartSound.
+	//
+	// Two reasons. It has to follow the music slider, and there is no music
+	// channel for sound effects -- snd_musicvolume only ever reaches zmusic.
+	// And zmusic decodes MP3 through mpg123 as a matter of course, where the
+	// SFX path went silent on this same file.
+	//
+	// Nothing is lost by taking over the music: TITLEMAP's MAPINFO block sets
+	// no `music` key at all, so the title screen plays nothing today -- that is
+	// the "Unable to load : Unable to read header" in the console, an empty
+	// music name. gameinfo's titlemusic applies to a title PAGE, not a title
+	// MAP, so it never reaches this screen.
+	//
+	// Fired from WorldTick, not RenderOverlay: RenderOverlay is ui scope and
+	// runs per rendered frame, so an == test on maptime would retrigger at
+	// framerate. WorldTick is play scope and runs once per tic.
+	override void WorldTick()
+	{
+		if (gamestate != GS_TITLELEVEL)
+			return;
+
+		CVar en = CVar.FindCVar("rt_titlelogo");
+		if (en != null && !en.GetBool())
+			return;
+
+		// Fires on the tic the fade-in starts. maptime resets when the title
+		// map loops, so coming back to the menu plays it again -- intended.
+		// looping = false: it is a sting, it ends and leaves the screen quiet,
+		// which is what the title map did before. force = true so returning to
+		// the menu restarts it instead of being ignored as "already playing".
+		if (level.maptime == T_HOLDOFF)
+			S_ChangeMusic("D64RTINT", 0, false, true);
+	}
+
+	override void RenderOverlay(RenderEvent e)
+	{
+		if (gamestate != GS_TITLELEVEL)
+			return;
+
+		CVar en = CVar.FindCVar("rt_titlelogo");
+		if (en != null && !en.GetBool())
+			return;
+
+		int t = level.maptime - T_HOLDOFF;
+		if (t < 0)
+			return;
+
+		double alpha;
+		if (t < T_FADEIN)
+			alpha = double(t) / T_FADEIN;
+		else if (t < T_FADEIN + T_HOLD)
+			alpha = 1.0;
+		else if (t < T_FADEIN + T_HOLD + T_FADEOUT)
+			alpha = 1.0 - double(t - T_FADEIN - T_HOLD) / T_FADEOUT;
+		else
+			return;
+
+		// Ease the ramp so the fade reads as light rather than as a linear
+		// opacity slider. Squaring biases it dark, which suits a bright logo
+		// over the near-black title map.
+		alpha = alpha * alpha;
+
+		TextureID logo = TexMan.CheckForTexture("D64RTLGO", TexMan.Type_Any);
+		if (!logo.IsValid())
+			return;
+
+		// Virtual 640x400: matches the 16:10-ish letterbox the title map is
+		// composed for, and DTA_KeepRatio stops it stretching on ultrawide.
+		int vw = 640, vh = 400;
+		Vector2 sz = TexMan.GetScaledSize(logo);
+		double drawW = vw * 0.62;
+		double drawH = drawW * sz.y / sz.x;
+		double x = (vw - drawW) * 0.5;
+		double y = vh * 0.16;
+
+		Screen.DrawTexture(logo, false, x, y,
+			DTA_VirtualWidth, vw, DTA_VirtualHeight, vh,
+			DTA_KeepRatio, true,
+			DTA_DestWidthF, drawW, DTA_DestHeightF, drawH,
+			DTA_Alpha, alpha);
+
+		// "RAY TRACED" in the game's own big font rather than baked into the
+		// PNG -- DBIGFONT is Retribution's, so the line matches the rest of the
+		// menu instead of importing a foreign typeface.
+		Font fnt = Font.GetFont("DBIGFONT");
+		if (fnt == null)
+			fnt = bigfont;
+		if (fnt == null)
+			return;
+
+		string s = "RAY TRACED";
+		double tw = fnt.StringWidth(s);
+		double ty = y + drawH + vh * 0.02;
+		Screen.DrawText(fnt, Font.CR_UNTRANSLATED,
+			int((vw - tw) * 0.5), int(ty), s,
+			DTA_VirtualWidth, vw, DTA_VirtualHeight, vh,
+			DTA_KeepRatio, true,
+			DTA_Alpha, alpha);
+	}
+}

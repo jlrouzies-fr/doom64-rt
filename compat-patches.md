@@ -1129,3 +1129,44 @@ than across it — so only the weaker of the two views fell under threshold.
 units `rt-fog.md` §6 documents, across nine maps; normalising it would retune all
 of them for a MAP01 report. `ab-smoke.cmd fogsafe` is the check that it did not
 move. Full write-up: `docs/moon-and-sky-leaks.md` §5.4.
+
+## Doom 64 menu graphics — RT's `rt/wad` was overriding the mod (2026-08-13)
+
+**Symptom.** On the main menu, `New Game` and `Options` were in the Doom 64 face
+while `Load` / `Save` / `Quit` were plain Doom 1/2 lettering, and the RT options
+header read `GRAPHICS` in that same plain face.
+
+**Cause.** Not a font fallback — all five main-menu entries are `PatchItem`s, so
+no font is consulted. `GetCmdLineFiles` (`d_main.cpp:1963`) adds every `-file`
+PWAD and then appends `rt/wad` **unconditionally, last**, so nothing loaded with
+`-file` can ever override an `rt/wad` lump. RT ships its own
+`graphics/M_LOADG|M_SAVEG|M_QUITG.png` in the plain face and they beat
+Retribution's D64 patches; it ships **no** `M_NGAME`, `M_OPTION` or `M_SKULL1`,
+which is exactly why those kept the D64 look. `M_DISOPT` / `M_DISP` (both reading
+`GRAPHICS`) are RT's own — Doom 64 never had that word, so there was no mod art
+to lose the fight.
+
+**Change** (no engine or RTGL1 rebuild; art only):
+
+| file | change |
+|---|---|
+| `tools/extract_d64_menu_gfx.py` | new — copies `M_LOADG` / `M_SAVEG` / `M_QUITG` out of `D64RTR_v15.WAD` **byte for byte** into `rt-wad-overlay/graphics/` |
+| `tools/gen_d64_menu_title.py` | new — renders a title from the mod's `DBIGFONT` for words the mod has no art for; writes `M_DISOPT` / `M_DISP` as `Graphics` |
+| `tools/sync-rt-wad.py` | walks subdirectories (was top-level only) and creates destination dirs, so `graphics/` mirrors into both `rt/wad` trees |
+
+**Retribution's menu patches are font renders, not drawn art.** `DBIGFONT`
+(FON2) at zero tracking, cropped to the ink, with the font's grey ramp remapped
+to the menu's reds, reproduces `M_NGAME` / `M_NEWG` / `M_LOADG` / `M_SAVEG` /
+`M_OPTION` / `M_OPTTTL` / `M_QUITG` at **0 mismatching pixels** — that is what
+`gen_d64_menu_title.py --verify` asserts, and it is why a synthesised `Graphics`
+is indistinguishable from shipped art. The casing matters: the font is small-caps,
+so the words are `"Options"` / `"Load Game"`, not `"OPTIONS"`. Two traps paid for:
+the ramp needed palette indices **1 and 10** as well as 2–9 (they appear only in
+`m`/`d`/`v` and in `Q`'s descender, so `Options` alone verified clean while the
+two-word lumps were 4–8 px out), and the height must come from the ink, not a
+constant — `Quit Game` is 14 rows where every other patch is 13.
+
+**Do not put menu art in a `-file` pk3.** It cannot win. The tracked master is
+`rt-wad-overlay/`, mirrored by `tools/sync-rt-wad.py`; both real `rt/wad` trees
+are gitignored, so edits made directly in them are invisible to git and are lost
+on the next build refresh.

@@ -41,12 +41,22 @@ TARGETS = [
 ]
 
 
+def overlay_files():
+    """Every file in the overlay, as a path relative to it (subdirs included)."""
+    for dirpath, dirnames, filenames in os.walk(OVERLAY):
+        dirnames[:] = [d for d in dirnames if not d.startswith(".")]
+        for f in filenames:
+            if f.startswith("."):
+                continue
+            yield os.path.relpath(os.path.join(dirpath, f), OVERLAY)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--check", action="store_true", help="report drift without copying")
     args = ap.parse_args()
 
-    files = sorted(f for f in os.listdir(OVERLAY) if not f.startswith("."))
+    files = sorted(overlay_files())
     if not files:
         raise SystemExit("rt-wad-overlay/ is empty")
 
@@ -66,6 +76,7 @@ def main():
             if args.check:
                 print(f"  DRIFT {f}  ->  {target}")
             else:
+                os.makedirs(os.path.dirname(dst), exist_ok=True)
                 shutil.copy2(src, dst)
                 print(f"  COPIED {f}  ->  {target}")
 
