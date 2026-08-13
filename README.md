@@ -20,6 +20,16 @@ Every light in the game is a real emitter, and every surface answers to it.
 <img src="https://img.shields.io/badge/GPU-hardware_ray_tracing-8A2B12?style=for-the-badge&labelColor=1B1B1B" alt="GPU: hardware ray tracing required">
 </p>
 
+<p>
+<a href="AI-DECLARATION.md"><img src="https://img.shields.io/badge/䷼%20AI--DECLARATION-copilot-fee2e2?labelColor=fee2e2" alt="AI-DECLARATION: copilot"></a>
+</p>
+
+<sub>
+Written by AI under human direction. The author is a .NET engineer, not a graphics
+programmer:<br>the direction, the judgement of every rendered frame and every decision are
+theirs — the code is Claude's. <a href="AI-DECLARATION.md">Details</a>.
+</sub>
+
 <sub><b><a href="AGENTS.md">AGENTS.md</a></b> &nbsp;·&nbsp; <a href="docs/doom64-retribution-pathtracing-plan.md">Path-tracing plan</a> &nbsp;·&nbsp; <a href="docs/material-authoring-spec.md">Material spec</a> &nbsp;·&nbsp; <a href="compat-patches.md">Compat patches</a> &nbsp;·&nbsp; <b><a href="CREDITS.md">Credits</a></b></sub>
 
 </div>
@@ -34,6 +44,7 @@ Every light in the game is a real emitter, and every surface answers to it.
 - [**Features**](#features) — [lighting](#lighting) · [atmosphere](#atmosphere) · [sprites, monsters, gore](#sprites) · [HUD and menus](#hud) · [denoising and upscaling](#denoising)
 - [**For developers**](#developers) — the doc index, in [DEVELOPERS.md](DEVELOPERS.md)
 - [**Credits**](#credits) — RTGL1, gzdoom-rt, Retribution, Doom 64
+- [**AI declaration**](AI-DECLARATION.md) — what was written by AI, and what wasn't
 
 <br>
 
