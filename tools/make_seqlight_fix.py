@@ -221,6 +221,56 @@ class Shaft:
 
 
 SHAFTS = [
+    # ---- MAP02 SFLATAR FLOOR PLATE ---------------------------------------------
+    # From the game (rt-console.log, MAP02):
+    #
+    #   whatsthat: sector 4  lightlevel 220  tag 0  floor texture 'SFLATAR'
+    #              threshold 200 -> ABOVE: this surface SELF-EMITS
+    #              brightest neighbour: sector 6 at 130  (delta +90)
+    #
+    # tag 0, so no ACS -- this is paint. 160x160u, nearest light-bearing actor 233u,
+    # i.e. outside it.
+    #
+    # SFLATAR is checked, not assumed, because it is ONE LETTER from SFLATAQ, which
+    # is a real 4x4 bulb array with an authored _e and its own analytic light path.
+    # Extracted side by side, SFLATAR is a decorative diamond floor plate: the pale
+    # shapes are pattern, not bulbs. It has no _e, and no engine matcher takes it --
+    # RT_UploadCeilingEdgeLamps accepts only SFLATAS/SFLATAQ, and even SFLATAP is
+    # excluded there as "a recessed grille/vent panel with slats".
+    #
+    # This is practices §20 verbatim: SPACEAR was a plain trim panel sitting one
+    # letter from SPACEAZ's bulb array, and matching by name lit blank wall on MAP02
+    # while missing every real lamp. Confirm the fixture from the pixels.
+    #
+    # AND THEN DISABLED, because the pixels were the wrong question. It was reported
+    # with a doubt attached -- "i do have a doubt if its bad" -- and the doubt was
+    # right. Two things say this one is AUTHORED:
+    #
+    #   - GAME-WIDE, 6 OF THE 7 SFLATAR FLOORS ARE ABOVE THEIR OWN MAP'S THRESHOLD.
+    #     One bright plate is a candidate; six out of seven is a motif. Compare the
+    #     §20 method that vindicated it -- measure the rule against the whole game
+    #     before believing what one map shows you.
+    #   - practices §4 settles what to do about it, and settled it ON THIS MAP: the
+    #     MAP02 corridor "shows glowing floor panels, not a bulb", and the verdict
+    #     was that surface self-emission is THE RIGHT SHAPE for that. rt_sector_emis
+    #     exists for this exact case. Stripping it removes the feature the cvar was
+    #     written to provide.
+    #
+    # What separates it from the MAP22/23/24 entries below: those are 255 on walls,
+    # recesses and whole rooms whose own hosts are darker and which repeat nowhere;
+    # this is a small floor plate, on a texture the game paints bright wherever it
+    # uses it. The giveaway that it "reads flat" -- objects resting on it stay dark
+    # -- is §12, emissive not being a light source, and is a limitation of the
+    # construct, NOT evidence the paint is fake.
+    #
+    # If it ever does want to light the room, the answer is a LAMPS entry adding a
+    # real light thing over the plate, never re-enabling this.
+    Shaft(
+        "MAP02", [4], from_light=220, to_light=130,
+        enabled=False,
+        note="SURVEYED, NOT STRIPPED. SFLATAR floor plate x1, 160x160u, L220 vs host 130 (sector 6), nearest light-bearing actor 233u. Looks exactly like a painted shaft and is not one: 6 of 7 SFLATAR floors game-wide are painted above their map threshold, and §4 calls a glowing floor panel the case rt_sector_emis is for.",
+    ),
+
     # ---- MAP01 MAIN HALL -------------------------------------------------------
     # Reported as screen/level1-ACSturninglight.png, and named exactly right:
     #
