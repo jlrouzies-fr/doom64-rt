@@ -1,7 +1,9 @@
+# Repo root, derived from this script's own location.
+$PROJ = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 # Launch Retribution 20s max, click Launch if needed, capture window bitmap.
 param([int]$WaitSeconds = 20)
 $ErrorActionPreference = 'Stop'
-$Root = 'G:\AI\Doom64-RT'
+$Root = '$PROJ'
 $Wd = Join-Path $Root 'sourcecode\gzdoom-rt\build\RelWithDebInfo'
 $ShotDir = Join-Path $Root 'screenshots'
 New-Item -ItemType Directory -Force -Path $ShotDir | Out-Null
@@ -12,7 +14,7 @@ Start-Sleep -Milliseconds 300
 
 $arg = @(
   '-iwad','D:\Games\GZDoom\doom2.wad',
-  '-file','G:\AI\Doom64-RT\Doom64-Retribution\D64RTR_v15.WAD','G:\AI\Doom64-RT\Doom64-Retribution\D64RTR_BRIGHTMAPS.PK3',
+  '-file','$PROJ\Doom64-Retribution\D64RTR_v15.WAD','$PROJ\Doom64-Retribution\D64RTR_BRIGHTMAPS.PK3',
   '-rtnolauncher','-nosound','-width','1280','-height','720',
   '+vid_fullscreen','0','+map','map01',
   '+rt_mod_compat','3','+r_drawvoxels','0','+d64_enterfade','0',

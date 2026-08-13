@@ -10,7 +10,10 @@ import re
 import shutil
 from pathlib import Path
 
-ROOT = Path(r"G:\AI\Doom64-RT")
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[1]
+
+ROOT = PROJ_ROOT
 WORLD = ROOT / r"Doom64-Retribution\Retribution-RT-Materials\rt\data\textures_world_emis.json"
 WORLD_BAK = WORLD.with_suffix(".json.bak")
 

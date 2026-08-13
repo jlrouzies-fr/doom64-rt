@@ -1,3 +1,5 @@
+# Repo root, derived from this script's own location.
+$PROJ = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 param(
   [string]$OutDir = '',
   [int]$Width = 960,
@@ -11,7 +13,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $py = 'C:\Users\Winter\AppData\Local\Programs\Python\Python313\python.exe'
-$root = 'G:\AI\Doom64-RT'
+$root = '$PROJ'
 if (-not $OutDir) {
   $OutDir = Join-Path $root 'tools\_enemy_gallery\batch_eyes'
 }
@@ -49,9 +51,9 @@ $idxCsv = ($indexList -join ',')
 & $py -c @"
 import json, sys
 from pathlib import Path
-sys.path.insert(0, r'G:/AI/Doom64-RT/tools')
+sys.path.insert(0, r'$PROJ/tools')
 from build_enemy_gallery import write_tour_zscript
-root = Path(r'G:/AI/Doom64-RT')
+root = Path(r'$PROJ')
 booths = json.loads((root/'tools/_enemy_gallery/booths.json').read_text(encoding='utf-8'))['booths']
 idxs = [int(x) for x in '$idxCsv'.split(',') if x.strip() != '']
 chunk = [dict(booths[i]) for i in idxs]

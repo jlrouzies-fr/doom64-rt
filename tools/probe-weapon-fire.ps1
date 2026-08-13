@@ -1,3 +1,5 @@
+# Repo root, derived from this script's own location.
+$PROJ = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 ﻿# Drive a weapon's Fire animation with no user input and capture one screenshot per
 # tic, to find out why the plasma rifle / BFG sprite disappears while shooting.
 #
@@ -17,7 +19,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$Root = 'G:\ai\Doom64-RT'
+$Root = '$PROJ'
 $Py = 'C:\Users\Winter\AppData\Local\Programs\Python\Python313\python.exe'
 $Probe = Join-Path $Root 'Doom64-Retribution\d64r-weapon-fire-probe.pk3'
 $suffix = if ($Tag) { "_$Tag" } else { '' }

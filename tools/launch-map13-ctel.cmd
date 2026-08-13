@@ -1,4 +1,6 @@
 @echo off
+rem Repo root, derived from this script's own location.
+for %%I in ("%~dp0..") do set "PROJ=%%~fI"
 rem MAP13 CTEL alcove — launches map 13 with its OWN console log.
 rem
 rem The shared rt-console.log is written by every launcher, so with several agents
@@ -38,5 +40,5 @@ rem rt_spin_panel_debug prints the orbiting light each second: which sector, whi
 rem animation frame it read, the bearing it derived and where it put the light. If the
 rem light visibly leads or lags the lit gem, nudge +rt_spin_panel_yaw; if it travels the
 rem wrong way round the panel, +rt_spin_panel_cw 0.
-call "%~dp0launch-retribution-rt.cmd" 13 -- +logfile "G:\AI\Doom64-RT\rt-map13.log" ^
+call "%~dp0launch-retribution-rt.cmd" 13 -- +logfile "%PROJ%\rt-map13.log" ^
   +rt_tex_probe CTEL +rt_spin_panel_debug 1 %*

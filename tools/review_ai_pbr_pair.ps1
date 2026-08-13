@@ -1,3 +1,5 @@
+# Repo root, derived from this script's own location.
+$PROJ = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 param(
   [string]$Indices = '0,1,2,3,4',
   [string]$OutDir = '',
@@ -14,8 +16,8 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$pyAi = 'G:\AI\Doom64-RT\tools\.venv-ai\Scripts\python.exe'
-$root = 'G:\AI\Doom64-RT'
+$pyAi = '$PROJ\tools\.venv-ai\Scripts\python.exe'
+$root = '$PROJ'
 $review = Join-Path $root 'tools\review_gallery_batch.ps1'
 $gen = Join-Path $root 'tools\gen_ai_pbr.py'
 if (-not $OutDir) {

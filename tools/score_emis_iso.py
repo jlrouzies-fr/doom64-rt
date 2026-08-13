@@ -12,7 +12,10 @@ from pathlib import Path
 
 from PIL import Image
 
-ROOT = Path(r"G:\AI\Doom64-RT")
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[1]
+
+ROOT = PROJ_ROOT
 ROOMS_JSON = ROOT / r"tools\_emis_iso\rooms.json"
 
 

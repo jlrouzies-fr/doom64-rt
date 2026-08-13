@@ -4,8 +4,11 @@ import re
 import struct
 from pathlib import Path
 
-SRC = Path(r"G:\AI\Doom64-RT\tools\_map_cmp\MAP01_TEXTMAP.txt")
-OUT_DIR = Path(r"G:\AI\Doom64-RT\tools\_map_isol")
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[1]
+
+SRC = PROJ_ROOT / r"tools\_map_cmp\MAP01_TEXTMAP.txt"
+OUT_DIR = PROJ_ROOT / r"tools\_map_isol"
 
 
 def wad(items):

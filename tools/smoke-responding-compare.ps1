@@ -1,6 +1,8 @@
+# Repo root, derived from this script's own location.
+$PROJ = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 # Max 20s. Compare Responding: Retribution menu / map01 / Doom2 map01
 $ErrorActionPreference = 'Stop'
-$wd = 'G:\AI\Doom64-RT\sourcecode\gzdoom-rt\build\RelWithDebInfo'
+$wd = '$PROJ\sourcecode\gzdoom-rt\build\RelWithDebInfo'
 Get-Process gzdoom -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
 Remove-Item -Recurse -Force "$wd\rt\scenes\d64rtr_v15_map01" -ErrorAction SilentlyContinue
 
@@ -54,7 +56,7 @@ function Smoke([string]$name, [string]$arg) {
 }
 
 $base = '-iwad D:\Games\GZDoom\doom2.wad -rtnolauncher -nosound -width 1280 -height 720 +vid_fullscreen 0 +rt_autoexport false +rt_fluid false +rt_upscale_dlss 0 +rt_classic 1 +rt_mod_compat 3 +r_drawvoxels 0 +d64_enterfade 0'
-$mod = '-file G:\AI\Doom64-RT\Doom64-Retribution\D64RTR_v15.WAD G:\AI\Doom64-RT\Doom64-Retribution\D64RTR_BRIGHTMAPS.PK3'
+$mod = '-file $PROJ\Doom64-Retribution\D64RTR_v15.WAD $PROJ\Doom64-Retribution\D64RTR_BRIGHTMAPS.PK3'
 
 Smoke 'ret_menu' "$base $mod"
 Smoke 'ret_map01' "$base $mod +map map01"

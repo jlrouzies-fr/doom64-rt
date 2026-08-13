@@ -1,7 +1,10 @@
 import struct, re
 from pathlib import Path
 
-p = Path(r"G:\AI\Doom64-RT\Doom64-Retribution\D64RTR_v15.WAD")
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[1]
+
+p = PROJ_ROOT / r"Doom64-Retribution\D64RTR_v15.WAD"
 d = p.read_bytes()
 n, o = struct.unpack_from("<II", d, 4)
 lumps = []
@@ -22,7 +25,7 @@ def get_map_lump(mapname, lumpname):
     return None
 
 
-out = Path(r"G:\AI\Doom64-RT\tools\_map_cmp")
+out = PROJ_ROOT / r"tools\_map_cmp"
 out.mkdir(exist_ok=True)
 
 for m in ["MAP01", "MAP02"]:

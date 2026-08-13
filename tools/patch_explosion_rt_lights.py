@@ -13,7 +13,10 @@ import json
 import re
 from pathlib import Path
 
-ROOT = Path(r"G:\AI\Doom64-RT")
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[1]
+
+ROOT = PROJ_ROOT
 RT_DATA = ROOT / r"sourcecode\gzdoom-rt\build\RelWithDebInfo\rt\data"
 GLOBAL_JSON = RT_DATA / "textures.json"
 SCENE_JSON = RT_DATA / r"scenes\d64rtr_v15_map01\textures.json"

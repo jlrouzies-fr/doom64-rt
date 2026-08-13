@@ -27,7 +27,10 @@ import subprocess
 import sys
 from pathlib import Path
 
-ROOT = Path(r"G:\AI\Doom64-RT")
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[1]
+
+ROOT = PROJ_ROOT
 LAB = ROOT / "tools" / "smoke-lab.cmd"
 # 96 = the bright beige room, 97 = the dark cool one. Colour questions
 # belong on 96: a grey puff on a dark blue wall is easy, and that is

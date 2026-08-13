@@ -1,4 +1,6 @@
-param([string]$Out = 'G:\AI\Doom64-RT\tools\_map_isol\play_shot.png')
+# Repo root, derived from this script's own location.
+$PROJ = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+param([string]$Out = '$PROJ\tools\_map_isol\play_shot.png')
 # Capture the gzdoom client area from the desktop after forcing the window
 # topmost at a known rect. PrintWindow is broken for RT/Vulkan; unfocused
 # CopyFromScreen grabs whatever overlaps the game (browser, etc.).

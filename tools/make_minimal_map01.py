@@ -2,6 +2,9 @@
 import struct
 from pathlib import Path
 
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[1]
+
 TEXTMAP = r"""namespace = "zdoom";
 thing
 {
@@ -51,7 +54,7 @@ def wad(lumps):
     header = struct.pack("<4sII", b"PWAD", len(lumps), 12 + len(body))
     return header + body + directory
 
-out = Path(r"G:\AI\Doom64-RT\tools\map01_minimal.wad")
+out = PROJ_ROOT / r"tools\map01_minimal.wad"
 data = wad([
     ("MAP01", b""),
     ("TEXTMAP", TEXTMAP.encode("utf-8")),

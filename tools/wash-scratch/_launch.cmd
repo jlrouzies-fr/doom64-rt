@@ -1,6 +1,8 @@
 @echo off
 rem Shared WashScratch launcher. Expects WASH_* vars set by caller.
 setlocal EnableExtensions
+rem Repo root, derived from this script's own location.
+for %%I in ("%~dp0..\..") do set "PROJ=%%~fI"
 
 if not defined WASH_TITLE set "WASH_TITLE=WashScratch"
 if not defined WASH_MAPBOOST set "WASH_MAPBOOST=200"
@@ -10,7 +12,7 @@ if not defined WASH_DYNLIGHT set "WASH_DYNLIGHT=0"
 if not defined WASH_MAXSCR set "WASH_MAXSCR=3"
 if not defined WASH_EMPTY set "WASH_EMPTY=0"
 
-set "ROOT=G:\AI\Doom64-RT"
+set "ROOT=%PROJ%"
 set "ENGINE=%ROOT%\sourcecode\gzdoom-rt\build\WashScratch"
 set "IWAD=D:\Games\GZDoom\doom2.wad"
 set "MOD=%ROOT%\Doom64-Retribution\D64RTR_v15.WAD"

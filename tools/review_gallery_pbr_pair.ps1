@@ -1,3 +1,5 @@
+# Repo root, derived from this script's own location.
+$PROJ = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 param(
   [int]$Start = 0,
   [int]$Count = 10,
@@ -10,7 +12,7 @@ $ErrorActionPreference = 'Stop'
 if ($Count -gt 30) { throw "Count max is 30 (got $Count)." }
 
 $py = 'C:\Users\Winter\AppData\Local\Programs\Python\Python313\python.exe'
-$root = 'G:\AI\Doom64-RT'
+$root = '$PROJ'
 $review = Join-Path $root 'tools\review_gallery_batch.ps1'
 $apply = Join-Path $root 'tools\apply_batch_category_pbr.py'
 if (-not $OutDir) {

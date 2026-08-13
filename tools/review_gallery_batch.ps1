@@ -1,3 +1,5 @@
+# Repo root, derived from this script's own location.
+$PROJ = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 param(
   [int]$Start = 0,
   [int]$Count = 30,
@@ -22,7 +24,7 @@ $ErrorActionPreference = 'Stop'
 if ($Count -gt 30 -and -not $Indices) { throw "Count max is 30 (got $Count)." }
 
 $py = 'C:\Users\Winter\AppData\Local\Programs\Python\Python313\python.exe'
-$root = 'G:\AI\Doom64-RT'
+$root = '$PROJ'
 
 $indexList = @()
 if ($Indices) {

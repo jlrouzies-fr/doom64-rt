@@ -6,7 +6,10 @@ import subprocess
 import sys
 from pathlib import Path
 
-ROOT = Path(r"G:\AI\Doom64-RT")
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[1]
+
+ROOT = PROJ_ROOT
 ENGINE = ROOT / r"sourcecode\gzdoom-rt\build\RelWithDebInfo"
 PY_SYNC = ROOT / r"tools\sync_gallery_pbr_set.py"
 BUILD = ROOT / r"tools\build_emis_gallery.py"

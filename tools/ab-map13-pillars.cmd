@@ -1,4 +1,6 @@
 @echo off
+rem Repo root, derived from this script's own location.
+for %%I in ("%~dp0..") do set "PROJ=%%~fI"
 rem MAP13 courtyard pillars — "they get illuminated regularly".
 rem
 rem The pillars are the H119 sectors 47-52, 61-69. Ruled out from the map data, so do
@@ -58,5 +60,5 @@ if not defined X (
 echo MAP13 pillars — arm: %ARM%
 echo   %X%
 call "%~dp0launch-retribution-rt.cmd" 13 -- ^
-  +logfile "G:\AI\Doom64-RT\rt-map13-pillars-%ARM%.log" ^
+  +logfile "%PROJ%\rt-map13-pillars-%ARM%.log" ^
   +rt_tex_probe H119 +rt_lightlevel_watch 1 %X%

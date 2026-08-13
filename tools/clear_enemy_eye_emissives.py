@@ -6,7 +6,7 @@ import re
 import sys
 from pathlib import Path
 
-ROOT = Path(r"G:\AI\Doom64-RT")
+ROOT = PROJ_ROOT
 sys.path.insert(0, str(ROOT / "tools"))
 from gen_enemy_eye_emissives import (  # noqa: E402
     ENEMY_GALLERY_SCENE,
@@ -18,6 +18,9 @@ from gen_enemy_eye_emissives import (  # noqa: E402
     OVERLAY,
     SCENE,
 )
+
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[1]
 
 DIRS = (MAT, MAT_DEV, OMAT)
 

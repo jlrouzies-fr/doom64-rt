@@ -1,5 +1,9 @@
 import re
 from collections import Counter
+from pathlib import Path
+
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[1]
 
 def parse(path):
     t = open(path, encoding="utf-8", errors="replace").read()
@@ -29,8 +33,8 @@ def parse(path):
     return types, specs, ss, floors
 
 for label, p in [
-    ("MAP01", r"G:\AI\Doom64-RT\tools\_map_cmp\MAP01_TEXTMAP.txt"),
-    ("MAP02", r"G:\AI\Doom64-RT\tools\_map_cmp\MAP02_TEXTMAP.txt"),
+    ("MAP01", str(PROJ_ROOT / r"tools\_map_cmp\MAP01_TEXTMAP.txt")),
+    ("MAP02", str(PROJ_ROOT / r"tools\_map_cmp\MAP02_TEXTMAP.txt")),
 ]:
     types, specs, ss, floors = parse(p)
     print("====", label)

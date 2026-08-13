@@ -1,9 +1,11 @@
+# Repo root, derived from this script's own location.
+$PROJ = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 # Build three RTGL binary stashes for sequential wash QA (01-05 launchers).
 # Variants: live (current HitInfo), indir_kill (INDIR emission=0), clamp (min 0.05).
 # Takes several minutes (3× RTGL rebuild). Quit gzdoom before running.
 
 $ErrorActionPreference = 'Stop'
-$Root = 'G:\AI\Doom64-RT'
+$Root = '$PROJ'
 $HitInfo = Join-Path $Root 'deps\RTGL\Source\Shaders\HitInfo.inl'
 $Cache = Join-Path $Root 'deps\RTGL\Source\Shaders\Build\GenerateShadersCache.txt'
 $EngineRt = Join-Path $Root 'sourcecode\gzdoom-rt\build\RelWithDebInfo\rt'

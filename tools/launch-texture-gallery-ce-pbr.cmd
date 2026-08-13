@@ -1,15 +1,17 @@
 @echo off
 setlocal
-set "ENGINE=G:\AI\Doom64-RT\sourcecode\gzdoom-rt\build\RelWithDebInfo"
+rem Repo root, derived from this script's own location.
+for %%I in ("%~dp0..") do set "PROJ=%%~fI"
+set "ENGINE=%PROJ%\sourcecode\gzdoom-rt\build\RelWithDebInfo"
 set "IWAD=D:\Games\GZDoom\doom2.wad"
-set "MOD=G:\AI\Doom64-RT\Doom64-Retribution\D64RTR_v15.WAD"
-set "BM=G:\AI\Doom64-RT\Doom64-Retribution\D64RTR_BRIGHTMAPS.PK3"
-set "GAL=G:\AI\Doom64-RT\Doom64-Retribution\d64rtexg.wad"
-set "INFO=G:\AI\Doom64-RT\Doom64-Retribution\d64r-texgallery-mapinfo.pk3"
-set "SKY=G:\AI\Doom64-RT\Doom64-Retribution\d64r-rt-sky.pk3"
+set "MOD=%PROJ%\Doom64-Retribution\D64RTR_v15.WAD"
+set "BM=%PROJ%\Doom64-Retribution\D64RTR_BRIGHTMAPS.PK3"
+set "GAL=%PROJ%\Doom64-Retribution\d64rtexg.wad"
+set "INFO=%PROJ%\Doom64-Retribution\d64r-texgallery-mapinfo.pk3"
+set "SKY=%PROJ%\Doom64-Retribution\d64r-rt-sky.pk3"
 set "PY=C:\Users\Winter\AppData\Local\Programs\Python\Python313\python.exe"
-set "CE_PBR=G:\AI\Doom64-RT\DoomCE\DOOM64.CE.Addon.GFX.PBR.pk3"
-set "CE_OUT=G:\AI\Doom64-RT\Doom64-Retribution\Retribution-RT-Materials-CE\manifest.json"
+set "CE_PBR=%PROJ%\DoomCE\DOOM64.CE.Addon.GFX.PBR.pk3"
+set "CE_OUT=%PROJ%\Doom64-Retribution\Retribution-RT-Materials-CE\manifest.json"
 
 cd /d "%ENGINE%" || exit /b 1
 rem MAP99 texture gallery with DoomCE Substance PBR converted to RTGL1 _n/_orm.
@@ -35,14 +37,14 @@ if not exist "%GAL%" (
 )
 if not exist "%CE_PBR%" (
   echo ERROR: missing %CE_PBR%
-  echo Put Doom 64 CE Full under G:\AI\Doom64-RT\DoomCE\
+  echo Put Doom 64 CE Full under %PROJ%\DoomCE\
   exit /b 1
 )
 
 echo Converting CE PBR if needed...
-"%PY%" "G:\AI\Doom64-RT\tools\convert_ce_pbr_to_rt.py" || exit /b 1
+"%PY%" "%PROJ%\tools\convert_ce_pbr_to_rt.py" || exit /b 1
 echo Syncing CE PBR maps into engine rt\mat ...
-"%PY%" "G:\AI\Doom64-RT\tools\sync_gallery_pbr_set.py" ce || exit /b 1
+"%PY%" "%PROJ%\tools\sync_gallery_pbr_set.py" ce || exit /b 1
 
 echo Texture gallery MAP99 — DoomCE PBR overlay + DLSS-RR
 echo   Compare vs baseline: tools\launch-texture-gallery-rt.cmd

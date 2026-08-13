@@ -10,7 +10,10 @@ import math
 import zipfile
 from pathlib import Path
 
-ROOT = Path(r"G:\AI\Doom64-RT")
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[1]
+
+ROOT = PROJ_ROOT
 PKG = ROOT / r"tools\d64r-gallery-orbit-sweep"
 OUT_PK3 = ROOT / r"Doom64-Retribution\d64r-gallery-orbit-sweep.pk3"
 

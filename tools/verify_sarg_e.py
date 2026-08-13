@@ -1,7 +1,10 @@
 from pathlib import Path
 import re
 
-mat = Path(r"G:\AI\Doom64-RT\sourcecode\gzdoom-rt\build\RelWithDebInfo\rt\mat")
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[1]
+
+mat = PROJ_ROOT / r"sourcecode\gzdoom-rt\build\RelWithDebInfo\rt\mat"
 files = sorted(mat.glob("SARG*_e.png"))
 print("mat exists", mat.exists(), "count", len(files))
 for f in files[:8]:

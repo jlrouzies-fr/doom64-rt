@@ -1,14 +1,16 @@
 @echo off
 setlocal
-set "ENGINE=G:\AI\Doom64-RT\sourcecode\gzdoom-rt\build\RelWithDebInfo"
+rem Repo root, derived from this script's own location.
+for %%I in ("%~dp0..") do set "PROJ=%%~fI"
+set "ENGINE=%PROJ%\sourcecode\gzdoom-rt\build\RelWithDebInfo"
 set "IWAD=D:\Games\GZDoom\doom2.wad"
-set "MOD=G:\AI\Doom64-RT\Doom64-Retribution\D64RTR_v15.WAD"
-set "BM=G:\AI\Doom64-RT\Doom64-Retribution\D64RTR_BRIGHTMAPS.PK3"
-set "GAL=G:\AI\Doom64-RT\Doom64-Retribution\d64renemyg.wad"
-set "INFO=G:\AI\Doom64-RT\Doom64-Retribution\d64r-enemygallery-mapinfo.pk3"
-set "SKY=G:\AI\Doom64-RT\Doom64-Retribution\d64r-rt-sky.pk3"
-set "TOUR=G:\AI\Doom64-RT\Doom64-Retribution\d64r-enemy-gallery-tour.pk3"
-set "SKUL=G:\AI\Doom64-RT\Doom64-Retribution\d64r-lostsoul-rt.pk3"
+set "MOD=%PROJ%\Doom64-Retribution\D64RTR_v15.WAD"
+set "BM=%PROJ%\Doom64-Retribution\D64RTR_BRIGHTMAPS.PK3"
+set "GAL=%PROJ%\Doom64-Retribution\d64renemyg.wad"
+set "INFO=%PROJ%\Doom64-Retribution\d64r-enemygallery-mapinfo.pk3"
+set "SKY=%PROJ%\Doom64-Retribution\d64r-rt-sky.pk3"
+set "TOUR=%PROJ%\Doom64-Retribution\d64r-enemy-gallery-tour.pk3"
+set "SKUL=%PROJ%\Doom64-Retribution\d64r-lostsoul-rt.pk3"
 
 cd /d "%ENGINE%" || exit /b 1
 rem Dark no-aggro enemy eye gallery: MAP98.

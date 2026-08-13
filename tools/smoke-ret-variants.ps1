@@ -1,4 +1,6 @@
-$wd = 'G:\AI\Doom64-RT\sourcecode\gzdoom-rt\build\RelWithDebInfo'
+# Repo root, derived from this script's own location.
+$PROJ = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+$wd = '$PROJ\sourcecode\gzdoom-rt\build\RelWithDebInfo'
 Get-Process gzdoom -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
 Add-Type -TypeDefinition @'
 using System; using System.Text; using System.Runtime.InteropServices;
@@ -44,7 +46,7 @@ function Smoke($name, $arg) {
   "{0} : {1}" -f $name, ($parts -join ' | ')
 }
 $b = '-iwad D:\Games\GZDoom\doom2.wad -rtnolauncher -nosound -width 1280 -height 720 +vid_fullscreen 0 +rt_autoexport false +rt_fluid false +rt_upscale_dlss 0 +rt_classic 1 +rt_mod_compat 3 +r_drawvoxels 0 +d64_enterfade 0'
-$w = 'G:\AI\Doom64-RT\Doom64-Retribution\D64RTR_v15.WAD'
-$bm = 'G:\AI\Doom64-RT\Doom64-Retribution\D64RTR_BRIGHTMAPS.PK3'
+$w = '$PROJ\Doom64-Retribution\D64RTR_v15.WAD'
+$bm = '$PROJ\Doom64-Retribution\D64RTR_BRIGHTMAPS.PK3'
 Smoke 'nobm_map01' "$b -file $w +map map01"
 Smoke 'withbm_map02' "$b -file $w $bm +map map02"

@@ -23,6 +23,9 @@ from pathlib import Path
 
 from PIL import Image
 
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[1]
+
 
 def score_dir(d: Path) -> list[dict]:
     rows: list[dict] = []
@@ -61,7 +64,7 @@ def main() -> int:
     ap.add_argument(
         "dir",
         nargs="?",
-        default=r"G:\AI\Doom64-RT\screen\yaw_sweep",
+        default=str(PROJ_ROOT / r"screen\yaw_sweep"),
     )
     ap.add_argument(
         "--max-delta",

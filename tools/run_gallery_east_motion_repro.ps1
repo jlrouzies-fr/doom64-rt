@@ -1,3 +1,5 @@
+# Repo root, derived from this script's own location.
+$PROJ = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 param(
   [string]$OutDir = '',
   [double]$EmisMapBoost = 200,
@@ -11,7 +13,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $py = 'C:\Users\Winter\AppData\Local\Programs\Python\Python313\python.exe'
-$root = 'G:\AI\Doom64-RT'
+$root = '$PROJ'
 if (-not $OutDir) { $OutDir = Join-Path $root "screen\endwall_$Tag" }
 
 New-Item -ItemType Directory -Force -Path $OutDir | Out-Null

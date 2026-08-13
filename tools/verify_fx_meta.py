@@ -1,9 +1,10 @@
 from pathlib import Path
 import re
 
-t = Path(
-    r"G:\AI\Doom64-RT\sourcecode\gzdoom-rt\build\RelWithDebInfo\rt\data\textures.json"
-).read_text(encoding="utf-8")
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[1]
+
+t = PROJ_ROOT / r"sourcecode\gzdoom-rt\build\RelWithDebInfo\rt\data\textures.json".read_text(encoding="utf-8")
 for n in [
     "BAR1A0",
     "BAR1B0",
@@ -19,5 +20,5 @@ for n in [
 ]:
     m = re.search(rf'"textureName"\s*:\s*"{n}"[^}}]+}}', t)
     print(m.group(0) if m else "MISSING " + n)
-mat = Path(r"G:\AI\Doom64-RT\sourcecode\gzdoom-rt\build\RelWithDebInfo\rt\mat")
+mat = PROJ_ROOT / r"sourcecode\gzdoom-rt\build\RelWithDebInfo\rt\mat"
 print("BAR1 _e:", list(mat.glob("BAR1*_e.png")))

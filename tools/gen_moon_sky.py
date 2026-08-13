@@ -77,6 +77,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from make_map_3dfloor_rtfix import WAD, read_wad_lumps
 
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[1]
+
 HERE = Path(__file__).resolve().parent
 SKYDIR = HERE / "d64r-rt-sky"
 OUTPNG = SKYDIR / "textures" / "MOONSKY.png"
@@ -103,7 +106,7 @@ DEFAULT_DIAMETER_DEG = 12.0
 # carries a halo out beyond that -- so the disc composites through alpha and the
 # halo screens on, each doing the job it was drawn for. Falls back to the
 # procedural disc below if the file is missing, so the sky always builds.
-MOON_ART = Path(r"G:\AI\Doom64-RT\moontexture.png")
+MOON_ART = PROJ_ROOT / r"moontexture.png"
 
 
 def load_moon_art() -> tuple[Image.Image, Image.Image, float] | None:

@@ -18,7 +18,10 @@ import sys
 import zipfile
 from pathlib import Path
 
-ROOT = Path(r"G:\ai\Doom64-RT")
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[1]
+
+ROOT = PROJ_ROOT
 OUT = ROOT / "Doom64-Retribution" / "d64r-weapon-fire-probe.pk3"
 
 HOLD = 25  # tics per frame

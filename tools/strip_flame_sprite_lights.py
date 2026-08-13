@@ -25,7 +25,10 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-ROOT = Path(r"G:\ai\Doom64-RT")
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[1]
+
+ROOT = PROJ_ROOT
 
 # Must match RT_FLAME_KINDS in src/common/rendering/rt/rt_main.cpp, one for one.
 # (label, name regex). The label is only for the report; the regex is what matches a

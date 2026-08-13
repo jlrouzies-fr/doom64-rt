@@ -15,18 +15,17 @@ import re
 import sys
 from pathlib import Path
 
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[1]
+
 sys.exit(
     "bump_bar1_light.py is superseded and would re-add noShadow to the barrels. "
     "Edit FORCE in tools/gen_fx_emissives.py and re-run that instead."
 )
 
-GLOBAL = Path(
-    r"G:\AI\Doom64-RT\sourcecode\gzdoom-rt\build\RelWithDebInfo\rt\data\textures.json"
-)
-SCENE = Path(
-    r"G:\AI\Doom64-RT\sourcecode\gzdoom-rt\build\RelWithDebInfo\rt\data\scenes\d64rtr_v15_map01\textures.json"
-)
-GEN = Path(r"G:\AI\Doom64-RT\tools\gen_fx_emissives.py")
+GLOBAL = PROJ_ROOT / r"sourcecode\gzdoom-rt\build\RelWithDebInfo\rt\data\textures.json"
+SCENE = PROJ_ROOT / r"sourcecode\gzdoom-rt\build\RelWithDebInfo\rt\data\scenes\d64rtr_v15_map01\textures.json"
+GEN = PROJ_ROOT / r"tools\gen_fx_emissives.py"
 
 BAR = {
     "BAR1A0": {

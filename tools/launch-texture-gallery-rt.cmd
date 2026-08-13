@@ -1,13 +1,15 @@
 @echo off
 setlocal
-set "ENGINE=G:\AI\Doom64-RT\sourcecode\gzdoom-rt\build\RelWithDebInfo"
+rem Repo root, derived from this script's own location.
+for %%I in ("%~dp0..") do set "PROJ=%%~fI"
+set "ENGINE=%PROJ%\sourcecode\gzdoom-rt\build\RelWithDebInfo"
 set "IWAD=D:\Games\GZDoom\doom2.wad"
-set "MOD=G:\AI\Doom64-RT\Doom64-Retribution\D64RTR_v15.WAD"
-set "BM=G:\AI\Doom64-RT\Doom64-Retribution\D64RTR_BRIGHTMAPS.PK3"
-set "GAL=G:\AI\Doom64-RT\Doom64-Retribution\d64rtexg.wad"
-set "INFO=G:\AI\Doom64-RT\Doom64-Retribution\d64r-texgallery-mapinfo.pk3"
-set "SKY=G:\AI\Doom64-RT\Doom64-Retribution\d64r-rt-sky.pk3"
-set "SPAWN=G:\AI\Doom64-RT\Doom64-Retribution\d64r-gallery-spawn-east.pk3"
+set "MOD=%PROJ%\Doom64-Retribution\D64RTR_v15.WAD"
+set "BM=%PROJ%\Doom64-Retribution\D64RTR_BRIGHTMAPS.PK3"
+set "GAL=%PROJ%\Doom64-Retribution\d64rtexg.wad"
+set "INFO=%PROJ%\Doom64-Retribution\d64r-texgallery-mapinfo.pk3"
+set "SKY=%PROJ%\Doom64-Retribution\d64r-rt-sky.pk3"
+set "SPAWN=%PROJ%\Doom64-Retribution\d64r-gallery-spawn-east.pk3"
 set "PY=C:\Users\Winter\AppData\Local\Programs\Python\Python313\python.exe"
 
 cd /d "%ENGINE%" || exit /b 1
@@ -44,10 +46,10 @@ if not exist "%GAL%" (
 )
 
 echo Syncing baseline PBR maps into engine rt\mat ...
-"%PY%" "G:\AI\Doom64-RT\tools\sync_gallery_pbr_set.py" baseline || exit /b 1
+"%PY%" "%PROJ%\tools\sync_gallery_pbr_set.py" baseline || exit /b 1
 
 echo Packing east-wall spawn ...
-"%PY%" "G:\AI\Doom64-RT\tools\pack_gallery_spawn_east.py" || exit /b 1
+"%PY%" "%PROJ%\tools\pack_gallery_spawn_east.py" || exit /b 1
 
 echo Texture gallery MAP99 — spawn EAST end wall, free roam + DLSS-RR
 

@@ -1,6 +1,10 @@
 import re
+from pathlib import Path
 
-t = open(r"G:\AI\Doom64-RT\tools\_map_cmp\MAP01_TEXTMAP.txt", encoding="utf-8").read()
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[1]
+
+t = open(str(PROJ_ROOT / r"tools\_map_cmp\MAP01_TEXTMAP.txt"), encoding="utf-8").read()
 for m in re.finditer(r"(?ms)^sector\s*\{(.*?)\}", t):
     b = m.group(1)
     if re.search(r"(?m)^\s*id\s*=\s*18\s*;", b):

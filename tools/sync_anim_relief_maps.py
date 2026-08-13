@@ -36,7 +36,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from make_map_3dfloor_rtfix import WAD, read_wad_lumps
 
-ROOT = Path(r"G:\AI\Doom64-RT")
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[1]
+
+ROOT = PROJ_ROOT
 MAT = ROOT / r"sourcecode\gzdoom-rt\build\RelWithDebInfo\rt\mat"
 MAT_DEV = ROOT / r"sourcecode\gzdoom-rt\build\RelWithDebInfo\rt\mat_dev"
 OMAT = ROOT / r"Doom64-Retribution\Retribution-RT-Materials\rt\mat"

@@ -1,5 +1,7 @@
 @echo off
 setlocal EnableExtensions
+rem Repo root, derived from this script's own location.
+for %%I in ("%~dp0..") do set "PROJ=%%~fI"
 rem ---------------------------------------------------------------------------
 rem Build an OLD RTGL commit into tools\rtgl-variants\<name>\ so it can be A/B'd
 rem against the current build with ab-rtgl-baseline.cmd, without disturbing the
@@ -21,10 +23,10 @@ if "%NAME%"=="" goto :usage
 call "C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\Common7\Tools\VsDevCmd.bat" -arch=x64 -host_arch=x64
 if errorlevel 1 exit /b 1
 
-set "RTGL=G:\AI\Doom64-RT\deps\RTGL"
-set "WT=G:\AI\Doom64-RT\deps\RTGL-bisect"
-set "DLSS_SDK_PATH=G:\AI\Doom64-RT\deps\DLSS"
-set "DEST=G:\AI\Doom64-RT\tools\rtgl-variants\%NAME%"
+set "RTGL=%PROJ%\deps\RTGL"
+set "WT=%PROJ%\deps\RTGL-bisect"
+set "DLSS_SDK_PATH=%PROJ%\deps\DLSS"
+set "DEST=%PROJ%\tools\rtgl-variants\%NAME%"
 
 rem A stale worktree from an interrupted run would silently build the wrong commit.
 if exist "%WT%" (

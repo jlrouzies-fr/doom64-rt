@@ -6,10 +6,28 @@ rem Project root, derived from this script's own location, so a clone can live
 rem anywhere. Nothing below may hardcode an absolute path into the repo.
 for %%I in ("%~dp0..") do set "PROJ=%%~fI"
 set "ENGINE=%PROJ%\sourcecode\gzdoom-rt\build\RelWithDebInfo"
-rem The IWAD is the one path that cannot be derived from the repo. Override it with
-rem the D64RT_IWAD environment variable rather than editing this line.
-if not defined D64RT_IWAD set "D64RT_IWAD=D:\Games\GZDoom\doom2.wad"
+rem The IWAD is the one file this project cannot supply: Retribution is a PWAD and
+rem needs a doom2.wad you legitimately own (Steam / GOG / a retail disc). Set
+rem D64RT_IWAD to point at it; otherwise we look in the usual install locations.
+if not defined D64RT_IWAD (
+  for %%W in (
+    "D:\Games\GZDoom\doom2.wad"
+    "%ProgramFiles(x86)%\Steam\steamapps\common\Doom 2\base\doom2.wad"
+    "%ProgramFiles(x86)%\Steam\steamapps\common\Doom 2\masterbase\doom2.wad"
+    "%ProgramFiles(x86)%\Steam\steamapps\common\Ultimate Doom\base\doom2.wad"
+    "C:\Program Files (x86)\GOG Galaxy\Games\DOOM II\doom2.wad"
+    "%USERPROFILE%\Documents\GZDoom\doom2.wad"
+    "%PROJ%\doom2.wad"
+  ) do if not defined D64RT_IWAD if exist %%W set "D64RT_IWAD=%%~W"
+)
 set "IWAD=%D64RT_IWAD%"
+if not exist "%IWAD%" (
+  echo ERROR: no doom2.wad found.
+  echo        Retribution is a PWAD -- it needs a DOOM II IWAD you own.
+  echo        Set D64RT_IWAD to its full path, e.g.
+  echo          set "D64RT_IWAD=C:\Path\To\doom2.wad"
+  exit /b 1
+)
 set "MOD=%PROJ%\Doom64-Retribution\D64RTR_v15.WAD"
 set "BM=%PROJ%\Doom64-Retribution\D64RTR_BRIGHTMAPS.PK3"
 set "SKUL=%PROJ%\Doom64-Retribution\d64r-lostsoul-rt.pk3"

@@ -1,19 +1,21 @@
 @echo off
 setlocal
+rem Repo root, derived from this script's own location.
+for %%I in ("%~dp0..") do set "PROJ=%%~fI"
 rem DIAG: all _e quarantined + all textures.json emis stripped.
 rem Isolates sky / RR / additive vs surface emis.
-set "ENGINE=G:\AI\Doom64-RT\sourcecode\gzdoom-rt\build\RelWithDebInfo"
+set "ENGINE=%PROJ%\sourcecode\gzdoom-rt\build\RelWithDebInfo"
 set "IWAD=D:\Games\GZDoom\doom2.wad"
-set "MOD=G:\AI\Doom64-RT\Doom64-Retribution\D64RTR_v15.WAD"
-set "BM=G:\AI\Doom64-RT\Doom64-Retribution\D64RTR_BRIGHTMAPS.PK3"
-set "GAL=G:\AI\Doom64-RT\Doom64-Retribution\d64rtexg.wad"
-set "INFO=G:\AI\Doom64-RT\Doom64-Retribution\d64r-texgallery-mapinfo.pk3"
-set "SKY=G:\AI\Doom64-RT\Doom64-Retribution\d64r-rt-sky.pk3"
-set "SPAWN=G:\AI\Doom64-RT\Doom64-Retribution\d64r-gallery-spawn-east.pk3"
+set "MOD=%PROJ%\Doom64-Retribution\D64RTR_v15.WAD"
+set "BM=%PROJ%\Doom64-Retribution\D64RTR_BRIGHTMAPS.PK3"
+set "GAL=%PROJ%\Doom64-Retribution\d64rtexg.wad"
+set "INFO=%PROJ%\Doom64-Retribution\d64r-texgallery-mapinfo.pk3"
+set "SKY=%PROJ%\Doom64-Retribution\d64r-rt-sky.pk3"
+set "SPAWN=%PROJ%\Doom64-Retribution\d64r-gallery-spawn-east.pk3"
 set "PY=C:\Users\Winter\AppData\Local\Programs\Python\Python313\python.exe"
 
 cd /d "%ENGINE%" || exit /b 1
-"%PY%" "G:\AI\Doom64-RT\tools\pack_gallery_spawn_east.py" || exit /b 1
+"%PY%" "%PROJ%\tools\pack_gallery_spawn_east.py" || exit /b 1
 
 echo Gallery DIAG — NO surface _e / NO emis meta. mapboost 200. Try in console:
 echo   rt_sky 0          ^(if blotches die -^> sky^)

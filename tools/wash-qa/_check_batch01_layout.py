@@ -4,7 +4,10 @@ import struct
 from collections import Counter
 from pathlib import Path
 
-p = Path(r"G:/AI/Doom64-RT/Doom64-Retribution/d64rtexg01.wad")
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[2]
+
+p = PROJ_ROOT / r"Doom64-Retribution/d64rtexg01.wad"
 d = p.read_bytes()
 n, o = struct.unpack_from("<II", d, 4)
 t = ""
@@ -19,7 +22,7 @@ mids = re.findall(r'texturemiddle = "([^"]+)";', t)
 c = Counter(mids)
 pillar_tex = [k for k in c if k not in ("STONE2", "-")]
 g = json.loads(
-    Path(r"G:/AI/Doom64-RT/tools/_gallery/batches/batch_01.json").read_text(encoding="utf-8")
+    PROJ_ROOT / r"tools/_gallery/batches/batch_01.json".read_text(encoding="utf-8")
 )["grid"]
 print("sectors", secs, "(expect 102 = hall+solid+100 pillars)")
 print("pillar face textures", len(pillar_tex), "sample", pillar_tex[:6])

@@ -77,7 +77,10 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-OUT_DIR = Path(r"G:\AI\Doom64-RT\tools\d64r-rt-sky\textures")
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[1]
+
+OUT_DIR = PROJ_ROOT / r"tools\d64r-rt-sky\textures"
 
 # Slice resolution.
 #

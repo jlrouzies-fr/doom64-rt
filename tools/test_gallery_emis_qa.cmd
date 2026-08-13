@@ -1,5 +1,7 @@
 @echo off
 setlocal EnableExtensions
+rem Repo root, derived from this script's own location.
+for %%I in ("%~dp0..") do set "PROJ=%%~fI"
 rem Gallery emissive QA (root-cause oriented):
 rem   1) offline hygiene (allowlist / no solid stub _e)
 rem   2) orbit-inward at stock mapboost 200 — must NOT wash toward center
@@ -8,7 +10,7 @@ rem   3) center yaw at mapboost 200 — directional wash check
 rem
 rem Requires rebuilt RTGL with HitInfo INDIR applying emissiveMult to _e maps.
 rem Exit 0 = pass, 2 = fail
-set "ROOT=G:\AI\Doom64-RT"
+set "ROOT=%PROJ%"
 set "PY=C:\Users\Winter\AppData\Local\Programs\Python\Python313\python.exe"
 set "ORBIT=%ROOT%\screen\orbit_sweep"
 set "YAW=%ROOT%\screen\yaw_sweep"

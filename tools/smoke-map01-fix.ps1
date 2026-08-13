@@ -1,4 +1,6 @@
-$wd = 'G:\AI\Doom64-RT\sourcecode\gzdoom-rt\build\RelWithDebInfo'
+# Repo root, derived from this script's own location.
+$PROJ = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+$wd = '$PROJ\sourcecode\gzdoom-rt\build\RelWithDebInfo'
 Get-Process gzdoom -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
 Add-Type -TypeDefinition @'
 using System; using System.Text; using System.Runtime.InteropServices;
@@ -32,9 +34,9 @@ public static class CL9 {
 $arg = @(
   '-iwad','D:\Games\GZDoom\doom2.wad',
   '-file',
-  'G:\AI\Doom64-RT\Doom64-Retribution\D64RTR_v15.WAD',
-  'G:\AI\Doom64-RT\Doom64-Retribution\D64RTR_BRIGHTMAPS.PK3',
-  'G:\AI\Doom64-RT\Doom64-Retribution\d64r-map01-rtfix.wad',
+  '$PROJ\Doom64-Retribution\D64RTR_v15.WAD',
+  '$PROJ\Doom64-Retribution\D64RTR_BRIGHTMAPS.PK3',
+  '$PROJ\Doom64-Retribution\d64r-map01-rtfix.wad',
   '-rtnolauncher','-nosound','-width','1280','-height','720',
   '+vid_fullscreen','0','+map','map01',
   '+rt_mod_compat','3','+r_drawvoxels','0','+d64_enterfade','0',

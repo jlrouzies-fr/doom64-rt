@@ -16,7 +16,10 @@ from pathlib import Path
 from build_texture_gallery import GALLERY_MAP, build_gallery_textmap, write_wad
 import build_texture_gallery as btg
 
-ROOT = Path(r"G:\AI\Doom64-RT")
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[1]
+
+ROOT = PROJ_ROOT
 WORLD_EMIS = (
     ROOT / r"Doom64-Retribution\Retribution-RT-Materials\rt\data\textures_world_emis.json"
 )

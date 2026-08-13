@@ -62,6 +62,43 @@ copy /Y "%REL%\openal32.dll" "%OUT%\" >nul
 copy /Y "%ROOT%\build\zmusic\build\source\Release\zmusic.dll" "%OUT%\" >nul 2>nul
 if not exist "%OUT%\zmusic.dll" copy /Y "%REL%\zmusic.dll" "%OUT%\" >nul
 
+rem ---------------------------------------------------------------------------
+rem Everything below used to be three manual first-run steps, and each of them
+rem fails SILENTLY when skipped. They are cheap, they are idempotent, and they
+rem have to re-run after any clean build, because the block above restages
+rem %OUT%\rt wholesale from the stock package. No Python: a user who only wants
+rem to play should not need an interpreter.
+rem ---------------------------------------------------------------------------
+
+rem 1. RTGL1 only ever READS RTGL1.json (VulkanDevice_Init.cpp, .value_or). No
+rem    file means developerMode=false, which means every authored PNG material is
+rem    ignored and the game quietly looks stock.
+if not exist "%OUT%\rt\RTGL1.json" (
+  echo === Writing rt\RTGL1.json ^(developerMode on^) ===
+  >  "%OUT%\rt\RTGL1.json" echo {
+  >> "%OUT%\rt\RTGL1.json" echo   "version": 0,
+  >> "%OUT%\rt\RTGL1.json" echo   "developerMode": true,
+  >> "%OUT%\rt\RTGL1.json" echo   "vulkanValidation": false,
+  >> "%OUT%\rt\RTGL1.json" echo   "dx12Validation": false,
+  >> "%OUT%\rt\RTGL1.json" echo   "dlssValidation": false,
+  >> "%OUT%\rt\RTGL1.json" echo   "fpsMonitor": false
+  >> "%OUT%\rt\RTGL1.json" echo }
+)
+
+rem 2. The authored RT materials. The generators write both trees, so this only
+rem    matters on a fresh checkout or after the restage above.
+if exist "%PROJ%\Doom64-Retribution\Retribution-RT-Materials\rt" (
+  echo === Staging authored RT materials ===
+  xcopy /E /I /Y /Q "%PROJ%\Doom64-Retribution\Retribution-RT-Materials\rt" "%OUT%\rt" >nul
+)
+
+rem 3. The menu overlay. rt\wad is appended AFTER every -file PWAD, so without
+rem    this the stock RT menu art wins over Retribution's.
+if exist "%PROJ%\rt-wad-overlay" (
+  echo === Syncing rt-wad-overlay into rt\wad ===
+  xcopy /E /I /Y /Q "%PROJ%\rt-wad-overlay" "%OUT%\rt\wad" >nul
+)
+
 echo BUILD_OK %OUT%\gzdoom.exe
 dir "%OUT%\gzdoom.exe"
 exit /b 0

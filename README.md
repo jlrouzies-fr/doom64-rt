@@ -63,7 +63,7 @@ rebuild it, not as something you can download and run.
 | **GPU** | Any GPU with **Vulkan ray tracing** — NVIDIA RTX, AMD RDNA 2 and later, Intel Arc. Path tracing only; there is no rasterized fallback, so hardware RT is not optional. Only NVIDIA has been tested here, and **DLSS is NVIDIA-only** — on other hardware use FSR2 (`rt_upscale_fsr2`) and skip the DLSS SDK below. |
 | **OS** | Windows — the build scripts and the win32 surface path. |
 | **Toolchain** | Visual Studio **Build Tools 18** with the x64 native toolset, CMake, Python 3.13 with Pillow. The build scripts call `VsDevCmd.bat` from the `…\Microsoft Visual Studio\18\BuildTools\…` path — another edition or version means editing line 3 of both. |
-| **IWAD** | `doom2.wad`. Retribution loads as `-file` on top of it. |
+| **IWAD** | A `doom2.wad` **you own** — Retribution is a PWAD and cannot run without one. The Steam or GOG release of DOOM II both work; the launcher looks in the usual install locations and otherwise takes `D64RT_IWAD`. |
 | **Stock engine package** | A **gzdoom-rt 1.0.2 release** unpacked to `gzdoom-rt-1.0.2\`. Not optional: `build-gzdoom-rt.cmd` stages `rt\`, `libsndfile-1.dll` and `openal32.dll` out of it, and without that `rt\` tree the engine has no shaders, no `rt\data` and no `rt\wad`. |
 
 ### Game files — download these yourself
@@ -81,11 +81,21 @@ pack is required, not optional — `launch-retribution-rt.cmd` passes it on ever
 Retribution's own `D64RTR_INSTRUCTIONS.TXT` §"Music" covers the soundfont alternative if
 you would rather have the MIDIs.
 
-> [!WARNING]
-> **The IWAD path is still hardcoded** in `launch-retribution-rt.cmd`
-> (`D:\Games\GZDoom\doom2.wad`). Set the `D64RT_IWAD` environment variable to point
-> somewhere else instead of editing the script. Everything else — engine, deps, mod files —
-> is now resolved relative to the repo, so the clone can live anywhere.
+### The IWAD
+
+DOOM II is still sold, so this project does not point anyone at a pirated IWAD. Buy it on
+Steam or GOG — or use the free [Freedoom](https://freedoom.github.io/) Phase 2 IWAD if you
+want a no-purchase route, though nothing here has been tested against it.
+
+The launcher searches the usual Steam and GOG install paths, plus `doom2.wad` beside the
+repo. If yours lives elsewhere, point at it rather than editing the script:
+
+```powershell
+$env:D64RT_IWAD = "C:\Path\To\doom2.wad"
+```
+
+Everything else — engine, deps, mod files, tools — now resolves relative to the repo, so
+the clone can live anywhere.
 
 <a id="dependencies"></a>
 ### Dependencies — all under `deps\`, never Program Files
@@ -144,36 +154,27 @@ the engine build first. Three things they do deliberately, each one paid for:
 <a id="first-run"></a>
 ### First run
 
-1. **Create** `rt\RTGL1.json` in the build output — RTGL1 only ever *reads* this file
-   (`VulkanDevice_Init.cpp:228`, `.value_or(default)`), so if it does not exist you get
-   `developerMode: false` and **every authored PNG material is silently ignored**, KTX2
-   only. Nothing warns you; the game just looks stock.
-
-   ```json
-   { "version": 0, "developerMode": true, "vulkanValidation": false,
-     "dx12Validation": false, "dlssValidation": false, "fpsMonitor": false }
-   ```
-
-2. Sync `Doom64-Retribution\Retribution-RT-Materials\rt\` into the engine `rt\` tree.
-   The generators write both trees, so this is only needed on a fresh checkout.
-3. Push the menu overlay into the engine's `rt\wad`:
-
-   ```powershell
-   python tools\sync-rt-wad.py
-   ```
-
-   This one cannot be shipped prebuilt: `rt\wad` lives *inside the engine build tree*, and
-   `build-gzdoom-rt.cmd` restages that whole tree from the stock package. `rt\wad` also
-   loads **after** every `-file` PWAD, so without this the stock RT menu art overrides
-   Retribution's. Re-run it after any clean rebuild.
-
-4. Play:
+There is no first-run ritual any more — `build-gzdoom-rt.cmd` does it. Just play:
 
 ```powershell
 .\tools\launch-retribution-rt.cmd          # MAP01
 .\tools\launch-retribution-rt.cmd 13       # any map, 1-34
 .\tools\launch-retribution-rt.cmd menu     # boot to the title screen
 ```
+
+For the record, these are the three things the build script now does for you at the end of
+staging, each of which fails *silently* when skipped, and each of which has to be redone
+after any clean rebuild because the stock `rt\` tree is restaged wholesale:
+
+| Step | Why it matters |
+|---|---|
+| writes `rt\RTGL1.json` with `developerMode: true` | RTGL1 only ever **reads** this file (`VulkanDevice_Init.cpp:228`, `.value_or(default)`). No file means `developerMode: false`, every authored PNG material ignored, KTX2 only — and nothing warns you. The game just looks stock. |
+| stages `Retribution-RT-Materials\rt\` into the engine `rt\` | The materials themselves. |
+| copies `rt-wad-overlay\` into `rt\wad` | `rt\wad` is appended **after** every `-file` PWAD, so without it the stock RT menu art overrides Retribution's. |
+
+None of that needs Python. The interpreter is only for the authoring tools —
+generators, scanners, gallery builders — and for RTGL1's own shader generation when you
+build it.
 
 <br>
 

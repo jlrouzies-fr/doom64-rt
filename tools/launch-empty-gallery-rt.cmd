@@ -1,8 +1,10 @@
 @echo off
 setlocal
+rem Repo root, derived from this script's own location.
+for %%I in ("%~dp0..") do set "PROJ=%%~fI"
 rem Empty twin of MAP99 gallery: same hall footprint, ZERO texture pillars.
 rem Isolates shell/sky/muzzle/RR wash from booth emissives.
-set "ROOT=G:\AI\Doom64-RT"
+set "ROOT=%PROJ%"
 set "ENGINE=%ROOT%\sourcecode\gzdoom-rt\build\RelWithDebInfo"
 set "IWAD=D:\Games\GZDoom\doom2.wad"
 set "MOD=%ROOT%\Doom64-Retribution\D64RTR_v15.WAD"

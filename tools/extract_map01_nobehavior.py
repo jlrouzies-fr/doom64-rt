@@ -2,7 +2,10 @@
 import struct
 from pathlib import Path
 
-src = Path(r"G:\AI\Doom64-RT\Doom64-Retribution\D64RTR_v15.WAD")
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[1]
+
+src = PROJ_ROOT / r"Doom64-Retribution\D64RTR_v15.WAD"
 d = src.read_bytes()
 n, o = struct.unpack_from("<II", d, 4)
 lumps = []
@@ -49,6 +52,6 @@ def wad(items):
     header = struct.pack("<4sII", b"PWAD", len(items), 12 + len(body))
     return header + body + directory
 
-out = Path(r"G:\AI\Doom64-RT\tools\map01_nobehavior.wad")
+out = PROJ_ROOT / r"tools\map01_nobehavior.wad"
 out.write_bytes(wad(wanted))
 print("wrote", out, "lumps", len(wanted))

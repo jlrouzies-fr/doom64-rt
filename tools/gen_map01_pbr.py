@@ -19,7 +19,10 @@ import zlib
 from collections import Counter
 from pathlib import Path
 
-ROOT = Path(r"G:\AI\Doom64-RT")
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[1]
+
+ROOT = PROJ_ROOT
 TEXTMAP = ROOT / r"tools\_map_cmp\MAP01_TEXTMAP.txt"
 WAD = ROOT / r"Doom64-Retribution\D64RTR_v15.WAD"
 BM_PK3 = ROOT / r"Doom64-Retribution\D64RTR_BRIGHTMAPS.PK3"

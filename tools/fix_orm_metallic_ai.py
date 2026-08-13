@@ -8,7 +8,7 @@ Default scope: MAP01-used textures that have an _orm.png.
 Use --all for every authored _orm under Retribution-RT-Materials.
 
 Requires the project venv:
-  G:\\AI\\Doom64-RT\\deps\\orm-vlm\\venv\\Scripts\\python.exe tools\\fix_orm_metallic_ai.py
+  deps\\orm-vlm\\venv\\Scripts\\python.exe tools\\fix_orm_metallic_ai.py
 """
 from __future__ import annotations
 
@@ -22,7 +22,10 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-ROOT = Path(r"G:\AI\Doom64-RT")
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[1]
+
+ROOT = PROJ_ROOT
 WAD = ROOT / r"Doom64-Retribution\D64RTR_v15.WAD"
 OVERLAY_MAT = ROOT / r"Doom64-Retribution\Retribution-RT-Materials\rt\mat"
 ENGINE_RT = ROOT / r"sourcecode\gzdoom-rt\build\RelWithDebInfo\rt"

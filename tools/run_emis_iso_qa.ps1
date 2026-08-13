@@ -1,3 +1,5 @@
+# Repo root, derived from this script's own location.
+$PROJ = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 param(
   [string]$OutDir = '',
   [string]$Mode = 'categories',
@@ -10,7 +12,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $py = 'C:\Users\Winter\AppData\Local\Programs\Python\Python313\python.exe'
-$root = 'G:\AI\Doom64-RT'
+$root = '$PROJ'
 if (-not $OutDir) {
   $OutDir = Join-Path $root 'screen\emis_iso'
 }

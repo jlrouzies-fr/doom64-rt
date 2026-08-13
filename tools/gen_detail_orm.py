@@ -19,9 +19,12 @@ from pathlib import Path
 
 from PIL import Image, ImageFilter, ImageOps
 
-ROOT = Path(r"G:\AI\Doom64-RT")
+ROOT = PROJ_ROOT
 sys.path.insert(0, str(ROOT / "tools"))
 from apply_all_category_pbr import classify  # noqa: E402
+
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[1]
 
 WAD = ROOT / r"Doom64-Retribution\D64RTR_v15.WAD"
 MAT = ROOT / r"sourcecode\gzdoom-rt\build\RelWithDebInfo\rt\mat"

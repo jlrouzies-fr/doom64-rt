@@ -19,7 +19,10 @@ from collections import Counter, defaultdict
 from datetime import date
 from pathlib import Path
 
-ROOT = Path(r"G:\AI\Doom64-RT")
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[1]
+
+ROOT = PROJ_ROOT
 WAD = ROOT / r"Doom64-Retribution\D64RTR_v15.WAD"
 BM_PK3 = ROOT / r"Doom64-Retribution\D64RTR_BRIGHTMAPS.PK3"
 OUT_WAD = ROOT / r"Doom64-Retribution\d64r-texture-gallery.wad"

@@ -19,7 +19,10 @@ import struct
 import wave
 from pathlib import Path
 
-ROOT = Path(r"G:\AI\Doom64-RT")
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[1]
+
+ROOT = PROJ_ROOT
 OUT = ROOT / r"tools\d64r-rt-flashlight"
 RATE = 22050
 

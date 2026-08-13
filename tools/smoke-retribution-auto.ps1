@@ -1,3 +1,5 @@
+# Repo root, derived from this script's own location.
+$PROJ = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 # Auto smoke-test Retribution RT without user input.
 # Windowed + warp to MAP01. Skips IWAD Launch dialog via -config + optional button click.
 param(
@@ -11,7 +13,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$Root = 'G:\AI\Doom64-RT'
+$Root = '$PROJ'
 $Iwad = 'D:\Games\GZDoom\doom2.wad'
 $Mod  = Join-Path $Root 'Doom64-Retribution\D64RTR_v15.WAD'
 $Bm   = Join-Path $Root 'Doom64-Retribution\D64RTR_BRIGHTMAPS.PK3'

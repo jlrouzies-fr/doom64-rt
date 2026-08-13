@@ -22,9 +22,13 @@ import struct
 import zipfile
 
 from PIL import Image
+from pathlib import Path
 
-WAD = r"G:\ai\Doom64-RT\Doom64-Retribution\D64RTR_v15.WAD"
-OUT = r"G:\ai\Doom64-RT\Doom64-Retribution\d64r-mugshot.pk3"
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[1]
+
+WAD = str(PROJ_ROOT / r"Doom64-Retribution\D64RTR_v15.WAD")
+OUT = str(PROJ_ROOT / r"Doom64-Retribution\d64r-mugshot.pk3")
 
 # Where the face sits in the 320x240 HUD: the gap between the key icons
 # (which end at x=88) and the centred 3-digit ammo counter (which starts

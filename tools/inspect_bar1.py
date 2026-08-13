@@ -4,11 +4,14 @@ from pathlib import Path
 
 from PIL import Image
 
-p = Path(r"G:\AI\Doom64-RT\Doom64-Retribution\D64RTR_v15.WAD")
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[1]
+
+p = PROJ_ROOT / r"Doom64-Retribution\D64RTR_v15.WAD"
 d = p.read_bytes()
 n, o = struct.unpack_from("<II", d, 4)
-mat = Path(r"G:\AI\Doom64-RT\sourcecode\gzdoom-rt\build\RelWithDebInfo\rt\mat")
-omat = Path(r"G:\AI\Doom64-RT\Doom64-Retribution\Retribution-RT-Materials\rt\mat")
+mat = PROJ_ROOT / r"sourcecode\gzdoom-rt\build\RelWithDebInfo\rt\mat"
+omat = PROJ_ROOT / r"Doom64-Retribution\Retribution-RT-Materials\rt\mat"
 mat.mkdir(parents=True, exist_ok=True)
 omat.mkdir(parents=True, exist_ok=True)
 
@@ -38,7 +41,7 @@ for i in range(n):
         e.putdata(out)
         e.save(mat / f"{nm}_e.png")
         e.save(omat / f"{nm}_e.png")
-        img.save(Path(r"G:\AI\Doom64-RT\tools\_map_isol") / f"{nm}.png")
+        img.save(PROJ_ROOT / r"tools\_map_isol" / f"{nm}.png")
         print("  wrote _e")
     except Exception as ex:
         print("  fail", ex)

@@ -45,7 +45,10 @@ import struct
 import zipfile
 from pathlib import Path
 
-ROOT = Path(r"G:\AI\Doom64-RT")
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[1]
+
+ROOT = PROJ_ROOT
 OUT_WAD = ROOT / r"Doom64-Retribution\d64rsmokelab.wad"
 OUT_MAPINFO = ROOT / r"Doom64-Retribution\d64r-smokelab-mapinfo.pk3"
 

@@ -21,7 +21,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageOps
 
-ROOT = Path(r"G:\AI\Doom64-RT")
+ROOT = PROJ_ROOT
 sys.path.insert(0, str(ROOT / "tools"))
 from gen_detail_orm import (  # noqa: E402
     BOOTHS,
@@ -33,6 +33,9 @@ from gen_detail_orm import (  # noqa: E402
     solid_orm_image,
     wad_png,
 )
+
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[1]
 
 DEFAULT_NORMALS = "prs-eth/marigold-normals-v1-1"
 DEFAULT_IID = "prs-eth/marigold-iid-appearance-v1-1"

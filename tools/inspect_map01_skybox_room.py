@@ -2,7 +2,10 @@
 import re
 from pathlib import Path
 
-text = Path(r"G:\AI\Doom64-RT\tools\_map_cmp\MAP01_TEXTMAP.txt").read_text(encoding="utf-8")
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[1]
+
+text = PROJ_ROOT / r"tools\_map_cmp\MAP01_TEXTMAP.txt".read_text(encoding="utf-8")
 
 verts = []
 for m in re.finditer(r"(?ms)^vertex\s*\{(.*?)\}", text):

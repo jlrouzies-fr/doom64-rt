@@ -1,5 +1,7 @@
 @echo off
 setlocal EnableExtensions
+rem Repo root, derived from this script's own location.
+for %%I in ("%~dp0..") do set "PROJ=%%~fI"
 rem ---------------------------------------------------------------------------
 rem Swap the whole RTGL1 runtime between a known-good 2026-08-03 build and the
 rem current one, to find where the DLSS-RR worm / black-grain regression entered.
@@ -50,7 +52,7 @@ if "%WHICH%"=="" set "WHICH=aug03"
 if "%MAP%"==""  set "MAP=2"
 
 set "SRC=%~dp0rtgl-variants\%WHICH%"
-set "DST=G:\AI\Doom64-RT\sourcecode\gzdoom-rt\build\RelWithDebInfo\rt"
+set "DST=%PROJ%\sourcecode\gzdoom-rt\build\RelWithDebInfo\rt"
 
 if not exist "%SRC%\RTGL1.dll" (
   echo Usage: %~nx0 ^<aug03^|head^> [1-32]

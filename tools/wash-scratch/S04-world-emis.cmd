@@ -1,6 +1,8 @@
 @echo off
 setlocal EnableExtensions
-set "ROOT=G:\AI\Doom64-RT"
+rem Repo root, derived from this script's own location.
+for %%I in ("%~dp0..\..") do set "PROJ=%%~fI"
+set "ROOT=%PROJ%"
 set "PY=C:\Users\Winter\AppData\Local\Programs\Python\Python313\python.exe"
 "%PY%" "%ROOT%\tools\wash-scratch\apply_stage.py" stage_world_emis
 if errorlevel 1 exit /b 1

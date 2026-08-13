@@ -7,7 +7,10 @@ import shutil
 import sys
 from pathlib import Path
 
-ROOT = Path(r"G:\AI\Doom64-RT")
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[2]
+
+ROOT = PROJ_ROOT
 SCRATCH = ROOT / r"sourcecode\gzdoom-rt\build\WashScratch"
 STOCK = ROOT / r"gzdoom-rt-1.0.2"
 LIVE = ROOT / r"sourcecode\gzdoom-rt\build\RelWithDebInfo"

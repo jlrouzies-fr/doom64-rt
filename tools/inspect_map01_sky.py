@@ -3,7 +3,10 @@ import struct
 from pathlib import Path
 from collections import Counter
 
-text = Path(r"G:\AI\Doom64-RT\tools\_map_cmp\MAP01_TEXTMAP.txt").read_text(encoding="utf-8")
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[1]
+
+text = PROJ_ROOT / r"tools\_map_cmp\MAP01_TEXTMAP.txt".read_text(encoding="utf-8")
 
 print("=== sky-related things ===")
 for m in re.finditer(r"(?ms)^thing\s*\{(.*?)\}", text):
@@ -33,7 +36,7 @@ for m in re.finditer(r'texture(?:floor|ceiling|middle|top|bottom)\s*=\s*"([^"]+)
 print(tex)
 
 # Decode ISUCK PNG palette roughly
-data = Path(r"G:\AI\Doom64-RT\tools\_map_isol\ISUCK.bin").read_bytes()
+data = PROJ_ROOT / r"tools\_map_isol\ISUCK.bin".read_bytes()
 assert data[:8] == b"\x89PNG\r\n\x1a\n"
 # find PLTE
 i = 8

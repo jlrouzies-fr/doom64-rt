@@ -31,7 +31,10 @@ from pathlib import Path
 
 from PIL import Image
 
-ROOT = Path(r"G:\ai\Doom64-RT")
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[1]
+
+ROOT = PROJ_ROOT
 WAD = ROOT / r"Doom64-Retribution\D64RTR_v15.WAD"
 OUT_HTML = ROOT / r"tools\_gallery\all_sprites_export.html"
 OUT_JSON = ROOT / r"tools\_gallery\all_sprites_export.json"

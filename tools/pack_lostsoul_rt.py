@@ -45,7 +45,10 @@ from gen_enemy_eye_emissives import (
     wad_lumps,
 )
 
-ROOT = Path(r"G:\AI\Doom64-RT")
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[1]
+
+ROOT = PROJ_ROOT
 OUT_DIR = ROOT / r"tools\d64r-lostsoul-rt"
 OUT_PK3 = ROOT / r"Doom64-Retribution\d64r-lostsoul-rt.pk3"
 SPR_DIR = OUT_DIR / "sprites"

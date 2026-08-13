@@ -13,7 +13,10 @@ from __future__ import annotations
 import zipfile
 from pathlib import Path
 
-ROOT = Path(r"G:\AI\Doom64-RT")
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[1]
+
+ROOT = PROJ_ROOT
 SRC = ROOT / r"tools\d64r-rt-sky"
 OUT = ROOT / r"Doom64-Retribution\d64r-rt-sky.pk3"
 

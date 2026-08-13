@@ -1,5 +1,7 @@
+# Repo root, derived from this script's own location.
+$PROJ = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 param(
-  [string]$OutRoot = 'G:\AI\Doom64-RT\screen\wallturned_ab',
+  [string]$OutRoot = '$PROJ\screen\wallturned_ab',
   [int]$Width = 1280,
   [int]$Height = 720,
   [int]$TimeoutSec = 90
@@ -7,7 +9,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $py = 'C:\Users\Winter\AppData\Local\Programs\Python\Python313\python.exe'
-$root = 'G:\AI\Doom64-RT'
+$root = '$PROJ'
 $wd = Join-Path $root 'sourcecode\gzdoom-rt\build\RelWithDebInfo'
 $pk3 = Join-Path $root 'Doom64-Retribution\d64r-gallery-wall-ab.pk3'
 

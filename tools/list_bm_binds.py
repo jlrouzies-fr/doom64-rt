@@ -3,10 +3,13 @@ import zipfile
 from collections import Counter
 from pathlib import Path
 
-bm = Path(r"G:\AI\Doom64-RT\Doom64-Retribution\D64RTR_BRIGHTMAPS.PK3")
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[1]
+
+bm = PROJ_ROOT / r"Doom64-Retribution\D64RTR_BRIGHTMAPS.PK3"
 with zipfile.ZipFile(bm) as z:
     t = z.read("GLDEFS").decode("latin1", "replace")
-Path(r"G:\AI\Doom64-RT\tools\_map_isol\brightmaps_gldefs.txt").write_text(t, encoding="utf-8")
+PROJ_ROOT / r"tools\_map_isol\brightmaps_gldefs.txt".write_text(t, encoding="utf-8")
 binds = re.findall(
     r'brightmap\s+sprite\s+"([^"]+)"\s*\{\s*map\s+"([^"]+)"', t, re.I
 )

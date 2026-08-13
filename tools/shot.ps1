@@ -1,3 +1,5 @@
+# Repo root, derived from this script's own location.
+$PROJ = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 # Launch Retribution-RT, let it settle, take a screenshot, quit.
 #
 # The one thing that makes this work: `wait` only defers THE REST OF THE SAME
@@ -16,12 +18,12 @@ param(
   [int]$Tics = 300,            # 35 tics = 1 second of game time
   [int]$Width = 1920,
   [int]$Height = 820,
-  [string]$OutDir = 'G:\AI\Doom64-RT\screen\shots',
+  [string]$OutDir = '$PROJ\screen\shots',
   [string]$Extra = ''
 )
 
 $ErrorActionPreference = 'Stop'
-$Root = 'G:\AI\Doom64-RT'
+$Root = '$PROJ'
 $Mods = Join-Path $Root 'Doom64-Retribution'
 $Wd   = Join-Path $Root 'sourcecode\gzdoom-rt\build\RelWithDebInfo'
 $Exe  = Join-Path $Wd 'gzdoom.exe'

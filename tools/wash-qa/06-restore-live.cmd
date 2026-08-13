@@ -1,7 +1,9 @@
 @echo off
 rem Restore live RTGL from variants\live after testing 04/05.
 setlocal
-set "ROOT=G:\AI\Doom64-RT"
+rem Repo root, derived from this script's own location.
+for %%I in ("%~dp0..\..") do set "PROJ=%%~fI"
+set "ROOT=%PROJ%"
 set "ENGINE=%ROOT%\sourcecode\gzdoom-rt\build\RelWithDebInfo"
 set "VAR=%ROOT%\tools\wash-qa\variants\live"
 if not exist "%VAR%\RTGL1.dll" (

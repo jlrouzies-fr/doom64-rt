@@ -47,7 +47,10 @@ import sys
 import zipfile
 from pathlib import Path
 
-ROOT = Path(r"G:\AI\Doom64-RT")
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[1]
+
+ROOT = PROJ_ROOT
 # BOTH sources: rt_cvars.inc is the X-macro list, but a few cvars are declared
 # directly in rt_cvars.cpp (rt_mod_compat is one). Parsing only the .inc reports
 # those as orphaned pins, which is a false alarm -- and a checker that cries wolf

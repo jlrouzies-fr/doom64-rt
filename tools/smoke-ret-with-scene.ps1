@@ -1,4 +1,6 @@
-$wd = 'G:\AI\Doom64-RT\sourcecode\gzdoom-rt\build\RelWithDebInfo'
+# Repo root, derived from this script's own location.
+$PROJ = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+$wd = '$PROJ\sourcecode\gzdoom-rt\build\RelWithDebInfo'
 Get-Process gzdoom -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
 Add-Type -TypeDefinition @'
 using System; using System.Text; using System.Runtime.InteropServices;
@@ -29,7 +31,7 @@ public static class CL7 {
   }
 }
 '@
-$arg = '-iwad D:\Games\GZDoom\doom2.wad -file G:\AI\Doom64-RT\Doom64-Retribution\D64RTR_v15.WAD G:\AI\Doom64-RT\Doom64-Retribution\D64RTR_BRIGHTMAPS.PK3 -rtnolauncher -nosound -width 1280 -height 720 +vid_fullscreen 0 +map map01 +rt_mod_compat 3 +r_drawvoxels 0 +d64_enterfade 0 +rt_classic 1 +rt_autoexport false +rt_fluid false +rt_upscale_dlss 0'
+$arg = '-iwad D:\Games\GZDoom\doom2.wad -file $PROJ\Doom64-Retribution\D64RTR_v15.WAD $PROJ\Doom64-Retribution\D64RTR_BRIGHTMAPS.PK3 -rtnolauncher -nosound -width 1280 -height 720 +vid_fullscreen 0 +map map01 +rt_mod_compat 3 +r_drawvoxels 0 +d64_enterfade 0 +rt_classic 1 +rt_autoexport false +rt_fluid false +rt_upscale_dlss 0'
 $p = Start-Process -FilePath "$wd\gzdoom.exe" -WorkingDirectory $wd -ArgumentList $arg -PassThru
 Start-Sleep 1
 [CL7]::Go([uint32]$p.Id)

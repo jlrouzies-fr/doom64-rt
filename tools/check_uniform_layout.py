@@ -25,9 +25,13 @@ Run from tools/build-rtgl.cmd after GenerateShaders.py -g.
 import io
 import re
 import sys
+from pathlib import Path
 
-C_HDR = r'G:\ai\Doom64-RT\deps\RTGL\Source\Generated\ShaderCommonC.h'
-GLSL_HDR = r'G:\ai\Doom64-RT\deps\RTGL\Source\Generated\ShaderCommonGLSL.h'
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[1]
+
+C_HDR = str(PROJ_ROOT / r"deps\RTGL\Source\Generated\ShaderCommonC.h")
+GLSL_HDR = str(PROJ_ROOT / r"deps\RTGL\Source\Generated\ShaderCommonGLSL.h")
 
 # base alignment, size -- std140
 STD140 = {

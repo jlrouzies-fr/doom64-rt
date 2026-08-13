@@ -1,5 +1,7 @@
 @echo off
 setlocal EnableExtensions
+rem Repo root, derived from this script's own location.
+for %%I in ("%~dp0..") do set "PROJ=%%~fI"
 rem ---------------------------------------------------------------------------
 rem SMOKE LAB -- unattended capture of muzzle smoke on MAP97, for tuning it.
 rem
@@ -49,8 +51,8 @@ set "MOON="
 if "%LABMAP%"=="MAP95" set "MOON=+rt_sun 1 +rt_sun_intensity 200 +rt_sun_a 35 +rt_sun_b 225"
 
 set "IWAD=D:\Games\GZDoom\doom2.wad"
-set "BUILD=G:\AI\Doom64-RT\sourcecode\gzdoom-rt\build\RelWithDebInfo"
-set "D64=G:\AI\Doom64-RT\Doom64-Retribution"
+set "BUILD=%PROJ%\sourcecode\gzdoom-rt\build\RelWithDebInfo"
+set "D64=%PROJ%\Doom64-Retribution"
 set "SHOTS=%~dp0_smokelab"
 
 rem Anything after "--" is appended verbatim and wins, for one-off overrides.

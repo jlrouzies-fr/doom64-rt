@@ -1,9 +1,11 @@
+# Repo root, derived from this script's own location.
+$PROJ = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $ErrorActionPreference = 'Stop'
-$wd = 'G:\AI\Doom64-RT\sourcecode\gzdoom-rt\build\RelWithDebInfo'
-$log = 'G:\AI\Doom64-RT\smoke-doom2.txt'
+$wd = '$PROJ\sourcecode\gzdoom-rt\build\RelWithDebInfo'
+$log = '$PROJ\smoke-doom2.txt'
 $scenes = Join-Path $wd 'rt\scenes'
 $backup = Join-Path $wd 'rt\scenes_doom2_backup\map01'
-$stock = 'G:\AI\Doom64-RT\gzdoom-rt-1.0.2\rt\scenes\map01'
+$stock = '$PROJ\gzdoom-rt-1.0.2\rt\scenes\map01'
 if (-not (Test-Path (Join-Path $scenes 'map01'))) {
   if (Test-Path $backup) { Copy-Item -Recurse $backup (Join-Path $scenes 'map01') }
   elseif (Test-Path $stock) { Copy-Item -Recurse $stock (Join-Path $scenes 'map01') }

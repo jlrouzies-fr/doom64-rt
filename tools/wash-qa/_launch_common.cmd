@@ -2,6 +2,8 @@
 rem Shared launcher body for wash-qa/*.cmd
 rem Expects: WASH_TITLE, WASH_MAPBOOST, WASH_SKY, WASH_VARIANT (optional: live|indir_kill|clamp)
 setlocal EnableExtensions
+rem Repo root, derived from this script's own location.
+for %%I in ("%~dp0..\..") do set "PROJ=%%~fI"
 
 if not defined WASH_TITLE set "WASH_TITLE=gallery wash QA"
 if not defined WASH_MAPBOOST set "WASH_MAPBOOST=200"
@@ -10,7 +12,7 @@ if not defined WASH_VARIANT set "WASH_VARIANT=live"
 if not defined WASH_MZLFLSH set "WASH_MZLFLSH=1"
 if not defined WASH_EMPTY set "WASH_EMPTY=0"
 
-set "ROOT=G:\AI\Doom64-RT"
+set "ROOT=%PROJ%"
 set "ENGINE=%ROOT%\sourcecode\gzdoom-rt\build\RelWithDebInfo"
 set "IWAD=D:\Games\GZDoom\doom2.wad"
 set "MOD=%ROOT%\Doom64-Retribution\D64RTR_v15.WAD"

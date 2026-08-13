@@ -5,7 +5,10 @@ import re
 from collections import Counter
 from pathlib import Path
 
-p = Path(r"G:\AI\Doom64-RT\sourcecode\gzdoom-rt\build\RelWithDebInfo\rt\data\textures.json")
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[2]
+
+p = PROJ_ROOT / r"sourcecode\gzdoom-rt\build\RelWithDebInfo\rt\data\textures.json"
 prefs: Counter[str] = Counter()
 for line in p.read_text(encoding="utf-8").splitlines():
     s = line.split("//", 1)[0]

@@ -1,13 +1,15 @@
+# Repo root, derived from this script's own location.
+$PROJ = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 param(
   [string]$Label = 'fix',
-  [string]$ExtraFile = 'G:\AI\Doom64-RT\Doom64-Retribution\d64r-map01-rtfix.wad',
+  [string]$ExtraFile = '$PROJ\Doom64-Retribution\d64r-map01-rtfix.wad',
   [switch]$Screenshot
 )
 
-$wd = 'G:\AI\Doom64-RT\sourcecode\gzdoom-rt\build\RelWithDebInfo'
-$mod = 'G:\AI\Doom64-RT\Doom64-Retribution\D64RTR_v15.WAD'
-$bm = 'G:\AI\Doom64-RT\Doom64-Retribution\D64RTR_BRIGHTMAPS.PK3'
-$shotDir = 'G:\AI\Doom64-RT\tools\_map_isol'
+$wd = '$PROJ\sourcecode\gzdoom-rt\build\RelWithDebInfo'
+$mod = '$PROJ\Doom64-Retribution\D64RTR_v15.WAD'
+$bm = '$PROJ\Doom64-Retribution\D64RTR_BRIGHTMAPS.PK3'
+$shotDir = '$PROJ\tools\_map_isol'
 New-Item -ItemType Directory -Force -Path $shotDir | Out-Null
 
 Get-Process gzdoom -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
