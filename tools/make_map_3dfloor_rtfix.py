@@ -20,7 +20,7 @@ import sys
 import zlib
 from pathlib import Path
 
-ROOT = Path(r"G:\AI\Doom64-RT")
+ROOT = Path(__file__).resolve().parent.parent
 WAD = ROOT / r"Doom64-Retribution\D64RTR_v15.WAD"
 OUT = ROOT / "Doom64-Retribution"
 COMBINED = OUT / "d64r-3dfloor-rtfix.wad"

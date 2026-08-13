@@ -604,6 +604,88 @@ are the reason a decal was chosen over a light or a shadow caster:
 | **It cannot occlude or be hit** | Rasterized, never in the acceleration structure. No reflection, refraction or bounce ray can see it, and it costs nothing in the AS. |
 | **It stops at edges for free** | `RsDecal.frag` discards where the traced surface under the pixel is more than **5 cm** from the quad. So the blob stops at a step instead of smearing down it — and it is hidden behind the sprite's own pixels without a depth test (the pipeline has `depthTestEnable = VK_FALSE`). |
 
+### Standing bodies get a fainter blob than things lying flat
+
+Reported after the size falloff landed: the shotgun reads right, the soldier is
+about 30% too heavy. **Size cannot explain that and `rt_sprite_ao_sizefall` cannot
+fix it** — once the size falloff is applied the two footprints are within a few
+centimetres of each other. What actually differs is that the shotgun's is a thin
+ellipse (`aspect` 0.4) and the soldier's a full circle, so the soldier's covers
+roughly **three times the area** at the same strength.
+
+`rt_sprite_ao_upright` (0.7) scales strength for upright things only, and it is a
+class rule rather than a fudge because the physics agrees:
+
+- a **dropped weapon is in contact with the floor across its whole footprint**, so
+  the occlusion under it is strong and tight;
+- a **standing body touches the floor only at its feet**. Everything above the
+  ankles is far enough up that the floor still sees most of the sky, so real
+  contact occlusion under a standing figure genuinely is weaker and broader.
+
+It reuses the same upright test `rt_sprite_shadow` keys on, so nothing new is
+classified: the soldier passes (`h 56 >= 1.5·r 20`), the shotgun pickup fails on
+the absolute height floor (`h 20 < 24`), and a corpse moves to the lying-down side
+the moment gzdoom quarters its `Height`.
+
+**If monsters still read heavy, this is the knob** — not `rt_sprite_ao_strength`,
+which would take the props down with them.
+
+### Size: the blob must not be a scale model of the object
+
+Requested 2026-08-13: *"the bigger the sprite, the less there is."*
+
+Both sizing paths are otherwise **linear in the object** — the circle is a
+multiple of the collision radius, the ellipse a multiple of the sprite's own
+width — so a soldier got a footprint as much bigger than a shotgun lying beside
+him as his body is. That reads wrong, and the reason is worth stating because it
+also says how far to take the correction: **contact occlusion is not a scale model
+of the object.** It is the gap where the object meets the floor, and that gap does
+not grow with the object — a soldier's boots meet the floor on about as much area
+as a shotgun's receiver does.
+
+So the footprint is pulled toward a reference size by an exponent:
+
+    f = (ref / size) ^ rt_sprite_ao_sizefall
+
+`0` leaves the linear behaviour untouched, `1` makes every blob exactly `ref`
+across whatever its owner's size, and the default `0.6` sits between — big things
+still read bigger, just far less than proportionally.
+
+An **exponent rather than a clamp** because it has no discontinuity: no actor size
+is a special case, and nothing pops when a thing changes size in play — which does
+happen, since gzdoom quarters an actor's `Height` on death.
+
+`ref` is fixed at **one metre** (32 map units, an ordinary Doom actor) rather than
+being a cvar. Moving the pivot point is what `rt_sprite_ao_radius` and
+`rt_sprite_ao_fit` already do; `sizefall` only decides how much **spread** there is
+around it.
+
+### The blob is a single fan, and it must stay one
+
+A dead end worth recording, because the fix for it is not the obvious one.
+
+An attempt to give the blob a flat dark **core** — a full-strength inner ring, then
+a ramp to the rim — put visible **triangles** around every blob. The cause is
+structural, so more segments does not help:
+
+| triangle of a ring quad | alpha | iso-lines run |
+|---|---|---|
+| `(i0,o0,o1)` | `A·λ(i0)` | parallel to the **outer** edge |
+| `(i0,o1,i1)` | `A·(λ(i0)+λ(i1))` | parallel to the **inner** edge |
+
+Two gradient directions meeting along the diagonal is a crease, and it appears in
+every segment at once. Banding the penumbra over several thin rings shrinks it but
+does not remove it.
+
+**A single fan has no such quad.** Every triangle's alpha is `A·λ(centre)`, so all
+the gradients agree, and the only polygonal boundary is the rim — which sits at
+alpha 0, where a facet cannot be seen. That is why the original looked smooth, and
+it is the property to preserve: **do not introduce a high-alpha ring.**
+
+If a genuinely different radial profile is ever wanted, the answer is a per-pixel
+falloff — a radial-gradient texture bound to the decal, since `RsDecal.frag`
+already multiplies `baseColor()` by its texture sample — not more geometry.
+
 ### The footprint's shape — one shape cannot serve every class
 
 Requested after the first working build: *"under a shotgun on the floor it should
@@ -682,12 +764,14 @@ camera.
 | `rt_sprite_ao` | `true` | master switch |
 | `rt_sprite_ao_strength` | `0.7` | fraction of the floor's albedo removed at the centre. Settled in play — see below |
 | `rt_sprite_ao_radius` | `1.6` | multiple of `actor->radius`, for the **circle** |
+| `rt_sprite_ao_upright` | `0.7` | strength multiplier for standing things only. The knob for "monsters read too heavy" |
+| `rt_sprite_ao_sizefall` | `0.6` | how much smaller, relative to its owner, a blob gets as the sprite grows. 0 = proportional, 1 = all the same size |
 | `rt_sprite_ao_shape` | `1` | 0 = circle always; 1 = circle upright / ellipse lying down; 2 = ellipse always |
 | `rt_sprite_ao_fit` | `1.0` | multiple of the **sprite's** horizontal extent, for the ellipse. 1 = the art's own width |
 | `rt_sprite_ao_aspect` | `0.4` | the ellipse's across-axis over its along-axis. A declared assumption, not a measurement |
 | `rt_sprite_ao_fade` | `56` | map units of height over which it fades out |
 | `rt_sprite_ao_scope` | `0` | 0 = everything with a floor; 1 = only what `rt_sprite_shadow` skips |
-| `rt_sprite_ao_segments` | `14` | fan resolution |
+| `rt_sprite_ao_segments` | `32` | angular resolution — the silhouette only; the rim sits at alpha 0 |
 | `rt_sprite_ao_dist` | `30` | metres. Tighter than the proxies' 40 — see the limitation below |
 | `rt_sprite_ao_debug` | `false` | **`RT_CVAR_NOARCH`** — per-60-draw count of blobs *uploaded*, plus the nearest one's world position. Read the trap below before using it |
 
