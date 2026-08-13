@@ -2,33 +2,39 @@
 rem DelayedExpansion is needed to accumulate the "--" passthrough in a loop.
 rem Safe here: no literal '!' appears anywhere else in this script.
 setlocal EnableExtensions EnableDelayedExpansion
-set "ENGINE=G:\AI\Doom64-RT\sourcecode\gzdoom-rt\build\RelWithDebInfo"
-set "IWAD=D:\Games\GZDoom\doom2.wad"
-set "MOD=G:\AI\Doom64-RT\Doom64-Retribution\D64RTR_v15.WAD"
-set "BM=G:\AI\Doom64-RT\Doom64-Retribution\D64RTR_BRIGHTMAPS.PK3"
-set "SKUL=G:\AI\Doom64-RT\Doom64-Retribution\d64r-lostsoul-rt.pk3"
-set "FLSH=G:\AI\Doom64-RT\Doom64-Retribution\d64r-rt-flashlight.pk3"
-set "FIX3D=G:\AI\Doom64-RT\Doom64-Retribution\d64r-3dfloor-rtfix.wad"
-set "SEQL=G:\AI\Doom64-RT\Doom64-Retribution\d64r-seqlight-fix.wad"
-set "BULBTEX=G:\AI\Doom64-RT\Doom64-Retribution\d64r-bulb-textures.wad"
-set "CTELFIX=G:\AI\Doom64-RT\Doom64-Retribution\d64r-ctel-fix.wad"
-set "SKY=G:\AI\Doom64-RT\Doom64-Retribution\d64r-rt-sky.pk3"
-set "LAVAFX=G:\AI\Doom64-RT\Doom64-Retribution\d64r-lava-fx.pk3"
-set "BLOODFX=G:\AI\Doom64-RT\Doom64-Retribution\d64r-blood-persist.pk3"
-set "WIDEGFX=G:\AI\Doom64-RT\Doom64-Retribution\d64r-widescreen-gfx.pk3"
-set "TITLOGO=G:\AI\Doom64-RT\Doom64-Retribution\d64r-rt-titlelogo.pk3"
+rem Project root, derived from this script's own location, so a clone can live
+rem anywhere. Nothing below may hardcode an absolute path into the repo.
+for %%I in ("%~dp0..") do set "PROJ=%%~fI"
+set "ENGINE=%PROJ%\sourcecode\gzdoom-rt\build\RelWithDebInfo"
+rem The IWAD is the one path that cannot be derived from the repo. Override it with
+rem the D64RT_IWAD environment variable rather than editing this line.
+if not defined D64RT_IWAD set "D64RT_IWAD=D:\Games\GZDoom\doom2.wad"
+set "IWAD=%D64RT_IWAD%"
+set "MOD=%PROJ%\Doom64-Retribution\D64RTR_v15.WAD"
+set "BM=%PROJ%\Doom64-Retribution\D64RTR_BRIGHTMAPS.PK3"
+set "SKUL=%PROJ%\Doom64-Retribution\d64r-lostsoul-rt.pk3"
+set "FLSH=%PROJ%\Doom64-Retribution\d64r-rt-flashlight.pk3"
+set "FIX3D=%PROJ%\Doom64-Retribution\d64r-3dfloor-rtfix.wad"
+set "SEQL=%PROJ%\Doom64-Retribution\d64r-seqlight-fix.wad"
+set "BULBTEX=%PROJ%\Doom64-Retribution\d64r-bulb-textures.wad"
+set "CTELFIX=%PROJ%\Doom64-Retribution\d64r-ctel-fix.wad"
+set "SKY=%PROJ%\Doom64-Retribution\d64r-rt-sky.pk3"
+set "LAVAFX=%PROJ%\Doom64-Retribution\d64r-lava-fx.pk3"
+set "BLOODFX=%PROJ%\Doom64-Retribution\d64r-blood-persist.pk3"
+set "WIDEGFX=%PROJ%\Doom64-Retribution\d64r-widescreen-gfx.pk3"
+set "TITLOGO=%PROJ%\Doom64-Retribution\d64r-rt-titlelogo.pk3"
 rem Doomguy mugshot. Must load AFTER %MOD%: it carries a full copy of
 rem Retribution's SBARINFO (plus the DrawMugShot), and SBARINFO replaces
 rem wholesale, so whichever copy loads last is the entire HUD.
-set "MUGSHOT=G:\AI\Doom64-RT\Doom64-Retribution\d64r-mugshot.pk3"
-set "MUS=G:\AI\Doom64-RT\Doom64-Retribution\D64MUS.PK3"
+set "MUGSHOT=%PROJ%\Doom64-Retribution\d64r-mugshot.pk3"
+set "MUS=%PROJ%\Doom64-Retribution\D64MUS.PK3"
 rem Full console transcript (incl. startup) -> shareable log. `logfile` is
 rem whitelisted to run at GS_STARTUP (c_dispatch.cpp), so it captures
 rem everything from boot, including RTGL -rtdebug output.
-set "LOGF=G:\AI\Doom64-RT\rt-console.log"
+set "LOGF=%PROJ%\rt-console.log"
 rem The ~325 STATIC cvar pins, exec'd rather than passed as "+name value" pairs.
 rem See the note above the start command for why.
-set "PINS=G:\AI\Doom64-RT\tools\d64rt-pins.cfg"
+set "PINS=%PROJ%\tools\d64rt-pins.cfg"
 
 rem Usage: launch-retribution-rt.cmd [1-34|menu] [debug] [-- +cvar val ...]
 rem   Optional map number (default 1) → +map map01 … map34

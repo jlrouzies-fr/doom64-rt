@@ -1,14 +1,17 @@
 @echo off
 setlocal EnableExtensions
+rem Project root, derived from this script's own location, so a clone can live
+rem anywhere. Nothing below may hardcode an absolute path into the repo.
+for %%I in ("%~dp0..") do set "PROJ=%%~fI"
 call "C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\Common7\Tools\VsDevCmd.bat" -arch=x64 -host_arch=x64
 if errorlevel 1 (
   echo VsDevCmd failed
   exit /b 1
 )
 
-set "RTGL=G:\AI\Doom64-RT\deps\RTGL"
-set "DLSS_SDK_PATH=G:\AI\Doom64-RT\deps\DLSS"
-set "OUT=G:\AI\Doom64-RT\sourcecode\gzdoom-rt\build\RelWithDebInfo"
+set "RTGL=%PROJ%\deps\RTGL"
+set "DLSS_SDK_PATH=%PROJ%\deps\DLSS"
+set "OUT=%PROJ%\sourcecode\gzdoom-rt\build\RelWithDebInfo"
 
 if not exist "%DLSS_SDK_PATH%\include\nvsdk_ngx.h" (
   echo ERROR: DLSS SDK missing at %DLSS_SDK_PATH%

@@ -344,7 +344,10 @@ declaration cannot drift from its definition. Put nothing in that file except an
 
 Important cvars on Retribution launch (do not crank blindly):
 
-- `+rt_upscale_dlss 2 +rt_rayreconstr 1` — preferred denoising path
+- `+rt_upscale_dlss 2 +rt_rayreconstr 0` — DLSS upscaling with the **A-SVGF** denoiser, the
+  shipping path. DLSS-RR is **alpha here and does not render well**: it is wired up and
+  pinned **off** (`rt_rayreconstr 0`), and `RAYRECONSTRUCTION.md` is an experiment log, not
+  a recommendation. Do not turn it on and treat what you see as the intended image.
 - `+rt_normalmap_stren 1 +rt_heightmap_stren 1` — **keep near 1**; 10+ makes RR struggle
 - `rt_verbose` — **0 by default, and that is the release setting.** RT/RTGL1 diagnostics (boot timings, denoiser path, ReSTIR, `D64RtSkyFix:`, `RT water:`/`RT lava:` tagging) then carry `PRINT_NONOTIFY`: still in the console and `rt-console.log`, just not painted over the game. Set it to 1 to get them back on screen. Do **not** reach for `con_notifylines 0` — that takes pickups and level names with it. See `compat-patches.md` (2026-08-13).
 - Flashlight: `rt_flsh 0` / `1` in console, or the **`rt_flsh_toggle`** CCMD the key is bound to — never `toggle rt_flsh`, which prints `"rt_flsh" = "true"` on screen every press (default **F** via `d64r-rt-flashlight.pk3` KEYCONF). Horror defaults: dim warm beam tipped to ground (`rt_flsh_pitch`), battery cycle (`rt_flsh_battery`) with HUD **left of HEALTH** on ForceScaled 320×240 (`BATTERY` + muted cased 5-cell bar) from `d64r-rt-flashlight.pk3`.

@@ -1,47 +1,354 @@
-# Doom64-RT
+<div align="center">
 
-Path-traced Doom 64: Retribution work on top of [gzdoom-rt](https://github.com/vs-shirokii/gzdoom-rt) (RTGL1).
+<img src="docs/img/doom64rt-banner.png" alt="Doom 64 — Ray Traced" width="620">
 
-## What’s in this repo
+<h3>Path-traced <em>Doom 64: Retribution</em></h3>
 
-- **`tools/`** — launchers, texture/enemy galleries, PBR helpers (`gen_ai_pbr.py`), eye/Lost Soul generators
-- **`Doom64-Retribution/Retribution-RT-Materials/`** — authored RT companions (`*_orm.png`, `*_n.png`, `*_h.png`, `*_e.png`) + scene `textures.json`
-- **Docs** — start with **`AGENTS.md`** (agent handoff), then `doom64-retribution-pathtracing-plan.md`, `material-authoring-spec.md`, `compat-patches.md`
+<p>
+Real ray tracing on the N64 original — no rasterized fallback, no RTX Remix.<br>
+Every light in the game is a real emitter, and every surface answers to it.
+</p>
 
-## Not in git (see `.gitignore`)
+<p>
+<img src="https://img.shields.io/badge/ENGINE-gzdoom--rt-C8501E?style=for-the-badge&labelColor=1B1B1B" alt="Engine: gzdoom-rt">
+<img src="https://img.shields.io/badge/RENDERER-RTGL1_path_tracing-C8501E?style=for-the-badge&labelColor=1B1B1B" alt="Renderer: RTGL1">
+<img src="https://img.shields.io/badge/DENOISER-A--SVGF-2E6E8E?style=for-the-badge&labelColor=1B1B1B" alt="Denoiser: A-SVGF">
+<img src="https://img.shields.io/badge/UPSCALER-DLSS_2-2E6E8E?style=for-the-badge&labelColor=1B1B1B" alt="Upscaler: DLSS 2">
+<br>
+<img src="https://img.shields.io/badge/BASE-Retribution_v1.5-8A2B12?style=for-the-badge&labelColor=1B1B1B" alt="Base: Retribution v1.5">
+<img src="https://img.shields.io/badge/PLATFORM-Windows-8A2B12?style=for-the-badge&labelColor=1B1B1B" alt="Platform: Windows">
+<img src="https://img.shields.io/badge/GPU-hardware_ray_tracing-8A2B12?style=for-the-badge&labelColor=1B1B1B" alt="GPU: hardware ray tracing required">
+</p>
 
-Engine builds, Python venv, upstream `sourcecode/gzdoom-rt` checkout, stock WADs/music, and gallery screenshot PNGs. Rebuild / obtain those locally.
+<sub><b><a href="AGENTS.md">AGENTS.md</a></b> &nbsp;·&nbsp; <a href="docs/doom64-retribution-pathtracing-plan.md">Path-tracing plan</a> &nbsp;·&nbsp; <a href="docs/material-authoring-spec.md">Material spec</a> &nbsp;·&nbsp; <a href="compat-patches.md">Compat patches</a> &nbsp;·&nbsp; <b><a href="CREDITS.md">Credits</a></b></sub>
 
-## Quick start (local)
+</div>
 
-1. Build or install gzdoom-rt under `sourcecode/gzdoom-rt/build/RelWithDebInfo`.
-2. Ensure `rt/RTGL1.json` has `"developerMode": true` for PNG overrides.
-3. Sync materials from `Doom64-Retribution/Retribution-RT-Materials/rt/` into the engine `rt/` tree (generators also write both).
-4. Play: `tools\launch-retribution-rt.cmd` (MAP01, DLSS-RR, Lost Soul pack).
-5. Enemy eye debug hall: `tools\launch-enemy-gallery-rt.cmd` (MAP98).
-6. Texture PBR gallery: `tools\launch-texture-gallery-rt.cmd` (MAP99).
+---
 
-## Enemy eyes / Lost Soul
+## ⛧ &nbsp;Contents
+
+- [**Status**](#status) — where the project is, and what "no release yet" means
+- [**Building it yourself**](#building) — [what you need](#requirements) · [dependencies](#dependencies) · [build](#build) · [first run](#first-run)
+- [**Launchers**](#launchers) — how the game and the A/B arms are started
+- [**Features**](#features) — [lighting](#lighting) · [atmosphere](#atmosphere) · [sprites, monsters, gore](#sprites) · [HUD and menus](#hud) · [denoising and upscaling](#denoising)
+- [**For developers**](#developers) — the doc index, in [DEVELOPERS.md](DEVELOPERS.md)
+- [**Credits**](#credits) — RTGL1, gzdoom-rt, Retribution, Doom 64
+
+<br>
+
+<a id="status"></a>
+## ⛧ &nbsp;Status
+
+Work in progress, built and played on one machine. **There is no release yet** — no
+packaged build, no installer, and the paths in the build scripts are absolute and mine.
+Until a release exists, treat this repo as the *source* of a mod plus the notes to
+rebuild it, not as something you can download and run.
+
+<br>
+
+<a id="building"></a>
+## ⛧ &nbsp;Building it yourself
+
+> [!IMPORTANT]
+> Almost nothing needed to *run* the game is in git — engine build, RTGL1 build, SDKs,
+> the Python venv, the `sourcecode/gzdoom-rt` checkout, IWAD, Retribution and music are all
+> gitignored. What is tracked is our RT materials, our tools, our engine patches and the docs.
+
+<a id="requirements"></a>
+### What you need
+
+| | |
+|---|---|
+| **GPU** | Any GPU with **Vulkan ray tracing** — NVIDIA RTX, AMD RDNA 2 and later, Intel Arc. Path tracing only; there is no rasterized fallback, so hardware RT is not optional. Only NVIDIA has been tested here, and **DLSS is NVIDIA-only** — on other hardware use FSR2 (`rt_upscale_fsr2`) and skip the DLSS SDK below. |
+| **OS** | Windows — the build scripts and the win32 surface path. |
+| **Toolchain** | Visual Studio **Build Tools 18** with the x64 native toolset, CMake, Python 3.13 with Pillow. The build scripts call `VsDevCmd.bat` from the `…\Microsoft Visual Studio\18\BuildTools\…` path — another edition or version means editing line 3 of both. |
+| **IWAD** | `doom2.wad`. Retribution loads as `-file` on top of it. |
+| **Game files** | From your own copy of Doom 64: Retribution v1.5 — `D64RTR_v15.WAD` and `D64MUS.PK3`, dropped into `Doom64-Retribution\`. Not redistributed here; see [Credits](CREDITS.md). |
+| **Stock engine package** | A **gzdoom-rt 1.0.2 release** unpacked to `gzdoom-rt-1.0.2\`. Not optional: `build-gzdoom-rt.cmd` stages `rt\`, `libsndfile-1.dll` and `openal32.dll` out of it, and without that `rt\` tree the engine has no shaders, no `rt\data` and no `rt\wad`. |
+
+> [!WARNING]
+> **The scripts assume the repo lives at `G:\AI\Doom64-RT`.** Every path in
+> `build-gzdoom-rt.cmd`, `build-rtgl.cmd` and `launch-retribution-rt.cmd` is absolute, so a
+> clone anywhere else will happily build and launch the *original* tree instead of yours.
+> Either clone to that path, or edit the `set "…="` block at the top of each of those three
+> scripts. The IWAD path (`D:\Games\GZDoom\doom2.wad`) is hardcoded the same way.
+
+<a id="dependencies"></a>
+### Dependencies — all under `deps\`, never Program Files
+
+> [!IMPORTANT]
+> The engine and the path tracer must be **this project's forks, on the `doom64-rt`
+> branch** — not their upstreams. Both carry changes this repo depends on (the RT feature
+> file split, the froxel changes fog and smoke need, the emissive and translation fixes).
+> Upstream will build, then behave wrong in ways nothing reports.
+> **The project repo itself is on `fileSplit`** — its `main` branch is an empty initial
+> commit, so a plain `git clone` gets you a README and nothing else.
 
 ```powershell
-# Prefer the Python that has Pillow (see AGENTS.md)
-python tools\gen_enemy_eye_emissives.py
-python tools\pack_lostsoul_rt.py
-python tools\build_enemy_gallery.py
+git clone -b fileSplit  https://github.com/jlrouzies-fr/doom64-rt.git  Doom64-RT
+cd Doom64-RT
+git clone -b doom64-rt https://github.com/jlrouzies-fr/gzdoom-rt.git sourcecode\gzdoom-rt
+git clone -b doom64-rt https://github.com/jlrouzies-fr/RTGL.git      deps\RTGL
+git clone https://github.com/NVIDIA/DLSS.git                          deps\DLSS   # NVIDIA only
 ```
 
-Policy summary: brightmap-only eyes, no cast light on eyes, no `noShadow` on monster sprites. Full rules in `material-authoring-spec.md` / `AGENTS.md`.
+Only the DLSS SDK comes from its own upstream — it supplies the NGX snippets, and
+`build-rtgl.cmd` currently requires it. On non-NVIDIA hardware that dependency has to come
+out of the build (`-DRG_WITH_NATIVE_DLSS=OFF`) and upscaling falls back to FSR2.
 
-## AI PBR pilot
+<a id="build"></a>
+### Build
 
 ```powershell
-# venv once
-# python -m venv tools\.venv-ai
-# tools\.venv-ai\Scripts\pip install -r tools\requirements-ai-pbr.txt
-
-powershell -NoProfile -ExecutionPolicy Bypass -File tools\review_ai_pbr_pair.ps1 `
-  -Indices "0,1,2,3,4" -View corner -Orm heuristic `
-  -Strength 4.5 -HeightCrazy 3.0 -NormalMapStren 3.5
+.\tools\build-gzdoom-rt.cmd     # vcpkg + ZMusic + gzdoom-rt  -> build\RelWithDebInfo\gzdoom.exe
+.\tools\build-rtgl.cmd          # shaders + RTGL1.dll         -> build\RelWithDebInfo\rt\bin\
 ```
 
-Requires an RTX GPU for Marigold via Diffusers. For in-game normal strength while playing Retribution, keep launcher `rt_normalmap_stren` near **1** so Ray Reconstruction stays stable.
+Both scripts stage their output into `sourcecode\gzdoom-rt\build\RelWithDebInfo\`, so run
+the engine build first. Three things they do deliberately, each one paid for:
+
+- **`build-rtgl.cmd` aborts if a shader fails.** `GenerateShaders.py` exits 0 even when
+  `glslangValidator` rejects a shader, which would otherwise ship the *previous* SPIR-V into
+  a playtest.
+- **It clears the object files when `ShaderCommonC.h` changes.** The generated uniform
+  struct is not a tracked CMake dependency, so a stale `.obj` keeps the old
+  `sizeof(ShGlobalUniform)` and every field past the old size silently reads **zero** — no
+  crash, no validation error. That cost a full day once.
+- **It checks the copy of `RTGL1.dll` succeeded.** The DLL is locked while gzdoom is
+  running, and a silent failure means fresh shaders get tested against the old renderer.
+  Kill `gzdoom.exe` before building.
+
+<a id="first-run"></a>
+### First run
+
+1. **Create** `rt\RTGL1.json` in the build output — RTGL1 only ever *reads* this file
+   (`VulkanDevice_Init.cpp:228`, `.value_or(default)`), so if it does not exist you get
+   `developerMode: false` and **every authored PNG material is silently ignored**, KTX2
+   only. Nothing warns you; the game just looks stock.
+
+   ```json
+   { "version": 0, "developerMode": true, "vulkanValidation": false,
+     "dx12Validation": false, "dlssValidation": false, "fpsMonitor": false }
+   ```
+
+2. Sync `Doom64-Retribution\Retribution-RT-Materials\rt\` into the engine `rt\` tree.
+   The generators write both trees, so this is only needed on a fresh checkout.
+3. Build the derived WADs that are gitignored because they are generated, and push the
+   menu overlay into `rt\wad` (both are load-order-critical, and the launcher refuses to
+   start without the first):
+
+   ```powershell
+   python tools\make_map_3dfloor_rtfix.py    # d64r-3dfloor-rtfix.wad — RT hangs on 3D floors
+   python tools\sync-rt-wad.py               # menu patches into rt\wad, which loads LAST
+   ```
+
+4. Play:
+
+```powershell
+.\tools\launch-retribution-rt.cmd          # MAP01
+.\tools\launch-retribution-rt.cmd 13       # any map, 1-34
+.\tools\launch-retribution-rt.cmd menu     # boot to the title screen
+```
+
+<br>
+
+<a id="launchers"></a>
+## ⛧ &nbsp;Launchers
+
+<table>
+<tr><th align="left">Command</th><th align="left">What you get</th></tr>
+<tr>
+  <td><code>tools\launch-retribution-rt.cmd [1-34|menu]</code></td>
+  <td>The game. Native RTGL1 path tracing, A-SVGF denoiser, DLSS upscaling.</td>
+</tr>
+<tr>
+  <td><code>tools\ab.cmd &lt;arm&gt; [map]</code></td>
+  <td>A/B runner. Arms are config files in <code>tools\arms\*.cfg</code>, never console commands.</td>
+</tr>
+<tr>
+  <td><code>tools\launch-enemy-gallery-rt.cmd</code></td>
+  <td>MAP98 — enemy eye / emissive debug hall.</td>
+</tr>
+<tr>
+  <td><code>tools\launch-texture-gallery-rt.cmd</code></td>
+  <td>MAP99 — texture PBR gallery.</td>
+</tr>
+</table>
+
+> [!NOTE]
+> The launcher pins ~390 cvars via `+exec tools\d64rt-pins.cfg` rather than on the command line.
+> That is deliberate: `cmd.exe` truncates at 8191 characters, and the old inline form silently
+> dropped the tail — arms ran on defaults while the tool printed values it never applied.
+
+<br>
+
+<a id="features"></a>
+## ⛧ &nbsp;Features
+
+The renderer is RTGL1's. What this project adds is everything above it: the game's fake
+lighting replaced with real emitters, and a set of engine features Doom 64 never had.
+Every one of them is documented — the doc is the reference, this is the index.
+
+<a id="lighting"></a>
+### Lighting — the main body of work
+
+Doom 64 paints light. Sectors are set bright where a lamp *should* be, walls carry
+baked-in glow, and shafts are drawn into the floor texture. Under path tracing that reads
+as surfaces glowing for no reason, while the fixture beside them stays black. The bulk of
+this project is finding those and replacing them with something that actually emits.
+
+- **Painted light → real fixtures.** Nine repair families in one wad — sequence chains,
+  blinks, ACS light calls (literal *and* computed args), painted shafts, painted tints,
+  sector lamps, per-panel wall lamps. → [`docs/sequence-light-chains.md`](docs/sequence-light-chains.md)
+- **Finding them.** `scan_light_specials.py`, `scan_fake_lightshafts.py`,
+  `scan_painted_light.py` (1128 game-wide candidates, with a fixture-distance column), plus
+  in-game `whatsthat`, `rt_tex_probe` and `rt_lightlevel_watch`.
+  → [`docs/rt-lighting-practices.md`](docs/rt-lighting-practices.md)
+- **Wall monitors.** 48 flicker lights across 8 maps, one per 64×64 tile, placed at the
+  emissive mask's lit centroid rather than mid-tile. → [`AGENTS.md`](AGENTS.md)
+- **Inferred fixtures** — ceiling insets, wall strips, hanging tech, solo bulbs, spin
+  panels — derived from the texture rather than hand-placed.
+  → [`docs/solo-bulb-lamps.md`](docs/solo-bulb-lamps.md), [`docs/faux-lamp-panels.md`](docs/faux-lamp-panels.md)
+- **Flames.** All 84 torch/fire/candle sprites are lit engine-side, not by texture meta,
+  because meta can express neither the offset up onto the flame nor a flicker.
+  → [`docs/flame-lighting.md`](docs/flame-lighting.md)
+- **World emissives** — lava, monitors, keys, EXIT signs, teleporters as masked emitters
+  feeding GI. → [`docs/material-authoring-spec.md`](docs/material-authoring-spec.md)
+
+<a id="atmosphere"></a>
+### Atmosphere
+
+| Feature | Notes | Doc |
+|---|---|---|
+| **The moon** | A disc in the sky plus a real directional light, aimed alike; the disc alone casts nothing, because the sky cubemap is not importance-sampled. Aim with the `moon` CCMD, per-map table in `RT_MOON_PRESETS`. Shadow rays must prove they reached sky (`rt_sun_require_sky`) or the moon washes sealed rooms. | [`moon-and-sky-leaks`](docs/moon-and-sky-leaks.md) |
+| **Clouds + lightning** | A layered cloud deck (`rt_clouds_*`): 6–8 baked slices drawn as stacked sky-dome shells, so they parallax and occlude each other. It is sky *geometry*, not a participating medium — but moonlight is tinted and attenuated through the stack, and it flashes with MAP11's storm, whose schedule this puts back. `thunder` CCMD. | [`rt-clouds-and-lightning`](docs/rt-clouds-and-lightning.md) |
+| **Per-map fog** | A froxel volume with a near/far ramp, tuned per level (`rt_fog_*`, `RT_FOG_PRESETS`, `fog` CCMD). Needed two RTGL1 froxel changes. | [`rt-fog`](docs/rt-fog.md) · [implementation](docs/rt-fog-implementation.md) |
+| **Volumetric smoke** | Muzzle smoke as a real participating medium inside the fog's froxel volume, so it takes the colour of whatever lights the room. Six sources: weapons, monster guns, projectiles, barrels, flames. Sim is on the CPU, on purpose. `smoke` CCMD. | [`rt-smoke`](docs/rt-smoke.md) |
+| **Water** | Stylized surface with projected caustics; flats are tagged engine-side, no per-map setup. | [`rt-water`](docs/rt-water.md) |
+| **Lava** | The floor is the emitter — drifting quantized heat field (`rt_lava_flow*`), slow whole-surface breath, optional analytic light grid over the flats. | — |
+
+<a id="sprites"></a>
+### Sprites, monsters, gore
+
+- **Enemy eyes** — brightmap-only emissive masks. They glow; they never lantern the room
+  (no `lightIntensity`, and never `noShadow`, which kills the monster's shadow).
+- **Lost Souls** — the light rides on the fire frames themselves, A–F only, so a corpse
+  does not light the room.
+- **Persistent blood** — splats stay on the floor (`rt_gore_*`), explosive kills leave
+  blood at all, and per-monster blood colour finally renders: RTGL1 keys materials by
+  name, so every palette translation of a sprite uploaded as the same material and the
+  first one drawn won. → [`docs/blood-persist.md`](docs/blood-persist.md)
+- **Spectres** — rasterized translucent overlay with an alpha floor, rather than forced
+  water/glass. → [`docs/spectre-issue-log.md`](docs/spectre-issue-log.md)
+
+<a id="hud"></a>
+### HUD, menus, presentation
+
+- **The Doom guy mugshot** — Doom 64 dropped the status bar, so Retribution has no face.
+  All 42 frames are *generated* from one painted sheet and restyled to the D64 palette;
+  nothing in `d64r-mugshot.pk3` is hand-authored. → [`docs/hud-mugshot.md`](docs/hud-mugshot.md)
+- **Flashlight** — dim warm beam tipped toward the ground with a battery cycle and a HUD
+  meter (`rt_flsh*`, **F** by default). The beam angle and pitch are tuned to catch muzzle
+  smoke, not free parameters.
+- **Act title cards** and title/logo art. → [`docs/act-title-cards.md`](docs/act-title-cards.md)
+- **Menu patches** in Retribution's own font — `rt/wad` loads *last*, after every `-file`
+  PWAD, so RT's plain-Doom menu art was overriding the D64 art.
+  → [`compat-patches.md`](compat-patches.md)
+
+<a id="denoising"></a>
+### Denoising and upscaling
+
+**DLSS 2 upscaling + the A-SVGF denoiser is the shipping path.**
+
+> [!WARNING]
+> **DLSS Ray Reconstruction is alpha here and does not render well — it ships OFF and is
+> not recommended.** It is wired up and can be switched on for experiments, but the image
+> is not stable enough to play with. A-SVGF is the intended path; treat anything in
+> [`RAYRECONSTRUCTION.md`](RAYRECONSTRUCTION.md) and `docs/rayreconstruction/` as an
+> experiment log rather than a recommendation.
+
+Also keep `rt_normalmap_stren` / `rt_heightmap_stren` near **1** — 10+ destabilises the
+denoiser regardless of which one you use.
+
+<br>
+
+<a id="developers"></a>
+## ⛧ &nbsp;For developers
+
+Everything in this project is written down — each feature, each fix, and each dead end,
+usually written the day it cost us something.
+
+### → &nbsp;**[DEVELOPERS.md](DEVELOPERS.md)** — the index of every doc in the repo
+
+Grouped by feature docs, the lighting-repair pipeline, materials and models, tooling,
+generated inventories, and the historical briefs kept for *why* rather than *how*.
+
+Three that matter more than the rest:
+
+| | |
+|---|---|
+| [`AGENTS.md`](AGENTS.md) | The working handbook — diagnostic procedure for a wrongly-lit surface, the `rt/` source map, how to add a cvar, and 31 numbered pitfalls not to repeat. |
+| [`compat-patches.md`](compat-patches.md) | Every engine and RTGL1 change we made, dated, with the reason. |
+| [`docs/open-issues-rt-lighting.md`](docs/open-issues-rt-lighting.md) | What still fails. |
+
+<br>
+
+---
+
+<a id="credits"></a>
+## ⛧ &nbsp;Credits
+
+This project renders someone else's game, in someone else's engine, with someone else's
+path tracer. **[CREDITS.md](CREDITS.md) is the full list** — this is the short one.
+
+<table>
+<tr><th align="left">Project</th><th align="left">By</th></tr>
+<tr>
+  <td><b>RTGL1</b> / RayTracedGL1 — the path tracer<br><sub>MIT</sub></td>
+  <td><b>Sultim Tsyrendashiev</b> (© 2020–2023) and <b>Vasilii Shirokii</b> (© 2024).
+      Sultim is also the author of <i>Doom: Ray Traced</i>, which this project's material
+      and lighting conventions follow.</td>
+</tr>
+<tr>
+  <td><b>GZDoom: Ray Traced</b> — the engine we build<br><sub>GPLv3</sub></td>
+  <td><b>Vasilii Shirokii</b> (<a href="https://github.com/vs-shirokii/gzdoom-rt">vs-shirokii</a>) —
+      the RT renderer our engine work extends is his.</td>
+</tr>
+<tr>
+  <td><b>GZDoom</b><br><sub>GPLv3</sub></td>
+  <td>The <b>ZDoom</b> / <b>GZDoom</b> teams — <b>Christoph Oelckers</b>,
+      <b>Magnus Norddahl</b>, <b>Randy Heit</b>, <b>Alexey Lysiuk</b>,
+      <b>Rachael Alexanderson</b>, <b>Braden Obrzut</b> and many contributors.
+      Doom source © 1997 <b>id Software</b> and <b>Raven Software</b>.</td>
+</tr>
+<tr>
+  <td><b>Doom 64: Retribution v1.5</b> — the game</td>
+  <td><b>Nevander</b>, plus the long list of authors in Retribution's own credits —
+      <b>Kaiser</b> (Doom 64 EX, WadGen, Absolution TC), <b>Elbryan42</b>,
+      <b>AgentSpork</b>, <b>Steven Searle</b>, <b>Dreadflame</b>, <b>Footman</b>,
+      <b>Cage</b>, <b>Almonds</b>, <b>NMN</b> and others.</td>
+</tr>
+<tr>
+  <td><b>Doom 64</b> (1997) — the original</td>
+  <td><b>Midway Games</b> and <b>id Software</b>. Music and sound by <b>Aubrey Hodges</b>.</td>
+</tr>
+<tr>
+  <td><b>DLSS 2</b> / Ray Reconstruction</td>
+  <td><b>NVIDIA</b>.</td>
+</tr>
+</table>
+
+<br>
+
+---
+
+<div align="center">
+<sub>
+Built on <a href="https://github.com/vs-shirokii/gzdoom-rt">gzdoom-rt</a> and
+<a href="https://github.com/sultim-t/RayTracedGL1">RTGL1</a> over
+<b>Doom 64: Retribution</b> — see <a href="CREDITS.md">CREDITS.md</a>.<br>
+<i>Doom</i> and <i>Doom 64</i> are trademarks of id Software. This is a non-commercial fan project,
+not affiliated with id Software, Bethesda, Midway or NVIDIA.
+</sub>
+</div>
