@@ -217,16 +217,24 @@ ACTOR RTBloodPersistInvis : 64InvisiBlood replaces 64InvisiBlood
 // GetReplacee() and matches on either type (p_enemy.cpp), so map special
 // actions keyed on 64Arachnotron still fire through the replacement.
 
-// Retribution already ships 7B 5A 84 on this one; darker so it reads as clearly
-// not-blood in an unlit room rather than as a pink splash.
+// Retribution ships 7B 5A 84 on this one -- same hue, but washed out. This is
+// brighter AND more saturated, which is the pair that makes it read as purple
+// rather than as grey-lilac: the translation multiplies by the sprite's own
+// brightness, so a low-value colour lands much darker on screen than its swatch
+// suggests. 4B 2A 5A was tried first and was too dark to read at all.
 ACTOR RTBloodNightmareImp : 64NightmareImp replaces 64NightmareImp
 {
-\tBloodColor "4B 2A 5A"
+\tBloodColor "96 54 B4"
 }
 
+// Brown, because the Doom 64 Cacodemon is brown -- the blue here was a Doom II
+// habit. Deliberately the same value as the Pain Elemental below: they are one
+// family, and an identical colour costs nothing extra, because
+// CreateBloodTranslation dedupes by RGB and hands both actors the SAME
+// translation index -- so they also share one set of RT materials.
 ACTOR RTBloodCacodemon : 64Cacodemon replaces 64Cacodemon
 {
-\tBloodColor "3C 64 C8"
+\tBloodColor "6B 4A 28"
 }
 
 ACTOR RTBloodPainElemental : 64PainElemental replaces 64PainElemental

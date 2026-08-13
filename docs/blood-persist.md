@@ -213,10 +213,10 @@ the colour:
 
 | actor | colour | |
 |---|---|---|
-| `64NightmareImp` | `4B 2A 5A` | dark purple — **overrides** the WAD's lighter `7B 5A 84` |
+| `64NightmareImp` | `96 54 B4` | bright purple — **overrides** the WAD's washed-out `7B 5A 84` |
 | `64HellKnight` | `18 8C 31` | green, **the WAD's own** — we add nothing, the engine fix just makes it visible |
-| `64Cacodemon` | `3C 64 C8` | deep blue |
-| `64PainElemental` | `6B 4A 28` | brown |
+| `64Cacodemon` | `6B 4A 28` | brown, because the Doom 64 caco *is* brown; blue was a Doom II habit |
+| `64PainElemental` | `6B 4A 28` | the same brown — same family, and identical RGB costs nothing (below) |
 | `64Arachnotron` | `C8 C8 64` | pale yellow-green |
 | `64SpiderMastermind` | `C8 C8 64` | matches the Arachnotron; **no map places one**, so it cannot be judged in play |
 | `64BaronOfHell` | — | **red, deliberately.** It bleeds red beside a green Hell Knight; that is the decision, not an oversight |
@@ -224,6 +224,17 @@ the colour:
 Everything else — humans, Doom Imps, Demons, Revenant, Mancubus, Cyberdemon,
 Archvile — stays red, because red has to remain the common case or it stops
 reading as blood at all.
+
+**Pick colours brighter than they look right.** The translation multiplies each
+palette entry by the sprite's own **brightness**, so a low-value colour lands
+much darker on screen than its swatch: the Nightmare Imp's first attempt at
+`4B 2A 5A` was too dark to read as anything. Brightness *and* saturation
+together are what make a splat read as purple rather than as grey.
+
+Two actors sharing an RGB value is free, and slightly better than free:
+`CreateBloodTranslation` searches `BloodTranslationColors` for an exact RGB
+match and reuses the existing index, so the Cacodemon and the Pain Elemental
+share one translation — and therefore one set of RT materials.
 
 Replacing a monster class is safe for boss specials: `A_BossDeath` resolves
 `GetReplacee()` and matches on either the replacee's or its own type
