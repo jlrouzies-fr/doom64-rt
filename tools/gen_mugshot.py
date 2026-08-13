@@ -1,7 +1,7 @@
 """
 Convert an AI-painted mugshot sheet into game-ready STF* face lumps.
 
-The source sheets (screen/doomguy_grittry.png) follow the vanilla mugshot layout:
+The source sheets (tools/mugshot-art/doomguy_grittry.png) follow the vanilla mugshot layout:
 8 columns of expressions across, 5 health tiers down, then DEAD/GOD on row 6.
 
     col  0     1     2     3     4     5     6     7
@@ -17,7 +17,7 @@ warpaint red), a luminance stretch onto the vanilla range, and only then the
 box downscale and PLAYPAL quantize.
 
 Usage:
-    py -3 tools/gen_mugshot.py --sheet screen/doomguy_grittry.png --out <dir>
+    py -3 tools/gen_mugshot.py --sheet tools/mugshot-art/doomguy_grittry.png --out <dir>
     py -3 tools/gen_mugshot.py ... --only STFST01,STFEVL0,STFST41
 """
 

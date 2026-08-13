@@ -17,7 +17,7 @@ Columns are the idle trio the engine rotates through every 17 tics (boxed,
 because that rotation is what usually looks wrong) followed by the reactions.
 
 Usage:
-    py -3 tools/gen_mugshot_gallery.py --sheet screen/doomguy_grittry.png \
+    py -3 tools/gen_mugshot_gallery.py --sheet tools/mugshot-art/doomguy_grittry.png \
         --outdir screen --pixels 0.5,0.67,1.0,1.5,2.0
 """
 

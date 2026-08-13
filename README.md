@@ -64,15 +64,28 @@ rebuild it, not as something you can download and run.
 | **OS** | Windows — the build scripts and the win32 surface path. |
 | **Toolchain** | Visual Studio **Build Tools 18** with the x64 native toolset, CMake, Python 3.13 with Pillow. The build scripts call `VsDevCmd.bat` from the `…\Microsoft Visual Studio\18\BuildTools\…` path — another edition or version means editing line 3 of both. |
 | **IWAD** | `doom2.wad`. Retribution loads as `-file` on top of it. |
-| **Game files** | From your own copy of Doom 64: Retribution v1.5 — `D64RTR_v15.WAD` and `D64MUS.PK3`, dropped into `Doom64-Retribution\`. Not redistributed here; see [Credits](CREDITS.md). |
 | **Stock engine package** | A **gzdoom-rt 1.0.2 release** unpacked to `gzdoom-rt-1.0.2\`. Not optional: `build-gzdoom-rt.cmd` stages `rt\`, `libsndfile-1.dll` and `openal32.dll` out of it, and without that `rt\` tree the engine has no shaders, no `rt\data` and no `rt\wad`. |
 
+### Game files — download these yourself
+
+None of this is redistributed here. Get it from the mod's own ModDB page and drop it in
+`Doom64-Retribution\`:
+
+| File | Where |
+|---|---|
+| `D64RTR_v15.WAD` + `D64RTR_BRIGHTMAPS.PK3` | **Doom 64: Retribution v1.5** — [moddb.com/mods/doom-64-retribution](https://www.moddb.com/mods/doom-64-retribution) |
+| `D64MUS.PK3` | **OGG music pack v1.3** (download `D64MUS.ZIP`, unzip) — [the addon page](https://www.moddb.com/mods/doom-64-retribution/addons/doom-64-retribution-ogg-music-pack-v13) |
+
+The launcher loads the OGG pack rather than the MIDI + `DOOMSND.SF2` route, so the music
+pack is required, not optional — `launch-retribution-rt.cmd` passes it on every start.
+Retribution's own `D64RTR_INSTRUCTIONS.TXT` §"Music" covers the soundfont alternative if
+you would rather have the MIDIs.
+
 > [!WARNING]
-> **The scripts assume the repo lives at `G:\AI\Doom64-RT`.** Every path in
-> `build-gzdoom-rt.cmd`, `build-rtgl.cmd` and `launch-retribution-rt.cmd` is absolute, so a
-> clone anywhere else will happily build and launch the *original* tree instead of yours.
-> Either clone to that path, or edit the `set "…="` block at the top of each of those three
-> scripts. The IWAD path (`D:\Games\GZDoom\doom2.wad`) is hardcoded the same way.
+> **The IWAD path is still hardcoded** in `launch-retribution-rt.cmd`
+> (`D:\Games\GZDoom\doom2.wad`). Set the `D64RT_IWAD` environment variable to point
+> somewhere else instead of editing the script. Everything else — engine, deps, mod files —
+> is now resolved relative to the repo, so the clone can live anywhere.
 
 <a id="dependencies"></a>
 ### Dependencies — all under `deps\`, never Program Files
@@ -86,12 +99,21 @@ rebuild it, not as something you can download and run.
 > commit, so a plain `git clone` gets you a README and nothing else.
 
 ```powershell
-git clone -b fileSplit  https://github.com/jlrouzies-fr/doom64-rt.git  Doom64-RT
+git clone -b fileSplit https://github.com/jlrouzies-fr/doom64-rt.git Doom64-RT
 cd Doom64-RT
-git clone -b doom64-rt https://github.com/jlrouzies-fr/gzdoom-rt.git sourcecode\gzdoom-rt
-git clone -b doom64-rt https://github.com/jlrouzies-fr/RTGL.git      deps\RTGL
-git clone https://github.com/NVIDIA/DLSS.git                          deps\DLSS   # NVIDIA only
+git clone --recurse-submodules -b doom64-rt https://github.com/jlrouzies-fr/gzdoom-rt.git sourcecode\gzdoom-rt
+git clone --recurse-submodules -b doom64-rt https://github.com/jlrouzies-fr/RTGL.git      deps\RTGL
+git clone https://github.com/NVIDIA/DLSS.git                                              deps\DLSS   # NVIDIA only
 ```
+
+> [!CAUTION]
+> **`--recurse-submodules` is not optional.** The engine keeps `unordered_dense` as a
+> submodule under `src\common\rendering\rt\`, and RTGL1 keeps six (imgui, glfw, cgltf,
+> glaze, glm, DirectX-Headers). Without them the engine compiles for several minutes and
+> then fails every RT translation unit at once with
+> `Cannot open include file: 'unordered_dense/…'`. If you already cloned flat:
+> `git -C sourcecode\gzdoom-rt submodule update --init --recursive` (and the same for
+> `deps\RTGL`).
 
 Only the DLSS SDK comes from its own upstream — it supplies the NGX snippets, and
 `build-rtgl.cmd` currently requires it. On non-NVIDIA hardware that dependency has to come
@@ -134,14 +156,16 @@ the engine build first. Three things they do deliberately, each one paid for:
 
 2. Sync `Doom64-Retribution\Retribution-RT-Materials\rt\` into the engine `rt\` tree.
    The generators write both trees, so this is only needed on a fresh checkout.
-3. Build the derived WADs that are gitignored because they are generated, and push the
-   menu overlay into `rt\wad` (both are load-order-critical, and the launcher refuses to
-   start without the first):
+3. Push the menu overlay into the engine's `rt\wad`:
 
    ```powershell
-   python tools\make_map_3dfloor_rtfix.py    # d64r-3dfloor-rtfix.wad — RT hangs on 3D floors
-   python tools\sync-rt-wad.py               # menu patches into rt\wad, which loads LAST
+   python tools\sync-rt-wad.py
    ```
+
+   This one cannot be shipped prebuilt: `rt\wad` lives *inside the engine build tree*, and
+   `build-gzdoom-rt.cmd` restages that whole tree from the stock package. `rt\wad` also
+   loads **after** every `-file` PWAD, so without this the stock RT menu art overrides
+   Retribution's. Re-run it after any clean rebuild.
 
 4. Play:
 

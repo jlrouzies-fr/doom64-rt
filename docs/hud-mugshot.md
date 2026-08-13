@@ -9,8 +9,12 @@ opacity and the layout style exposed as options.
 Everything here is generated. Nothing in `d64r-mugshot.pk3` is hand-authored, so
 the whole thing can be rebuilt from the source sheet in two commands.
 
+The sheet lives in **`tools/mugshot-art/`** and is tracked in git. It used to sit in
+`screen/`, which is gitignored — so the pk3 shipped while the art it derives from did
+not, and "rebuilt in two commands" was only true on the machine that made it.
+
 ```
-py -3 tools\gen_mugshot.py --sheet "screen\doomguy_grittry-removebg-preview.png" ^
+py -3 tools\gen_mugshot.py --sheet "tools\mugshot-art\doomguy_grittry-removebg-preview.png" ^
     --raw --grain 0 --sharpen 0 --scale 1 --idle brow --pad 3 --lift 0.5 --out <dir>
 py -3 tools\build_mugshot_pk3.py --frames <dir> --scale 1 --pad 3
 ```
