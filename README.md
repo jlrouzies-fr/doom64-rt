@@ -13,7 +13,7 @@ Every light in the game is a real emitter, and every surface answers to it.
 <img src="https://img.shields.io/badge/ENGINE-gzdoom--rt-C8501E?style=for-the-badge&labelColor=1B1B1B" alt="Engine: gzdoom-rt">
 <img src="https://img.shields.io/badge/RENDERER-RTGL1_path_tracing-C8501E?style=for-the-badge&labelColor=1B1B1B" alt="Renderer: RTGL1">
 <img src="https://img.shields.io/badge/DENOISER-A--SVGF-2E6E8E?style=for-the-badge&labelColor=1B1B1B" alt="Denoiser: A-SVGF">
-<img src="https://img.shields.io/badge/UPSCALER-DLSS_2-2E6E8E?style=for-the-badge&labelColor=1B1B1B" alt="Upscaler: DLSS 2">
+<img src="https://img.shields.io/badge/UPSCALER-DLSS_2_%7C_FSR_2-2E6E8E?style=for-the-badge&labelColor=1B1B1B" alt="Upscaler: DLSS 2 or FSR 2">
 <br>
 <img src="https://img.shields.io/badge/BASE-Retribution_v1.5-8A2B12?style=for-the-badge&labelColor=1B1B1B" alt="Base: Retribution v1.5">
 <img src="https://img.shields.io/badge/PLATFORM-Windows-8A2B12?style=for-the-badge&labelColor=1B1B1B" alt="Platform: Windows">
@@ -71,7 +71,7 @@ rebuild it, not as something you can download and run.
 
 | | |
 |---|---|
-| **GPU** | Any GPU with **Vulkan ray tracing** — NVIDIA RTX, AMD RDNA 2 and later, Intel Arc. Path tracing only; there is no rasterized fallback, so hardware RT is not optional. Only NVIDIA has been tested here, and **DLSS is NVIDIA-only** — on other hardware use FSR2 (`rt_upscale_fsr2`) and skip the DLSS SDK below. |
+| **GPU** | Any GPU with **Vulkan ray tracing** — NVIDIA RTX, AMD RDNA 2 and later, Intel Arc. Path tracing only; there is no rasterized fallback, so hardware RT is not optional. Upscaling is DLSS 2 **or** FSR 2 (`rt_upscale_dlss` / `rt_upscale_fsr2`); DLSS is NVIDIA-only, FSR runs anywhere. Only NVIDIA has been tested here. |
 | **OS** | Windows — the build scripts and the win32 surface path. |
 | **Toolchain** | Visual Studio **Build Tools 18** with the x64 native toolset, CMake, Python 3.13 with Pillow. The build scripts call `VsDevCmd.bat` from the `…\Microsoft Visual Studio\18\BuildTools\…` path — another edition or version means editing line 3 of both. |
 | **IWAD** | A `doom2.wad` **you own** — Retribution is a PWAD and cannot run without one. The Steam or GOG release of DOOM II both work; the launcher looks in the usual install locations and otherwise takes `D64RT_IWAD`. |
@@ -197,7 +197,7 @@ build it.
 <tr><th align="left">Command</th><th align="left">What you get</th></tr>
 <tr>
   <td><code>tools\launch-retribution-rt.cmd [1-34|menu]</code></td>
-  <td>The game. Native RTGL1 path tracing, A-SVGF denoiser, DLSS upscaling.</td>
+  <td>The game. Native RTGL1 path tracing, A-SVGF denoiser, DLSS or FSR upscaling.</td>
 </tr>
 <tr>
   <td><code>tools\ab.cmd &lt;arm&gt; [map]</code></td>
@@ -296,7 +296,13 @@ this project is finding those and replacing them with something that actually em
 <a id="denoising"></a>
 ### Denoising and upscaling
 
-**DLSS 2 upscaling + the A-SVGF denoiser is the shipping path.**
+**The A-SVGF denoiser is the shipping path, with DLSS 2 or FSR 2 for upscaling.**
+
+The development launcher pins DLSS (`rt_upscale_dlss 2`) because that is what this
+machine has. **The release launcher will not force it** — DLSS is NVIDIA-only, and on
+anything else the upscaler has to be FSR 2 (`rt_upscale_fsr2`) or none at all. Note the
+two share one upscaler slot and FSR is applied second, so a stale `rt_upscale_fsr2` in
+your ini silently disables DLSS; set one, not both.
 
 > [!WARNING]
 > **DLSS Ray Reconstruction is alpha here and does not render well — it ships OFF and is
