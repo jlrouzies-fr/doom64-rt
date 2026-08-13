@@ -752,14 +752,37 @@ is the entire reason the cvar is there.
   is the bound; the same limit applies to the game's bullet-hole decals.
 - **`rt_sprite_ao_scope 0` overlaps `rt_sprite_shadow` on live monsters.** Both
   are present under a standing enemy. That is deliberate — the proxy shadow is
-  what vanishes when the light lies in its plane, and the blob is what is left —
-  but it is why the default strength is well under half.
+  what vanishes when the light lies in its plane, and the blob is what is left.
+  It was the stated reason for a conservative default strength; in play that
+  double-darkening turned out not to be the problem the argument predicted.
 
-**Status.** Reported invisible on the first build; cause found and fixed (the
-world-position trap above). Rebuilt with `rt_sprite_ao_debug` added. **Still not
-confirmed in-engine** — nobody has yet looked at a blob, so if it is invisible
-again the first move is `.\tools\ab.cmd spriteao-loud 02` and reading the emitted
-count, *not* changing strength.
+### Strength: 0.7, and why the a-priori number was too low
+
+Settled in play (2026-08-13). It **shipped at 0.45** on the written argument that
+anything past ~0.6 would stop reading as contact and start reading as a painted
+black disc. That argument was wrong, and the reason generalises to every knob in
+this feature:
+
+**`rt_sprite_ao_strength` is not the darkness you see.** The blob multiplies the
+floor's *albedo*, so what reaches the screen is already scaled by the light in the
+room, by the rim falloff, and by however much of the blob the sprite itself is
+covering. The cvar is the darkness you would get on a fully-lit floor at the exact
+geometric centre — a case that essentially never fills a pixel. Reasoning about it
+as if it were a screen-space overlay under-shoots, and it under-shot by about a
+third.
+
+The same caution applies in the other direction to `rt_sprite_ao_aspect` and
+`rt_sprite_ao_fit`: pick them by looking at a dropped weapon in a lit room, not by
+argument. The one number that should still be reasoned about rather than eyeballed
+is `rt_sprite_ao_fade`, because its failure (a disc following a flying enemy) is
+not visible at all from the viewpoint where you would be tuning the others.
+
+**Status: CONFIRMED IN PLAY** (2026-08-13). Invisible on the first build (the
+world-position trap above), fixed, then the footprint was fitted to the sprite and
+the strength settled at 0.7 from play. The remaining unverified claims are the
+*negative* ones — no blob in a mirror or in water, none following a flying enemy,
+none surviving into an unlit room — and those are what `spriteao-loud` and a
+lift/cacodemon are for.
 
 ---
 
