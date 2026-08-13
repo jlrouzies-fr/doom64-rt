@@ -221,6 +221,45 @@ class Shaft:
 
 
 SHAFTS = [
+    # ---- MAP01 MAIN HALL -------------------------------------------------------
+    # Reported as screen/level1-ACSturninglight.png, and named exactly right:
+    #
+    #   whatsthat: sector 119  lightlevel 220  tag 25  top texture 'SPACEAB'
+    #              threshold 200 -> ABOVE: this surface SELF-EMITS
+    #              brightest neighbour: sector 131 at 255  (delta -35)
+    #
+    # Note the NEGATIVE delta. This sector is not brighter than its surroundings --
+    # the whole hall is bright together, which is why no per-element scan ever
+    # singled it out and why it survived every earlier pass.
+    #
+    # The movement is ACS: script 12, type OPEN, 64 Light_Fade calls over tags
+    # 20..27, each tag cycling 200 -> 220 -> 240 in 4-tic steps. Eight tags taking
+    # turns is the travelling wave the CHAINS family exists for, built out of ACS
+    # instead of sector specials -- which is exactly why scan_light_specials.py
+    # reports MAP01 as "sequence=0 chains=0". The calls all carry LITERAL one-byte
+    # args, so they were sitting in plain sight; the first opcode scan called them
+    # computed only because it looked for PUSHNUMBER when acs_call_signature()
+    # says the encoding is PUSHnBYTES.
+    #
+    # THE ACS STRIP ALONE WOULD MAKE THIS WORSE, and that is the trap here. All 27
+    # sectors STORE 255, so removing the animation leaves them pinned at the top of
+    # the ramp -- a constant full-strength self-emission instead of one that at
+    # least dips to 200. The lightlevel has to come down with it, hence this entry
+    # AND the ScriptedComputed for script 12.
+    #
+    # to_light 160 is the element's own host: sectors 17, 138 and 139, the corridors
+    # the hall opens onto. SFLATAQ and SPACEAZ inside the hall carry authored _e and
+    # are real bulb fixtures -- this does not touch them, and since they now cast as
+    # real lamps rather than GI, they are what should be carrying the room.
+    Shaft(
+        "MAP01",
+        [18, 19, 20, 60, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125,
+         126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137],
+        from_light=255, to_light=160,
+        enabled=True,
+        note="The main hall, 27 sectors over 992x808u, painted 255 throughout with an ACS chase on top (see the ScriptedComputed for script 12, which must be stripped WITH this or the hall pins at a constant 255). Host 160 is the corridors it opens onto. Nearest light-bearing actor 268u.",
+    ),
+
     # ---- PANEL SWEEP -----------------------------------------------------------
     # 29 elements, 36 sectors, 9 maps. Not found by eye: found by taking the fixtures
     # ALREADY confirmed from screenshots and repaired in this table, then looking for
@@ -1679,6 +1718,21 @@ SCRIPTED_COMPUTED = [
     #
     # The builder asserts the exact count per map, so if any of these is wrong the
     # build fails instead of zeroing an unrelated special.
+    # MAP01 script 12 — the ONE entry in this table that is not script 669, and the
+    # reason it is allowed: script 12 is type OPEN on MAP01, so it installs at load
+    # and runs forever, which is the same property that qualifies 669 everywhere
+    # else. The caveat above about "Light_Fade elsewhere (scripts 2-30) is triggered
+    # by gameplay" is about CLOSED scripts; MAP01's 2, 9 and 11 are indeed closed and
+    # are left alone. Check the type byte before adding another non-669 entry.
+    #
+    # 64 calls, tags 20..27, cycling 200/220/240 over 4 tics each: the travelling
+    # wave across the main hall (screen/level1-ACSturninglight.png). Must ship WITH
+    # the MAP01 Shaft at the top of SHAFTS -- stripping this alone pins all 27
+    # sectors at their stored 255 and the hall gets BRIGHTER, not darker.
+    ScriptedComputed(
+        "MAP01", 12, 113, 3, 64, enabled=True,
+        note="Light_Fade x64 over tags 20-27 in script 12 (OPEN) — the hall's chase wave. Paired with the MAP01 hall Shaft.",
+    ),
     ScriptedComputed(
         "MAP10", 669, 113, 3, 3, enabled=True,
         note="Light_Fade x3 in the OPEN script — same sourceless sweep as MAP13.",
