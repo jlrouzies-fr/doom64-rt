@@ -76,7 +76,7 @@ lists a buffer upgrade rather than pretending 32 is enough forever.
     rt_smoke_density       optical depth per METRE at the core
     rt_smoke_color         scattering albedo (hex)
     rt_smoke_count         puffs per shot (PLAYER weapons only — see below)
-    rt_smoke_budget        live puffs uploaded, max 32
+    rt_smoke_budget        live puffs uploaded (120), hard cap 128
     rt_smoke_life          seconds — move with rt_smoke_growth, see below
     rt_smoke_radius        metres at spawn
     rt_smoke_growth        metres/second of expansion
@@ -122,7 +122,7 @@ too. They were added chasing smoke's noise and each fixes something that was
 wrong for fog as well:
 
     rt_volume_blur          0..1, a 5-tap spatial filter, taken at SAMPLE time
-    rt_volume_dither        per-pixel sample jitter in froxels (stock 2)
+    rt_volume_dither        per-pixel sample jitter in froxels (5; stock 2)
     rt_volume_occlude_emis  attenuate screen emission by the medium
     rt_volume_type          0 none / 1 froxel / 2 depth-based
     rt_volume_far           the volume's reach, and therefore its Z resolution
@@ -211,10 +211,17 @@ Left alone, ambient smoke would win every contest for a pool slot simply by
 outlasting everything else — and the smoke that would be pushed out is the wisp
 off the gun in your hands. Three mechanisms prevent that, and none is optional:
 
-1. **`rt_smoke_ambient_far` (14 m)** — tighter than the weapon cull, because a
-   torch two rooms away is a slot spent on something the froxel grid cannot
-   resolve anyway.
-2. **`rt_smoke_ambient_budget` (52 of 128)** — a ceiling on how many ambient
+1. **`rt_smoke_ambient_far` (60 m)** — a SPAWN cull, not a render cull: past it
+   the puff is never created, which is why `rt_volume_far 1000` changes nothing
+   about distant flames. It was 9, then 14, now 60.
+
+   **At 60 m the BUDGET is the real limit, not the range.** One torch holds ~8
+   parcels, so 96 serves about a dozen torches; past that the pool is full and
+   further emitters do not emit at all. Uploads are nearest-first, so the
+   torches near you win and a distant hall stays dry. 60 m means "as far as a
+   dozen torches reach", not "every torch within 60 m", and raising the range
+   again buys nothing without a bigger pool — which uniform bytes cap at 128.
+2. **`rt_smoke_ambient_budget` (96 of 128)** — a ceiling on how many ambient
    puffs may be *alive*. Emission stops at the cap rather than pushing other
    smoke out. An emitter held off keeps its own cadence, so nothing catches up
    in a burst when a slot frees.
@@ -222,7 +229,7 @@ off the gun in your hands. Three mechanisms prevent that, and none is optional:
    overflow rule prefer them, so a shot finds room even with the flames at their
    cap.
 
-`smoke` in the console reports the split — `60 live (52 ambient, cap 52)`. Sitting
+`smoke` in the console reports the split — `104 live (96 ambient, cap 96)`. Sitting
 *at* the cap is the expected state in a torch-lit room, not a fault.
 
 **The buffer went 32 → 128 for this.** Muzzle smoke alone fits in 32; a room full
@@ -489,6 +496,96 @@ the room's colour. `rt_smoke_tint` (0.8) biases a smoke cell back toward its own
 albedo. It is the right knob for "smoke should look grey" and it is **not** what
 made it visible — absorption was. A whole gallery of colour and density
 candidates came back invisible in the bright room before that was understood.
+
+### 3.1a Adding smoke to a weapon: density and count, never life
+
+The chaingun was reported as too subtle. Its row was thinner than the pistol's
+on the axes that matter — density 0.70 against 0.90, and 9 trail parcels against
+22 — so it went density 1.10, count 0.46, trail 13.
+
+**`life`, `radius` and `growth` were left alone deliberately.** Life is the
+tempting knob and it is the one that broke the pistol earlier: `rise` integrates
+over time and `curl` scales as age SQUARED, so a 25% longer life raised that
+plume 32% and spread it 56%, reported as "it appears above me and is too sprayed
+out". Density and parcel count add smoke where the smoke already is; life adds
+smoke-shaped space somewhere else.
+
+`trailEvery` stayed at 3 for a separate reason. A held trigger re-arms the
+emitter every `rt_smoke_repeat` (5) tics, and at 2 the emitter alone runs the
+pool to its ceiling — the oldest parcels, which are the tail you read as
+lingering, get culled to make room. Verified while holding fire: 22 live puffs
+against the budget, so the tail survives.
+
+### 3.2a The lit room was lit by a texture, and the volume cannot see one
+
+The other half of "smoke is invisible in a lit room", found later and much
+larger than the absorption fix above.
+
+**RTGL1 emissive lights SURFACES and is invisible to the froxel volume.** A
+Doom 64 lamp ceiling (`SFLATAQ`, `SFLATAS`) carried `emissiveMult 20` in
+`textures.json`, and that glow — not the analytic lights — was what actually lit
+those rooms. So the brighter the ceiling looked, the *less* the smoke under it
+caught: measured in the lab, toggling all 320 analytic ceiling lights moved a
+119-luminance floor by **+0.02**. The room was ~98% emissive GI. Meanwhile a dim
+red key door lit the same smoke beautifully, because a door jamb is three real
+9800 PointLight things about a metre away.
+
+It reads as a smoke bug and is not one. Nothing in the smoke path can fix it;
+the light was never in the volume to begin with.
+
+**The fix is real point lights on the painted bulbs.** `rt_ceiling_bulb_spacing`
+16 puts one light in every socket (SFLATAQ tiles bulbs every 16 units, SFLATAS
+every 32). Intensity scales with the square of the spacing, so the spacing knob
+redistributes light without changing the total; `rt_ceiling_bulb_gain` is the
+brightness. Numbers on MAP94 (below), glow off, real lights only: gain 1 → floor
+19.5, 4 → 94.0, 6 → 117.5, 8 → 132.0, against **floor 123.0 from the glow
+alone** — i.e. ~84% of a nominally "point lit" room was still the texture.
+
+#### Three ways to switch the glow off, two of them wrong
+
+1. **`emissiveMult 0` in `textures.json`** — wrong. That is a property of the
+   TEXTURE, and Doom 64 hangs one texture on two different fixtures: MAP02 has
+   33 SFLATAQ ceilings, 18 floors and **30 wall faces**, where the same art is a
+   wall light strip. It put out every strip in the game.
+2. **Suppress on flats, by texture name** — also wrong. MAP03 has 46 SFLATAQ
+   ceilings and 46 matching floors, mostly thin recessed strips too small for
+   the lattice to place anything in. They lost their glow and gained no light: a
+   dead groove in the ceiling.
+3. **Suppress only where lights actually landed** — right.
+   `RT_UploadCeilingEdgeLamps` records which sector planes got lattice lights
+   *after* the cap has trimmed the list, and `HWFlat::DrawFlat` asks that set
+   (`RT_IsLatticeLitPlane`). A pane keeps its glow unless something real
+   replaced it.
+
+Carried into RTGL as **`RG_MESH_PRIMITIVE_EMISSIVE_OVERRIDE`**: "the primitive's
+own `emissive` wins over the material's". It has to be an override rather than a
+force-zero, because `TextureMeta::Modify` applies the material *after* the caller
+fills in `RgMeshPrimitiveInfo` — passing 0 from the engine is silently discarded
+— and because the useful setting turned out to be a *fraction*, not zero.
+
+**Full suppression was right about the light and wrong on screen.** With the
+glow off the bulbs went dead flat and stopped blooming. A real lamp is a bright
+thing to LOOK at as well as a thing that lights a room. `rt_ceiling_bulb_emis`
+is the residue kept, and it ships at 20 — the texture's own value, i.e. glow in
+full, lights on top. Emissive drives bloom and GI together with no separate
+channel, so raising it always brings room light with it: floor 126.8 at 0, 131.2
+at 5, 134.7 at 10. Trim `rt_ceiling_bulb_gain`, not this.
+
+**Two smaller findings.** Killing the glow also removes the beige it mixed into
+every bounce (lab room R−B +21.8 → +5.5 at identical exposure — same brightness,
+grey instead of warm), hence `rt_ceiling_bulb_color`, sampled from the brightest
+3% of each texture's own `_e` map and *multiplied* onto the sector hue so a
+coloured room still colours its lamps. And SFLATAQ packs 4×4 bulbs where SFLATAS
+packs 2×2, so one light per bulb makes it **4× brighter for no reason but how
+finely its art is drawn** — `rt_ceiling_bulb_aq_scale` 0.25 takes that back out.
+
+**What this bought the smoke, honestly.** At matched room brightness, plume
+contrast against its background went 0.22 → 0.54. But the plume itself got
+slightly *darker* (85.8 → 77.4). Ceiling lamps 7 m above a floor-level puff
+still deliver very little to it — inverse square is inverse square, which is
+also why the door jamb wins at ~1 m. The smoke reads better because a lit room
+gives it something to be dark against, **not** because it finally caught the
+ceiling light.
 
 ### 3.3 The parcel-size cliff
 
@@ -766,6 +863,28 @@ otherwise have turned the smoke off with no `rt_smoke_*` cvar saying so.
 
 ---
 
+### 6.1 MAP94, and why the big lab room lies about lamps
+
+`tools/build_smoke_lab.py` builds four rooms. MAP97 dark and cool, MAP96 bright
+and beige, MAP95 moonlit — and **MAP94**, four small `SFLATAS` panes in an
+otherwise plain 640×640 room with a 5 m ceiling and **no other light in the map**:
+no fixture things, no stand-in muzzle lamp.
+
+That last part is the point. Every other room in this lab plants fixtures to
+guarantee something is lit, which is exactly what a test of what the PANES
+deliver must not do.
+
+**MAP96 cannot answer lamp questions and will actively mislead.** It tiles a
+lamp flat across a whole 512×512 ceiling, which Doom 64 never does — real panes
+are small and there are a few of them (MAP03 has 46, mostly thin strips). At one
+light per painted bulb that single pane wants **1024 lights for one surface**,
+the cap trims most of them away, and "one light per bulb" then measures *darker*
+than the sparse placement it replaced. The conclusion is an artifact of the room
+and nothing else. On MAP94 the same setting delivers **64 of 64 lights wanted**.
+
+Generalise it: a test room built to make an effect obvious can also put the
+effect outside the range where its own limits behave normally.
+
 ## 7. Two bugs that cost a session, and how they were actually found
 
 Neither was in the smoke code, and both are written up in `compat-patches.md`.
@@ -920,6 +1039,53 @@ genuinely different amounts of medium — and it is **open**.
 
 ---
 
+### 9.1 Two denoise knobs that could not reach
+
+Both found by playing with them, and both were knobs whose ceiling was in the
+code rather than in the physics.
+
+**`rt_smoke_history` was capped at 8 and looked dead.** It was `min()`'d with
+`rt_volume_history` (8), so *every value above 8 was the same setting* —
+reported from play as "history 20, more doesn't change anything", which is
+exactly what a silently clamped cvar looks like from outside. The `min` existed
+for a good reason in the other direction: this knob was only ever meant to
+SHORTEN the window, because the fog's 8 frames made a muzzle-lit puff smear, so
+smoke asked for 2. It capped lengthening for free. Now used directly, and
+lengthening is a real use precisely because the volume has no spatial denoiser
+worth the name — `rt_volume_blur` is already at its maximum of 1. Ships at 20.
+
+**`rt_smoke_spp` was clamped to 16, in two places that must agree** —
+`rt_main.cpp` and RTGL's `VulkanDevice.cpp`. Raised to 32; ships at 8. If the
+two ever disagree the engine asks for more samples than the shader will do and
+the extra silently does nothing, which is this project's recurring failure mode.
+
+It remains the only knob that helps when the noise is **temporal**, or when a
+LIGHT is moving: a flying plasma bolt changes the radiance at a fixed world
+point, so no amount of temporal averaging can fix it. Cost scales with how much
+of the screen the smoke covers, so profile on a barrel burst in your face, not
+on a quiet corridor.
+
+**`rt_volume_dither` 2 → 5**, also from play. Note this is the *opposite*
+direction from what that cvar's own help recommends: higher jitter hides the
+froxel grid better but reaches further across geometry silhouettes, which is
+what draws dark outlines around things seen through smoke. If those appear,
+dither is the cause and lowering it is the fix.
+
+### 9.2 The console spam that no cvar could stop
+
+`rt_smoke D/received` and `rt_smoke E/space` printed every 60 frames on the
+normal launcher for the whole game, and `rt_smoke_debug 0` did nothing.
+
+The three instrumentation blocks live in **RTGL's `VulkanDevice.cpp`**, not the
+engine, and had **no cvar gate at all** — the only condition was `count > 0`.
+`params.debugMode` was already being passed in and written to `gu->smokeDebug` a
+few lines below; the block simply never consulted it. Now gated.
+
+Worth generalising: a debug print in the library cannot be reached by an engine
+cvar unless someone deliberately plumbs it, and the person hitting it will
+reasonably conclude the cvar is broken.
+
+
 ## 10. Known limits
 
 - **Puffs are spheres.** Real smoke is not, and at these radii the eye can tell.
@@ -928,8 +1094,18 @@ genuinely different amounts of medium — and it is **open**.
 - **128 puffs, hard, and ambient sources are why it is not 32.** They ride in the global
   uniform (8 KB) rather than a storage buffer, and 128 is where
   `maxUniformBufferRange`'s guaranteed 16 KB stops being comfortable. Past that
-  it is a `LightManager` clone plus a descriptor set. The BUDGET (48 uploaded) is
-  a separate, shader-time limit — see §3.1, and do not conflate them.
+  it is a `LightManager` clone plus a descriptor set. The BUDGET (120 uploaded)
+  is a separate, shader-time limit — see §3.1, and do not conflate them.
+- **Flame reach is budget-bound, not range-bound.** `rt_smoke_ambient_far` is 60
+  m but ~96 ambient parcels serve about a dozen torches, so a big torch-lit hall
+  still goes dry past the nearest few. Raising the range further does nothing;
+  the pool is the wall, and the pool is capped by uniform bytes (§3.1).
+- **A lamp ceiling still barely lights a puff, even with real lights.** Inverse
+  square: 7 m from a ceiling to a floor-level puff loses almost everything, and
+  no gain that keeps the room unclipped changes it. What the point-light rework
+  bought was a lit ROOM for the smoke to be dark against (contrast 0.22 → 0.54),
+  not a lit puff (§3.2a). Smoke catching light properly still means a light
+  within a metre or two of it.
 - **A held chaingun in a torch-lit room still saturates.** The pool prefers to
   evict ambient puffs, so what gets culled is flame smoke rather than yours —
   but the flames visibly thin out while you hold the trigger. That is the
