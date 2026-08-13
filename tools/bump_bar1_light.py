@@ -1,6 +1,24 @@
+"""SUPERSEDED -- DO NOT RUN. Kept only as a record of the barrel light history.
+
+This was a one-off that wrote BAR1A0/BAR1B0 meta straight into the built
+textures.json. Its values (noShadow: True, lightIntensity 420/360) are exactly the
+combination that caused the mid-sprite fizzle reported in
+screen/barrelsBlinkFizzle.png: a sphere light at the sprite's own centre with
+nothing to occlude it. Running this would undo the fix.
+
+The barrels are owned by tools/gen_fx_emissives.py (the FORCE table, which carries
+the full explanation). Change them there and regenerate.
+"""
+
 import json
 import re
+import sys
 from pathlib import Path
+
+sys.exit(
+    "bump_bar1_light.py is superseded and would re-add noShadow to the barrels. "
+    "Edit FORCE in tools/gen_fx_emissives.py and re-run that instead."
+)
 
 GLOBAL = Path(
     r"G:\AI\Doom64-RT\sourcecode\gzdoom-rt\build\RelWithDebInfo\rt\data\textures.json"

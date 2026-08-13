@@ -42,18 +42,47 @@ MAT_DEV = ROOT / r"sourcecode\gzdoom-rt\build\RelWithDebInfo\rt\mat_dev"
 OVERLAY_MAT = ROOT / r"Doom64-Retribution\Retribution-RT-Materials\rt\mat"
 
 # Forced profiles (override sampling). HEX without '#'.
+#
+# NO noShadow ON THE BARRELS, and the intensity stays low. Reported as
+# screen/barrelsBlinkFizzle.png: white speckles crawling across the sprite in a
+# band at mid-height, on top of a core blown out to white.
+#
+# That band is where RTGL1 puts the light. MakeLightsForPrimitive() merges the two
+# triangles of a sprite quad into ONE sphere light at the average of their
+# centroids -- the geometric centre of the sprite. With noShadow the quad cannot
+# occlude it, so a 520-intensity light illuminates its own surface from a distance
+# of about zero, the 1/r^2 term explodes, and the few samples that land there are
+# far too hot for the denoiser to resolve. They survive as speckles, and they move
+# because the sampling jitters every frame.
+#
+# The _e mask proves it is not the art: BAR1A0_e is 3.3% coverage confined to rows
+# 0..20 of 50 -- the TOP of the sprite -- peaking at 224 with no saturated pixel.
+# It cannot produce a white core in the MIDDLE. (The small bright patch at the very
+# top of the reported screenshot IS the mask; the blob below it is the light.)
+#
+# This is pitfall 4 for the third time in this generator: the Lost Soul and the
+# rocket HUD flash were both "lightIntensity plus noShadow on the same sprite",
+# and both were fixed by removing noShadow -- "noShadow is the part that blows
+# out". Barrels kept both because they came in through FORCE rather than through
+# PREFIX_RULES, which is also why line ~577's no_shadow=True never applied to them.
+#
+# 180/150 is roughly where these sat before bump_bar1_light.py took them to
+# 420/360 and this table to 520/420. A sphere light coplanar with a flat quad is a
+# degenerate case that self-shadowing alone does not fix, so the intensity has to
+# come down as well as the flag coming off.
+#
+# emissiveMult is deliberately UNCHANGED -- it is the authored green glow, it is
+# what the blink reads as, and at 3.3% coverage it was never the fizzle.
 FORCE: dict[str, dict] = {
     # Poison barrel idle — classic GLDEFS BARREL is green
     "BAR1A0": {
         "emissiveMult": 1.6,
-        "noShadow": True,
-        "lightIntensity": 520,
+        "lightIntensity": 180,
         "lightColorHEX": "3dff4a",
     },
     "BAR1B0": {
         "emissiveMult": 1.4,
-        "noShadow": True,
-        "lightIntensity": 420,
+        "lightIntensity": 150,
         "lightColorHEX": "2ecc40",
     },
 }
@@ -77,7 +106,11 @@ FLAME_YELLOW = "ffcc33"
 # Do NOT add SKUL* here — owned by gen_enemy_eye / pack_lostsoul_rt.
 PREFIX_RULES: list[tuple[str, float, float, str | None]] = [
     # barrels / toxic boom
-    ("BAR1", 1.5, 480, "3dff4a"),
+    # Dead for BAR1A0/BAR1B0, which FORCE owns -- kept in step with FORCE so a new
+    # barrel frame does not silently arrive at 480 + no_shadow=True (line ~577
+    # applies noShadow to everything that comes through THIS table) and bring the
+    # mid-sprite fizzle back. See the FORCE note.
+    ("BAR1", 1.5, 180, "3dff4a"),
     ("BEXP", 0.65, 2400, "66ff44"),  # toxic green boom
     # rockets / barrel secondary boom (fire) — keep orange
     ("MISL", 0.45, 2200, "ff9a40"),
@@ -430,8 +463,16 @@ def upsert_json(path: Path, entries: dict[str, dict], replace: bool = False) -> 
         cur.update(meta)
         cur["textureName"] = name
         # Authored meta without lightIntensity must clear stale attached lights.
-        if "lightIntensity" not in meta:
-            cur.pop("lightIntensity", None)
+        # ...and the same for noShadow, for the same reason. An upsert can ADD a
+        # key but never REMOVE one, so a flag deleted at the source lives forever
+        # in every overlay it already reached. That is exactly how the barrels
+        # kept noShadow after it came off FORCE: the global JSON lost it, MAP01's
+        # scene overlay kept it, and scene overlays WIN -- so the fizzle would have
+        # survived the fix on the one map you see barrels first.
+        # Any key this generator owns must be cleared when the new meta omits it.
+        for owned in ("lightIntensity", "noShadow"):
+            if owned not in meta:
+                cur.pop(owned, None)
         by[name] = cur
     data["version"] = data.get("version", 0)
     data["array"] = list(by.values())
