@@ -236,6 +236,16 @@ class D64LavaFx : EventHandler
     int spawned;
     int tick;
 
+    // Print level for this pk3's diagnostics. Under `rt_verbose 0` (the engine's
+    // release default) they stay out of the on-screen notify area but still
+    // reach the console buffer and the logfile. Set `rt_verbose 1` to see the
+    // sector count and the spark trace on screen again.
+    static int DiagLevel()
+    {
+        let cv = CVar.FindCVar( "rt_verbose" );
+        return ( cv && cv.GetBool() ) ? PRINT_HIGH : PRINT_HIGH | PRINT_NONOTIFY;
+    }
+
     // Rate is what the PLAYER sees, not what the lake covers.
     //
     // NEAR_MAX is effectively the effect's DRAW DISTANCE: nothing is spawned
@@ -284,7 +294,7 @@ class D64LavaFx : EventHandler
 
         if( secIdx.Size() > 0 )
         {
-            Console.Printf( "D64LavaFx: %d lava sector(s), %d droplet(s) every %d tics near the player",
+            Console.PrintfEx( DiagLevel(), "D64LavaFx: %d lava sector(s), %d droplet(s) every %d tics near the player",
                             secIdx.Size(), PER_BURST, PERIOD );
         }
     }
@@ -329,7 +339,7 @@ class D64LavaFx : EventHandler
                     spawned++;
                     if( spawned <= 3 || ( spawned % 200 ) == 0 )
                     {
-                        Console.Printf( "D64LavaFx: spark %d at (%.0f %.0f %.0f), %.0f from player",
+                        Console.PrintfEx( DiagLevel(), "D64LavaFx: spark %d at (%.0f %.0f %.0f), %.0f from player",
                                         spawned, px, py, fz, rad );
                     }
                     sp.vel = ( frandom( -0.55, 0.55 ), frandom( -0.55, 0.55 ), frandom( 1.8, 3.9 ) );

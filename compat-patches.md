@@ -1189,3 +1189,48 @@ constant — `Quit Game` is 14 rows where every other patch is 13.
 `rt-wad-overlay/`, mirrored by `tools/sync-rt-wad.py`; both real `rt/wad` trees
 are gitignored, so edits made directly in them are invisible to git and are lost
 on the next build refresh.
+
+---
+
+## `rt_verbose` — the renderer stops talking over the game (2026-08-13)
+
+**Symptom:** every level load, and every press of the flashlight key, painted a
+line of text across the picture — `Can't find a file, no static scene will be
+present: ...`, `Denoiser path: A-SVGF (Denoise) ...`, `ReSTIR: initialSamples=32
+...`, `D64RtSkyFix: MAP01 sky -> MOONSKY`, `RT_BOOT: ...`, `"rt_flsh" = "true"`.
+Fine while developing, not shippable.
+
+**The lever is the print LEVEL, not the call site.** `PRINT_NONOTIFY` (1024, an
+*flag* on the print level) makes `PrintString` skip the notify overlay while
+still writing the console buffer, `I_PrintStr` and the logfile
+(`c_console.cpp`). So a message can be silenced on screen and lose nothing —
+`~` and `rt-console.log` still have every line. That is why the new default is
+quiet: there is no diagnostic cost to pay for it.
+
+`rt_verbose` (bool, default **false**) selects between the two, through
+`RT_DiagPrintLevel()` in `rt_internal.h` (and a private mirror,
+`RT_BootPrintLevel()`, in `d_main.cpp`, which must not include that header).
+
+| Source of noise | How it was silenced |
+|---|---|
+| **Everything RTGL1 prints** | one line: the `RG_MESSAGE_SEVERITY_WARNING` branch of `RT_Print` (`rt_main.cpp`) |
+| `RT_BOOT:` timings ×4 | `d_main.cpp` |
+| upscale/RR decision, `RT_Title:` | `rt_main.cpp`, `rt_titles.cpp` |
+| `RT water:` / `RT lava:` tagging, lava-with-no-light | `rt_draw.cpp`, `rt_lights_fx.cpp` |
+| `D64RtSkyFix:`, `D64LavaFx:` | `Console.PrintfEx(DiagLevel(), ...)` in the pk3 ZScript; `DiagLevel()` reads `rt_verbose` via `CVar.FindCVar` |
+| `"rt_flsh" = "true"` on every keypress | new **`CCMD(rt_flsh_toggle)`** (`rt_weapon.cpp`); KEYCONF alias moved off `toggle rt_flsh` |
+
+Four things worth knowing before extending this:
+
+- **A toggle *message* does not help.** `CCMD(toggle)` in `c_cvars.cpp` reports
+  unconditionally, and `SetToggleMessages` only swaps one on-screen line for
+  another (`Printf(PRINT_NOTIFY, ...)`). The key had to stop calling `toggle`.
+- **`PRINT_LOG` is the wrong flag.** It writes the logfile *only* — the message
+  disappears from the in-game console too. `PRINT_HIGH | PRINT_NONOTIFY` is the
+  one that keeps the console.
+- **Do not silence a CCMD's reply.** `whatsthat`, `moon`, `clouds`, `fog`,
+  `smoke`, `thunder`, `rt_dump_*` answer a question the user typed and must
+  print where it was asked. Everything already behind a `*_debug` cvar is left
+  loud for the same reason: turning that cvar on *is* the request.
+- **`con_notifylines 0` is not the answer.** It would take pickups and level
+  names with it. Game messages are untouched by any of this.

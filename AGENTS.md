@@ -10,6 +10,11 @@ Engine hardcoding / patch log:
 
 → **`compat-patches.md`**
 
+Who wrote what we build on (RTGL1, gzdoom-rt, GZDoom, Retribution, Doom 64) — take
+attributions from here, never from memory, and update it when a new dependency lands:
+
+→ **`CREDITS.md`**
+
 Material / emissive authoring rules:
 
 → **`material-authoring-spec.md`**
@@ -341,7 +346,8 @@ Important cvars on Retribution launch (do not crank blindly):
 
 - `+rt_upscale_dlss 2 +rt_rayreconstr 1` — preferred denoising path
 - `+rt_normalmap_stren 1 +rt_heightmap_stren 1` — **keep near 1**; 10+ makes RR struggle
-- Flashlight: `rt_flsh 0` / `1` in console (default **F** via `d64r-rt-flashlight.pk3` KEYCONF). Horror defaults: dim warm beam tipped to ground (`rt_flsh_pitch`), battery cycle (`rt_flsh_battery`) with HUD **left of HEALTH** on ForceScaled 320×240 (`BATTERY` + muted cased 5-cell bar) from `d64r-rt-flashlight.pk3`.
+- `rt_verbose` — **0 by default, and that is the release setting.** RT/RTGL1 diagnostics (boot timings, denoiser path, ReSTIR, `D64RtSkyFix:`, `RT water:`/`RT lava:` tagging) then carry `PRINT_NONOTIFY`: still in the console and `rt-console.log`, just not painted over the game. Set it to 1 to get them back on screen. Do **not** reach for `con_notifylines 0` — that takes pickups and level names with it. See `compat-patches.md` (2026-08-13).
+- Flashlight: `rt_flsh 0` / `1` in console, or the **`rt_flsh_toggle`** CCMD the key is bound to — never `toggle rt_flsh`, which prints `"rt_flsh" = "true"` on screen every press (default **F** via `d64r-rt-flashlight.pk3` KEYCONF). Horror defaults: dim warm beam tipped to ground (`rt_flsh_pitch`), battery cycle (`rt_flsh_battery`) with HUD **left of HEALTH** on ForceScaled 320×240 (`BATTERY` + muted cased 5-cell bar) from `d64r-rt-flashlight.pk3`.
 - RR / denoise live A/B: RTGL Dev window → **RR / Denoise live** (RR on/off, temporal prefilter, sensitivity presets). Switch ON emis: LED chroma masks via `gen_world_emissives.py` (missing BMTX brightmaps).
 - Dev UI: **UI font scale** + full settings persist (`rt/devmode_settings.json`, `rt/imgui.ini`). **Materials A/B**: strip normals / ORM / height / emissives separately (RR walk-noise diagnosis). Reset button if Override sticks bad.
 - ORM metal fog (RR walk noise): `deps\orm-vlm\venv\Scripts\python.exe tools\fix_orm_metallic_ai.py` (MAP01 default; `--all` for full set; `--model` for a larger VLM on 32GB).

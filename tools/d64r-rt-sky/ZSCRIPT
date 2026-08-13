@@ -99,6 +99,17 @@ class D64RtSkyFix : EventHandler
 		}
 	}
 
+	// Print level for this pk3's diagnostics. Under `rt_verbose 0` (the engine's
+	// release default) they keep off the on-screen notify overlay but still
+	// reach the console buffer and the logfile, so "D64RtSkyFix: MAP01 sky ->
+	// MOONSKY" stops painting across the picture on every single level load
+	// without becoming undiagnosable. Set `rt_verbose 1` to see them again.
+	static int DiagLevel()
+	{
+		let cv = CVar.FindCVar("rt_verbose");
+		return (cv && cv.GetBool()) ? PRINT_HIGH : PRINT_HIGH | PRINT_NONOTIFY;
+	}
+
 	override void WorldLoaded(WorldEvent e)
 	{
 		String map = level.MapName.MakeUpper();
@@ -137,14 +148,14 @@ class D64RtSkyFix : EventHandler
 		{
 			level.ChangeSky(sky, sky);
 			if (used != want)
-				Console.Printf("D64RtSkyFix: %s wants %s -- MISSING, fell back to %s",
+				Console.PrintfEx(DiagLevel(), "D64RtSkyFix: %s wants %s -- MISSING, fell back to %s",
 					map, want, used);
 			else
-				Console.Printf("D64RtSkyFix: %s sky -> %s", map, want);
+				Console.PrintfEx(DiagLevel(), "D64RtSkyFix: %s sky -> %s", map, want);
 		}
 		else
 		{
-			Console.Printf("D64RtSkyFix: %s -- no sky texture found at all (wanted %s)",
+			Console.PrintfEx(DiagLevel(), "D64RtSkyFix: %s -- no sky texture found at all (wanted %s)",
 				map, want);
 		}
 	}
