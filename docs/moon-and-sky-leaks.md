@@ -559,6 +559,210 @@ mode this design has.
 
 ---
 
+## 5.3.1 The other half — contact occlusion, `rt_sprite_ao`
+
+Requested 2026-08-13, in the same breath as the wall shadow above: *"can we have
+a bit of ambient occlusion under enemies / props sprites (e.g. weapons on the
+floor) — to compensate that a sprite 2d board doesn't always cast shadows if
+light is perpendicular."*
+
+**It is a second mechanism, not a tuning of §5.3, and the reason is the whole
+point.** A cast shadow answers *where is the light*, and a board answers that
+badly by construction: §5.3's crossed proxies remove the camera dependence and
+the fully degenerate direction, but a plane is still a plane, and how much
+shadow an actor throws still swings with the light's bearing (0.92× at best,
+by the arithmetic in §5.3). Contact occlusion answers a different question —
+*is there an object touching this floor* — and that question **has the same
+answer from every light direction**. So it survives exactly the frame the cast
+shadow loses.
+
+And it reaches the classes §5.3 deliberately refuses. `rt_sprite_shadow_scope 1`
+is live monsters only, because a vertical cross through a corpse, a gib or a
+dropped shotgun is the wrong shape and threw radiating spokes
+(`screen/shadowissue.png`). Those things kept their stock billboard shadow,
+which is to say very little. **A blob on the floor is the right shape for a flat
+thing lying on a floor** — which is why this is worth building rather than
+adding a fifth plane.
+
+### What ships: an RTGL1 decal, not geometry
+
+Each qualifying thing submits a **triangle fan** on the floor beneath it, flagged
+`RG_MESH_PRIMITIVE_DECAL`: black, alpha `rt_sprite_ao_strength` at the centre
+falling to 0 at the rim. The falloff is **vertex-colour interpolation**, so the
+feature ships no art, writes no `textures.json` entry and touches no material —
+with no texture bound, RTGL1 samples its 1×1 white (`TextureManager::
+CreateEmptyTexture`), which is the identity this needs.
+
+The decal pipeline blends `SRC_ALPHA / ONE_MINUS_SRC_ALPHA` into the G-buffer
+albedo, so a black decal leaves the floor at `albedo × (1 − a)` — a pure
+**multiplicative darkening**. Three properties fall out of that, and all three
+are the reason a decal was chosen over a light or a shadow caster:
+
+| | |
+|---|---|
+| **It scales with the light already there** | Full strength on a lit floor, invisible in a dark room. An occlusion term must never be able to push a surface below unlit, and an additive black overlay would. |
+| **It cannot occlude or be hit** | Rasterized, never in the acceleration structure. No reflection, refraction or bounce ray can see it, and it costs nothing in the AS. |
+| **It stops at edges for free** | `RsDecal.frag` discards where the traced surface under the pixel is more than **5 cm** from the quad. So the blob stops at a step instead of smearing down it — and it is hidden behind the sprite's own pixels without a depth test (the pipeline has `depthTestEnable = VK_FALSE`). |
+
+### The footprint's shape — one shape cannot serve every class
+
+Requested after the first working build: *"under a shotgun on the floor it should
+not be round, it should be a line the length of the shotgun sprite."* Correct, and
+it is §5.3's lesson again in a new place.
+
+- **Standing things keep a circle** at the collision radius. A body's footprint
+  really is roughly round, the circle is camera-independent, and the collision
+  radius is the honest measure — the sprite's canvas is about twice the body (the
+  marine drawn on 64 units around a radius of 17), which is the trap
+  `rt_sprite_shadow_width` exists for.
+- **Things lying down get an ellipse fitted to the sprite quad.** For a dropped
+  shotgun the art is the *only* description of the shape there is, so the
+  along-axis is measured from the quad's real horizontal extent in world space.
+
+The along-axis is derived by **2×2 principal axis of the quad's world XY
+vertices**, not by "take local Y" — that is precisely the mistake §5.3 spent three
+fixes on, because the local verts carry a baked `(camera_yaw − actor_yaw)` offset
+and no local axis means what its name says. A covariance carries no such
+assumption and is also correct for a pitched quad, where the up axis has a
+horizontal component too.
+
+**The across-axis is not measurable and is not pretended to be.** A single
+camera-facing billboard carries no information whatsoever about how deep an object
+is — the same ceiling `docs/rt-voxel-models.md` §6 documents for silhouette
+carving. So it is a declared constant, `rt_sprite_ao_aspect` (0.4), and no work on
+this code reaches past that.
+
+**The fitted ellipse turns with the billboard**, and this was accepted when it was
+asked for. Note it is the exact opposite of the §5.3 proxies, which are
+world-fixed *precisely so the shadow stops following the camera* — and the two are
+consistent rather than contradictory: a **cast shadow**'s shape must not follow
+the viewer, because nothing physical does that; a **footprint traced from the drawn
+object** should track what is actually drawn. `rt_sprite_ao_shape 0` reverts to the
+disc as a pin change, and raising `rt_sprite_ao_aspect` toward 1 is the middle
+position — it rounds the ellipse out and shrinks the swing without giving up the
+fit.
+
+    .\tools\ab.cmd spriteao-disc 02     circle everywhere
+    .\tools\ab.cmd spriteao-on   02     fitted -- walk a circle around a dropped gun
+
+### The four things that decide whether it is honest
+
+Each of these is the feature admitting where its assumption stops, in the same
+spirit as §5.3's scope tests:
+
+- **Height fade** (`rt_sprite_ao_fade`, 56 map units). The blob asserts the thing
+  is *on* the floor. A lost soul crossing a room, a cacodemon, a rocket in flight
+  and a jumping player must not carry a disc with them, so it fades linearly from
+  contact to nothing. This is the single most important knob for not looking fake.
+- **The floor comes from the playsim.** `actor->floorz`, plumbed through
+  `m_lastthingfloorz`, not re-derived in the renderer. It is already resolved
+  across 3D floors and slopes, and getting it wrong buries the quad in the floor
+  where the 5 cm test silently discards it — a failure that looks exactly like
+  the feature not being built.
+- **Radius is the actor's, not the quad's.** `rt_sprite_ao_radius` multiplies
+  `actor->radius`. A sprite quad is the art's canvas and is roughly twice the
+  body (a marine: 64 units of art around a radius of 17) — the same trap
+  `rt_sprite_shadow_width` exists for. The default is 1.6× on purpose: occlusion
+  reaches past a silhouette, and a blob cut exactly at the body reads as a
+  sticker.
+- **One blob per actor per frame.** A sprite with a fog layer draws **twice**
+  (`hw_sprites.cpp` ~390/398), and unlike a mesh primitive a decal has no ID
+  collision check to save us — two passes would blend twice and square the
+  darkening. Gated on `primitiveIndexInMesh == 0`, which resets per actor, so it
+  needs no static state and no frame counter.
+
+The player's own viewer sprite is excluded, for the same reason §5.3 excludes it:
+it is drawn at the eye, and a blob under it is a dark ring painted around the
+camera.
+
+### Cvars
+
+| cvar | default | note |
+|---|---|---|
+| `rt_sprite_ao` | `true` | master switch |
+| `rt_sprite_ao_strength` | `0.7` | fraction of the floor's albedo removed at the centre. Settled in play — see below |
+| `rt_sprite_ao_radius` | `1.6` | multiple of `actor->radius`, for the **circle** |
+| `rt_sprite_ao_shape` | `1` | 0 = circle always; 1 = circle upright / ellipse lying down; 2 = ellipse always |
+| `rt_sprite_ao_fit` | `1.0` | multiple of the **sprite's** horizontal extent, for the ellipse. 1 = the art's own width |
+| `rt_sprite_ao_aspect` | `0.4` | the ellipse's across-axis over its along-axis. A declared assumption, not a measurement |
+| `rt_sprite_ao_fade` | `56` | map units of height over which it fades out |
+| `rt_sprite_ao_scope` | `0` | 0 = everything with a floor; 1 = only what `rt_sprite_shadow` skips |
+| `rt_sprite_ao_segments` | `14` | fan resolution |
+| `rt_sprite_ao_dist` | `30` | metres. Tighter than the proxies' 40 — see the limitation below |
+| `rt_sprite_ao_debug` | `false` | **`RT_CVAR_NOARCH`** — per-60-draw count of blobs *uploaded*, plus the nearest one's world position. Read the trap below before using it |
+
+Compiled defaults **and** pins in `tools/d64rt-pins.cfg`, both, per the rule in
+§5.3: a pin overrides the compiled default, so changing one alone changes
+nothing.
+
+    .\tools\ab.cmd spriteao-off  02     control
+    .\tools\ab.cmd spriteao-on   02     what ships
+    .\tools\ab.cmd spriteao-loud 02     0.9 / 2.5x -- "is it running at all"
+
+`spriteao-loud` exists because the shipping values are deliberately subtle and
+*"I see no difference"* is ambiguous between "working and subtle" and "not
+running". Run it first when something looks wrong, then judge strength on
+`spriteao-on` — judging strength on `loud` is how a feature ships as a sticker.
+
+### The trap: a decal's world position is NOT its transform
+
+**The first version shipped invisible**, and the failure is worth the space
+because nothing about it is guessable from the API and nothing at all is logged.
+
+`RsDecal.vert` is three lines long and the middle one is the problem:
+
+```glsl
+outTexCoord = texCoord;
+outWorldPos = position;                                    // <- LOCAL, untransformed
+gl_Position = rasterizerVertInfo.viewProj * vec4( position, 1.0 );
+```
+
+The push constant is *already* `model * viewProj` (`RasterizedPushConst`
+premultiplies `info.transform`), so **`gl_Position` is transformed and
+`outWorldPos` is not.** The fragment shader then tests that untransformed value
+against a true world-space `framebufSurfacePosition`.
+
+So the blob was built the way the shadow proxies above legitimately are — verts
+around a local origin, location in `mesh.transform` — and the result is a quad
+that **rasterizes in exactly the right place on screen and then discards 100 % of
+its fragments**, because its "world" position is ~(0,0,0) while the floor is tens
+of metres away. Not misplaced. Invisible, silently, with no warning and no
+geometry to inspect.
+
+gzdoom's own wall decals never hit this: world geometry takes the `MakeTransform`
+branch in `InternalDraw`, where the transform is identity and local already *is*
+world. **A sprite is the only caller that arrives at the decal path with a real
+transform**, which is why a working decal system could be sitting right there and
+still not save the first attempt.
+
+The fix is one line of policy — **world-space vertices, identity transform** —
+and `rt_sprite_ao_debug` exists so this class of failure can never again be
+confused with the feature being switched off. It counts *uploads*: `emitted > 0`
+with a clean screen means a position bug, not a disabled feature. That distinction
+is the entire reason the cvar is there.
+
+### Known limitations, stated rather than hidden
+
+- **Not in reflections or water.** It is rasterized into the primary G-buffer, so
+  a mirror shows the floor with no blob. This is the cost of the approach and it
+  is the thing to look at first if the feature ever needs replacing.
+- **Long range.** The decal's 5 cm test compares against the *checkerboard
+  neighbour's* traced surface position, and at distance a pixel footprint can
+  exceed 5 cm on a grazing floor, which drops fragments. `rt_sprite_ao_dist 30`
+  is the bound; the same limit applies to the game's bullet-hole decals.
+- **`rt_sprite_ao_scope 0` overlaps `rt_sprite_shadow` on live monsters.** Both
+  are present under a standing enemy. That is deliberate — the proxy shadow is
+  what vanishes when the light lies in its plane, and the blob is what is left —
+  but it is why the default strength is well under half.
+
+**Status.** Reported invisible on the first build; cause found and fixed (the
+world-position trap above). Rebuilt with `rt_sprite_ao_debug` added. **Still not
+confirmed in-engine** — nobody has yet looked at a blob, so if it is invisible
+again the first move is `.\tools\ab.cmd spriteao-loud 02` and reading the emitted
+count, *not* changing strength.
+
+---
+
 ## 5.4 The shafts are a MEDIUM, and its density was tied to the volume's reach
 
 Reported after the smoke work: on MAP01 the shafts through the ceiling opening
@@ -656,6 +860,11 @@ and the moon lives in there next to the fog and the smoke.
 | `RTGL/.../RaygenCommon.h` | `traceSunReachesSky`, surface + indirect probe; `calcSunOnlyReservoir` + the `sunSplit` exclusion (§5.2) |
 | `RTGL/.../RtVolumetric.rgen` | the probe on the **shafts** |
 | `RTGL/.../VulkanDevice.cpp` | `sunRequireSky` / `sunLeakDebug` uniforms |
+| `tools/arms/sprshadow-*.cfg` | the §5.3 sprite-shadow arms (`sprshadow-off` / `-on` / `-probe` / `-max`) |
+| `tools/arms/spriteao-*.cfg` | the §5.3.1 contact-occlusion arms (`spriteao-off` / `-on` / `-loud` / `-disc`) |
+| `rt_draw.cpp` | both sprite mechanisms: the §5.3 shadow proxies and the §5.3.1 AO decal fan |
+| `hw_sprites.cpp` | the per-actor facts they run on — `m_lastthingupright`, `m_lastthinglivemonster`, `m_lastthingfloorz` |
+| `RTGL/.../RsDecal.frag` | the 5 cm surface test and the albedo blend the §5.3.1 blob is built on |
 
 ---
 
