@@ -224,6 +224,15 @@ Three things that will otherwise cost you a day:
   **GREEN** escaped — and it composes with the fix, so all-red is the
   confirmation. The regression it can cause is the opposite one: an unclosed
   courtyard now goes dark. `tools/ab-skyleak.cmd noreq` compares against stock.
+- **The shafts are a MEDIUM, and its density hangs off `rt_volume_far`.** What
+  you see as a shaft is `rt_volume_scatter` being scattered by the directional
+  light, and the shader applies that coefficient **per froxel cell** over a grid
+  that is 64 slices at any reach — so raising the reach for smoke (`30 → 60`)
+  halved the medium and halved the moon with it. Reported as "shafts weak from
+  in front, fine looking up at the moon"; the asymmetry is the phase function's
+  ~11× forward bias, and it is the confirmation, not a contradiction.
+  `rt_volume_scatter` is now normalised per metre in `rt_main.cpp` (fog is not —
+  it is tuned in per-cell units). Doc §5.4, arms `tools/arms/moon-*.cfg`.
 - **There is no single visibility choke point.** The visible shafts are
   *volumetric*, and `RtVolumetric.rgen` does **not** call
   `traceDirectIllumination` — it shadow-tests its own light. A fix in the shared

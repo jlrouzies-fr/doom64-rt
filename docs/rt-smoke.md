@@ -136,6 +136,18 @@ wrong for fog as well:
 sets the froxel slice thickness (`far / 64`), which is the resolution limit
 everything in §8 runs into.
 
+**And raising it for smoke cost the moon half its light shafts.** The shader's
+coefficient is per CELL, so `30 → 60` — pinned to double smoke's render distance
+— halved the number of cells any given metre of air occupies, and so halved the
+global medium. Smoke never noticed, because it pays the slice thickness
+engine-side before upload (§3, "`rt_smoke_density` is per METRE, and the fog's is
+not"); the moon's shafts *are* that medium, and they went weak on MAP01 for a
+week. `rt_volume_scatter` is now normalised per metre against a 30 m reference in
+`rt_main.cpp`, so the reach is a reach again. Written up in
+`docs/moon-and-sky-leaks.md` §5.4, with `tools/arms/moon-*.cfg` as the A/B.
+**Fog is deliberately not normalised** — its nine maps are tuned in the per-cell
+units `rt-fog.md` §6 describes.
+
 ### Per weapon
 
 `RT_SMOKE_PROFILES` in `rt_smoke.cpp` bends those defaults per ready weapon,

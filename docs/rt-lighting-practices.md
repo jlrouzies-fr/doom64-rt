@@ -706,6 +706,50 @@ dependence on sector shape.
   shown a case it must pass, and a case it must fail, is not evidence. This is §10
   ("instrument to discriminate") applied to the instrument itself.
 
+## 33. "It casts no shadow" is usually the pipeline, not the caster
+
+`screen/moon_shadow_limit.png`: 21 `64MarineBot`s in `TITLEMAP` casting no moon
+shadow while the buildings around them did. The question asked was whether the
+moon has a **limit on how many shadows it can cast**. It does not — `rt_shadowrays`
+maps to RTGL1's `maxBounceShadows`, which gates shadow rays by *bounce depth*
+("if illumination bounce index is in `[0, maxBounceShadows)`"), never by caster
+count, and shadow rays test the whole TLAS at a fixed cost per ray.
+
+Four caster-side explanations were checked and all four were wrong:
+
+| checked | result |
+|---|---|
+| meta `noShadow` → `WORLD_1`, which `rayCullMaskWorld_Shadow` excludes | 441 textures carry it; `PLAY`/`POSS`/`SPOS`/`SARG`/`TROO` are **243 entries with zero** |
+| the shadow cull mask | `getShadowCullMask()` returns `WORLD_0` + first-person-viewer; an opaque sprite is in `WORLD_0` |
+| rasterized-not-traced (the MAP01 fence bug, `rt_force_mask_opaque`) | `64MarineBot` is `: ZombieMan` with no `RenderStyle` and no `Alpha` |
+| the actor | **the user's own observation ended it**: the same sprites shadow in play when an enemy shoots |
+
+**The answer was `rt_shadow_samples`.** Direct visibility is *one binary ray per
+pixel*, so a pixel is fully lit or fully black. A thin, distant, **moving** caster
+covers a fraction of a pixel, so every pixel along its umbra is a coin flip with
+no temporal history to reuse — and a coin flip is exactly what a denoiser
+averages to nothing. A muzzle flash escapes this because it is bright and close,
+so its shadow is *most* of the light at those pixels and survives anything. The
+static buildings escape it because their history is stable.
+
+**Rules:**
+
+- **"No shadow" has two distinct causes and the image cannot tell them apart:**
+  the ray was never blocked, or it was blocked and the result was drowned in fill
+  light or smeared by the denoiser. `rt_debug_visibility 1` exists for exactly
+  this (added after four A/B ladders failed to separate them) — black where the
+  shadow ray was blocked, no radiance involved. **Reach for it before building
+  arms**; it would have answered this in one run instead of six.
+- **A user's "it works over there" is the strongest evidence in the room.** The
+  muzzle-flash observation eliminated every caster-side theory at once and
+  redirected the search to the light. §29.
+- **Contrast, not correctness.** A shadow is only visible in proportion to how
+  much of the local light it blocks. Before suspecting geometry, ask what *else*
+  is lighting that surface.
+- **A print-only debug cvar changes nothing on screen.** `rt_prim_debug` was
+  reported as "no difference"; its answer was in the console, unread. Say which
+  output an instrument writes to when handing one over.
+
 ## Pending visual confirmation
 
 `RT_UploadCeilingEdgeLamps` (MAP03 ceiling strips) and the map-relative

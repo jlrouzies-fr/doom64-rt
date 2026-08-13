@@ -1044,3 +1044,88 @@ Shipped: 48 SMONBA panels as 9804, `arg3/arg4` 16/20, `angle` 2, white, at
 133..167. Pinned in `tools/d64rt-pins.cfg`; arms `ab-smon.cmd
 static|statichard|staticcalm|staticoff`, which vary only this cvar and so leave
 every 9802 monitor identical between them.
+
+## RTGL1: `sunSplit` — the directional light shaded outside ReSTIR (2026-08-13)
+
+**Symptom.** Sprites cast no moon shadow (`screen/moon_shadow_limit.png`, 21
+`64MarineBot`s in TITLEMAP) while the same sprites shadow perfectly from a muzzle
+flash. Not a caster problem: no `noShadow` meta, correct `WORLD_0` shadow mask,
+opaque alpha-tested primitives, and no caster limit exists (`maxBounceShadows`
+gates bounce depth, not object count).
+
+**Cause.** `RaygenCommon.h` merged the directional light's reservoir into the
+regular-lights reservoir stochastically, so one light wins per pixel. A weak,
+huge light loses that draw on most pixels, so its shadows come back sparse and
+the denoiser flattens them.
+
+**Change**, all gated on the new uniform and OFF by default:
+
+| file | change |
+|---|---|
+| `Source/Generated/GenerateShaderCommon.py` | `_pads8` → `sunSplit` (float where a uint was, so std140 is unchanged; `check_uniform_layout.py` passes, 183 fields / 8192 bytes) |
+| `Source/Shaders/RaygenCommon.h` | exclude the sun from the merge in DIRECT **and** INITIAL; new `calcSunOnlyReservoir()`; deterministic sun term in `processDirectIllumination`, with the `validCount == 0` early-out moved so a moon-only room is not returned black |
+| `Include/RTGL1/RTGL1.h`, `Source/DrawFrameInfo.h` | `RgDrawFrameSkyParams::sunSplit`, default 0 |
+| `Source/VulkanDevice.cpp` | `gu->sunSplit` |
+| gzdoom `rt_cvars.inc`, `rt_main.cpp` | `rt_sun_split` (default false) → `.sunSplit` |
+
+Unbiased: the sun is removed from the candidate set rather than double-counted,
+and the single-candidate reservoir is built exactly as the stochastic path built
+it, so sunlit brightness is unchanged and only the noise differs. Indirect and
+volumetric keep the stock path. A/B: `.\tools\ab.cmd title-nosplit|title-split`.
+Full write-up: `docs/moon-and-sky-leaks.md` §5.2.
+
+## RTGL1: `RG_MESH_PRIMITIVE_SHADOW_ONLY` — sprite shadow proxies (2026-08-13)
+
+**Symptom.** A sprite is a camera-facing quad with no thickness: a light lying in
+its plane projects it to a line (no shadow at all), and the shadow's shape
+changes as the player rotates, because the quad turns to face the viewer.
+Voxelising the actors is a documented dead end (`docs/rt-voxel-models.md` §6).
+
+**Change.** A new primitive class that is in the acceleration structure and
+blocks shadow rays while being invisible to every other ray — the complement of
+`RG_MESH_PRIMITIVE_NO_SHADOW`:
+
+| file | change |
+|---|---|
+| `Include/RTGL1/RTGL1.h` | `RG_MESH_PRIMITIVE_SHADOW_ONLY = 1 << 22` |
+| `Source/VertexCollectorFilterType.h/.cpp` | new `PV_SHADOW_ONLY` primary-visibility class (bit 11, previously unused; BLASes are per-primitive here so no bucket growth) |
+| `Source/ASManager.cpp` | that class → `INSTANCE_MASK_RESERVED_0`, with **no** `rayCullMaskWorld` test — the mask's absence from it is exactly what hides the geometry |
+| `Source/VulkanDevice.cpp` | `rayCullMaskWorld_Shadow = WORLD_0 \| RESERVED_0` |
+| gzdoom `rt_draw.cpp` | after the sprite upload, submit `rt_sprite_shadow_planes` copies at fixed world yaws; same verts, different transform (the billboard is already factored into rotation + pivot); IDs at `actor + 0x4000000000000000 + k` so they cannot collide with a pointer-derived ID |
+| gzdoom `rt_cvars.inc` | `rt_sprite_shadow` (off), `_planes` (2), `_hidecaster` (on), `_dist` (40 m) |
+
+Translucent sprites are skipped (rasterized, so not in the AS and casting nothing
+today). Default off. A/B: `.\tools\ab.cmd sprshadow-off|sprshadow-on`. Full
+write-up: `docs/moon-and-sky-leaks.md` §5.3.
+
+## `rt_volume_far` was a hidden density knob, and it dimmed the moon (2026-08-13)
+
+**Symptom.** After the smoke work the moon's volumetric shafts went weak on
+MAP01 — barely visible in front of the ceiling opening, but plainly there
+standing under it looking up at the moon. No `rt_sun_*` value had changed.
+
+**Cause.** `RtVolumetric.rgen` multiplies its scattering coefficient **per
+froxel cell**, and `CmVolumetricProcess.comp` prefix-sums cells with no
+slice-thickness weighting. The grid is 64 slices whatever the reach, so
+`rt_volume_far` sets metres-per-cell — and the pin raised it `30 → 60` to double
+smoke's render distance (commit `11417f2`). A shaft crossing a given room then
+passed through half as many cells: **half the in-scattered light**. Smoke was
+immune because it converts its own per-metre density to per-cell before upload
+(`rt_main.cpp`, the `sliceM` block), which is precisely why the moon was the only
+thing that changed. The view asymmetry is the Henyey–Greenstein phase function at
+`rt_volume_lassymetry 0.5` — ~11× more scattering into the eye along the beam
+than across it — so only the weaker of the two views fell under threshold.
+
+**Change** (engine only; no RTGL1 rebuild):
+
+| file | change |
+|---|---|
+| gzdoom `rt_main.cpp` | `volume_dens = rt_volume_scatter * ( reach / 30 )`, feeding `.scaterring` and `.farScattering` in the **unfogged** branches only. `rt_volume_scatter` is now a per-metre density and `rt_volume_far` a pure reach/resolution knob |
+| gzdoom `rt_main.cpp` | `.farScattering` also states `0` in the `smoke_owns` case — near 0 with a non-zero far was a ramp from clear air into haze, the opposite of what zero base density is for |
+| gzdoom `rt_cvars.inc` | `rt_volume_far` / `rt_volume_scatter` help rewritten to say which is which |
+| `tools/arms/moon-*.cfg` | seven arms, `moon-before` reproducing the regression exactly on the fixed build |
+
+**Fog is deliberately untouched.** `RT_FOG_PRESETS` is tuned in the per-cell
+units `rt-fog.md` §6 documents, across nine maps; normalising it would retune all
+of them for a MAP01 report. `ab-smoke.cmd fogsafe` is the check that it did not
+move. Full write-up: `docs/moon-and-sky-leaks.md` §5.4.

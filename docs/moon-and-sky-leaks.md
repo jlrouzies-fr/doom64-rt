@@ -350,6 +350,293 @@ change also fixes it, normally the radius.
 
 ---
 
+## 5.2 The moon competes for each pixel, and usually loses — `rt_sun_split`
+
+Found from `screen/moon_shadow_limit.png`: sprites casting no moon shadow while
+the same sprites shadow perfectly from a muzzle flash. It is not a shadow bug
+and not a caster bug — the shadows were being cast and thrown away.
+
+**Mechanism.** `RaygenCommon.h` builds two reservoirs — one over the regular
+lights, one for the directional light — and merges them **stochastically**:
+
+```glsl
+updateCombinedReservoir(combined, dirLightReservoir, rnd);
+```
+
+So exactly **one light wins per pixel**. That is proper importance sampling, and
+it fails in a specific way for a light that is *huge but weak*: at
+`rt_sun_intensity 90`, against a level's own lamps and `rt_sector_emis` surfaces,
+the moon wins on a minority of pixels. Its shadows are therefore resolved on a
+sparse random subset of the image, and the denoiser flattens what survives. A
+muzzle flash escapes this by dominating every pixel it touches, which is exactly
+why the same sprite shadows fine when an enemy fires.
+
+**Why more samples only half-worked.** `rt_shadow_samples` averages visibility
+for the light **already chosen** (`reservoir.selected`), so it sharpens the moon
+only where the moon was picked — measured: 8 samples recovered "a bit".
+`rt_spp_direct 4` did restore them, because N independent estimates give the moon
+N chances to be drawn, but it pays for that by multiplying rays across **every**
+light to repair one.
+
+**The fix.** `rt_sun_split 1` removes the sun from that draw and shades it
+deterministically: one shadow ray on every pixel facing it, added to the ReSTIR
+estimate over everything else.
+
+- **Unbiased.** The sun is removed from the candidate set rather than counted
+  twice, and `calcSunOnlyReservoir()` mirrors how `calcInitialReservoir` built
+  `dirLightReservoir` — one candidate, `oneOverSourcePdf` 1, normalised to 1 — so
+  sunlit surfaces are the **same brightness** either way. Only the noise changes.
+  If brightness moves, the weight has drifted; that is the one way this breaks.
+- **DIRECT *and* INITIAL.** Excluding the sun in the direct pass alone would not
+  work: the INITIAL pass writes the reservoir image that direct sample 0 loads,
+  so the sun would be back in the lottery through the stored reservoir.
+- **Indirect and volumetric are untouched** — bounce light and the fog shafts
+  keep the stock path and are bit-identical.
+- **Cost** is one shadow ray per sun-facing pixel: most of the screen outdoors,
+  nearly none indoors.
+- The old `validCount == 0` early-out had to move, or a room lit *only* by the
+  moon — no regular lights, no valid reservoir — would have returned black for
+  exactly the surfaces this exists to light.
+
+**Default is OFF** (`rt_sun_split false`, RTGL1's `sunSplit` defaults to 0), so
+play is unchanged until the A/B says otherwise:
+
+    .\tools\ab.cmd title-nosplit menu     stock, run first
+    .\tools\ab.cmd title-split   menu     the fix, at stock sample counts
+    .\tools\ab.cmd title-split   02       and in a real level, for the frame cost
+
+Both arms hold `rt_shadow_samples 1` and `rt_spp_direct 1` deliberately: the
+claim is that one deterministic ray beats eight samples and four spp, so it has
+to be shown at stock quality rather than on top of it. To ship it, flip the
+compiled default **and** add the pin to `tools/d64rt-pins.cfg` — a pin overrides
+the compiled default, so both must agree.
+
+---
+
+## 5.3 A sprite has no thickness — `rt_sprite_shadow`
+
+Reported straight after §5.2 landed, and it is the other half of the same
+complaint. A sprite is a **camera-facing quad**, so its shadow is the projection
+of a plane:
+
+- **A light lying in that plane projects it to a line.** Look at an actor with
+  the light exactly to your left and it casts nothing at all.
+- **The quad turns to face you, so the shadow's shape changes as you rotate.**
+  Nothing physical does this, and it reads as instability.
+
+Voxelising the actors would fix it properly and is a **documented dead end** here
+— `docs/rt-voxel-models.md` §6: silhouette carving from Doom's 8 hand-drawn
+rotations cannot represent a concavity, "the ceiling of the method, not a tuning
+problem."
+
+**What ships instead: invisible crossed quads.** Each visible actor also submits
+`rt_sprite_shadow_planes` (2) quads at **fixed world angles**, flagged
+`RG_MESH_PRIMITIVE_SHADOW_ONLY`. At 90° apart no light direction is degenerate —
+as one plane goes edge-on the other is face-on — and being world-fixed, the
+shadow stops following the camera.
+
+| | |
+|---|---|
+| **Invisible how** | The proxies land on `INSTANCE_MASK_RESERVED_0`, which is absent from `rayCullMaskWorld` (`WORLD_0\|1\|2`) and therefore from the primary, reflection, refraction and indirect cull masks *by construction*. One line in `VulkanDevice.cpp` adds it to `rayCullMaskWorld_Shadow`, and that is the only ray that can see them. |
+| **Why it is cheap** | `CalculateTrueTransformAndItsVerts` already factors a billboard into (rotation, pivot) + un-rotated local verts, so a proxy is **the same vertices under a different transform** — no vertex maths, no second geometry copy, no texture work. |
+| **Silhouette, not a rectangle** | The alpha test is carried over in the flags. |
+| **Skipped** | Translucent sprites — spectres, the nightmare imp, additive fire. RTGL1 rasterizes those, so they are not in the AS and cast nothing today; giving them a solid shadow would be a change in look, not a fix. |
+| **Bounded** | `rt_sprite_shadow_dist` (40 m). The cost is per visible actor per frame. |
+| **The caster** | `rt_sprite_shadow_hidecaster` (on) puts `NO_SHADOW` on the visible billboard, or the umbra is the union of all three quads — fatter than the actor and still camera-dependent, i.e. the artefact survives diluted. |
+
+Unique IDs are `actor pointer + 0x4000000000000000 + plane`, deliberately beyond
+any Windows x64 user-space pointer: a collision would make RTGL1 drop one of the
+two primitives with *"a primitive with the same ID already exists"*, silently,
+and the proxy is the one that would lose.
+
+**SHIPPING ON** (2026-08-13) — compiled default `rt_sprite_shadow true` **and**
+pinned in `tools/d64rt-pins.cfg`, along with the scope, plane count, width,
+hidecaster and distance. Both are needed: a pin overrides the compiled default,
+so changing only one changes nothing. A/B:
+
+    .\tools\ab.cmd sprshadow-off 02      stock billboards
+    .\tools\ab.cmd sprshadow-on  02      what ships
+
+### What a proxy can and cannot stand in for
+
+A proxy is **an assumption about 3D shape**, and the four artefacts found in play
+are all that assumption failing somewhere it does not fit. Worth keeping
+together, because each fix narrows *where the feature applies* rather than
+improving the proxy:
+
+| symptom | cause | answer |
+|---|---|---|
+| swinging corner shadows across the flashlight beam | the **player's own** body is a `FirstPersonViewer` sprite that is also an `ExportInstance`, so it got proxies — and clearing the mesh flags dropped `FIRST_PERSON_VIEWER`, making them world occluders standing at the camera | skip viewer sprites. Keeping the flag instead fails: `PV_FIRST_PERSON_VIEWER` is tested before `PV_SHADOW_ONLY`, so the proxy would become *visible* geometry in front of the camera |
+| black stripe down the middle of every enemy in the beam | a proxy plane passes through the actor's **own axis**, so it shadows the half of its own billboard behind it — and with the flashlight (a light along the sprite's normal) the perpendicular plane is edge-on and projects to a line down the centre | alpha-tested instances carry `INSTANCE_CUSTOM_INDEX_FLAG_IGNORE_SHADOW_PROXY`; `getShadowCullMask` strips `RESERVED_0` for them, so sprites do not **receive** proxy shadows |
+| shadow spilling onto the floor *in front* of a sprite | proxies were as wide as the sprite's **canvas** (a marine: 64 units of art around a radius of 17), so the plane facing the viewer overhung the actor by ~2× | `rt_sprite_shadow_width` scales the horizontal axis to `actor->radius` |
+| radiating spokes from corpses, gibs and dropped weapons (`screen/shadowissue.png`) | those are **flat plates on the ground**; four vertical cards through one is simply the wrong shape | emit proxies only for upright things — `!MF_CORPSE && Height >= 24 && Height >= 1.5·radius`. Corpses and pickups keep their stock billboard shadow, exactly as before the feature |
+| a **mirrored twin** beside the shadow, on some enemies of a class but not others (`screen/invertedSpriteShadow.png`) | a textured plane's shadow is the **mirror** of its mask when the light is on the plane's far side, so roughly half the world-fixed planes cast a flipped silhouette | flip each proxy's U so its un-mirrored face points at the **camera** — gzdoom already chose the sprite's rotation frame for the camera's angle, so that is the only available definition of correct, and it is the right one for the flashlight |
+| that mirroring **surviving the flip**, specifically on side-on enemies | the local verts are not axis-aligned. `hw_sprites.cpp` hands `push_apply_spriterotation` the **actor's own yaw**, so the quad keeps its camera-facing orientation baked in, offset by `camera_yaw − actor_yaw` | canonicalise the quad from its own vertices before using it (below) |
+
+**The one that invalidated three earlier fixes.** Because the local verts carry
+that baked offset, a proxy built as "the same verts under a `yaw_k` transform"
+actually sat at `yaw_k + (camera_yaw − actor_yaw)`. Consequences, all silent:
+
+- the planes were **not world-fixed** — they rotated with the camera, which is
+  the property the whole design rests on;
+- **local Y was not the width axis**, so `rt_sprite_shadow_width` narrowed the
+  wrong one;
+- the mirror test's normal was off by the same angle, worst when the actor is
+  **side-on** to the viewer — exactly where the mirrored shadow survived.
+
+The fix derives the quad's frame from its own vertices: take the face normal
+(`(p1−p0)×(p2−p0)`), pick the side the camera is on since winding is not
+guaranteed, then rotate the verts about local Z until that normal is `+X`. The
+quad is then canonical — normal `+X`, width along `Y`, upright along `Z` — and a
+rigid rotation cannot mirror it, so the texture's handedness relative to the
+normal survives. Only then do the width scaling, the world yaws and the mirror
+test mean what they say.
+
+The height test is shape, not taste: gzdoom quarters an actor's `Height` on
+death, so a corpse lands near **H/R 0.7** while every standing monster is 1.8+
+(demon 30/56) and a barrel is 4.2; pickups are short without ever being corpses
+(shotgun 20/16 = 0.8).
+
+**Shipping scope is live monsters only** — `rt_sprite_shadow_scope 1`
+(`MF3_ISMONSTER && health > 0`, on top of the shape tests). Scope 0 widens it to
+anything upright, which also takes in barrels, torches and tall props.
+
+`health > 0` is not redundant with `MF_CORPSE`: an actor is dead the moment its
+health reaches 0 and plays a death animation for several tics **before**
+`MF_CORPSE` is set and its height quartered. Without it, a dying enemy keeps
+full-height vertical proxies through exactly the frames where it is folding onto
+the floor.
+
+**The general lesson.** One proxy shape cannot serve every sprite class. The
+useful question is not "is the proxy better" but "does this object match the
+assumption" — and where it does not, the honest move is to leave that class on
+the stock billboard rather than to keep tuning.
+
+### The plane spread was wrong for 3 and 4 planes
+
+The yaws were a fixed table `{0, π/2, π/6, π/3}`. A plane's orientation is modulo
+π — a quad and its 180° twin are the same occluder — so for `planes 4` that table
+is **0/30/60/90**: every plane packed into one quadrant, with the 90°–180° half
+uncovered. The consequence is that **how wide a shadow an actor casts depends on
+the light's compass bearing**, worst case 0.71× the actor's width against 0.97×
+at the best. It is derived now, `k·π/n`, so 4 planes are 0/45/90/135 and the
+worst case rises to 0.92×. `planes 2` was correct by luck and is unchanged;
+**the default is now 4**, which reads better in play.
+
+### Open: a missing shadow on a WALL
+
+Reported 2026-08-13 and **not yet resolved**. Sprite ahead, light to its right,
+wall to its left: the shadow lands on the floor but the wall gets nothing. Two
+candidates, and they need opposite fixes:
+
+- **Geometry** — the plane facing that bearing is too narrow, or no proxy reached
+  that surface. But the spacing arithmetic above predicts a *narrower* shadow,
+  not an absent one, so this is the weaker candidate.
+- **Light selection** — §5.2 again, for a *local* lamp. `rt_sun_split` took only
+  the moon out of ReSTIR's per-pixel draw; every ordinary light still competes,
+  so a lamp's shadow resolves only where that lamp wins. Near the sprite it
+  dominates the floor and wins; on a wall several lights reach, it wins on a
+  fraction of pixels, and a sparse shadow is what the denoiser flattens. That
+  predicts "floor yes, wall no" with no geometry involved.
+
+Two arms separate them, both run from the exact viewpoint where it is missing:
+
+    .\tools\ab.cmd sprshadow-probe 02    rt_debug_visibility 1 -- is the ray blocked?
+    .\tools\ab.cmd sprshadow-max   02    shadow_samples 8 + spp_direct 4
+
+Actor-shaped **black** on the wall under `probe` means the proxies *are*
+occluding and the loss is downstream; the shadow appearing under `max` confirms
+selection variance. If selection is the answer, the fix is not more planes — it
+is extending the `rt_sun_split` treatment to the dominant local light, which is a
+real design job, not a cvar.
+
+Both arms also set `rt_sun_split 1`, since outdoors there is no point testing
+sprite shadows the moon was never resolving. **The check that matters most is a
+negative one:** nothing new should ever be *visible* — not directly, not in a
+mirror or water, not as a brightening from indirect light. A faint cross around
+an actor would mean the instance mask is wrong, and that is the single failure
+mode this design has.
+
+---
+
+## 5.4 The shafts are a MEDIUM, and its density was tied to the volume's reach
+
+Reported after the smoke work: on MAP01 the shafts through the ceiling opening
+were much weaker — barely visible standing in front of the opening, but plainly
+there standing **under** it and looking up at the moon. That asymmetry reads as
+nonsense and is the thing that identifies the cause.
+
+**Nothing about the moon changed.** `rt_sun_intensity` is the 90 it always was
+and `rt_sun_require_sky` still passes those rays. What you see as a shaft is the
+**global medium** — `rt_volume_scatter` — being scattered by the directional
+light, so anything that thins the medium thins the shaft, and no `rt_sun_*` cvar
+is involved anywhere in the chain.
+
+The medium was thinned by a **smoke** pin. `RtVolumetric.rgen` applies the
+scattering coefficient **per froxel cell**:
+
+```glsl
+float scattering = ( fogDens + smoke.a ) * 0.001;
+imageStore( g_volumetric, cell, vec4( lighting * scattering, scattering + absorbtion ) );
+```
+
+and `CmVolumetricProcess.comp` prefix-sums those cells with **no slice-thickness
+weighting**. The grid is 64 slices whatever the reach, so `rt_volume_far` sets
+the metres per cell — and `30 → 60`, pinned to double smoke's render distance,
+halved how many cells a shaft crosses. Half the cells is half the in-scattered
+light. `rt_main.cpp` already stated this coupling for the *shortening* direction
+("shortening the reach would silently thicken it, because its density is per
+CELL"); nobody applied it to lengthening. **Smoke was immune** because it pays
+the slice thickness engine-side before upload, which is exactly why the moon was
+the only thing that moved.
+
+**Why looking up still worked.** The phase function is Henyey–Greenstein at
+`rt_volume_lassymetry 0.5`. At k = 0.706, `phaseFunction_Schlick` returns 0.462
+looking into the beam against 0.040 looking across it — about **11×**. That
+ratio was always there; halving the density pushed the across-the-beam view under
+the threshold where it reads while the into-the-beam view had 11× of headroom.
+So the "impossible" observation is the measurement that confirms the diagnosis.
+
+**The fix is a normalisation, not a value.** `rt_volume_scatter` is scaled per
+metre against the 30 m reach it was tuned at, before upload:
+
+    volume_dens = rt_volume_scatter * ( reach / 30 )
+
+so `rt_volume_far` is a **reach and resolution** knob only, and a density value
+means the same thing at any reach. Fog is deliberately **not** normalised: it
+carries its own tuned pair (`rt_fog_far` / `rt_fog_density`) on nine maps,
+`rt-fog.md` §6 documents the per-cell coupling as part of that contract, and
+`ab-smoke.cmd fogsafe` asserts those maps did not move.
+
+Two smaller contributors from the same stretch, both worth knowing before tuning
+anything here:
+
+- **`rt_volume_dither` is measured in FROXELS**, and the froxels doubled in
+  length with the reach. 2 → 5 was therefore ~0.94 m → ~4.7 m of depth smear, a
+  five-fold change from one pin plus another pin's side effect.
+- **The room under the shaft got brighter.** The lamp-ceiling work
+  (`rt-smoke.md` §3.2a) gives SFLATAQ/SFLATAS panes real bulb lights *and* keeps
+  their painted glow, so a shaft of fixed brightness reads weaker against MAP01's
+  halls than it used to.
+
+A/B, `tools/arms/moon-*.cfg` — view every arm twice, in front of the opening and
+under it looking up:
+
+    .\tools\ab.cmd moon-before 01    reproduces the report exactly, on the fixed build
+    .\tools\ab.cmd moon-now    01    shipping
+    .\tools\ab.cmd moon-far30  01    must MATCH moon-now near the camera -- the acceptance test
+    .\tools\ab.cmd moon-dens   01    twice the historical density: shafts and haze together
+    .\tools\ab.cmd moon-lint   01    brighter shafts, no extra haze
+    .\tools\ab.cmd moon-sharp  01    dither 2 + blur 0: how much is the smoothing pins
+    .\tools\ab.cmd moon-dark   01    bulbs off: how much is the brighter room
+
+**Generalise it.** A cvar owned by one feature can set the units another feature
+is measured in. Any pin that changes the froxel volume's geometry —
+`rt_volume_far`, `rt_fog_far` — silently retunes everything the volume carries,
+and the moon lives in there next to the fog and the smoke.
+
+---
+
 ## 6. Files
 
 | file | role |
@@ -359,12 +646,14 @@ change also fixes it, normally the radius.
 | `tools/scan_sky_apertures.py` | measures sky-hack gaps; the negative result above |
 | `tools/ab-moon.cmd`, `ab-moonsize.cmd`, `ab-skyleak.cmd` | pre-set A/B arms |
 | `tools/arms/cull-*.cfg` | the §5.1 geometry-culling arms (`ab.cmd cull-stock` / `-dark` / `-wide` / `-all`) |
+| `tools/arms/moon-*.cfg` | the §5.4 medium-density arms (`moon-before` / `-now` / `-far30` / `-dens` / `-lint` / `-sharp` / `-dark`) |
+| `RTGL/.../CmVolumetricProcess.comp` | the unweighted prefix sum — why CELLS, not metres, are what a shaft is counted in (§5.4) |
 | `hw_bsp.cpp` | the second, unculled BSP walk — `rt_cullmode`, `rt_nocull`, `rt_segdrawn` (§5.1) |
 | `rt_main.cpp` | `rt_sun_*`, `rt_moon_*`, `RT_MOON_PRESETS`, `moon` / `rt_sky_here` CCMDs, `RT_MoonSkyPitchOffset` |
 | `r_sky.cpp` | sky yaw tracking in `R_UpdateSky` |
 | `hw_skydome.cpp` | sky pitch offset in `SetupMatrices` |
 | `hw_sky.cpp` | `rt_sky_nowalls` |
-| `RTGL/.../RaygenCommon.h` | `traceSunReachesSky`, surface + indirect probe |
+| `RTGL/.../RaygenCommon.h` | `traceSunReachesSky`, surface + indirect probe; `calcSunOnlyReservoir` + the `sunSplit` exclusion (§5.2) |
 | `RTGL/.../RtVolumetric.rgen` | the probe on the **shafts** |
 | `RTGL/.../VulkanDevice.cpp` | `sunRequireSky` / `sunLeakDebug` uniforms |
 

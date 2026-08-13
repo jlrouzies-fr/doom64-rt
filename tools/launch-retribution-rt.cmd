@@ -15,6 +15,11 @@ set "CTELFIX=G:\AI\Doom64-RT\Doom64-Retribution\d64r-ctel-fix.wad"
 set "SKY=G:\AI\Doom64-RT\Doom64-Retribution\d64r-rt-sky.pk3"
 set "LAVAFX=G:\AI\Doom64-RT\Doom64-Retribution\d64r-lava-fx.pk3"
 set "BLOODFX=G:\AI\Doom64-RT\Doom64-Retribution\d64r-blood-persist.pk3"
+set "WIDEGFX=G:\AI\Doom64-RT\Doom64-Retribution\d64r-widescreen-gfx.pk3"
+rem Doomguy mugshot. Must load AFTER %MOD%: it carries a full copy of
+rem Retribution's SBARINFO (plus the DrawMugShot), and SBARINFO replaces
+rem wholesale, so whichever copy loads last is the entire HUD.
+set "MUGSHOT=G:\AI\Doom64-RT\Doom64-Retribution\d64r-mugshot.pk3"
 set "MUS=G:\AI\Doom64-RT\Doom64-Retribution\D64MUS.PK3"
 rem Full console transcript (incl. startup) -> shareable log. `logfile` is
 rem whitelisted to run at GS_STARTUP (c_dispatch.cpp), so it captures
@@ -24,8 +29,9 @@ rem The ~325 STATIC cvar pins, exec'd rather than passed as "+name value" pairs.
 rem See the note above the start command for why.
 set "PINS=G:\AI\Doom64-RT\tools\d64rt-pins.cfg"
 
-rem Usage: launch-retribution-rt.cmd [1-34] [debug] [-- +cvar val ...]
+rem Usage: launch-retribution-rt.cmd [1-34|menu] [debug] [-- +cvar val ...]
 rem   Optional map number (default 1) → +map map01 … map34
+rem   "menu" instead of a number → no +map, boot to the title screen
 rem   Second arg "debug" → -rtdebug (RTGL messages to console: DLSS-RR init
 rem     success/failure, shader load errors. Muted by default; rt_main.cpp
 rem     sets allowedMessages=0 without it, so RR failing is otherwise silent.)
@@ -47,7 +53,19 @@ for %%A in (%*) do (
     if "%%~A"=="--" set "SEEN_SEP=1"
   )
 )
+rem "menu" instead of a map number boots to the title screen and main menu with
+rem the identical file list and pins. Needed because +map jumps straight into
+rem play, so the title/menu/intermission 2D screens are otherwise unreachable
+rem from this launcher -- and those are exactly what you look at to check
+rem d64r-widescreen-gfx.pk3 (TITLEPIC, INTERPIC behind the score screen, and
+rem the credits page).
+set "MAPARG=+map"
 set "MAPNUM=%~1"
+if /i "%MAPNUM%"=="menu" (
+  set "MAPARG="
+  set "MAPLUMP="
+  goto :launch
+)
 if "%MAPNUM%"=="" set "MAPNUM=1"
 set /a "N=MAPNUM" 2>nul
 if errorlevel 1 goto :badmap
@@ -57,6 +75,8 @@ rem run, and MAP34 is the ONLY place in the game the BFLM/RFLM/YFLM/GFLM loose
 rem fires are placed (one of each), so the cap used to make them unreachable.
 if %N% GTR 34 goto :badmap
 if %N% LSS 10 (set "MAPLUMP=map0%N%") else (set "MAPLUMP=map%N%")
+
+:launch
 
 cd /d "%ENGINE%" || exit /b 1
 
@@ -350,7 +370,8 @@ if not exist "%BULBTEX%" (
 )
 
 echo Native RT path tracing, A-SVGF denoiser (no Remix^)
-echo   map=%MAPLUMP%  +rt_upscale_dlss 2 +rt_rayreconstr 0 +rt_framegen 0
+if defined MAPLUMP (echo   map=%MAPLUMP%) else (echo   map=none ^(title screen^))
+echo   +rt_upscale_dlss 2 +rt_rayreconstr 0 +rt_framegen 0
 
 rem Place window ~300px above vertical center (Y grows down). Falls back to 0 (top).
 set "WINY=0"
@@ -528,6 +549,19 @@ rem cvar). rt_gore_max caps the live count, oldest first. Do not confuse
 rem rt_gore_* with rt_blood_tint_* below -- the latter is the blood LIQUID
 rem surface, nothing to do with splats. See docs/blood-persist.md.
 rem
+rem d64r-widescreen-gfx.pk3 overrides graphics/INTERPIC -- the demon-head plate
+rem behind the end-of-level score screen (and the credits page). The WAD's copy
+rem is 320x200, which GZDoom pillarboxes to a 4:3 box on a 16:9 window. The
+rem replacement is 3328x936 -- exactly 32:9, so even a super-ultrawide fills
+rem with no bars. CalcFullscreenScale (v_draw.cpp) crops the sides to fit
+rem anything narrower, and 3328 is exactly 2x the 1664-wide core, so on a 16:9
+rem screen the crop lands precisely on the original shot and the extension is
+rem never seen. The sides are the outer 280 columns mirrored, stretched and
+rem ramped down to 45% -- there is no art out there, only more of the same
+rem dark stone. Height must NOT be 200 or 400: those two values are remapped
+rem to 240/480 for the old non-square-pixel ratio and the aspect would come
+rem out wrong. Load it last so it wins over the WAD.
+rem
 rem sourceless glow. Currently only MAP03's twin staircases; three more chains
 rem are surveyed and awaiting playtest in docs/sequence-light-chains.md.
 rem Load order note: MAP03 has no special-160 linedefs, so it is absent from
@@ -580,14 +614,15 @@ rem
 rem Order matters and is preserved: the pins (including god/notarget) run BEFORE
 rem +map, exactly as they did inline, and %EXTRA% runs LAST so an arm still wins.
 start "" gzdoom.exe ^
-  -iwad "%IWAD%" -file "%MOD%" "%BM%" "%SKUL%" "%FLSH%" "%MUS%" "%FIX3D%" "%SEQL%" "%BULBTEX%" "%CTELFIX%" "%SKY%" -file "%LAVAFX%" "%BLOODFX%" -rtnolauncher -width 1280 -height 720 %RTDEBUG% ^
+  -iwad "%IWAD%" -file "%MOD%" "%BM%" "%SKUL%" "%FLSH%" "%MUS%" "%FIX3D%" "%SEQL%" "%BULBTEX%" "%CTELFIX%" "%SKY%" -file "%LAVAFX%" "%BLOODFX%" "%WIDEGFX%" "%MUGSHOT%" -rtnolauncher -width 1280 -height 720 %RTDEBUG% ^
   +logfile "%LOGF%" ^
   +win_y %WINY% ^
   +exec "%PINS%" ^
-  +map %MAPLUMP% %EXTRA%
+  %MAPARG% %MAPLUMP% %EXTRA%
 exit /b 0
 
 :badmap
 echo Usage: %~nx0 [1-34]
 echo   Optional map number (default 1^). Example: %~nx0 5  -^> +map map05
+echo   Or "menu" to boot to the title screen with no +map.
 exit /b 1
