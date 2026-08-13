@@ -76,6 +76,25 @@ class D64RtFlashlightHud : EventHandler
 
 	override void RenderOverlay(RenderEvent e)
 	{
+		// Gameplay only. DrawTopStuff -- and so RenderOverlay -- is dispatched
+		// for GS_TITLELEVEL as well as GS_LEVEL (d_main.cpp:1008), and the title
+		// screen IS a level here: Retribution's TITLEMAP is the zooming "DOOM"
+		// map with the monster fight. Without this the battery meter sits on the
+		// main menu from the first frame. GS_INTERMISSION and GS_FINALE never
+		// reach this hook at all, but the check covers them for free.
+		if (gamestate != GS_LEVEL)
+			return;
+
+		// ...and the story screens are LEVELS too, so the gamestate check alone
+		// does not cover them. MAP00 is "The Story so Far" (New Game) and
+		// INTER01..INTER13 are the between-episode text maps -- all real maps
+		// with a player in them, all GS_LEVEL. Match by name; there is no flag
+		// that separates them from a playable map.
+		string mn = level.MapName;
+		mn = mn.MakeUpper();
+		if (mn == "MAP00" || mn.Left(5) == "INTER")
+			return;
+
 		CVar flsh = CVar.FindCVar("rt_flsh");
 		CVar batt = CVar.FindCVar("rt_flsh_battery");
 		if (batt != null && !batt.GetBool())
@@ -94,22 +113,33 @@ class D64RtFlashlightHud : EventHandler
 		int state = stateC != null ? stateC.GetInt() : 0;
 		// Charge persists across a toggle now, so the meter still means something
 		// with the beam off — keep it up (dimmed) until the cell is topped up.
-		if (state <= 0 && (lightOn || charge >= 0.999))
-			return;
+		// Always on screen: the meter used to hide itself whenever the beam was
+		// off and the cell was full, so the HUD gained and lost an element as
+		// you played. It stays put now and just dims through the state levels.
 
 		int segs = 5;
 		int lit = int(Floor(charge * segs + 0.000001));
 		if (charge > 0.02 && lit < 1) lit = 1;
 		if (charge >= 0.995) lit = segs;
 
-		// Match SBARINFO ForceScaled alpha 0.55
-		double opacity = 0.55;
+		// Follow the HUD's own opacity (d64_hud_alpha, 0..100) instead of the
+		// 0.55 these levels were authored against. That constant matched
+		// Retribution's baked-in SBARINFO alpha; now that the HUD alpha is a
+		// user setting, hardcoding it left the battery ~45% fainter than
+		// everything around it. The per-state factors below are the ORIGINAL
+		// levels expressed relative to that 0.55 baseline, so the dimming of
+		// the off/flashing/low states is preserved exactly.
+		double hudA = 1.0;
+		CVar hudAC = CVar.FindCVar("d64_hud_alpha");
+		if (hudAC != null)
+			hudA = Clamp(hudAC.GetInt(), 0, 100) / 100.0;
+		double opacity = hudA;
 		if (state == 0)
-			opacity = 0.28; // switched off, trickle-charging
+			opacity = hudA * 0.51; // switched off, trickle-charging
 		else if (state == 2)
-			opacity = ((Level.Time / 4) % 2 == 0) ? 0.55 : 0.22;
+			opacity = ((Level.Time / 4) % 2 == 0) ? hudA : hudA * 0.40;
 		else if (state == 3)
-			opacity = 0.40;
+			opacity = hudA * 0.73;
 
 		int VW = 320;
 		int VH = 240;
@@ -119,8 +149,15 @@ class D64RtFlashlightHud : EventHandler
 			fnt = SmallFont;
 
 		// Same baselines as HEALTH (208) / health value (217)
-		int vLabelY = 208;
-		int vBarY = 217;
+		// Bottom-relative, exactly like the SBARINFO coordinates now are:
+		// -32 is the HEALTH/ARMOR label row, -23 the value row.
+		// Measured against HEALTH in a real frame: at -32 the label landed 6px
+		// high, and one virtual unit is ~4.9px here, so -31 lands within ~1px.
+		// Measured in a real frame against HEALTH: label top matches at -31,
+		// and the meter's centre lines up with the centre of the HEALTH value
+		// at -16 (it was 30px high at -22; ~4.9px per virtual unit here).
+		int vLabelY = -31;
+		int vBarY = -17;
 		int vBodyW = 36;
 		int vBodyH = 7;
 		int vTipW = 2;
@@ -137,29 +174,86 @@ class D64RtFlashlightHud : EventHandler
 		int gap = 8;
 		// Column immediately left of HEALTH (Copy mockup). Negative is OK —
 		// KeepRatio maps it into the ultrawide left margin beside the HUD.
-		int battLeft = healthLeft - gap - battW;
-		if (battLeft < -72)
-			battLeft = -72;
+		// Anchored INSIDE the 320-wide HUD, not derived from HEALTH. The old
+		// derivation put the label at about -58, i.e. entirely off the left
+		// of the HUD box, so only part of the bar showed and the word
+		// BATTERY was never visible. HEALTH and the mugshot moved right in
+		// build_mugshot_pk3.py (HEALTH_X / FACE_X) to clear this column.
+		int battLeft = 0;   // resolved after the scale block below
 
 		// ForceScaled / KeepRatio mapping (must match DrawText DTA_KeepRatio)
 		int sw = Screen.GetWidth();
 		int sh = Screen.GetHeight();
-		double scale = Min(sw / double(VW), sh / double(VH));
-		double ox = (sw - VW * scale) * 0.5;
-		double oy = (sh - VH * scale) * 0.5;
+		// Aspect-matched virtual width. The rest of the HUD now uses SBARINFO
+		// FullScreenOffsets, where x is measured from the real screen edge. A
+		// plain 320-wide KeepRatio box is letterboxed on an ultrawide, so the
+		// battery would sit inside that box while HEALTH sat at the true edge.
+		// Widening the virtual space to the screen's own aspect makes KeepRatio
+		// produce no letterbox at all: ox becomes 0 and x=4 means 4 units from
+		// the left of the monitor, the same as the SBARINFO coordinates.
+		int VWfs = Max(VW, int(VH * sw / double(sh) + 0.5));   // provisional
+		// Match the status bar's scale ANALYTICALLY rather than by asking it.
+		// base_sbar.cpp:385-405 computes, for a 320x240 bar on a wide screen:
+		//     SBarScale = h * hud_scalefactor * (1 / ViewportPixelAspect) / 240
+		// Two traps here, both hit already:
+		//   * a plain sh/240 omits the pixel-aspect divisor, which drew the
+		//     battery slightly LARGER than HEALTH;
+		//   * StatusBar.GetHUDScale() read from RenderOverlay returns SBarScale
+		//     as left by whatever draw ran last, not the SBARINFO's own pass,
+		//     which came out about half size.
+		// HUD_ASPECT is that divisor. 1.2 is GZDoom's classic pixel aspect; if
+		// the battery still does not match HEALTH it is the ONE number to move.
+		double HUD_ASPECT = 1.098;
+		double hudScaleFactor = 1.0;
+		CVar hsfC = CVar.FindCVar("hud_scalefactor");
+		if (hsfC != null && hsfC.GetFloat() > 0.05)
+			hudScaleFactor = hsfC.GetFloat();
+		double scale  = (sh / double(VH)) * hudScaleFactor / HUD_ASPECT;
+		double scaleX = scale;
+		// Virtual space sized so DTA_Virtual* reproduces exactly that scale,
+		// with y measured up from the bottom edge of the real screen.
+		VWfs = Max(1, int(sw / scaleX));
+		// Virtual space sized to reproduce exactly that scale, so DTA_Virtual*
+		// units are the same units the SBARINFO coordinates use.
+		int VHfs = Max(1, int(sh / scale));
+		double ox = 0;
+		double oy = sh;
 
-		int bodyW = Max(1, int(vBodyW * scale + 0.5));
+		// Where the battery column sits depends on the HUD style.
+		//   Modern (1): the SBARINFO layout is screen-anchored, so hug the left
+		//               edge. 12 rather than 4 - at 4 the first glyph of
+		//               "BATTERY" was being clipped by the screen edge.
+		//   Classic (0): the stock layout is centre-relative, so sit a gap to
+		//               the left of HEALTH's own left edge, which in that style
+		//               is centre-160+24.
+		int hudStyle = 1;
+		CVar styleC = CVar.FindCVar("d64_hud_style");
+		if (styleC != null)
+			hudStyle = styleC.GetInt();
+		if (hudStyle >= 1)
+		{
+			battLeft = 6;
+		}
+		else
+		{
+			int centreX = VWfs / 2;
+			battLeft = centreX - 160 + 24 - healthW / 2 - 8 - battW;
+			if (battLeft < 2)
+				battLeft = 2;
+		}
+
+		int bodyW = Max(1, int(vBodyW * scaleX + 0.5));
 		int bodyH = Max(1, int(vBodyH * scale + 0.5));
-		int tipW = Max(1, int(vTipW * scale + 0.5));
+		int tipW = Max(1, int(vTipW * scaleX + 0.5));
 		int tipH = Max(1, int(vTipH * scale + 0.5));
-		int pad = Max(1, int(vPad * scale + 0.5));
-		int gapPx = Max(1, int(vGap * scale + 0.5));
-		int rim = Max(1, int(vRim * scale + 0.5));
+		int pad = Max(1, int(vPad * scaleX + 0.5));
+		int gapPx = Max(1, int(vGap * scaleX + 0.5));
+		int rim = Max(1, int(vRim * scaleX + 0.5));
 		int shad = Max(1, int(scale + 0.5));
 
 		// Center the cell bar under the BATTERY label
 		int labelMidX = battLeft + battW / 2;
-		int bx = int(ox + labelMidX * scale) - bodyW / 2;
+		int bx = int(ox + labelMidX * scaleX) - bodyW / 2;
 		int by = int(oy + vBarY * scale);
 
 		Color shell   = Color(0x2A, 0x22, 0x22);
@@ -183,14 +277,14 @@ class D64RtFlashlightHud : EventHandler
 		}
 
 		// --- Label: same font/alpha/baseline as HEALTH, no background box ---
-		Screen.DrawText(fnt, Font.CR_BLACK, battLeft + 1, vLabelY + 1, "BATTERY",
-			DTA_VirtualWidth, VW, DTA_VirtualHeight, VH,
+		Screen.DrawText(fnt, Font.CR_BLACK, battLeft + 1, VHfs + vLabelY + 1, "BATTERY",
+			DTA_VirtualWidth, VWfs, DTA_VirtualHeight, VHfs,
 			DTA_KeepRatio, true,
-			DTA_Alpha, opacity * 0.45);
-		Screen.DrawText(fnt, Font.CR_UNTRANSLATED, battLeft, vLabelY, "BATTERY",
-			DTA_VirtualWidth, VW, DTA_VirtualHeight, VH,
+			DTA_Alpha, hudA * 0.45);
+		Screen.DrawText(fnt, Font.CR_UNTRANSLATED, battLeft, VHfs + vLabelY, "BATTERY",
+			DTA_VirtualWidth, VWfs, DTA_VirtualHeight, VHfs,
 			DTA_KeepRatio, true,
-			DTA_Alpha, opacity);
+			DTA_Alpha, hudA);
 
 		// --- Cased meter (Dim uses real pixels via KeepRatio ox/oy/scale) ---
 		Screen.Dim(shadow, opacity * 0.30, bx + shad, by + shad, bodyW + tipW + rim, bodyH + rim);
