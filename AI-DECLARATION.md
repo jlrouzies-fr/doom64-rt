@@ -36,6 +36,13 @@ What that split looks like in practice:
   and only a human at the screen can do that. A large share of this repo's
   documented findings begin with the author saying the render was wrong when the
   tooling said it was fine — and being right.
+- **That direction is technical, not just aesthetic.** Missing renderer experience
+  is not missing engineering judgement. Working from the rendered output and from a
+  broad knowledge of how game graphics settings behave — denoisers, upscalers,
+  light radii and falloff, fog and volumetrics, LOD and culling, what a given knob
+  is *supposed* to do — the author has repeatedly redirected the AI to a better
+  implementation than the one it proposed, and rejected changes that would have
+  looked right in isolation while breaking something else.
 - **Claude owns the writing.** Engine code in the `gzdoom-rt` fork, the Python and
   batch tooling, the generators, the scanners, the material metadata and the
   documentation. It also proposes designs, investigates faults and reports what it
@@ -45,6 +52,22 @@ What that split looks like in practice:
   is the only thing that has reliably found the subtle faults.
 - **`deployment: assist`** because there is no release yet — the build scripts are
   AI-written, the builds are run and verified by the author.
+
+This is why several of the project's standing rules exist, and they are written
+into `AGENTS.md` as instructions to the AI rather than as anecdotes:
+
+> *A negative from a scanner you just wrote is weaker evidence than what the
+> person watching the screen tells you. When they disagree, distrust the tool.*
+
+Cases behind that rule: one of three identical-looking wall panels lit a room and
+the other two did not — the author's "compare the things, not the textures" led to
+`rt_dynlight_flicker` silently dropping 199 of the game's 205 monitor lights, which
+no amount of material work would have found. A release build that "had the same
+settings" looked wrong to the author; the configs were byte-identical and the real
+cause was 236 KB of authored material metadata that had never been committed. An
+A/B that showed no difference was accepted as a null result until the author
+insisted the change could not be live — it wasn't. In each case the AI's own
+instrumentation said everything was fine.
 
 The two upstream forks this project depends on carry the same working
 arrangement for the changes made *here*:
