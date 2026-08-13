@@ -324,7 +324,7 @@ declaration cannot drift from its definition. Put nothing in that file except an
 
 | Script | Purpose |
 |---|---|
-| `tools/launch-retribution-rt.cmd` | Play — native RT + DLSS-RR. Optional arg `1`–`32` → `map01`…`map32` (default 1). Loads `d64r-lostsoul-rt.pk3` + `d64r-3dfloor-rtfix.wad` (all-map 3D-floor hang strip). |
+| `tools/launch-retribution-rt.cmd` | Play — native RT + DLSS-RR. Optional arg `1`–`32` → `map01`…`map32` (default 1). Loads `d64r-lostsoul-rt.pk3` + `d64r-3dfloor-rtfix.wad` (all-map 3D-floor hang strip — **all** map lumps, including the `FUN`/`ABS`/`OUT`/`RDM`/`REC`/`RTR` campaigns). |
 | `tools/launch-enemy-gallery-rt.cmd` | MAP98 dark no-aggro enemy eye review hall. |
 | `tools/launch-texture-gallery-rt.cmd` | MAP99 texture PBR gallery (baseline mats). |
 | `tools/launch-emis-gallery.cmd` | MAP99 **world-emissives only** (`d64remis.wad` — monitors/EXIT/keys/CRT/lava). |

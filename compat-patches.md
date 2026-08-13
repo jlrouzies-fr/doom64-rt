@@ -110,7 +110,26 @@ Not ACS (script 12 terminate still froze). Real MAP01 `TEXTMAP` without `BEHAVIO
 | Disable only `Sector_Set3dFloor` (special 160) | OK |
 | Keep 3D floor, replace control sector 18 `F_SKY1` → `FLAT1` | Still freezes |
 
-**Fix pack:** `d64r-3dfloor-rtfix.wad` — every Retribution map that had `Sector_Set3dFloor` (special 160) stripped (**28 maps / 161 linedefs**, 2026-08-05). Keeps `BEHAVIOR`/`ZNODES`. Loaded via `tools/launch-retribution-rt.cmd`. Regen: `python tools/make_map_3dfloor_rtfix.py`. Side effect: 3D-floor visuals won’t appear until an engine-side RT 3D-floor fix exists. Per-map copies `d64r-mapNN-rtfix.wad` also written for debugging.
+**Fix pack:** `d64r-3dfloor-rtfix.wad` — every Retribution map that had `Sector_Set3dFloor` (special 160) stripped (**44 maps / 209 linedefs**, 2026-08-13; was 28/161 while the scan was `MAP\d\d`-only). Keeps `BEHAVIOR`/`ZNODES`. Loaded via `tools/launch-retribution-rt.cmd`. Regen: `python tools/make_map_3dfloor_rtfix.py`. Side effect: 3D-floor visuals won’t appear until an engine-side RT 3D-floor fix exists. Per-map copies `d64r-<mapname>-rtfix.wad` also written for debugging.
+
+**The extra campaigns were never covered (2026-08-13).** `list_map_names()` matched
+`MAP\d{2}`, so the five bonus episodes — whose lumps are `FUN00`, `ABS01`–`ABS06`,
+`OUT01`–`OUT10`, `RDM01`–`RDM08`, `REC01`–`REC09`, `RTR01`–`RTR10` — kept their 3D
+floors and froze on New Game exactly like MAP01 used to: black screen, "Not
+Responding", process alive. Reported as **Bonus Fun Maps and Absolution Levels crash
+while Outcast and Redemption work**; that split is content, not category — a map only
+freezes if its 3D floor is heavy enough, so OUT01/RDM01 have 160s and survive.
+Map markers are now detected structurally (a zero-length lump followed by
+`TEXTMAP`/`THINGS`), which also picks up any future map whatever its name.
+
+Two things that will mislead you here:
+
+- **`+map FUN00` does NOT reproduce it.** Both maps boot and render fine when warped
+  to directly; the freeze only appears on the TITLEMAP → level transition the New Game
+  menu takes. Test the menu route or you will conclude the maps are fine.
+- **The log stops after `Can't find a file, no static scene will be present`** and
+  that same line is the last one on a *healthy* level load too, so it is not a marker.
+  The only reliable tell is `MainWindowTitle` going to "(Not Responding)".
 
 **Must include `BEHAVIOR` (+ `ZNODES`):** a TEXTMAP-only replacement stripped ACS → every switch that calls script 19 printed `P_StartScript: Unknown script 19`. Fix wad carries original `BEHAVIOR`/`ZNODES` with the patched `TEXTMAP` (3D-floor special cleared). Do **not** ship a mis-offset PWAD (lump directory offsets must be absolute from file start — a bad rewrite once made TEXTMAP = nested `PWAD` header → `Unexpected character ASCII 5` / invalid ACS).
 

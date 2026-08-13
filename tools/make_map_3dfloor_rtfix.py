@@ -52,12 +52,28 @@ def write_wad(path: Path, items: list[tuple[str, bytes]]) -> None:
     )
 
 
+def is_map_marker(lumps: list[tuple[str, bytes]], i: int) -> bool:
+    """A map marker is a zero-length lump whose next lump starts the map body.
+
+    Name-matching on ``MAP\\d\\d`` is what left the five extra campaigns
+    unprotected: Retribution's own levels are ``RTR01``, and the Absolution /
+    Outcast / Redemption / Reckoning / bonus sets are ``ABS01``, ``OUT01``,
+    ``RDM01``, ``REC01``, ``FUN00``. Those maps kept their 3D floors and froze
+    on entry exactly like MAP01 used to.
+    """
+    if i + 1 >= len(lumps):
+        return False
+    if lumps[i][1]:
+        return False
+    return lumps[i + 1][0].upper() in ("TEXTMAP", "THINGS")
+
+
 def map_lump_range(lumps: list[tuple[str, bytes]], mapname: str) -> tuple[int, int]:
     start = next(i for i, (nm, _) in enumerate(lumps) if nm.upper() == mapname.upper())
     end = start + 1
     while end < len(lumps):
         nm = lumps[end][0].upper()
-        if re.fullmatch(r"MAP\d{2}", nm) and nm != mapname.upper():
+        if is_map_marker(lumps, end) and nm != mapname.upper():
             break
         if nm == "ENDMAP":
             end += 1
@@ -67,7 +83,9 @@ def map_lump_range(lumps: list[tuple[str, bytes]], mapname: str) -> tuple[int, i
 
 
 def list_map_names(lumps: list[tuple[str, bytes]]) -> list[str]:
-    return [nm.upper() for nm, _ in lumps if re.fullmatch(r"MAP\d{2}", nm.upper())]
+    return [
+        nm.upper() for i, (nm, _) in enumerate(lumps) if is_map_marker(lumps, i)
+    ]
 
 
 def decode_textmap(blob: bytes) -> str:
@@ -150,9 +168,9 @@ def build_all() -> Path:
         combined.extend(items)
         total += n
         maps_fixed.append(f"{mapname}({n})")
-        # Keep per-map copy for debugging / selective load
-        num = int(mapname[3:])
-        per = OUT / f"d64r-map{num:02d}-rtfix.wad"
+        # Keep per-map copy for debugging / selective load. Named off the map
+        # lump, not a parsed number -- "FUN00" and "MAP00" would collide.
+        per = OUT / f"d64r-{mapname.lower()}-rtfix.wad"
         write_wad(per, items)
 
     if not combined:
