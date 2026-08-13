@@ -394,4 +394,11 @@ Built on <a href="https://github.com/vs-shirokii/gzdoom-rt">gzdoom-rt</a> and
 <i>Doom</i> and <i>Doom 64</i> are trademarks of id Software. This is a non-commercial fan project,
 not affiliated with id Software, Bethesda, Midway or NVIDIA.
 </sub>
+
+<br>
+
+<sub>
+🤫 &nbsp;<i>Don't tell Alex it's vibe coded.</i><br>
+<sub>…it's declared right there at the top, actually. Every light still had to survive a human looking at it.</sub>
+</sub>
 </div>
