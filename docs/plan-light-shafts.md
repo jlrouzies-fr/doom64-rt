@@ -231,6 +231,55 @@ larger of its world size and a fixed **angular** size — a constant few pixels 
 any distance. `dust-honest` turns that off so the shimmer it prevents can be
 seen.
 
+### The shaft gate — dust is *for* the shafts
+
+Traced lighting alone does not make dust a shaft effect, and this was reported
+from play: a room's ambient and its bounced GI reach everywhere, so every mote in
+the level picks up something and the field reads as an even haze of specks rather
+than as air made visible by a beam. Asked for as *"mostly visible under shafts,
+barely when not"*.
+
+`rt_dust_shaft_floor` (0.08) is the albedo a mote keeps where there is no beam —
+`1` is the ungated behaviour, `0` is beams only. What it interpolates against is
+a per-mote weight computed on the CPU from the very list that decides where
+shafts are (`RT_ShaftLightsSelected`), plus the moon. Two things keep that honest
+rather than a fudge:
+
+- **It is proximity × phase, never a radiance.** How much light actually arrives
+  is the tracer's answer; computing it here as well would count it twice. The
+  proximity term is deliberately *not* inverse-square — that is the light's own
+  falloff and the tracer has already applied it. `rt_dust_shaft_radius` (2.5 m)
+  is the half-weight distance, and it is a look knob with no physical answer.
+- **Visibility is still the tracer's.** A mote near a lamp but behind a wall gets
+  a high weight and no light, so it is still black. The CPU never has to answer
+  the question it could not answer cheaply.
+
+The phase term is the same Schlick/HG function `RtVolumetric.rgen` scatters with,
+normalised so isotropic is 1 and sharing `rt_volume_shaft_asym`. That is what
+makes the dust feel *volumetric* rather than merely locally lit: at the shipping
+0.5 it swings ~0.17–5.8, so a mote between you and the lamp flares and one lit
+from behind you does not — the same reason a shaft reads strongly looking into it
+and weakly from the side.
+
+**The moon needs a gate of its own** (`rt_dust_moon`). It is the strongest shaft
+in the game and a mote in one should blaze, but a directional light has no
+position, so proximity says nothing about it and the phase term *alone* would
+brighten every mote in the level whenever the player faces its bearing —
+including in a sealed room the moon cannot reach. So it counts only for a mote
+whose sector has a **sky ceiling**: cheap, exact for the case that matters, and
+wrong only under an overhang, where the tracer finds the mote shadowed and blacks
+it anyway.
+
+`rt_dust_clip` (on) skips motes outside every sector or buried in a floor or
+ceiling. Not a look change — such a mote is lit by nothing and already invisible
+— but the quads are never *built*, so the same `rt_dust_max` buys more dust where
+dust can be seen. It also supplies the sector the moon gate needs, so the two
+share one lookup.
+
+Ladder: `dust-ungated` (floor 1) → shipping 0.08 → `dust-only` (floor 0);
+`dust-beamwide` / `dust-beamtight` bracket the radius; `dust-nomoon` and
+`dust-noclip` isolate the two gates above.
+
 Two consequences worth knowing before tuning:
 
 - **`rt_dust_density` and `rt_dust_max` are not independent.** The cell spacing is
@@ -248,8 +297,12 @@ Arms: `dust-fat` (**run first** — the absurd arm; a mote is small enough that
 "I can't see any" has two causes that look identical), `dust-off`/`on`,
 `dust-heavy`, `dust-still` (freezes the field — the real test is whether the
 lattice is *visible*, which would be a bug in the hashing, not a value to tune),
-`dust-honest`, `dust-noshaft` (dust is lit by ordinary scene lighting, not by the
-shaft pass; this proves the two are independent).
+`dust-honest`, `dust-noshaft`, and the gate ladder above.
+
+**The diagnostics ship off.** `rt_volume_shaft_verbose` and `rt_dust_debug` are
+0 in the pins *and* in every arm — they were on in the first pass of arms and
+that is console noise during play. Turn one on for a run by appending it:
+`.\tools\ab.cmd dust-on 07 -- +rt_dust_debug 1`.
 
 ## 5. How to judge it
 
@@ -282,6 +335,9 @@ tuning.
 | `lampshaft-noband` / `lampshaft-wide` | the selection bug kept runnable, and the upper bound of the machinery |
 | `dust-fat` | **run first for dust** — is anything being drawn at all |
 | `dust-off` / `dust-on` / `dust-heavy` / `dust-still` / `dust-honest` / `dust-noshaft` | the dust ladder (§4c) |
+| `dust-ungated` / `dust-only` | the shaft gate: dust everywhere vs dust in beams only |
+| `dust-beamwide` / `dust-beamtight` | how wide a beam counts as a beam — a look knob with no physical answer |
+| `dust-nomoon` / `dust-noclip` | the moon gate and the solid-geometry clip, isolated |
 | `lampshaft-near0` | the near fade off, i.e. the physical answer |
 
 Good interior candidates: the MAP07 clad corridors, any room with a ceiling

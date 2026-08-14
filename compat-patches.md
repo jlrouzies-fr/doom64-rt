@@ -1445,3 +1445,63 @@ has two causes that look identical), `dust-off`/`on`/`heavy`/`still`/`honest`/
 `noshaft`. `dust-still` is not a look: freezing the field is the only way to check
 that the per-cell hashing hides the lattice, and visible rows there would be a bug
 in `rt_dust.cpp` rather than a value to tune.
+
+### Dust: gate it on the shafts, and go quiet (2026-08-14)
+
+Asked from play: "can we make the dust mostly visible under shafts / volumetric
+light (moon shaft, light shaft), and barely when not?" — plus "disable the
+console verbose / debug light volume for now".
+
+**Traced lighting alone does not give that**, which is the finding worth keeping.
+Dust is real geometry lit by the scene, so a mote *is* brighter under a lamp —
+but a room's ambient and its bounced GI reach everywhere, so every mote picks up
+something and the field reads as an even haze of specks rather than as air made
+visible by a beam. Correct lighting is not the same as the effect.
+
+`rt_dust_shaft_floor` (0.08) is the albedo a mote keeps where there is no beam;
+1 is the old behaviour, 0 is beams only. It interpolates against a per-mote
+weight computed from `RT_ShaftLightsSelected()` — the very list that decides
+where shafts are — plus the moon. Two properties make it honest:
+
+- **Proximity × phase, never a radiance.** How much light actually arrives is the
+  tracer's answer and computing it here too would double-count. The proximity
+  term is deliberately not inverse-square: that is the light's own falloff, and
+  the tracer has already applied it.
+- **Visibility stays the tracer's.** A mote near a lamp but behind a wall gets a
+  high weight and no light, so it is still black. The CPU never has to answer the
+  question it could not answer cheaply — which is the whole reason this is a
+  weight on the albedo and not a brightness.
+
+The phase term is the same Schlick/HG function `RtVolumetric.rgen` scatters with,
+normalised so isotropic is 1 and sharing `rt_volume_shaft_asym`. That is what
+makes dust read as *volumetric* rather than merely lit: ~0.17–5.8 at the shipping
+0.5, so a mote between you and the lamp flares and one lit from behind you does
+not.
+
+**The moon needed a gate of its own.** It is the strongest shaft in the game, and
+it is also the one that cannot be gated by proximity — a directional light has no
+position, so the phase term alone would brighten every mote in the level whenever
+the player faces its bearing, including in a sealed room it cannot reach. It
+counts only for a mote whose sector has a **sky ceiling** (`rt_dust_moon`):
+cheap, exact for the case that matters, and wrong only under an overhang, where
+the tracer finds the mote shadowed anyway.
+
+Also `rt_dust_clip` (on): skip motes outside every sector or inside a floor or
+ceiling. Not a look change — such a mote is lit by nothing — but the quads are
+never built, so the same cap buys more dust where dust can be seen, and the
+sector lookup is shared with the moon gate.
+
+**Two implementation notes, both caught before they shipped:**
+
+- `RT_ShaftLightsSelect()` now has two callers (the volumetric params and the
+  dust) and is cached per frame. Without that the second call would not merely
+  cost twice — it appends to the id list, so RTGL1 would have received every
+  light twice.
+- `const std::vector<T>& v = cond ? lvalue_ref : prvalue{}` yields a **prvalue**,
+  so the reference binds to a full copy of the list every frame. Lifetime-extended
+  and therefore silent. Bound through a named static empty instead.
+
+**Quiet by default.** `rt_volume_shaft_verbose` and `rt_dust_debug` are 0 in the
+pins and in every arm; the first pass of arms had them on, which is console noise
+during play. The arms that were documented as "watch the console" now say how to
+ask for it instead: `.\tools\ab.cmd dust-on 07 -- +rt_dust_debug 1`.
