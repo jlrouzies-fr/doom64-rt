@@ -20,6 +20,11 @@ Ordered by payoff per unit of work when it was drawn up (2026-08-14).
 | 10 | Flames and lava in the froxel medium, not just lamps | open |
 | 11 | Dust motes drifting in the lit shafts | open |
 | 12 | Underwater volumetrics below the water plane | open |
+| 13 | Sprite emissives and materials, weapons first | **planned** → [`plan-sprite-materials.md`](plan-sprite-materials.md) |
+| 14 | Rain and wet surfaces on the storm map | **planned** → [`plan-storm-rain.md`](plan-storm-rain.md) |
+| 15 | Wet-then-drying blood — a roughness ramp on the persistent decals | open |
+| 16 | Teleport pads as a volumetric burst | open |
+| 17 | Invulnerability as a material state — the one honest use for `MIRROR` | open |
 
 ---
 

@@ -9,7 +9,9 @@
 | 3 | plasma / BFG / arachnotron arcs | **built** — `rt_arc*`, ships **on** |
 | 1 | plasma light instability | planned |
 | 4 | Unmaker melt | **dropped for now** — see below |
-| 5 | rocket embers + smoke | planned, and it is the ONLY impact that gets smoke |
+| 5 | rocket embers + smoke | planned — the ONLY *projectile* impact that gets smoke |
+| 6 | barrel fire, floor scorch, smoking debris, acid | planned — shares §5's ember mechanism |
+| 7 | bullet holes with relief | planned — cheapest item here, and the most often on screen |
 
 Two scope calls that override what the sections below propose:
 
@@ -287,6 +289,140 @@ the blob should fade in as the ember cools, not be present from the first frame.
 
 ---
 
+## 6. Barrel destruction — fire, a scorched floor, smoking debris, spilled acid
+
+An exploding barrel currently produces a smoke burst and nothing else. It should leave a
+scene: a small fire burning down over a few seconds, a scorch churned into the floor under
+it, chunks of barrel lying around still smoking, and a spill of the green stuff it was full
+of.
+
+**The trigger is already solved and must not be rebuilt.** `RT_BarrelSmoke`
+(`rt_smoke.cpp:1003`) fires on the barrel entering sprite frame **BEXP E**, which is where
+`A_Explode` sits in `64ExplosiveBarrel`'s Death state. The comment there records why nothing
+else works: the barrel **lingers for a full 1050-tic respawn timer** after exploding, so the
+disappearance rule the projectiles use would put the effect roughly twenty seconds late, and
+the health test the monster-gunner path uses is meaningless because a barrel in its death
+state has no health. Hang everything below off that same edge.
+
+Note the gating, though — the same three-deep problem as §2. `RT_BarrelSmoke` is reached only
+when `rt_smoke` **and** `rt_smoke_barrel` are on. Barrel fire and debris must not inherit a
+smoke cvar; either hoist the edge detection or give this its own walk, as §2 did.
+
+### 6.1 What is already built and can simply be pointed at this
+
+| Piece | Reuse |
+|---|---|
+| the explosion edge | `RT_BarrelSmoke`'s BEXP-frame test |
+| smoke burst | `RT_SpawnSmokePuffs` + the existing `barrel` profile |
+| chunks that fly, bounce and settle | the **debris** half of `rt_sparks.cpp` — gravity, bounce, friction, settling, contact-AO blobs, all shipped |
+| the scorched floor | the **arc burn decal** (`rt_arc_burn`) is already a black albedo-darkening fan; a barrel scorch is the same primitive, wider, on a floor rather than a wall |
+| smoke off settled chunks | identical to §5's embers — **build the two together**, it is one mechanism |
+
+So most of this is assembly. The genuinely new part is the fire, and the acid is the part
+with a hard constraint on it.
+
+### 6.2 The fire
+
+A lingering flame needs three things that do not currently co-exist anywhere: a light that
+decays over a few seconds, an emissive thing to look at, and smoke rising off it. The light
+and the smoke are solved — `RT_UploadFlameLights` and the ambient-smoke emitters in
+`rt_smoke.cpp` already pair exactly this way for torches, and `RT_FlameSpriteOffset` exists
+so the two come from one resolved point rather than two.
+
+What a torch does **not** have is a lifetime; it burns forever. So the new work is a
+short-lived flame emitter — a position, a decaying intensity, and a countdown — rather than
+a new lighting technique. Use the flame flicker rig (`rt_flame_light_flicker` / `_speed` /
+`_wobble`) rather than inventing another, and remember the trap §1 states: **drive intensity,
+never radius.** Above `rt_dynlight_rsoft` (40 map units) a larger radius is *dimmer*, so a
+flame pulsed through its radius comes out inverted.
+
+### 6.3 The acid — read this before designing it
+
+Two facts, both of which contradict the obvious plan:
+
+**RTGL1's fluid is switched OFF in this project.** `rt_fluid`'s compiled default is `true`,
+but `tools/d64rt-pins.cfg:16` pins it **false**, and a pin overrides the compiled default.
+`RT_SpawnFluid` (`rt_titles.cpp:16`) returns immediately on `!rt_fluid`, so anything built on
+it today is inert and will look exactly like a plumbing bug. Find out *why* it is pinned off
+— cost, stability, or an artefact — before assuming it can simply be turned on.
+
+**The fluid has ONE global colour.** `rt_blood_color_r/g/b` is a single colour for the whole
+simulation, not a per-spawn parameter: `RgSpawnFluidInfo` carries position, velocity,
+dispersion and count, and no colour at all. So green acid and red blood **cannot coexist** —
+spawning green acid makes every wound in the level bleed green.
+
+That is a hard blocker on doing the acid as fluid, and it should decide the approach rather
+than be discovered halfway in. Three options, in the order they are worth trying:
+
+1. **Not fluid at all.** The `fluid` surface class in the debris system already exists and
+   already produces splash particles tinted from the texture. Green acid is that, with a
+   fixed green ramp instead of a sampled one — no new system, no global-colour problem, and
+   it works with `rt_fluid` off.
+2. **A spreading decal**, as §6.1's scorch but green and growing, for the puddle it leaves.
+   Pairs naturally with option 1 for the spray.
+3. **Real fluid**, only if `rt_fluid` is going to be turned on for other reasons anyway and
+   the global colour is acceptable — i.e. only if the project is willing to have green blood.
+
+### 6.4 Order
+
+The scorch and the debris are nearly free (both are shipped systems pointed at a new
+trigger). The fire is a small new emitter type. The acid is a design decision first and code
+second. Do them in that order, and do the smoking-debris part **with §5**, not separately.
+
+## 7. Bullet holes with relief
+
+Impacts currently leave flat marks. A hitscan hole should read as a **hole** — a punched
+cavity in concrete, a shallow dent in metal — and the difference costs one texture set plus a
+row in a table, because it rides the surface classification (`rt/data/spark_surfaces.txt`)
+that is already shipped and already labelled.
+
+Small, but it is on screen constantly: every shot fired in the game makes one.
+
+**One correction to the premise, and it changes what to build.** The decal path supports
+**normal maps, not height maps** — there is no parallax anywhere in it. `RsDecal.frag`'s push
+constants are `packedColor`, `textureIndex`, `emissiveTextureIndex`, `emissiveMult` and
+`normalTextureIndex`; the only `height` in the whole decal path is the framebuffer's. So the
+relief is lighting-derived, not geometric: a hole will look convincingly recessed as the
+light moves across it, and will **not** break the wall's silhouette or shift with parallax as
+you strafe.
+
+Under a path tracer that is a better deal than it sounds — the normal is what the bounce
+lighting actually reads — but it should be understood going in, because "add depth to the
+decal" and "make the decal light like it has depth" are different jobs with different
+results, and only the second is available.
+
+**How the normal composes, which is the good news.** The shader perturbs the *underlying*
+surface normal rather than replacing it:
+
+```glsl
+mat3 basis = getONB( underlyingNormal );
+out_normal = encodeNormal( safeNormalize2(
+    basis[0] * nmap.x + basis[1] * nmap.y + basis[2], underlyingNormal ) );
+```
+
+So one hole texture works on every wall at any orientation, and it inherits whatever the
+wall's own relief is doing. No per-surface authoring beyond the per-class variants.
+
+**What it needs:**
+
+- One albedo + `_n` pair per class. Two to start: a punched **hole** for `concrete` and a
+  shallow **dent** for `metal`. `wood` (splintered) and `flesh` are obvious later additions;
+  `fluid` should get nothing.
+- The class is already answered — `SurfaceKindOf()` in `rt_sparks.cpp` returns it at every
+  impact, which is how debris already picks its profile.
+- The geometry is the shipped decal shape: world-space verts, identity transform, one
+  primitive per hole. Every trap is already solved in `UploadAoBlob`.
+
+**The trap on this specific path**, and it is stated plainly in the shader above: when no
+emissive texture is bound, `ldrEmis = out_albedo.rgb` — the decal's own albedo becomes its
+screen emission, scaled by `emissiveMult`. **A bullet hole with a non-zero `emissiveMult`
+therefore glows.** Pin it at 0. This is the same fallback that makes it *dangerous* for §4's
+melt, where a faint glow looks plausible and is actually uncontrollable.
+
+Also: RTGL1 resolves materials through `rt/data/textures.json` only — the split
+`textures_*.json` overlays are inert, and the live build-directory copy has to be edited too.
+Budget for that, it has cost this project a session before.
+
 ## Suggested order
 
 1. **§1** — self-contained, no new plumbing, immediately changes how the weapon feels.
@@ -294,7 +430,14 @@ the blob should fade in as the ember cools, not be present from the first frame.
    scorch decals in [`plan-impact-fx.md`](plan-impact-fx.md) for free.
 3. **§3** — small once §2 lands.
 4. **§4** — build with the scorch decal, not separately.
-5. **§5** — last; it is the one with the density and double-smoke problems to solve.
+5. **§5** — the one with the density and double-smoke problems to solve.
+6. **§6** — barrels. Its scorch and debris are nearly free once §5 exists, because the
+   smoking-settled-ember mechanism is shared; build that part **once**, for both. The acid
+   is a design decision (§6.3) before it is any code at all.
+
+**§7 sits outside this order and can be done at any point** — it depends on nothing above,
+needs no new plumbing, and is the only item on this page that shows up on every single shot
+rather than on one weapon. If the list stalls, do that one.
 
 ## Open questions
 

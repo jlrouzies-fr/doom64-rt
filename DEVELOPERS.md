@@ -51,6 +51,8 @@ were written *after* losing a day to the thing they describe.
 | [`docs/rt-feature-ideas.md`](docs/rt-feature-ideas.md) | The shortlist of candidate RT features, with what was **rejected and why** — read this before proposing a new effect. Glass and mirrors are rejected on the *art*, not the plumbing: the game has neither. |
 | [`docs/plan-heat-haze.md`](docs/plan-heat-haze.md) | Refractive air over lava and fire, via the unused `THIN_MEDIA` primitive flag. |
 | [`docs/plan-impact-fx.md`](docs/plan-impact-fx.md) | **Scorch decals only** — the sparks and debris half of this shipped, and is [`docs/rt-impact-fx.md`](docs/rt-impact-fx.md). |
+| [`docs/plan-storm-rain.md`](docs/plan-storm-rain.md) | Rain and wet ground on MAP11, the game's only storm map. The particles are `rt_dust` with gravity; the wetness **cannot** be done in `textures.json`, because the ORM texture wins over `roughnessDefault`. |
+| [`docs/plan-sprite-materials.md`](docs/plan-sprite-materials.md) | Sprite emissives and materials, weapons first. Every first-person weapon between them has **nine** material files, all plasma rifle. Sprites are also the only surface where a texture can cast real light. |
 | [`docs/plan-projectile-impact-fx.md`](docs/plan-projectile-impact-fx.md) | Plasma arcs, Unmaker melt, rocket embers. Establishes that the impact hook is **hitscan only**, so no projectile in the game reacts to what it hits — that missing hook is the keystone for all three. |
 
 ## Lighting — the repair pipeline
