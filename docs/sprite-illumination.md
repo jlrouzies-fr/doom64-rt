@@ -19,6 +19,7 @@ mechanisms that look correct and silently do nothing.
 | `FIRE` bonfire | **missing from `RT_FLAME_KINDS` entirely** — 117 placements | added, built; see Case 7 and `docs/flame-lighting.md` |
 | `A028` / `A029` gargoyle statues | red eyes painted in the art, never emissive | `_e` masks + `emissiveMult`, live; see Case 8 |
 | `SWXC*` / `CMPSW*` switches | 54 of 95 faces had no emissive at all, and none cast light | composites masked + `rt_switch_lights`, built; see Case 9 |
+| `DART` trap dart / nailgun nail | near-black sprite, dark red head, no meta — invisible in flight | `_e` masks + `emissiveMult`, live; see Case 10 |
 
 Verified running: `rt_hand_light: uploaded=10 of 10 wanted (cap 48, within 2048u) I=45`
 in MAP05 (5 knights × 2 fists), and `uploaded=14 of 14` in MAP13 (Barons + Hell Knights
@@ -655,6 +656,58 @@ glowing, they just stop lighting. Verify with `tools/ab-switch.cmd debug` — MA
 `SWXC` faces. Throw a switch first; the A frame is unlit and correctly emits nothing.
 
 **Not verified in-engine.** Nobody has confirmed a marker sits on a pair of eyes.
+
+---
+
+## Case 10 — the dart (`DART`) — a sprite you cannot see coming
+
+`tools/gen_dart_emissives.py`. Reported 2026-08-14: the dart's dark red parts are
+invisible in game. They are — the sprite is five lumps of pure grey ramp (`8,8,8` up to
+`56,56,56`) with a red head painted in exactly two shades, and neither actor that uses it
+draws `BRIGHT`:
+
+    ACTOR 64Dart       Spawn: DART A 1     the trap dart, thing 896
+    ACTOR 64NailShot   Spawn: DART AA 1    the nailgun's nail, FastProjectile
+
+No RT entry existed for any of them. Against a dark floor a projectile whose brightest
+texel is `(56,56,56)` reads as nothing at all until it lands.
+
+| lump | size | `(40,0,0)` | `(56,0,0)` |
+| --- | --- | --- | --- |
+| `DARTA1` | 16×12 | 8 | 4 |
+| `DARTA2A8` | 32×11 | 9 | 7 |
+| `DARTA3A7` | 32×11 | 12 | 3 |
+| `DARTA4A6` | 32×11 | 5 | 3 |
+| `DARTA5` | 16×10 | — | — |
+
+`DARTA5` is the rear view and has no red on it at all; it is in the table with zero counts
+and deliberately gets no mask and no meta, rather than an empty `_e` for the hygiene
+checker to trip over.
+
+**Auto-detect is right here for Case 8's reason, only more so.** Every non-red texel in
+all five lumps is a pure grey (`r == g == b`), so the red is not a hue *range* to threshold
+— it is two exact palette entries. `ART_COUNTS` asserts the counts on every run and the
+tool aborts rather than guess if the art ever changes.
+
+**The mask is painted `e01000`, not the art's `(56,0,0)`.** That is Mechanism 3 and it is
+the whole bug in miniature: under RT the primary emission is the **raw** `_e` sample, so a
+mask painted at the art's own 0.22 renders at 0.22 and stays exactly as invisible as
+before. "Dark red" is the hue, delivered by a full-range deep red — the same `e01000`
+pinned for BOSS in Case 4, because saturation-normalising a dark red scales green with it
+and comes out orange. The art's two shades survive as a two-step ramp (`(56,0,0)` at the
+peak, `(40,0,0)` at 40/56 of it) so the head keeps its shading instead of flattening.
+`emissiveMult 2.0`, the enemy-eye / statue-eye house value.
+
+**No cast light.** A nail is a `FastProjectile` fired in bursts, and a sprite's attached
+light anchors at the billboard centre (Mechanism 2) — a burst would drop one light per
+nail for the length of its flight. The ask was visibility, and on-screen emission is what
+delivers it. Do **not** add a `DART` rule to `gen_fx_emissives.py`'s `PREFIX_RULES` to
+get one; that is trap 5, and it would attach exactly the light this decided against.
+
+Registered in `check_emis_hygiene.py` (`textures_dart.json` in `OVERLAY_KEEPS`, `DART` in
+`KEEP_E_RE`) so a later `gen_world_emissives.py` scrub cannot strip it.
+
+**Not verified in-engine.**
 
 ---
 

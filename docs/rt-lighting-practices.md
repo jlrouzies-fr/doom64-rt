@@ -750,6 +750,103 @@ static buildings escape it because their history is stable.
   reported as "no difference"; its answer was in the console, unread. Say which
   output an instrument writes to when handing one over.
 
+## 34. Source SIZE is not why the MAP01 fence casts no shadow — that theory is now falsified
+
+`screen/noVisibleShadowFence.png`: the octagonal `SPACECM` cage on MAP01 stands under a
+lamp ceiling and casts **nothing**, while the flashlight, a muzzle flash and a barrel
+explosion make the same fence cast crisply. Bodies, props and walls in that room cast from
+the lamps normally. Only the fence fails.
+
+The standing explanation since 2026-08-08 was **source size**: `rt_ceiling_edge_radius` /
+`rt_wall_strip_radius` are 0.35 m = **11.2 map units**, against 0.02 = 0.64 for the
+flashlight and muzzle flash, and penumbra width scales with source size, so an 11-unit
+source should erase a 4-unit wire's shadow while leaving wide occluders alone. It fits the
+observed split exactly. It is also, as of 2026-08-14, **wrong** — or nowhere near
+sufficient.
+
+**The test that falsified it.** Radii dropped to 0.15, `rt_shadow_samples` raised to 4, and
+the lamp pane split into a dense fill plus a sparse compact **key**: few lights at
+`radius 0.04` (1.3 map units, the same order as the flashlight's 0.64) spaced 128 units
+apart, carrying up to **100 %** of the pane's flux. That is "a handful of point-like
+sources" — the flashlight's own configuration — applied to the lamps. Result at every share
+from 0.5 to 1.0: **still no shadow**, plus visible noise from concentrating the flux into a
+few very bright small emitters. Reverted the same day.
+
+Both size levers were pushed to their limits and neither moved the shadow:
+
+| lever | pushed to | result |
+|---|---|---|
+| per-light radius | 0.35 → 0.04 (11.2 u → 1.3 u) | no shadow |
+| emitting-array extent | ~100 lights at 16 u → ~16 at 128 u | no shadow |
+| shadow samples | 1 → 4 | no shadow |
+
+**And that retroactively convicts the arm the 08-08 conclusion rested on.**
+`ab-bulb-softness`'s `pin` arm did make the fence cast — but it changed three things at
+once: radius 0.35 → 0.02, `seglen` 64 → 256, **and `rt_ceiling_edge_intensity` 180 → 720**.
+That last one is a 4× brightening of the lamps. Since radius and count have now been
+falsified independently, what that arm most likely demonstrated was **contrast**: the
+shadow appeared because the casting light got four times stronger relative to everything
+else in the room, not because its source got smaller. The ladder written to "fix the
+confounded density ladder" was itself confounded, the same way, on the same day.
+
+**What is still standing, and untested:**
+
+- **Contrast.** `rt_ceiling_bulb_emis` is **20** — the pane keeps its painted glow in full,
+  and emission casts no shadow at any strength (§12). That cvar's own description measures
+  it on MAP94: the glow carried floor **123.0** against **19.5** from the real lights, i.e.
+  **~84 % of the light in a "point lit" room was still the texture**. An umbra that removes
+  16 % of the illumination is not a shadow anyone can see. This is §33's "contrast, not
+  correctness", it sits directly above the cage, and **no ladder has ever varied it** —
+  `ab-bulb-keyfill` moves the *global* `rt_sector_emis` instead.
+- **Geometry.** Nobody has confirmed the lamps are on the far side of the fence from the
+  surface being looked at. If no lattice light is occluded by the grating for that
+  receiver, no light tuning can produce a shadow and every arm above measured the wrong
+  room. `whatsthat` and `rt_ceiling_edge_debug_marks` answer this; neither has been aimed
+  at the cage.
+- **Light selection.** ReSTIR picks one light per pixel out of ~100 candidates.
+
+**Rules:**
+
+- **Three levers pushed to their extremes with no movement means the model is wrong, not
+  the values.** Stop tuning and go back to the instrument. §25 and §11 both say this, and
+  it was ignored here for one more cycle.
+- **A shadow is only visible in proportion to how much of the local light it blocks.**
+  Before making a caster's light smaller, sharper or stronger, find out what *else* is
+  lighting that surface — especially anything that cannot cast (§12).
+- **An arm that moves three knobs proves nothing about any one of them.** `pin` moved
+  radius, count and intensity together and set the project's direction for six days.
+- **Concentrating flux into fewer, brighter, smaller lights is a noise source.** Variance
+  in a 1-spp direct estimate scales with how uneven the light set is, and ~16 lights at 64×
+  their neighbours' intensity is exactly the bad case. Any "fewer, brighter" fix has to be
+  judged for noise as well as for shape.
+
+## 34b. A knob can go inert under you when placement changes, and every ladder that used it silently becomes void
+
+The 2026-08-08 fence work built seven ladders that thinned the lamp count with
+`rt_ceiling_edge_seglen`. On **2026-08-10** the bulb lattice (`open-issues` §1.6g) moved
+`SFLATAS`/`SFLATAQ` off the perimeter walk, and seglen stopped reaching them — the count
+knob became `rt_ceiling_bulb_spacing`, which no arm had ever set. Nothing errored. The
+ladders still ran, still printed counts, and still produced results; those results were
+about a code path the fixtures no longer take. `ab-bulb-density`, `ab-bulb-softness`,
+`ab-bulb-keyfill` and `ab-lamp-placement` were re-pointed on 2026-08-14.
+
+Worse, the surviving conclusion was a *negative* — "count was eliminated" — and a stale
+negative is invisible.
+
+**Rules:**
+
+- **When you change where a feature places things, grep for every tool that tuned the old
+  placement** and re-point or retire it in the same commit. A cvar that no longer reaches
+  the code is worse than one that was deleted, because it still accepts a value.
+- **Date a null.** "Count does not matter" was true of the perimeter walk on 2026-08-08 and
+  says nothing about the lattice. §28's rule about census instruments applies to A/B arms
+  too: an experiment is evidence about the code that existed when it ran.
+- **Write the conclusion into `docs/`, not only into commit messages and tool headers.**
+  The whole 08-08 investigation — root cause believed confirmed, fix never shipped — lived
+  only in five commit messages and seven `.cmd` headers, so it was re-derived from scratch
+  on 08-14 and its central claim was only then found to be false. Had it been written down,
+  the falsifying test would have been the first thing tried rather than the last.
+
 ## Pending visual confirmation
 
 `RT_UploadCeilingEdgeLamps` (MAP03 ceiling strips) and the map-relative

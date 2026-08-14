@@ -49,6 +49,18 @@ rem      target. Raster shadows are not black either.
 rem   3. at the high-fill end, has the image gone flat and directionless? That is
 rem      the failure mode, and it arrives before the room gets too bright.
 rem
+rem
+rem !! STALE KNOB, REPAIRED 2026-08-14. rt_ceiling_edge_seglen stopped being the
+rem !! count knob for SFLATAS/SFLATAQ on 2026-08-10, when the bulb lattice
+rem !! (open-issues 1.6g) took those two textures off the perimeter walk. The count
+rem !! knob is rt_ceiling_bulb_spacing. Arms below now set both.
+rem !!
+rem !! NOTE the FILL here is the GLOBAL rt_sector_emis, which is NOT the fill
+rem !! sitting above the MAP01 cage -- the pane's own painted glow
+rem !! (rt_ceiling_bulb_emis 20) is, and this ladder never touches it. Measured
+rem !! on MAP94, that glow carried floor 123.0 against 19.5 from the real
+rem !! lights. Use this ladder for the AMBIENT question, not for the fence.
+rem
 rem Usage: ab-bulb-keyfill.cmd <keyonly^|lowfill^|midfill^|highfill^|flatcheck> [map 1-32]
 rem ---------------------------------------------------------------------------
 
@@ -77,6 +89,7 @@ rem cast at all (the flashlight casts at 0.02 = 0.64 map units; 0.35 = 11.2 does
 rem not), and shadow_samples 8 keeps that sharp shadow from reading as speckle.
 set "FIXED=+rt_wall_strip_radius 0.05 +rt_ceiling_edge_radius 0.05"
 set "FIXED=%FIXED% +rt_wall_strip_seglen 128 +rt_ceiling_edge_seglen 128"
+set "FIXED=%FIXED% +rt_ceiling_bulb_spacing 32"
 set "FIXED=%FIXED% +rt_shadow_samples 8"
 
 set "ARGS=+rt_wall_strip_intensity %I% +rt_ceiling_edge_intensity %I%"

@@ -1,0 +1,21 @@
+{
+  "version": 0,
+  "array": [
+    {
+      "emissiveMult": 2.0,
+      "textureName": "DARTA1"
+    },
+    {
+      "emissiveMult": 2.0,
+      "textureName": "DARTA2A8"
+    },
+    {
+      "emissiveMult": 2.0,
+      "textureName": "DARTA3A7"
+    },
+    {
+      "emissiveMult": 2.0,
+      "textureName": "DARTA4A6"
+    }
+  ]
+}

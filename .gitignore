@@ -157,3 +157,7 @@ tools/_smokelab/
 # single files over GitHub's 100 MB hard limit (a bundled PowerShell zip),
 # so committing it produces a push that cannot succeed.
 ReleaseTest/
+
+# Written by the launcher: the IWAD path the user picked. Machine-local state,
+# and it carries a personal filesystem path.
+doom64-rt-settings.txt

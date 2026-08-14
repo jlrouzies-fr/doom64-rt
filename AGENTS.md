@@ -257,6 +257,33 @@ Three things that will otherwise cost you a day:
   be. `rt_cpu_cullmode` / `rt_cpu_nocullradius`, doc §5.1, arms
   `.\tools\ab.cmd cull-stock|cull-dark|cull-wide|cull-all`.
 
+## Something casts no shadow
+
+**Reach for `rt_debug_visibility` before building a single A/B arm.** `1` paints the
+shadow-ray visibility term — BLACK where the ray was blocked, no radiance involved; `2`
+tints shadowed pixels red over normal shading. The final image cannot separate *"the
+occluder never blocked the ray"* from *"it did, and the result was drowned in fill light or
+smeared by the denoiser"*, and four A/B ladders failed to tell those apart before this
+existed.
+
+**A shadow's softness comes from the extent of the whole EMITTING ARRAY, not from one
+light's radius.** N lights spread across a ceiling behave as one source that size. A lamp
+pane is ~100 lattice lights at `rt_ceiling_bulb_spacing` 16, i.e. an area light hundreds of
+units wide, which erased the MAP01 cage's fence shadow no matter how small each light was
+(`screen/noVisibleShadowFence.png`). The fix is a **key/fill split inside the fixture** —
+`rt_ceiling_bulb_key`, a dense fill for the even wash plus a sparse compact key that does
+the casting, flux conserved so brightness cannot move. Radius itself is a *pure softness
+knob* and costs no brightness: radiance is `intensity/(π r²)` and the sphere subtends
+`≈ π r²/d²`. Full write-up: `docs/rt-lighting-practices.md` §34, `open-issues` §1.6h.
+A/B: `.\tools\ab-bulb-key.cmd <off|half|strong|keyonly> [map]`.
+
+**A count knob can go inert under you.** Seven ladders thinned lamps with
+`rt_ceiling_edge_seglen`; the 2026-08-10 bulb lattice took `SFLATAS`/`SFLATAQ` off that
+walk and the knob became `rt_ceiling_bulb_spacing`. Nothing errored — the arms still ran
+and still printed counts, about a path the fixtures no longer take. **Date every null**,
+and when you move where a feature places things, re-point every tool that tuned the old
+placement in the same commit (§34b).
+
 ## Sprites that emit light
 
 `docs/sprite-illumination.md` is the reference: `emissiveMult` is screen glow and

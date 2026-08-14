@@ -41,6 +41,7 @@ OVERLAY_KEEPS = (
     "textures_fx.json",
     "textures_explosions.json",
     "textures_statue_eyes.json",
+    "textures_dart.json",
 )
 
 # Sprite _e / scene-meta exemptions. Fire-frame coverage is SUFFIX-based on
@@ -54,6 +55,10 @@ KEEP_E_RE = re.compile(
     # so this cannot grow into a bare A02 prefix that would swallow the other seven
     # A02x decorations.
     r"A028A0|A029A0|"
+    # The dart/nail projectile's red head (tools/gen_dart_emissives.py). DART is the
+    # whole sprite family — five lumps, four masked — so the bare prefix is exact here
+    # and cannot widen onto anything else.
+    r"DART|"
     r"BAR1|BEXP|MISL|MISF|BAL|RBAL|TRCR|RECT|MANF|APLS|APBX|PLSS|PLSE|"
     r"PUFF|BLUD|TFOG|IFOG|FCAN|RT_|MZL)",
     re.I,

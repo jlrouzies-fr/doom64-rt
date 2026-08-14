@@ -41,6 +41,21 @@ rem Watch "uploaded=N of M wanted" in the console: N is the light count driving
 rem all of this, and if it does not fall between arms, the arm never reached the
 rem renderer and the result is void.
 rem
+rem
+rem !! STALE KNOB, REPAIRED 2026-08-14. This ladder thinned the light count with
+rem !! rt_ceiling_edge_seglen. That was the count knob in August. On 2026-08-10 the
+rem !! bulb lattice (open-issues 1.6g) moved SFLATAS/SFLATAQ off the perimeter walk,
+rem !! and seglen is INERT on those two textures now -- the count knob is
+rem !! rt_ceiling_bulb_spacing. Any null this ladder produced after that date means
+rem !! "the arm never reached the renderer", not "count does not matter".
+rem !!
+rem !! The two knobs also compensate energy DIFFERENTLY, so they cannot share one
+rem !! number. The lattice already scales a light's intensity with the square of its
+rem !! spacing (a light carries the energy of the area it stands for), so spacing is
+rem !! flux-neutral on its own and rt_ceiling_edge_intensity must stay put. The
+rem !! perimeter walk does not compensate at all, so seglen still needs its matching
+rem !! intensity rise. Raising both would double-compensate and brighten the room.
+rem
 rem Usage: ab-bulb-density.cmd <dense^|mid^|sparse^|point> [map 1-32]
 rem ---------------------------------------------------------------------------
 
@@ -56,14 +71,17 @@ rem nothing". That null was a broken experiment, not a result. 0.10 is near the
 rem dynlight radius that demonstrably casts crisp shadows (2026-08-08).
 set "R=0.10"
 
+rem SEG/I drive the PERIMETER walk (which does not compensate, hence the matching
+rem intensity). SPACE drives the LATTICE on SFLATAS/SFLATAQ (which compensates
+rem itself, hence intensity is not touched for it). Same physical density on both.
 if /i "%WHICH%"=="dense" (
-  set "SEG=64"  & set "I=180"
+  set "SEG=64"  & set "I=180"  & set "SPACE=16"
 ) else if /i "%WHICH%"=="mid" (
-  set "SEG=128" & set "I=360"
+  set "SEG=128" & set "I=360"  & set "SPACE=32"
 ) else if /i "%WHICH%"=="sparse" (
-  set "SEG=256" & set "I=720"
+  set "SEG=256" & set "I=720"  & set "SPACE=64"
 ) else if /i "%WHICH%"=="point" (
-  set "SEG=512" & set "I=1440"
+  set "SEG=512" & set "I=1440" & set "SPACE=128"
 ) else (
   echo Usage: %~nx0 ^<dense^|mid^|sparse^|point^> [map 1-32]
   exit /b 1
@@ -73,9 +91,10 @@ rem Both walks together: they light the same physical band where it turns a
 rem corner, so a spacing mismatch shows as a density step at the corner.
 set "ARGS=+rt_wall_strip_seglen %SEG% +rt_wall_strip_intensity %I% +rt_wall_strip_radius %R%"
 set "ARGS=%ARGS% +rt_ceiling_edge_seglen %SEG% +rt_ceiling_edge_intensity %I% +rt_ceiling_edge_radius %R%"
+set "ARGS=%ARGS% +rt_ceiling_bulb_spacing %SPACE% +rt_ceiling_edge_lattice 1"
 set "ARGS=%ARGS% +rt_ceiling_edge_debug 1"
 
-echo === bulb density: %WHICH% (seglen=%SEG% I=%I% radius=%R%), MAP%MAP% ===
+echo === bulb density: %WHICH% (seglen=%SEG% I=%I% spacing=%SPACE% radius=%R%), MAP%MAP% ===
 echo     %ARGS%
 echo     watch the "uploaded=N of M wanted" line -- N is the light count driving contrast
 echo     judge: 1) do sprites cast shadows  2) is the strip still continuous  3) brightness steady

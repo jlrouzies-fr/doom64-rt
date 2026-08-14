@@ -42,6 +42,16 @@ rem Judge: stand so the fence or a prop is between you and a bulb band, and look
 rem for an umbra on the wall behind. Then check whether the strip still reads as
 rem a strip.
 rem
+rem
+rem !! STALE KNOB, REPAIRED 2026-08-14. rt_ceiling_edge_seglen stopped being the
+rem !! count knob for SFLATAS/SFLATAQ on 2026-08-10, when the bulb lattice
+rem !! (open-issues 1.6g) took those two textures off the perimeter walk. The count
+rem !! knob is rt_ceiling_bulb_spacing. Arms below now set both.
+rem !! It also let the `pin` arm raise rt_ceiling_edge_intensity 180 -> 720 while
+rem !! claiming to hold intensity fixed, so `pin` was never a clean radius test.
+rem !! The lattice compensates its own energy across spacing, so SPACE needs no
+rem !! matching intensity -- and the intensity rise is therefore gone.
+rem
 rem Usage: ab-bulb-softness.cmd <soft^|mid^|hard^|hard4^|dyn^|pin> [map 1-32]
 rem ---------------------------------------------------------------------------
 
@@ -72,23 +82,27 @@ if /i "%WHICH%"=="soft" (
   rem Paired with sparse spacing on purpose. Small radius and low count have
   rem never been tested TOGETHER: the earlier radius arms ran at 113 lights,
   rem where whatever umbra formed was filled by another lamp.
-  set "R=0.02" & set "S=4" & set "SEG=256" & set "I=720"
+  set "R=0.02" & set "S=4" & set "SEG=256" & set "SPACE=64"
 ) else (
   echo Usage: %~nx0 ^<soft^|mid^|hard^|hard4^|dyn^|pin^> [map 1-32]
   exit /b 1
 )
 
-if "%SEG%"=="" set "SEG=64"
-if "%I%"==""   set "I=180"
+if "%SEG%"==""   set "SEG=64"
+if "%SPACE%"=="" set "SPACE=16"
+rem Intensity is now fixed in every arm. It used to move with the count on the
+rem `pin` arm, which made that arm a brightness change as well as a radius one.
+set "I=180"
 
 rem Held fixed so radius is the only thing moving: same spacing, same intensity,
 rem on both walks. The earlier ladder's mistake was letting these drift.
 set "ARGS=+rt_wall_strip_radius %R% +rt_ceiling_edge_radius %R% +rt_dynlight_radius 0.08"
 set "ARGS=%ARGS% +rt_wall_strip_seglen %SEG% +rt_ceiling_edge_seglen %SEG%"
 set "ARGS=%ARGS% +rt_wall_strip_intensity %I% +rt_ceiling_edge_intensity %I%"
-set "ARGS=%ARGS% +rt_shadow_samples %S%"
+set "ARGS=%ARGS% +rt_ceiling_bulb_spacing %SPACE% +rt_ceiling_edge_lattice 1"
+set "ARGS=%ARGS% +rt_shadow_samples %S% +rt_ceiling_edge_debug 1"
 
-echo === bulb softness: %WHICH% (radius=%R% samples=%S% seglen=%SEG% I=%I%), MAP%MAP% ===
+echo === bulb softness: %WHICH% (radius=%R% samples=%S% seglen=%SEG% spacing=%SPACE% I=%I%), MAP%MAP% ===
 echo     %ARGS%
 echo     judge: 1) umbra behind the fence  2) is the strip still continuous
 call "%~dp0launch-retribution-rt.cmd" %MAP% -- %ARGS%

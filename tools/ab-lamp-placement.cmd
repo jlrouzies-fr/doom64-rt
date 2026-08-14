@@ -61,7 +61,12 @@ set "CENTRE=%CENTRE% +rt_ceiling_lamp_debug 1"
 set "NOCENTRE=+rt_ceiling_lamps 0 +rt_ceiling_lamp_intensity 0"
 
 set "EDGE=+rt_ceiling_edge_lamps 1 +rt_ceiling_edge_intensity 360 +rt_ceiling_edge_radius 0.05"
-set "EDGE=%EDGE% +rt_ceiling_edge_seglen 128 +rt_ceiling_edge_debug 1"
+rem seglen alone no longer thins an SFLATAS/SFLATAQ pane -- since 2026-08-10 those
+rem go through the bulb lattice, whose count knob is rt_ceiling_bulb_spacing. Both
+rem are set so "edge" really is the sparse arm it claims to be. The lattice
+rem compensates its own energy across spacing, so it needs no intensity partner.
+set "EDGE=%EDGE% +rt_ceiling_edge_seglen 128 +rt_ceiling_bulb_spacing 32"
+set "EDGE=%EDGE% +rt_ceiling_edge_lattice 1 +rt_ceiling_edge_debug 1"
 set "NOEDGE=+rt_ceiling_edge_lamps 0"
 
 if /i "%WHICH%"=="centre" (
