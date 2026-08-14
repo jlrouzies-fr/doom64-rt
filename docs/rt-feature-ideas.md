@@ -14,7 +14,7 @@ Ordered by payoff per unit of work when it was drawn up (2026-08-14).
 | 4 | Finish metal/roughness authoring for real reflections | **rejected** — see below |
 | 5 | `ACID` liquid type for nukage and slime | **rejected** — see below |
 | 6 | Heat haze over lava and fire | **planned** → [`plan-heat-haze.md`](plan-heat-haze.md) |
-| 7 | Impact sparks and scorch decals | **planned** → [`plan-impact-fx.md`](plan-impact-fx.md) |
+| 7 | Impact sparks and scorch decals | sparks **done** (`rt_spark_*`, ships off); scorch still planned → [`plan-impact-fx.md`](plan-impact-fx.md) |
 | 8 | Shootable lights — kill the fixture, kill the light | open |
 
 ---

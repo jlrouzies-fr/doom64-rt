@@ -204,6 +204,129 @@ below what DECORATE asks for, on the same reasoning that settled the spectre (se
 below). Still well above the spectre's `0.20`: a nightmare imp is a semi-transparent monster,
 not an invisible one.
 
+> **OPEN, 2026-08-14: `rt_nightmareimp_alpha` is reported to change nothing at any
+> value, `1.0` included.** Not yet diagnosed. Do not tune it, and do not assume the
+> alpha above is what the imp renders at, until this is resolved. `rt_ghost_debug 2`
+> was built for exactly this and prints the whole chain — the sprite name as
+> `rt_draw.cpp` sees it, `GhostSprite()`'s classification, the incoming
+> object/vertex alpha, the cvar, `GhostLightScale()`, and the alpha actually
+> **packed** into `prim.color`:
+>
+>     .\tools\launch-retribution-rt.cmd 3 -- +rt_ghost_debug 2
+>
+> MAP03 has 21 nightmare imps (thing 3007); the densest are MAP13 (41), MAP18 (32)
+> and MAP16 (25).
+>
+> **`packedA` moving with the cvar puts the fault downstream of `rt_draw.cpp`**
+> (RTGL1 ignoring the vertex alpha on this primitive, or something else dominating
+> the image); **`packedA` not moving puts it here**, and the line says which gate
+> failed. Mode 2 rather than a TRO2 filter on purpose: "no line appeared" must not
+> be ambiguous between a name mismatch and the monster being off screen. The
+> leading suspect if the class prints as `None` is that the imp is not reaching
+> `IsLivingGhost()` at all, in which case `l_spriteAlpha` floors it at
+> `rt_translucent_minalpha` (0.72) instead — which would look exactly like this:
+> visibly semi-transparent, and deaf to its own cvar.
+>
+> **First run, MAP03 (2026-08-14).** 416 imp lines, all identical:
+>
+>     rt_ghost_debug TRO2B class=NightmareImp corpse=0 living=1 objA=1.000 vertA=0.600
+>                    cvar=0.420 lightscale=0.840 packedA=89/255 flags=0x2 TRANSLUCENT modcompat=1
+>
+> So the chain is **healthy as far as this file can see**: TRO2 is recognised, it
+> classifies as a living NightmareImp, and the cvar reaches the packed colour
+> exactly (`0.42 × 0.84 = 0.353 → 89/255`). Ruled out with it: the name mismatch
+> theory, the `rt_translucent_minalpha` floor, `rt_mod_compat`, and the
+> ALPHA_TESTED branch (`flags=0x2` is TRANSLUCENT).
+>
+> **But every line reads `cvar=0.420`** — the pinned value. The value was never
+> moved during that run, so it tested the plumbing, not the complaint. Two arms
+> now move it at launch (10× apart) rather than by console line:
+>
+>     .\tools\ab.cmd ghost-opaque 03      alpha 1.00, expect packedA ~214
+>     .\tools\ab.cmd ghost-faint  03      alpha 0.10, expect packedA ~21
+>
+> Stand in the same spot for both — `rt_ghost_lightscale` scales the final alpha
+> by room brightness, so moving between runs changes the number being compared.
+> Judge the **body**, never the eyes: emission is on the ONE,ONE attachment and
+> never sees alpha, so the eyes are identical in both arms by construction.
+>
+> **Second run, `ghost-opaque` (alpha 1.00): `packedA=214/255`, and the screen is
+> IDENTICAL.** So the alpha genuinely reaches RTGL1 and genuinely does nothing —
+> which rules out every remaining engine-side explanation and moves the fault into
+> the runtime's blend state.
+>
+> **The cause, found by reading RTGL1 rather than by another run: it is the BLEND
+> MODE, not the alpha.** These sprites carry an eye mask, so `textures.json` gives
+> them `"emissiveMult": 2.0`. `TextureMeta.cpp:291` overwrites `prim.emissive` with
+> that (the caller did not set `EMISSIVE_OVERRIDE`), and
+> `RasterizedDataCollector.cpp:129` reads:
+>
+> ```cpp
+> if( info.emissive > eps )      // 2.0
+>     if( r & TRANSLUCENT )      // yes — living ghost
+>         r |= ADDITIVE;         // blendSrc = SRC_ALPHA, blendDst = ONE
+> ```
+>
+> **Additive blending cannot occlude what is behind it at any alpha.** The cvar
+> only scales how much the sprite *adds*, and on art as dark as the nightmare
+> imp's, 0.35 versus 0.84 of a dark colour added to a lit room is close to
+> invisible. Same mechanism on the spectre. The symptom is exact and it was never
+> an alpha bug.
+>
+> `rt_ghost_emis 0` forces `emissive` to 0 with `EMISSIVE_OVERRIDE` so the material
+> cannot put it back, dropping the primitive into the ordinary
+> `SRC_ALPHA / ONE_MINUS_SRC_ALPHA` pipeline:
+>
+>     .\tools\ab.cmd ghost-opaque 03      alpha 1.00, emission ON  -- unchanged
+>     .\tools\ab.cmd ghost-noemis 03      alpha 1.00, emission OFF -- must read SOLID
+>
+> Those two differ in **one** cvar and the alpha is identical in both, so anything
+> that changes between them is not about alpha. Confirmation needs *both* halves:
+> a solid body **and** dark eyes. A solid body alone would be ambiguous; the dark
+> eyes are what prove the emission was what selected the additive pipeline.
+>
+> **`rt_ghost_emis 0` is the probe, not the fix** — it trades the eye glow for
+> working alpha, and the eyes are worth more.
+>
+> **THE FIX, and no RTGL1 change was needed after all: `rt_ghost_emis_split`
+> (default on).** The body and the eyes live on *different rasterizer
+> attachments with different blend factors* (`RasterizerPipelines.cpp`) — the body
+> is attachment 0 at `SRC_ALPHA`, `outScreenEmission` is attachment 1 at
+> `ONE, ONE` and **never reads alpha at all**. So the body does not need the
+> emissive and the eyes do not need the alpha, and they can simply be separated:
+>
+> | | |
+> |---|---|
+> | **body** | emissive forced to 0 with `EMISSIVE_OVERRIDE`, so the material cannot restore it and the pipeline stays plain `SRC_ALPHA / ONE_MINUS_SRC_ALPHA`. The alpha cvars now mean what they say and a ghost can occlude the wall behind it |
+> | **eyes** | the same quad uploaded again with its packed alpha masked to **zero** (`primColor & 0x00FFFFFF`) and the emissive left to the material. Contributes `SRC_ALPHA × colour` = **nothing** to the body, and the full mask to the emission |
+>
+> One extra rasterized quad per visible ghost per frame — same vertices, same
+> transform, no texture or geometry work; the same trick `rt_sprite_shadow`'s
+> proxies use. The copy carries `NO_SHADOW` (it contributes no body, so it must
+> not cast) and its own `primitiveIndexInMesh`, or RTGL1 drops one of the two
+> silently and the copy is the one that loses.
+>
+> **Consequence for tuning: every alpha value chosen before this is meaningless**,
+> because none of them did anything. `0.24` / `0.42` were picked against an
+> additive body and are now real alpha — expect the ghosts to read far more solid
+> than they ever have. Re-pick with `ghost-faint` (0.10) against `ghost-opaque`
+> (1.00), which now differ enormously.
+>
+> Also cleared statically, so nobody re-checks them: **no `forceOpaque`** on any
+> of the 114 TRO2/SAR2 entries in the live `textures.json` (that flag makes RTGL1
+> slam alpha to 255 and strip TRANSLUCENT — `TextureMeta.cpp:155`), and all 55
+> emissive frames **have a real `_e` mask**, so `RsWorld.inl` takes the
+> `baseColor × emisTex` branch (eyes only) rather than the
+> `ldrEmis = ldrColor.rgb` fallback, which would have put the whole body on the
+> alpha-blind emission attachment and explained the symptom exactly.
+
+**Both were raised 20 % on 2026-08-14** — spectre `0.20 → 0.24`, imp `0.35 → 0.42` — asked
+for by eye as "20 % less transparent". It is a **1.2× on the opacity**, applied to both so the
+pair keeps its relative spacing; the other reading (cut the *transparency* by a fifth) would
+land the spectre at `0.36`, nearly twice as solid as it was, which is not what was wanted.
+Compiled defaults in `rt_cvars.inc` **and** the pins in `tools/d64rt-pins.cfg` were both
+moved: a pin overrides a compiled default, so changing one alone changes nothing.
+
 ### ⚠ A living ghost must be TRANSLUCENT, never ALPHA_TESTED
 
 `makePrimFlags()` used to send only `IsSpectre()` sprites down the rasterized

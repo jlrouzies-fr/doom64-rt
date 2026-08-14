@@ -382,8 +382,8 @@ Three that matter more than the rest:
 ## ⛧ &nbsp;Art changes
 
 This project changes lighting, not artwork — with one exception, and it is here so it
-is not a quiet one. Everything below is Doom 64's own pixels, rearranged; nothing is
-painted or generated.
+is not a quiet one. It **ships enabled**: `d64r-sflatas-broken.wad` is in the launcher's
+own file list, so this is what the game looks like out of the box.
 
 ### SFLATAS — the ceiling lamp pane
 
@@ -393,14 +393,17 @@ painted or generated.
   <th align="center">After</th>
 </tr>
 <tr>
-  <td align="center"><img src="docs/img/features/sflatas-before.png" alt="SFLATAS, four bulbs" width="260"></td>
-  <td align="center"><img src="docs/img/features/sflatas-after.png" alt="SFLATAS, one centred bulb" width="260"></td>
+  <td align="center"><img src="docs/img/features/sflatas-before.png" alt="SFLATAS, four working bulbs" width="260"></td>
+  <td align="center"><img src="docs/img/features/sflatas-after.png" alt="SFLATAS, three bulbs smashed" width="260"></td>
 </tr>
 <tr>
-  <td align="center"><sub>2×2 bulbs per 64-unit tile</sub></td>
-  <td align="center"><sub>one bulb, centred, 25 units of plate to the tile edge</sub></td>
+  <td align="center"><sub>2×2 working bulbs per 64-unit tile — four lights</sub></td>
+  <td align="center"><sub>three smashed, one still burning — one light, nothing moved</sub></td>
 </tr>
 </table>
+
+The glass is repainted; **no bulb is moved**. That is the whole trick, and §"Why this
+edit and not another" below is why it matters.
 
 **Why.** A grating only casts a legible shadow when its light comes from one compact
 source. Measured in the shadow lab (`tools/build_shadow_lab.py`, the same fixture alone
@@ -419,17 +422,22 @@ of the mesh shadow that fills in the previous one's gaps, and the pattern cancel
 is not a renderer bug: a real ceiling of metre-spaced bulbs behind a half-metre mesh
 washes out too. It is why the caged zombie on MAP01 stood in a shadowless glow.
 
-**Why this edit and not another.** The game already has a single-bulb flat (`SFLATCH`),
-and swapping to it does fix the shadow — but a flat anchors to the **world origin**, not
-to the sector, so a wall lands wherever it lands and cuts a bulb in half. The margin is
-the fix: with the bulb centred and 25 units of blank plate to the tile edge, a seam falls
-on plate, where it is invisible.
+**Why this edit and not another.** The obvious version — repaint the pane as a single
+bulb in the middle of the tile — was built first, and it is worse. Moving painted
+geometry means moving it in the albedo *and* in the normal, height and roughness maps;
+then the light has to follow it; then every pane needs a per-sector texture offset so a
+wall does not slice the one bulb that is left, and the light has to follow that too.
+Breaking three bulbs changes **nothing's position**. All four housings still exist, so
+the authored relief maps are still correct and are left alone, and the flat keeps its
+original tiling, so no sector needs an offset. It also reads as a place rather than as a
+texture edit: this is an overrun military installation, and the maintenance stopped.
 
-**How it was made.** `tools/make_single_bulb_flat.py`. The authored `_e` mask says which
-texels are bulb; those are replaced by copying real plate from half a bulb-pitch away
-(wrapping, because flats tile), and then one of the original bulbs is stamped at the
-centre. The `_e` mask is rebuilt to match — leaving the four-blob mask against a one-bulb
-albedo would light three bulbs that are no longer painted.
+**How it was made.** `tools/gen_broken_bulb_flat.py`. The albedo is hand-painted; the
+tool works out which bulb is still intact by measuring luminance in the authored bulb
+windows (157 against 53/64/94 — not a judgement call), keeps that one blob in the `_e`
+emissive mask and clears the other three, and restores the authored `_n`/`_h`/`_orm`. The
+engine's `SoloBulbTextures` then puts one light on the survivor — at world **(16, 16)**
+for a bulb the image draws at (16, 48), because a ceiling flat's world Y is `64 − imageY`.
 
 <br>
 

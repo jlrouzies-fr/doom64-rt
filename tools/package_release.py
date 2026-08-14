@@ -64,7 +64,7 @@ RT_WAD_DROP = {"filter", "sounds"}
 MODS = [
     "d64r-lostsoul-rt.pk3", "d64r-rt-flashlight.pk3",
     "d64r-3dfloor-rtfix.wad", "d64r-seqlight-fix.wad",
-    "d64r-bulb-textures.wad", "d64r-ctel-fix.wad",
+    "d64r-bulb-textures.wad", "d64r-sflatas-broken.wad", "d64r-ctel-fix.wad",
     "d64r-rt-sky.pk3", "d64r-lava-fx.pk3", "d64r-blood-persist.pk3",
     "d64r-widescreen-gfx.pk3", "d64r-mugshot.pk3", "d64r-rt-titlelogo.pk3",
 ]

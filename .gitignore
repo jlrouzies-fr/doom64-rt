@@ -161,3 +161,8 @@ ReleaseTest/
 # Written by the launcher: the IWAD path the user picked. Machine-local state,
 # and it carries a personal filesystem path.
 doom64-rt-settings.txt
+
+# Backups taken by tools/apply_material_labels.py and
+# tools/bake_material_labels_orm.py before the first write. Local undo state:
+# "--revert" reads them, and they are regenerable by reverting and re-applying.
+*.pre_material_labels

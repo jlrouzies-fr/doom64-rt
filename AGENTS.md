@@ -44,6 +44,12 @@ fog's froxel volume, and why the sim is on the CPU):
 
 → **`docs/rt-smoke.md`**
 
+Impact sparks (`rt_spark_*`) — the hitscan hook in `P_LineAttack` that *is* a real
+game hook, the PUFF palette the look is derived from, why additive is the feature
+rather than the bug, and the three collision tiers:
+
+→ **`docs/plan-impact-fx.md`**
+
 Blood splats that stay on the floor (`rt_gore_*`, why the one-second lifetime
 was in the WAD's DECORATE and not in the renderer, the explosion burst, and
 per-monster blood colour + the RT material-naming bug that hid it):
@@ -328,6 +334,13 @@ and still printed counts, about a path the fixtures no longer take. **Date every
 and when you move where a feature places things, re-point every tool that tuned the old
 placement in the same commit (§34b).
 
+Broken-bulb lamp panes (`SFLATAS`), the art change that made the MAP01 cage's grating
+cast, and the traps it cost — **a ceiling flat's world Y is `64 − imageY`**, and RT
+materials live in **four** directories of which `developerMode` reads `mat_dev` and
+every build re-copies the tracked one over the build tree:
+
+→ **`docs/lamp-panes-broken-bulbs.md`**
+
 ## Sprites that emit light
 
 `docs/sprite-illumination.md` is the reference: `emissiveMult` is screen glow and
@@ -372,6 +385,7 @@ feature code to `rt_main.cpp`.
 | `rt_lights_fixtures.cpp` | Lamps inferred from a TEXTURE: ceiling inset, wall strip, ceiling edge, spin panel, solo bulb, hanging tech, hand glow |
 | `rt_lights_fx.cpp` | Switches, lava, flames (`RT_UploadFlameLights` — see `docs/flame-lighting.md`) |
 | `rt_smoke.cpp` | Puff simulation + all six smoke sources: weapons, monster guns (`RT_MONSTER_GUNS`), projectiles (`RT_PROJECTILE_SMOKE`), barrels, flames (`RT_AMBIENT_FLAMES`) + `smoke` CCMD (`docs/rt-smoke.md`) |
+| `rt_sparks.cpp` | Impact sparks (`rt_spark_*`): the pool, the 3-tier collision, the batched quads and the per-impact flash + `sparks` CCMD. **The one FX source with a real game hook** — `P_LineAttack` in `p_map.cpp` (`docs/plan-impact-fx.md`) |
 | `rt_presets.cpp` | Per-map moon / cloud / tint / fog tables + `moon`, `clouds`, `fog` CCMDs |
 | `rt_weather.cpp` | The storm + `thunder` |
 | `rt_draw.cpp` | `RTRenderState::InternalDraw` — the funnel every primitive passes through |
@@ -422,6 +436,7 @@ declaration cannot drift from its definition. Put nothing in that file except an
 | `tools/ab-water.cmd` | Water A/B: `stock`/`styl`/`flat`/`mirror`/`noglow`/`nocaus`/`debug`, default MAP10. Flats are tagged engine-side (`l_waterflag`), no setup needed. See `docs/rt-water.md`. |
 | `tools/smoke-lab.cmd` | **Smoke lab — MAP97 dark / MAP96 bright beige** — unattended capture of muzzle smoke in a controlled room (`python tools/build_smoke_lab.py` first). `tools/smoke-sweep.cmd <cvar> <values...>` walks one cvar at a fixed tic; `python tools/smoke_gallery.py` renders named candidate looks into one labelled PNG. Judge smoke here, never in a real level — and colour/visibility questions belong on MAP96. |
 | `tools/ab.cmd smoke-<arm>` | Volumetric smoke A/B (arms are cfgs in `tools/arms/`, NOT command-line strings). `smoke-full`/`fat`/`thin`/`still`/`drift`/`walk`/`glued`; monsters `smoke-monster`/`nomonster`; sources `smoke-flames`/`noflames`/`proj`/`barrel`/`crowd`; look `smoke-stylize0`; traps `nearfade`/`blendslow`/`blendraw`; resolution `reach30`/`reach8`; isolation `off`/`nolight`/`debug`; and `fogsafe`/`fogsmoke`, the fog regression. See `docs/rt-smoke.md`. |
+| `tools/ab.cmd spark-<arm>` | Impact spark A/B: `spark-fat` (**run first** — the absurd arm that separates plumbing from values), `spark-on`/`off`, `nolight` (how much is the traced flash), `nogrid` (the before for the pixel look — judge while moving), `nocollide`, `still` (bounce with the fall taken out), `debug`. Ships **off**; judge in the smoke lab (MAP97 dark, MAP96 bright) before a real level. See `docs/plan-impact-fx.md`. |
 | `tools/ab-blood.cmd` | Persistent blood A/B: `off`/`on`/`uncapped`/`tight`/`plain`/`wild`/`roll`; explosion splash `boom`/`noboom`/`bigboom`; per-monster colour `color`/`nocolor` (try MAP03 or MAP14), default MAP01. The lifetime is DECORATE in the WAD, not a renderer setting; explosive kills leave no blood in stock GZDoom because `P_RadiusAttack` never calls `P_SpawnBlood`; and blood colour needs `rt_tex_translations` (pitfall 30). See `docs/blood-persist.md`. |
 
 Important cvars on Retribution launch (do not crank blindly):
@@ -618,6 +633,27 @@ Clear all enemy `_e` + strip meta: `python tools/clear_enemy_eye_emissives.py` t
     Retribution's menu patches are plain `DBIGFONT` renders — `tools/gen_d64_menu_title.py`
     reproduces seven of them at 0 mismatching pixels and can synthesise any new
     word in the same face. See `compat-patches.md` (2026-08-13).
+
+32. **An `emissiveMult` in `textures.json` silently makes a TRANSLUCENT primitive
+    ADDITIVE — and additive can never occlude, at any alpha.** RTGL1's
+    `TextureMeta.cpp:291` overwrites `prim.emissive` from the material (unless the
+    caller sets `RG_MESH_PRIMITIVE_EMISSIVE_OVERRIDE`), and
+    `RasterizedDataCollector.cpp:129` then turns any translucent primitive with
+    `emissive > 0` into `ADDITIVE` (`SRC_ALPHA` / **`ONE`**). That is why
+    `rt_nightmareimp_alpha` and `rt_spectre_alpha` read as completely inert: their
+    eye masks carry `emissiveMult 2.0`, so the body blends additively and the alpha
+    only scales how much a *dark* sprite ADDS to a lit room. The alpha was never
+    wrong — `rt_ghost_debug` measured it arriving intact (0.42 → `packedA` 89/255,
+    1.00 → 214/255) while the image did not move. `rt_ghost_emis 0` proves it by
+    zeroing emissive (and taking the glowing eyes with it); **`rt_ghost_emis_split`
+    is the fix and needs no RTGL1 change** — the body and the emission are on
+    different attachments with different blend factors, so the eye mask goes out
+    on a second copy of the quad at **alpha 0**, which adds no body (attachment 0
+    is `SRC_ALPHA`) and the full glow (attachment 1 is `ONE,ONE`).
+    See `docs/spectre-issue-log.md`.
+    **The general lesson: when a cvar "does nothing", instrument the value's whole
+    path before touching its magnitude — and if the value provably arrives, the
+    next suspect is the STATE it is being interpreted in, not the value.**
 
 ## Suggested next work
 

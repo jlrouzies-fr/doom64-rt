@@ -35,6 +35,14 @@ set "FLSH=%PROJ%\Doom64-Retribution\d64r-rt-flashlight.pk3"
 set "FIX3D=%PROJ%\Doom64-Retribution\d64r-3dfloor-rtfix.wad"
 set "SEQL=%PROJ%\Doom64-Retribution\d64r-seqlight-fix.wad"
 set "BULBTEX=%PROJ%\Doom64-Retribution\d64r-bulb-textures.wad"
+rem SFLATAS, the ceiling lamp pane, repainted with three bulbs SMASHED and one
+rem still burning -- so a single compact source lights the pane and the cage
+rem grating finally casts. Loads after %MOD% because it is a TX_ override of one
+rem of Retribution's own flats. It has to ship with the engine's SoloBulbTextures
+rem entry, not on its own: with this art and no entry the lattice puts a light
+rem inside three broken bulbs. See README "Art changes" and
+rem docs\lamp-panes-broken-bulbs.md.
+set "PANEBRK=%PROJ%\Doom64-Retribution\d64r-sflatas-broken.wad"
 set "CTELFIX=%PROJ%\Doom64-Retribution\d64r-ctel-fix.wad"
 set "SKY=%PROJ%\Doom64-Retribution\d64r-rt-sky.pk3"
 set "LAVAFX=%PROJ%\Doom64-Retribution\d64r-lava-fx.pk3"
@@ -639,7 +647,7 @@ rem
 rem Order matters and is preserved: the pins (including god/notarget) run BEFORE
 rem +map, exactly as they did inline, and %EXTRA% runs LAST so an arm still wins.
 start "" gzdoom.exe ^
-  -iwad "%IWAD%" -file "%MOD%" "%BM%" "%SKUL%" "%FLSH%" "%MUS%" "%FIX3D%" "%SEQL%" "%BULBTEX%" "%CTELFIX%" "%SKY%" -file "%LAVAFX%" "%BLOODFX%" "%WIDEGFX%" "%MUGSHOT%" "%TITLOGO%" -rtnolauncher -width 1280 -height 720 %RTDEBUG% ^
+  -iwad "%IWAD%" -file "%MOD%" "%BM%" "%SKUL%" "%FLSH%" "%MUS%" "%FIX3D%" "%SEQL%" "%BULBTEX%" "%PANEBRK%" "%CTELFIX%" "%SKY%" -file "%LAVAFX%" "%BLOODFX%" "%WIDEGFX%" "%MUGSHOT%" "%TITLOGO%" -rtnolauncher -width 1280 -height 720 %RTDEBUG% ^
   +logfile "%LOGF%" ^
   +win_y %WINY% ^
   +exec "%PINS%" ^

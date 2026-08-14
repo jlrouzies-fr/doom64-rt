@@ -146,7 +146,8 @@ start "" "%ENGINE%\gzdoom.exe" -iwad "%IWAD%" ^
   -file "%MOD%" "%GAME%\D64RTR_BRIGHTMAPS.PK3" "%GAME%\D64MUS.PK3" ^
   "%MODS%\d64r-lostsoul-rt.pk3" "%MODS%\d64r-rt-flashlight.pk3" ^
   "%MODS%\d64r-3dfloor-rtfix.wad" "%MODS%\d64r-seqlight-fix.wad" ^
-  "%MODS%\d64r-bulb-textures.wad" "%MODS%\d64r-ctel-fix.wad" "%MODS%\d64r-rt-sky.pk3" ^
+  "%MODS%\d64r-bulb-textures.wad" "%MODS%\d64r-sflatas-broken.wad" ^
+  "%MODS%\d64r-ctel-fix.wad" "%MODS%\d64r-rt-sky.pk3" ^
   -file "%MODS%\d64r-lava-fx.pk3" "%MODS%\d64r-blood-persist.pk3" ^
   "%MODS%\d64r-widescreen-gfx.pk3" "%MODS%\d64r-mugshot.pk3" "%MODS%\d64r-rt-titlelogo.pk3" ^
   -rtnolauncher -width 1280 -height 720 ^

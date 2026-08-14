@@ -2,50 +2,56 @@
 setlocal EnableExtensions EnableDelayedExpansion
 for %%I in ("%~dp0..") do set "PROJ=%%~fI"
 rem ---------------------------------------------------------------------------
-rem SINGLE-BULB PANES ON A REAL MAP: does the lab result survive MAP01?
+rem SFLATAS, THE CEILING LAMP PANE: how SOFT should its one light be?
 rem
-rem   python tools\build_shadow_swap.py     once, and after any --map change
-rem   ab-texswap.cmd off                    stock MAP01 -- the reference
-rem   ab-texswap.cmd on                     lamp panes swapped to SFLATCH
-rem   ab-texswap.cmd on -- +rt_solo_lamp_intensity 900
+rem   ab-texswap.cmd soft            radius 0.06 -- the shipping pin
+rem   ab-texswap.cmd crisp           radius 0.02 -- the flashlight's
+rem   ab-texswap.cmd crisp 1 -- +rt_solo_lamp_intensity 200
 rem
-rem WHAT IS SWAPPED, and why it is not just an art change. MAP01's twelve lamp
-rem pane CEILINGS (6 SFLATAS + 6 SFLATAQ) become SFLATCH, which paints ONE bulb
-rem dead centre of its 64-unit tile. That moves them off the bulb-lattice path
-rem (rt_ceiling_bulb_*, one light per painted bulb) and onto the SOLO path
-rem (rt_solo_lamp_*, one light per tile) -- and the light family is the half that
-rem matters. Floors are untouched: SFLATAS is used as a floor too, and a floor is
-rem not a lamp pane.
+rem THE ART NOW SHIPS BY DEFAULT, so this is no longer an on/off comparison.
+rem d64r-sflatas-broken.wad is in the launcher's own -file list (and in
+rem package_release.py, launch-doom64-rt.cmd and shot.ps1's base list), which is
+rem why there is no `off` arm any more: you cannot get the stock four-bulb pane
+rem back by NOT passing something here. To see stock, drop the wad from those
+rem lists -- and note the engine's SoloBulbTextures entry would then light one of
+rem four intact bulbs and leave three dark, because the art and the table are a
+rem pair (docs\lamp-panes-broken-bulbs.md 3).
 rem
-rem WHY IT SHOULD HELP, from MAP93 (the shadow lab):
+rem WHAT THE ART IS. SFLATAS paints four bulbs 32 map units apart; the cage
+rem grating's openings are about 16, so four lights lay down offset copies of the
+rem mesh shadow that fill in each other's gaps and the pattern cancels. Measured
+rem alone in a dark room (tools\build_shadow_lab.py, MAP93):
 rem
-rem   1 light  radius 0.02   crisp diamond shadows on floor, walls and ceiling
-rem   4 lights radius 0.02   shadows too, once rt_solo_lamp_intensity is raised
-rem                          enough to beat the bounce fill
-rem   16 lights any radius   nothing
+rem   1 light   crisp diamond shadows on floor, walls and ceiling
+rem   4 lights  a trace, once the intensity beats the bounce fill
+rem   16        nothing, at any source radius
 rem
-rem A grating shadow needs a compact source, and it needs the sources far enough
-rem APART not to be -- Doom 64 paints its bulbs a metre or more apart, wider than
-rem the mesh openings, so every extra bulb lays down an offset copy that fills in
-rem the previous one's gaps. One bulb per pane sidesteps that entirely.
+rem So three of the four bulbs are SMASHED in the art and only the survivor is
+rem lit. Nothing moved: all four housings still exist, so _n/_h/_orm stay
+rem authored and no sector needs panning.
 rem
-rem NOTHING PERMANENT. The swap lives in d64r-shadow-swap.wad, loaded ONLY by this
-rem script and after every other file so it wins. `off` does not load it at all.
+rem WHY RADIUS IS THE KNOB LEFT. Shadow softness scales with source size, and it
+rem is very nearly a pure softness knob here -- RTGL1 sets radiance to
+rem intensity/(pi r^2) while the solid angle goes as pi r^2 / d^2, so the product
+rem is intensity/d^2 and the room does not change brightness with r. 0.02 is what
+rem makes a 4-unit fence wire cast at all (rt-lighting-practices 34); 0.06 is
+rem what is pinned, and is shared with SFLATCH -- which is the reason it has not
+rem simply been lowered. If crisp is the answer, SFLATAS should earn its own pair
+rem the way SFLATDE did with rt_solo_small_*.
 rem
-rem JUDGE:
-rem   1. does the cage grating cast a readable shadow on the floor or the wall?
-rem   2. does a pane read as ONE bulb rather than a lit panel? That is the cost,
-rem      and it is a change to the game's look, not just its lighting.
-rem   3. watch the console line: the panes must move from "+ N bulb lattice(s)"
-rem      to "solo N flat(s)". If they do not, the wad is not winning the load
-rem      order and the result is void.
+rem JUDGE, at the MAP01 cage:
+rem   1. does the grating cast a readable shadow on the wall or floor?
+rem   2. does the pane still read as a light fitting rather than a dead panel?
+rem   3. is exactly ONE bulb per 64-unit tile lit, and is it the INTACT one? A
+rem      lit patch on a smashed bulb means the SoloBulbTextures offset is wrong --
+rem      a ceiling flat's world y is (64 - image y), which has caught this twice.
 rem
-rem Usage: ab-texswap.cmd <off^|on^|swap> [map 1-32] [-- any +cvar ...]
+rem Usage: ab-texswap.cmd <soft^|crisp> [map 1-32] [-- any +cvar ...]
 rem ---------------------------------------------------------------------------
 
 set "WHICH=%~1"
 set "MAP=%~2"
-if "%WHICH%"=="" set "WHICH=on"
+if "%WHICH%"=="" set "WHICH=crisp"
 if "%MAP%"==""  set "MAP=1"
 if "%MAP%"=="--" set "MAP=1"
 set "MAPARG=map0%MAP%"
@@ -58,49 +64,30 @@ for %%A in (%*) do (
   if "%%A"=="--" set "SEEN=1"
 )
 
-set "SWAP=%PROJ%\Doom64-Retribution\d64r-shadow-swap.wad"
-set "ART=%PROJ%\Doom64-Retribution\d64r-single-bulb.wad"
-set "FILES="
-rem -ExtraFiles, NOT -file. This goes to shot.ps1, which appends to its single
-rem -file list; a bare -file here is an unknown parameter to the script and the
-rem overlay simply never loads -- which looks exactly like "the swap does
-rem nothing" while the console still reports the stock panes. That cost a round
-rem trip once already. Filename only: it resolves relative to Doom64-Retribution\.
-if /i "%WHICH%"=="on" (
-  if not exist "%ART%" (
-    echo run: python tools\make_single_bulb_flat.py
-    exit /b 1
-  )
-  set "FILES=-ExtraFiles d64r-single-bulb.wad"
-) else if /i "%WHICH%"=="swap" (
-  if not exist "%SWAP%" (
-    echo run: python tools\build_shadow_swap.py
-    exit /b 1
-  )
-  set "FILES=-ExtraFiles d64r-shadow-swap.wad"
-) else if /i "%WHICH%"=="off" (
-  rem no overlay -- stock panes
-) else (
-  echo Usage: %~nx0 ^<off^|on^|swap^> [map] [-- any +cvar ...]
+if not exist "%PROJ%\Doom64-Retribution\d64r-sflatas-broken.wad" (
+  echo run: py -3.13 tools\gen_broken_bulb_flat.py
   exit /b 1
 )
 
-rem Solo-path values, stated in BOTH arms so the only difference is the wad.
-rem
-rem 100, not the shipping 45 and not the 900 this started at. 45 is calibrated for
-rem a level that still has every other fixture lighting it, and these panes have to
-rem carry the room; 900 overshot and buried the shadow in its own bounce. 100 is
-rem where it read right in play. Radius 0.02 is the flashlight's, and is what makes
-rem a 4-unit fence wire cast at all (practices 34).
-set "A=+rt_solo_lamps 1 +rt_solo_lamp_radius 0.02 +rt_solo_lamp_intensity 100"
-set "A=%A% +rt_solo_lamp_stride 1 +rt_solo_lamp_max 384 +rt_ceiling_edge_debug 1"
+rem Intensity is stated in BOTH arms, at the shipping value, so the only thing
+rem that differs is the radius. A ladder that moves brightness and softness at
+rem once cannot answer either question -- that is the mistake the first density
+rem ladder had to undo.
+if /i "%WHICH%"=="soft" (
+  set "A=+rt_solo_lamps 1 +rt_solo_lamp_radius 0.06 +rt_solo_lamp_intensity 100"
+) else if /i "%WHICH%"=="crisp" (
+  set "A=+rt_solo_lamps 1 +rt_solo_lamp_radius 0.02 +rt_solo_lamp_intensity 100"
+) else (
+  echo Usage: %~nx0 ^<soft^|crisp^> [map] [-- any +cvar ...]
+  exit /b 1
+)
+set "A=%A% +rt_solo_lamp_stride 1 +rt_solo_lamp_max 384"
 
-rem Goes through shot.ps1 -Play rather than launch-retribution-rt.cmd, and for a
-rem concrete reason: the launcher's passthrough lands AFTER its own -file list, so
-rem the overlay would need a second -file on one command line. shot.ps1 appends to
-rem the single list instead, which makes "loaded last, therefore wins" a fact
-rem rather than a hope -- and that is the whole premise of this arm.
-echo === texswap: %WHICH% %MAPARG% !EXTRA! ===
-echo     judge: 1) fence shadow  2) does a pane still read as a lamp  3) console says "solo N flat(s)"
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0shot.ps1" -Play -Map %MAPARG% %FILES% -Extra "%A%!EXTRA!"
+rem Through shot.ps1 -Play rather than launch-retribution-rt.cmd, because the
+rem launcher's passthrough lands AFTER its own -file list. Nothing extra needs
+rem loading now that the art ships, but keeping one entry point means what you
+rem walk around in is exactly what the captures were taken from.
+echo === sflatas: %WHICH% %MAPARG% !EXTRA! ===
+echo     judge: 1) fence shadow  2) still reads as a lamp  3) ONE lit bulb per tile, the INTACT one
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0shot.ps1" -Play -Map %MAPARG% -Extra "%A%!EXTRA!"
 exit /b %ERRORLEVEL%

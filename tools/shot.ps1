@@ -41,7 +41,22 @@ param(
   # Launch and LEAVE IT RUNNING for a human, instead of settling + screenshotting
   # + quitting. Same file list, same pins, same extras -- so what you walk around
   # in is exactly what the captures were taken from.
-  [switch]$Play
+  [switch]$Play,
+  # Turn in place before the screenshot: tics of held +left (negative = +right).
+  # The MAP01 cage is 90 degrees LEFT of the spawn view, so a straight-ahead
+  # settle-and-shoot frames the wrong wall entirely. Keyboard turning has the
+  # classic Doom slow-start (~2 deg/tic for 6 tics, ~5 deg/tic after), so the
+  # tic count is calibrated by looking at the shot, not computed.
+  [int]$Turn = 0,
+  # Teleport the player to "x y" right after load (gzdoom `warp` cheat; needs
+  # sv_cheats, added automatically). Coordinates come from the map data --
+  # sector bounds out of the wad -- not from squinting at screenshots.
+  [string]$WarpTo = '',
+  # Tics of held +lookup (negative = +lookdown) before the settle. A ceiling
+  # fixture is the subject of most of this work and it is ABOVE the horizon, so
+  # a straight-ahead capture shows the shadow it casts but never the fixture
+  # itself -- which is the half that answers "is the light on the painted bulb".
+  [int]$Pitch = 0
 )
 
 $ErrorActionPreference = 'Stop'
@@ -61,10 +76,15 @@ Start-Sleep -Milliseconds 400
 $names = @(
   'D64RTR_v15.WAD','D64RTR_BRIGHTMAPS.PK3','d64r-lostsoul-rt.pk3','d64r-rt-flashlight.pk3',
   'D64MUS.PK3','d64r-3dfloor-rtfix.wad','d64r-seqlight-fix.wad','d64r-bulb-textures.wad',
+  'd64r-sflatas-broken.wad',
   'd64r-ctel-fix.wad','d64r-rt-sky.pk3','d64r-lava-fx.pk3','d64r-blood-persist.pk3',
   'd64r-widescreen-gfx.pk3','d64r-mugshot.pk3'
 )
 $files = $names | ForEach-Object { '"' + (Join-Path $Mods $_) + '"' }
+# Split on commas as well as taking a real array. `powershell -File script.ps1
+# -ExtraFiles a,b` passes "a,b" as ONE literal string -- -File does no argument
+# parsing -- so a .cmd wrapper cannot hand over two wads without this.
+$ExtraFiles = @($ExtraFiles | ForEach-Object { $_ -split ',' } | Where-Object { $_ })
 $files += $ExtraFiles | ForEach-Object {
   $p = if ([System.IO.Path]::IsPathRooted($_)) { $_ } else { Join-Path $Mods $_ }
   if (-not (Test-Path $p)) { throw "ExtraFiles: not found - $p" }
@@ -74,7 +94,34 @@ $files += $ExtraFiles | ForEach-Object {
 $before = @(Get-ChildItem $OutDir -Filter '*.png' -ErrorAction SilentlyContinue | ForEach-Object { $_.Name })
 
 # ONE command string. Semicolons, not separate + arguments.
-$seq = if ($Play) { '' } else { "+`"wait $Tics; screenshot; wait 40; quit`"" }
+$turnCmd = ''
+if ($WarpTo) {
+  # `warp` is a cheat CCMD, so sv_cheats has to be on first. It goes BEFORE the
+  # aim block and before the settle, so the denoiser accumulates at the final
+  # position rather than smearing the teleport into the captured frame.
+  $turnCmd = "sv_cheats 1; warp $WarpTo; "
+}
+if ($Turn -ne 0 -or $Pitch -ne 0) {
+  # Aim EARLY (after 30 tics), then let the full settle run with the final view:
+  # the denoiser needs stationary history, and a turn just before the screenshot
+  # would capture a frame of smeared temporal accumulation.
+  $turnCmd += 'wait 30; '
+  $spent = 30
+  if ($Turn -ne 0) {
+    $dir = if ($Turn -gt 0) { 'left' } else { 'right' }
+    $t = [math]::Abs($Turn)
+    $turnCmd += "+$dir; wait $t; -$dir; "
+    $spent += $t
+  }
+  if ($Pitch -ne 0) {
+    $pdir = if ($Pitch -gt 0) { 'lookup' } else { 'lookdown' }
+    $p = [math]::Abs($Pitch)
+    $turnCmd += "+$pdir; wait $p; -$pdir; "
+    $spent += $p
+  }
+  $Tics = [math]::Max(60, $Tics - $spent)
+}
+$seq = if ($Play) { '' } else { "+`"$turnCmd" + "wait $Tics; screenshot; wait 40; quit`"" }
 
 $argLine = (@('-iwad','"D:\Games\GZDoom\doom2.wad"','-file') + $files + @(
   '-rtnolauncher', '-width', "$Width", '-height', "$Height",

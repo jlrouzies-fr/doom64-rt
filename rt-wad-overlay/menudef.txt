@@ -413,8 +413,8 @@ LISTMENU "RT_OptionsMenu"
 										Linespacing	10
 	
 	// "HUD"
-	TextItem_RT	"RTMNU_HUD_STYLE"
-										Linespacing	10
+	// RTMNU_HUD_STYLE (None / Simple / Classic, i.e. screenblocks 12/11/10)
+	// is deliberately not offered - the mod ships one HUD.
 	TextItem_RT	"RTMNU_HUD_SIZE"
 										Linespacing	18
 	TextItem_RT	"HUD Opacity",			"RT_HudMenu"
@@ -456,9 +456,7 @@ LISTMENU "RT_OptionsMenuRemix"
 	TextItem_RT	"RTMNU_BLOOM"
 
 
-	// "HUD"
-										Linespacing	10
-	TextItem_RT	"RTMNU_HUD_STYLE"
+	// "HUD"  (RTMNU_HUD_STYLE removed - see RT_OptionsMenu)
 										Linespacing	10
 	TextItem_RT	"RTMNU_HUD_SIZE"
 										Linespacing	18

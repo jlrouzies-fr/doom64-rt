@@ -405,16 +405,55 @@ The player's own viewer sprite is excluded, for the same reason §1 excludes it:
 it is drawn at the eye, and a blob under it is a dark ring painted around the
 camera.
 
+### A living SEE-THROUGH monster gets no blob
+
+Requested 2026-08-14: exclude the nightmare imp and the spectre while they are
+alive, because they are semi-transparent. It is the same narrowing as everywhere
+else in this document, and here the assumption fails in a way that is easy to
+state: **the blob asserts that a solid body is standing here and blocking the
+light that would otherwise reach this floor.** For `64Spectre` (SAR2) and
+`64NightmareImp` (TRO2) that is false by construction — they are rasterized
+translucent overlays and the room is visible *through* them at
+`rt_spectre_alpha` / `rt_nightmareimp_alpha`. An opaque smudge sliding along the
+floor under a body you can see through reads as a painted disc, and on the two
+creatures whose whole point is being hard to see it gives their position away
+before the body does.
+
+§1 already refuses them, for the neighbouring reason (a translucent primitive is
+rasterized, never in the acceleration structure, so it casts nothing at all).
+
+The gate is `IsSpectre() || IsLivingGhost()` — **the same test `makePrimFlags`
+uses to choose the translucent overlay**, so the two cannot disagree: whatever
+renders see-through is exactly what is refused. Two things fall out of reusing
+it rather than writing a new one:
+
+- **Corpses keep their blob, for free.** `IsLivingGhost()` excludes them and
+  `rt_spectre_corpse_solid` takes the dead spectre out of `IsSpectre()` too, so a
+  dead ghost is an ordinary solid sprite — and a body lying on the floor is
+  precisely what contact occlusion is for.
+- **`rt_ghost_solid 1` puts the blob back**, because that cvar makes them solid
+  sprites and the assumption becomes true again.
+
+`rt_sprite_ao_ghosts 1` restores the old behaviour as a pin change.
+
+    .\tools\ab.cmd spriteao-on    02     what ships -- nothing under a live ghost
+    .\tools\ab.cmd spriteao-ghost 02     the control: blob under everything
+
+Judge it on a **lit** floor — the blob multiplies albedo, so a dark room hides
+the thing being compared — and check a *corpse* is identical in both arms. If a
+corpse changes, the exclusion is keyed on the wrong test.
+
 ### Cvars
 
 | cvar | default | note |
 |---|---|---|
 | `rt_sprite_ao` | `true` | master switch |
+| `rt_sprite_ao_ghosts` | `false` | give a blob to a **living** see-through monster too (spectre / nightmare imp). Off — see above. Their corpses are unaffected |
 | `rt_sprite_ao_strength` | `0.7` | fraction of the floor's albedo removed at the centre. Settled in play — see below |
 | `rt_sprite_ao_radius` | `1.6` | multiple of `actor->radius`, for the **circle** |
 | `rt_sprite_ao_upright` | `0.7` | strength multiplier for standing things only. The knob for "monsters read too heavy" |
-| `rt_sprite_ao_sizefall` | `0.6` | how much smaller, relative to its owner, a blob gets as the sprite grows. 0 = proportional, 1 = all the same size |
-| `rt_sprite_ao_shape` | `1` | 0 = circle always; 1 = circle upright / ellipse lying down; 2 = ellipse always |
+| `rt_sprite_ao_sizefall` | `0.2` | how much smaller, relative to its owner, a blob gets as the sprite grows. 0 = proportional, 1 = all the same size. Was `0.6`; taken down 2026-08-14 alongside `shape 2`, because a fitted ellipse already tracks the art and a heavy correction on top flattened big and small things toward one smudge |
+| `rt_sprite_ao_shape` | `2` | 0 = circle always; 1 = circle upright / ellipse lying down; 2 = **ellipse always** (shipping since 2026-08-14 — standing bodies get the fitted ellipse too, which changes their size as well as their shape: the ellipse is `fit` × the *sprite's* width, not `radius` × the collision radius) |
 | `rt_sprite_ao_fit` | `1.0` | multiple of the **sprite's** horizontal extent, for the ellipse. 1 = the art's own width |
 | `rt_sprite_ao_aspect` | `0.4` | the ellipse's across-axis over its along-axis. A declared assumption, not a measurement |
 | `rt_sprite_ao_fade` | `56` | map units of height over which it fades out |
@@ -503,6 +542,9 @@ the useful part — every one of them was a *different* kind of wrong:
 Rounds 2 and 3 were the same mistake twice: acting on an a-priori argument about
 what would look right instead of on what was reported. The values that survived
 (`strength 0.7`, `upright 0.7`, `sizefall 0.6`) were all settled by looking.
+`sizefall` then went to **0.2** on 2026-08-14, when `shape 2` made every
+footprint a fitted ellipse — that fit already tracks the art, so the extra
+correction on top was flattening big and small things toward one smudge.
 
 **Still unverified — and they are all *negative* claims**, which is why they
 survive: nothing in a mirror or in water, no blob following a flying enemy or a
@@ -522,7 +564,8 @@ ledge. `spriteao-loud`, a cacodemon and a lift are what test those.
 | `rt_cvars.inc` | every `rt_sprite_shadow_*` and `rt_sprite_ao_*` |
 | `tools/d64rt-pins.cfg` | the shipping pins. Must agree with the compiled defaults |
 | `tools/arms/sprshadow-*.cfg` | §1 arms — `off` / `on` / `probe` / `max` |
-| `tools/arms/spriteao-*.cfg` | §2 arms — `off` / `on` / `loud` / `disc` |
+| `tools/arms/spriteao-*.cfg` | §2 arms — `off` / `on` / `loud` / `disc` / `ghost` |
+| `rt_renderstate.h` | `IsSpectre()` / `IsLivingGhost()` — the see-through test §2 refuses on |
 | `RTGL/.../RsDecal.vert` | **the world-position trap** — reads §2 before touching it |
 | `RTGL/.../RsDecal.frag` | the 5 cm surface test and the albedo blend §2 is built on |
 | `RTGL/.../VulkanDevice.cpp` | `rayCullMaskWorld_Shadow` — the one line that makes §1's proxies shadow-only |
@@ -539,3 +582,4 @@ ledge. `spriteao-loud`, a cacodemon and a lift are what test those.
 | **a faint cross around an actor** | §1's instance mask is wrong. This is the single failure mode that design has, and nothing new should ever be *visible* |
 | **shadow gone outdoors** | `rt_sun_split` — see `moon-and-sky-leaks.md` §5.2. Sprite shadows the moon never resolved |
 | **a mirror shows no blob** | expected. §2 is rasterized into the primary G-buffer only |
+| **a blob under a live spectre / nightmare imp** | `rt_sprite_ao_ghosts` is on, or `rt_ghost_solid` is making them solid sprites. A blob under their **corpses** is correct |
