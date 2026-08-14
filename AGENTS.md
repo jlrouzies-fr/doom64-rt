@@ -243,6 +243,27 @@ Three things that will otherwise cost you a day:
   ~11× forward bias, and it is the confirmation, not a contradiction.
   `rt_volume_scatter` is now normalised per metre in `rt_main.cpp` (fog is not —
   it is tuned in per-cell units). Doc §5.4, arms `tools/arms/moon-*.cfg`.
+- **"The shaft stops short of the floor it lights" is NOT a renderer bug — two
+  mechanisms were measured and both came back negative.** Don't re-open it
+  without reading §5.5 first. The **depth dither** is a real one-sided bias
+  (`-sampleHemisphere()` has positive z, so the volume is never sampled deeper
+  than the surface, and it is a prefix sum) worth `0.33 × radius ×
+  (rt_volume_far/64)` = 1.56 m at the old settings — and 1.56 m is **invisible**
+  here: radius 5 and radius 0 look identical. The **phase function** at
+  `rt_volume_lassymetry 0.5` does swing 34× along a raking beam, but zeroing it
+  is *dimmer, not flatter* — the forward peak is carrying the shaft, so the
+  answer is never lower asymmetry. What is left is path length: a ray crossing
+  the beam near the floor spends almost no distance inside it. Look knobs only —
+  `rt_volume_lintensity` (brighter shaft, no extra haze) or `rt_volume_scatter`.
+- **A knob that "does nothing" is TWO hypotheses — too small to see, or never
+  reaching the shader — and one absurd value separates them for one launch.**
+  `shaft-probe` (`rt_volume_dither_z 40`, a 12.5 m shortfall) killed the shaft
+  outright and retired the plumbing explanation after two subtle arms had failed
+  to. Build the absurd arm *before* concluding a mechanism is wrong. Same
+  philosophy as `rt_smoke_debug 4`. Depth now has its own knob,
+  `rt_volume_dither_z` (1), because a one-sided depth filter and a symmetric
+  screen one should never have shared `rt_volume_dither`. Doc §5.5, arms
+  `tools/arms/shaft-*.cfg`.
 - **There is no single visibility choke point.** The visible shafts are
   *volumetric*, and `RtVolumetric.rgen` does **not** call
   `traceDirectIllumination` — it shadow-tests its own light. A fix in the shared
@@ -266,16 +287,39 @@ occluder never blocked the ray"* from *"it did, and the result was drowned in fi
 smeared by the denoiser"*, and four A/B ladders failed to tell those apart before this
 existed.
 
-**A shadow's softness comes from the extent of the whole EMITTING ARRAY, not from one
-light's radius.** N lights spread across a ceiling behave as one source that size. A lamp
-pane is ~100 lattice lights at `rt_ceiling_bulb_spacing` 16, i.e. an area light hundreds of
-units wide, which erased the MAP01 cage's fence shadow no matter how small each light was
-(`screen/noVisibleShadowFence.png`). The fix is a **key/fill split inside the fixture** —
-`rt_ceiling_bulb_key`, a dense fill for the even wash plus a sparse compact key that does
-the casting, flux conserved so brightness cannot move. Radius itself is a *pure softness
-knob* and costs no brightness: radiance is `intensity/(π r²)` and the sphere subtends
-`≈ π r²/d²`. Full write-up: `docs/rt-lighting-practices.md` §34, `open-issues` §1.6h.
-A/B: `.\tools\ab-bulb-key.cmd <off|half|strong|keyonly> [map]`.
+**But it only started telling the truth on 2026-08-14.** Mode 1 writes into the unfiltered
+*direct* buffer, while the final pixel is direct + indirect + volumetrics + exposure +
+screen emissive — so unless the Dev window's "Unfiltered diffuse direct" box was ticked you
+were reading a composite, and in an emissive-lit room the visibility term is a small
+minority of it. It now sets that flag itself. **Treat every "no shadow" conclusion dated
+before 2026-08-14 as unsupported**, and validate the view on a known caster before trusting
+it on an unknown one (§34a).
+
+**Do not reach for source SIZE on the MAP01 cage fence — that theory is falsified and cost
+two sessions.** `screen/noVisibleShadowFence.png` casts nothing under its lamp ceiling
+while a flashlight and a muzzle flash cast crisply, which looks exactly like a penumbra
+problem (`rt_ceiling_edge_radius` 0.35 = 11.2 map units vs their 0.02 = 0.64). It is not.
+On 2026-08-14 the radius was taken to 0.04, the ~100-light lattice was concentrated into
+~16 compact lights carrying 100 % of the pane's flux, and `rt_shadow_samples` raised to 4
+— **no shadow at any setting**, and concentrating flux that way is itself a noise source.
+All of it reverted. The one arm that ever made the fence cast (`ab-bulb-softness pin`) also
+raised `rt_ceiling_edge_intensity` 180 → 720, so what it showed was probably **contrast**,
+not size.
+
+**Occlusion is confirmed working — stop looking at the geometry** (`screen/debugMod1.png`,
+2026-08-14). With the fixed `rt_debug_visibility 1` the buffer resolves the grating's
+diamond lattice *and* a humanoid silhouette cleanly, so alpha-tested fence geometry and
+sprite proxies both block shadow rays correctly. Whatever is losing the shadow is
+downstream of occlusion: shadowless **fill** (`rt_sector_emis` × `rt_emis_mapboost`,
+`rt_ceiling_bulb_emis`, indirect GI) or **summation** over the many lattice lights that are
+*not* occluded for a given receiver — ReSTIR shades one light per pixel, so the buffer shows
+an umbra for the chosen light while the final image sums over all of them.
+
+Beware one number: the "the glow is ~84 % of the room's light" line in
+`rt_ceiling_bulb_noemis` was measured at `rt_ceiling_bulb_gain` **1**, before the gain was
+calibrated to 7. At shipping values the same lab reads floor 126.8 at emis 0 and 134.7 at
+emis 10 — nearer **11 %**. Do not quote the 84 %. Full write-up:
+`docs/rt-lighting-practices.md` §34/§34a, `open-issues` §1.6h.
 
 **A count knob can go inert under you.** Seven ladders thinned lamps with
 `rt_ceiling_edge_seglen`; the 2026-08-10 bulb lattice took `SFLATAS`/`SFLATAQ` off that

@@ -506,6 +506,154 @@ and the moon lives in there next to the fog and the smoke.
 
 ---
 
+## 5.5 The shaft stops before it lands — the depth dither is one-sided
+
+> **STATUS, 2026-08-14: CLOSED, both candidates measured and both NEGATIVE.**
+> The screenshot's short shaft is not explained by anything in this section. Two
+> arms settled it in one round and the numbers are worth keeping because both
+> mechanisms are real — they are just too small, or point the wrong way:
+>
+> | arm | prediction | **measured** |
+> |---|---|---|
+> | `shaft-stock` (dither_z 5) vs `shaft-bias` (0) | 1.5 m of beam back | *"kind of identical"* |
+> | `shaft-probe` (dither_z 40) | medium collapses | **no shaft at all** — the knob IS live |
+> | `shaft-iso` (lassymetry 0) | beam even end to end | **less visible / weaker** |
+>
+> `shaft-probe` is the load-bearing one. It rules out the silent-plumbing
+> explanation outright, so *"identical"* means what it says: the depth bias is
+> real arithmetic worth 1.56 m and **1.56 m is simply not visible here**. And
+> `shaft-iso` going dimmer rather than flatter says the forward peak is carrying
+> the shaft, not truncating it — killing the anisotropy costs brightness and buys
+> no reach, so the phase function is not the carrier either.
+>
+> **What is left is not a bug.** A camera ray crossing the beam near where it
+> meets the floor spends almost no *distance* inside it, so the ground contact is
+> genuinely faint — path length through the medium, not truncation. The knobs for
+> that are `rt_volume_scatter` and `rt_volume_lintensity` (which brightens the lit
+> shaft without thickening the haze), and it is a look decision rather than a
+> repair.
+>
+> `rt_volume_dither_z` is **kept** at 1. It is invisible at shipping values, but
+> coupling a one-sided depth filter to a symmetric screen one is wrong on its own
+> terms, and `shaft-probe` is only possible because the axis has its own knob.
+
+`screen/shaftsStoppingTooEarly.png`, MAP13's west hall. The cone from the window
+slots fades out in mid-air and never reaches the floor it is plainly lighting
+further along the beam. Reported as *"not reaching enough towards the end"* and
+as the shaft being pulled *"too back towards itself"*, with a cut-off that moves
+slightly with the camera.
+
+**This is not §5.4 again.** That was a density problem and the per-metre
+normalisation fixed it; the medium is the right thickness now. This is the
+column being **sampled short**, and the moving cut-off is what says so — a
+world-space cause (`rt_sun_require_sky` rejecting far froxels, geometry
+occlusion) cannot breathe with the camera.
+
+**The mechanism.** `CmScatterAccum.comp` jitters each pixel's volume lookup along
+a **hemisphere** sample, negated:
+
+```glsl
+const vec3 offset = sampleHemisphere( rnd.x, rnd.y, oop );
+return volume_sampleDithered( position, rnd.z, -offset, ... );
+```
+
+`sampleHemisphere` (`Random.h:88`) returns `z = sqrt(1 - u1)`, which is **always
+positive**. Negated, the depth component is always ≤ 0: the volume is never
+sampled deeper than the surface, only shallower. And `g_volumetric` holds a
+**prefix sum from the camera outward** (`CmVolumetricProcess.comp`), so a
+consistently shallower sample returns consistently *less* accumulated
+in-scattering. It does not blur the far end of a column. It deletes it.
+
+| | value |
+|---|---|
+| froxel depth at `rt_volume_far 60` | 60 m / 64 slices = **0.94 m** |
+| `E[rnd01]` | 0.5 |
+| `E[z]` of `sampleHemisphere` = ∫₀¹√(1−u)du | **2/3** |
+| **mean shortfall at radius 5** | 0.5 × 5 × ⅔ × 0.94 = **1.56 m** |
+| worst case | **4.69 m** |
+| stock RTGL1 (radius 2, far 30 → 0.47 m) | 0.31 m |
+
+The shipping pins were **5× the stock bias**, and neither pin looks like it did
+that: `rt_volume_dither` went 2 → 5 for smoke's noise, `rt_volume_far` went
+30 → 60 for smoke's reach, and the two **multiply**. Same compounding
+`moon-sharp.cfg` records for the *smear*, acting here on the *mean*. 1.5–4.7 m
+of missing beam is the size of the gap in the screenshot.
+
+**Why it is one-sided, and why symmetrising it is the wrong fix.** Sampling only
+toward the camera is what stops the jitter reading a froxel column that belongs
+to geometry **behind** the surface — the dark outlines dense smoke draws around
+everything seen through it, which `CmScatterAccum.comp`'s own comment records.
+That property has to survive.
+
+**The fix: give depth its own radius.** `rt_volume_dither` is now the **screen**
+axes only and keeps its 5; `rt_volume_dither_z` is the depth axis and ships at
+**1**. Depth only has to break **slice banding**, which is a half-froxel
+quantisation artefact, so a sub-froxel radius covers it and the bias falls to
+0.31 m — stock's figure, restored at a 60 m reach. The 5 it inherited was sized
+against *noise*, and noise is `rt_volume_blur`'s and `rt_volume_history`'s job.
+
+**The screen axes were never at fault.** `x` and `y` are `r·cos φ`, `r·sin φ` —
+symmetric about zero, so they blur the shaft's edge without displacing it. The
+"misplaced" half of the report is the missing far end, not a lateral shift.
+
+A/B, `tools/arms/shaft-*.cfg` — view each twice, across the shaft and along it,
+as §5.4 requires:
+
+    .\tools\ab.cmd shaft-probe 13   dither_z 40: RUN THIS FIRST. Is the knob connected?
+    .\tools\ab.cmd shaft-stock 13   dither_z 5: the old coupled behaviour
+    .\tools\ab.cmd shaft-now   13   shipping
+    .\tools\ab.cmd shaft-bias  13   dither_z 0: the upper bound, not shippable (banding)
+    .\tools\ab.cmd shaft-iso   13   the OTHER hypothesis -- lassymetry 0.5 -> 0
+
+**`shaft-probe` is the pattern to reuse, not just an arm.** `shaft-stock` and
+`shaft-bias` came back identical, and *"a knob did nothing"* has two completely
+different causes — too small to see, or never reaching the shader — which no
+amount of staring at the two arms can separate. §7 lists three separate silent
+value collapses in this feature alone. So the third arm is a deliberately absurd
+value chosen to be **impossible to miss**: 40 froxels is a 12.5 m mean shortfall
+out of a 60 m volume. It killed the shaft outright, which retired the plumbing
+hypothesis in one run and made the null result trustworthy. Cost: one launch.
+Build the absurd arm *before* concluding a mechanism is wrong, not after.
+
+### The other candidate, also negative: the phase function varies ALONG the beam
+
+`rt_volume_lassymetry 0.5` gives k = 0.706, and
+`(1-k²)/(4π(1+k·cosθ)²)` runs **0.462 → 0.096 → 0.080 → 0.0137** across
+cosθ = −1 → −0.5 → 0 → +1. A 34× range. `tolight` is constant for a directional
+light but `toviewer` is not, so froxels at one end of a raking beam are weighted
+several times harder than froxels at the other **for no reason the viewer can
+see** — and MAP13's moon is at altitude 25, a low raking beam, which is the worst
+case because the view direction swings furthest along its length.
+
+That would be a shaft dying along its length with nothing truncating it, and it
+is separable from the dither — the phase term varies with view **angle**, the
+dither with view **distance**.
+
+**Measured: `shaft-iso` is dimmer, not flatter.** At asymmetry 0 the phase is a
+flat 1/4π = 0.0796 against the forward peak's 0.462, so removing the anisotropy
+takes ~6× off the view that was working and gives the far end nothing back. The
+peak is **carrying** the shaft, not truncating it — which also means the tuning
+answer here is never *lower* asymmetry, and §5.4's "invisible from in front, fine
+looking up at the moon" is that same peak doing the job it exists for.
+
+**So neither candidate is the cause, and the remaining explanation is not a bug.**
+A camera ray crossing the beam near where it meets the floor spends almost no
+*distance* inside it, so the ground contact is genuinely faint. That is path
+length through the medium, and the honest knobs are `rt_volume_scatter` (thicker
+medium, more haze everywhere) and `rt_volume_lintensity` (brighter lit shaft, no
+extra haze — `moon-lint` is the arm). Both are look decisions.
+
+**Generalise it — twice.** *A knob that "does nothing" is two hypotheses, and one
+absurd value separates them for the price of one launch.* `shaft-probe` retired
+the plumbing explanation in a single run after two subtle arms had failed to.
+And: *a dither drawn from a hemisphere is a bias, not a dither.* A
+filter that is one-sided by design must be sized against the artefact it is
+hiding — here, half a froxel of banding — not against whatever noise happens to
+be annoying at the time. And it must be sized in the units it is actually
+measured in: this radius is in **froxels**, so `rt_volume_far` moves it too.
+
+---
+
 ## 6. Files
 
 | file | role |
@@ -516,7 +664,10 @@ and the moon lives in there next to the fog and the smoke.
 | `tools/ab-moon.cmd`, `ab-moonsize.cmd`, `ab-skyleak.cmd` | pre-set A/B arms |
 | `tools/arms/cull-*.cfg` | the §5.1 geometry-culling arms (`ab.cmd cull-stock` / `-dark` / `-wide` / `-all`) |
 | `tools/arms/moon-*.cfg` | the §5.4 medium-density arms (`moon-before` / `-now` / `-far30` / `-dens` / `-lint` / `-sharp` / `-dark`) |
-| `RTGL/.../CmVolumetricProcess.comp` | the unweighted prefix sum — why CELLS, not metres, are what a shaft is counted in (§5.4) |
+| `tools/arms/shaft-*.cfg` | the §5.5 depth-dither arms (`shaft-stock` / `-now` / `-bias`) |
+| `RTGL/.../CmVolumetricProcess.comp` | the unweighted prefix sum — why CELLS, not metres, are what a shaft is counted in (§5.4), and why sampling it shallow **deletes** the far end of a column rather than blurring it (§5.5) |
+| `RTGL/.../CmScatterAccum.comp` | where the volume is sampled per pixel and jittered — the one-sided `-sampleHemisphere` depth bias (§5.5) |
+| `RTGL/.../Volumetric.h` | the froxel mapping (`volume_getCenter` / `volume_toSamplePosition_T`) and `volume_sampleDithered`, which owns the split radii (§5.5) |
 | `hw_bsp.cpp` | the second, unculled BSP walk — `rt_cullmode`, `rt_nocull`, `rt_segdrawn` (§5.1) |
 | `rt_main.cpp` | `rt_sun_*`, `rt_moon_*`, `RT_MOON_PRESETS`, `moon` / `rt_sky_here` CCMDs, `RT_MoonSkyPitchOffset` |
 | `r_sky.cpp` | sky yaw tracking in `R_UpdateSky` |

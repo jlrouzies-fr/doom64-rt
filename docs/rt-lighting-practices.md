@@ -750,75 +750,149 @@ static buildings escape it because their history is stable.
   reported as "no difference"; its answer was in the console, unread. Say which
   output an instrument writes to when handing one over.
 
-## 34. Source SIZE is not why the MAP01 fence casts no shadow — that theory is now falsified
+## 34. The MAP01 fence: BOTH the light count and the source radius, measured in a lab
 
-`screen/noVisibleShadowFence.png`: the octagonal `SPACECM` cage on MAP01 stands under a
-lamp ceiling and casts **nothing**, while the flashlight, a muzzle flash and a barrel
-explosion make the same fence cast crisply. Bodies, props and walls in that room cast from
-the lamps normally. Only the fence fails.
+`screen/noVisibleShadowFence.png`: the `SPACECM` cage on MAP01 casts nothing under its
+lamp pane, while a flashlight and a muzzle flash cast crisply through the same grating.
 
-The standing explanation since 2026-08-08 was **source size**: `rt_ceiling_edge_radius` /
-`rt_wall_strip_radius` are 0.35 m = **11.2 map units**, against 0.02 = 0.64 for the
-flashlight and muzzle flash, and penumbra width scales with source size, so an 11-unit
-source should erase a 4-unit wire's shadow while leaving wide occluders alone. It fits the
-observed split exactly. It is also, as of 2026-08-14, **wrong** — or nowhere near
-sufficient.
+Settled 2026-08-14 in **MAP93, the shadow lab** (`tools/build_shadow_lab.py`,
+`tools/shadow-lab.ps1`): the same fixture — one SFLATAS pane inside a `SPACECM` cage —
+alone in a dark room with **no other light of any kind**, captured unattended. Every
+earlier attempt was run in MAP01's real room, which carries 283 analytic lights plus a
+moon, wall strips, dynlights and a level of emissive GI, and could not isolate anything.
 
-**The test that falsified it.** Radii dropped to 0.15, `rt_shadow_samples` raised to 4, and
-the lamp pane split into a dense fill plus a sparse compact **key**: few lights at
-`radius 0.04` (1.3 map units, the same order as the flashlight's 0.64) spaced 128 units
-apart, carrying up to **100 %** of the pane's flux. That is "a handful of point-like
-sources" — the flashlight's own configuration — applied to the lamps. Result at every share
-from 0.5 to 1.0: **still no shadow**, plus visible noise from concentrating the flux into a
-few very bright small emitters. Reverted the same day.
+**Both levers are necessary and neither is sufficient:**
 
-Both size levers were pushed to their limits and neither moved the shadow:
-
-| lever | pushed to | result |
+| lights on the pane | source radius | result |
 |---|---|---|
-| per-light radius | 0.35 → 0.04 (11.2 u → 1.3 u) | no shadow |
-| emitting-array extent | ~100 lights at 16 u → ~16 at 128 u | no shadow |
-| shadow samples | 1 → 4 | no shadow |
+| 1 | 0.35 m = 11.2 map units (shipped) | nothing |
+| 1 | **0.02 m = 0.64 units** | **crisp diamond shadows on floor, both walls and ceiling** |
+| 4 | 0.02 | a trace on the ceiling only |
+| 16 | 0.02 | nothing |
+| 16 | 0.06 | nothing |
 
-**And that retroactively convicts the arm the 08-08 conclusion rested on.**
-`ab-bulb-softness`'s `pin` arm did make the fence cast — but it changed three things at
-once: radius 0.35 → 0.02, `seglen` 64 → 256, **and `rt_ceiling_edge_intensity` 180 → 720**.
-That last one is a 4× brightening of the lamps. Since radius and count have now been
-falsified independently, what that arm most likely demonstrated was **contrast**: the
-shadow appeared because the casting light got four times stronger relative to everything
-else in the room, not because its source got smaller. The ladder written to "fix the
-confounded density ladder" was itself confounded, the same way, on the same day.
+So a legible grating shadow needs **one compact light per fixture**. Four already washes
+it out, which rules out "one light per painted bulb" as a design: an SFLATAS pane draws
+2×2 bulbs per 64-unit tile, so even a single tile is four.
 
-**What is still standing, and untested:**
+**I previously wrote in this section that source size was falsified. That was wrong**, and
+the way it was wrong is the lesson. The test that "falsified" it moved radius *inside*
+MAP01, where 271 other lights were untouched, and it also concentrated flux into a few very
+bright emitters, which added noise. A confounded experiment produced a confident negative
+that then steered two more rounds. The 2026-08-08 finding (`60e19bb`, `aacb140`) was right
+all along.
 
-- **Contrast.** `rt_ceiling_bulb_emis` is **20** — the pane keeps its painted glow in full,
-  and emission casts no shadow at any strength (§12). That cvar's own description measures
-  it on MAP94: the glow carried floor **123.0** against **19.5** from the real lights, i.e.
-  **~84 % of the light in a "point lit" room was still the texture**. An umbra that removes
-  16 % of the illumination is not a shadow anyone can see. This is §33's "contrast, not
-  correctness", it sits directly above the cage, and **no ladder has ever varied it** —
-  `ab-bulb-keyfill` moves the *global* `rt_sector_emis` instead.
-- **Geometry.** Nobody has confirmed the lamps are on the far side of the fence from the
-  surface being looked at. If no lattice light is occluded by the grating for that
-  receiver, no light tuning can produce a shadow and every arm above measured the wrong
-  room. `whatsthat` and `rt_ceiling_edge_debug_marks` answer this; neither has been aimed
-  at the cage.
-- **Light selection.** ReSTIR picks one light per pixel out of ~100 candidates.
+**Why radius matters so much here.** RTGL1 samples a sphere light at a random point on its
+surface (`Light.h:278-291`), so the radius *is* the penumbra generator. A grating cell is
+16 units; an 11.2-unit source blurs the cell's own width away, while a 0.64-unit one draws
+it sharply. Brightness does not change with radius — radiance is `intensity/(π r²)` and the
+sphere subtends `≈ π r²/d²`, so the product is `intensity/d²`.
 
 **Rules:**
 
-- **Three levers pushed to their extremes with no movement means the model is wrong, not
-  the values.** Stop tuning and go back to the instrument. §25 and §11 both say this, and
-  it was ignored here for one more cycle.
-- **A shadow is only visible in proportion to how much of the local light it blocks.**
-  Before making a caster's light smaller, sharper or stronger, find out what *else* is
-  lighting that surface — especially anything that cannot cast (§12).
-- **An arm that moves three knobs proves nothing about any one of them.** `pin` moved
-  radius, count and intensity together and set the project's direction for six days.
-- **Concentrating flux into fewer, brighter, smaller lights is a noise source.** Variance
-  in a 1-spp direct estimate scales with how uneven the light set is, and ~16 lights at 64×
-  their neighbours' intensity is exactly the bad case. Any "fewer, brighter" fix has to be
-  judged for noise as well as for shape.
+- **Isolate the fixture in a purpose-built map before tuning it.** Three ladders and six
+  days went into a room where no single knob could be seen. The lab answered it in eight
+  captures, and its light count is derived from the cage size and printed in the frame, so
+  an arm that fails to apply announces itself.
+- **A confounded experiment yields a false negative just as easily as a false positive**,
+  and a negative is far more expensive because nothing contradicts it later.
+- **`whatsthat` reports the surface the ray HIT.** It returned `SPACEAF` for the cage and
+  that was written down as fact; `SPACEAF` has *zero* transparent pixels. The grating is
+  `SPACECM` (64×64, 56.2 % transparent). Confirm a texture from its pixels (§17) before
+  building on the name — the lab caught this in one frame, because a cage built from an
+  opaque texture is a sealed box and renders the room black.
+
+## 34a. `rt_debug_visibility 1` was not showing you visibility — the instrument itself was the bug
+
+The whole method in §33 rests on one claim: that `rt_debug_visibility` separates *"the ray
+was never blocked"* from *"it was blocked and the result was drowned or smeared"*. On
+2026-08-14 that claim turned out to be false in exactly the rooms it was being used in.
+
+`RtRaygenDirect.rgen:93-104` writes the visibility term into the **unfiltered DIRECT**
+buffer — the direct *diffuse* channel and nothing else — and returns. But
+`CmPrepareFinal.comp:43-84` builds the final pixel as denoised direct **+ indirect +
+volumetrics + auto-exposure + screen emissive × `emissionMaxScreenColor`**, and only
+substitutes the raw direct buffer when `DEBUG_SHOW_FLAG_UNFILTERED_DIFFUSE` is ticked in
+the Dev window. Without that tick you are looking at the normal image with one summand
+scaled by visibility.
+
+Under a Doom 64 lamp pane, that summand is a **minority of the pixel**: the painted glow
+is only one of several shadowless contributors (`rt_ceiling_bulb_emis`, `rt_sector_emis`
+and indirect GI), all of it
+emissive and none of it able to shadow. So the view came out looking like the ordinary
+scene with a few lights dimmed — reported verbatim as *"it just seems to disable some
+lights but not much"* — and it could not have shown an umbra it did find, let alone prove
+one absent.
+
+**Two conclusions were built on that reading and both are now void:** the 2026-08-08
+*"`rt_debug_visibility 1` showed that NOTHING casts a shadow from the bulb bands"*, which
+eliminated "blocked but drowned" and sent the hunt into source size for six days; and the
+`sprshadow-probe` decision table, which asks you to read black-vs-no-black off the same
+view.
+
+Fixed in `deps/RTGL/Source/VulkanDevice.cpp` (`FillUniform`): mode **1** now sets
+`DEBUG_SHOW_FLAG_UNFILTERED_DIFFUSE` itself, so it shows the raw buffer, bypassing the
+denoiser, with no box to remember. Mode **2** deliberately still composites — it exists to
+locate an umbra *against* normal shading. Needs `tools/build-rtgl.cmd`.
+
+**Rules:**
+
+- **An instrument that only works when paired with a setting somewhere else is not an
+  instrument.** The cvar description did say "judge in the Dev 'Unfiltered diffuse direct'
+  view"; two investigations still read it composited. If a debug view has a precondition,
+  make the view enforce it rather than documenting it.
+- **Validate the instrument on a case where you know the answer before trusting it on one
+  where you do not.** §32 already says every verifier needs a control — a case it must pass
+  and a case it must fail. This one had never been shown either. Point it at a wall lit by
+  a single close lamp with a body in front: if that does not go black, the view is lying.
+- **A debug view that composites is showing you a RATIO, not a term.** Ask what fraction of
+  the final pixel the thing you are debugging actually contributes. When the answer is
+  16 %, no amount of staring will resolve it.
+
+## 34c. A per-pixel debug view cannot isolate one occluder while N lights compete
+
+`screen/redDebugShadow.png` — `rt_debug_visibility 2` in the MAP01 cage room with every
+authored emissive fill peeled off — comes back with **nearly every surface tinted**, which
+looks like "everything is shadowed" and localises nothing.
+
+The console explains it in one line:
+
+    uploaded=283 of 275 wanted (cap 1024, within 3072u)
+      from 16 lamp ceiling(s) + 4 lamp floor(s) + 12 bulb lattice(s) | faux 4 | solo 4
+
+283 lights, against a cap of 1024 — nothing is being trimmed, so that is the real number
+competing for every pixel. ReSTIR shades **one** light per pixel, and `g_debugVisibility`
+records the shadow ray for *that* light. With 283 candidates most pixels choose something a
+wall, a pillar or the cage occludes, so the view reports "shadowed" almost everywhere and
+says nothing whatever about the fence.
+
+**The view is not wrong; the question is wrong.** "Was the light this pixel chose blocked"
+only becomes "does this occluder cast" when there is essentially one light to choose.
+
+And the same number invalidates every count experiment on this problem. The knobs each
+reach a different fraction of those 283:
+
+| knob | reaches |
+|---|---|
+| `rt_ceiling_bulb_spacing` | the **12** bulb-lattice panes |
+| `rt_ceiling_edge_seglen` | the **8** perimeter-walk panes |
+| `rt_faux_lamp_max` / `rt_solo_lamp_max` | faux + solo, on **separate budgets** no arm ever set |
+| `rt_ceiling_edge_max` | the main list only — *not* faux or solo |
+
+That is why the 2026-08-14 key/fill test returned null: it re-spaced 12 panes and left the
+other ~271 lights exactly as they were. `ab-onelamp` had the same defect in reverse — it
+capped the main list to 1, called that "one lamp", and uploaded 9.
+
+**Rules:**
+
+- **Before reading any per-pixel light debug view, print the light count.** If it is not
+  ~1, the view is answering a different question than the one you are asking.
+- **When a population is assembled from several sources with separate budgets, no single
+  knob thins it.** Find the total first — the debug line existed and said 283 — then check
+  which fraction your knob actually reaches before running the experiment, not after.
+- **An isolation arm has to turn off *everything*, and prove it did.** State the expected
+  console line in the arm's own echo, so an arm that failed to apply announces itself
+  instead of returning a confident null.
 
 ## 34b. A knob can go inert under you when placement changes, and every ladder that used it silently becomes void
 

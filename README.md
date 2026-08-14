@@ -43,6 +43,7 @@ theirs — the code is Claude's. <a href="AI-DECLARATION.md">Details</a>.
 - [**Building it yourself**](#building) — [what you need](#requirements) · [dependencies](#dependencies) · [build](#build) · [first run](#first-run)
 - [**Launchers**](#launchers) — how the game and the A/B arms are started
 - [**For developers**](#developers) — the doc index, in [DEVELOPERS.md](DEVELOPERS.md)
+- [**Art changes**](#art) — the one texture this project edits, and why
 - [**Credits**](#credits) — RTGL1, gzdoom-rt, Retribution, Doom 64
 - [**AI declaration**](AI-DECLARATION.md) — what was written by AI, and what wasn't
 
@@ -372,6 +373,63 @@ Three that matter more than the rest:
 | [`AGENTS.md`](AGENTS.md) | The working handbook — diagnostic procedure for a wrongly-lit surface, the `rt/` source map, how to add a cvar, and 31 numbered pitfalls not to repeat. |
 | [`compat-patches.md`](compat-patches.md) | Every engine and RTGL1 change we made, dated, with the reason. |
 | [`docs/open-issues-rt-lighting.md`](docs/open-issues-rt-lighting.md) | What still fails. |
+
+<br>
+
+---
+
+<a id="art"></a>
+## ⛧ &nbsp;Art changes
+
+This project changes lighting, not artwork — with one exception, and it is here so it
+is not a quiet one. Everything below is Doom 64's own pixels, rearranged; nothing is
+painted or generated.
+
+### SFLATAS — the ceiling lamp pane
+
+<table>
+<tr>
+  <th align="center">Before</th>
+  <th align="center">After</th>
+</tr>
+<tr>
+  <td align="center"><img src="docs/img/features/sflatas-before.png" alt="SFLATAS, four bulbs" width="260"></td>
+  <td align="center"><img src="docs/img/features/sflatas-after.png" alt="SFLATAS, one centred bulb" width="260"></td>
+</tr>
+<tr>
+  <td align="center"><sub>2×2 bulbs per 64-unit tile</sub></td>
+  <td align="center"><sub>one bulb, centred, 25 units of plate to the tile edge</sub></td>
+</tr>
+</table>
+
+**Why.** A grating only casts a legible shadow when its light comes from one compact
+source. Measured in the shadow lab (`tools/build_shadow_lab.py`, the same fixture alone
+in a dark room):
+
+| lights on the pane | result |
+|---|---|
+| 1 | crisp diamond shadows on floor, walls and ceiling |
+| 4 | shadows, once the intensity beats the bounce fill |
+| 16 | nothing, at any source radius |
+
+The lamp pane places one light per painted bulb, and Doom 64 paints those bulbs 32 map
+units apart — **one metre**. The cage grating's openings are about half that. Once the
+lights are further apart than the occluder's features, each one lays down an offset copy
+of the mesh shadow that fills in the previous one's gaps, and the pattern cancels. That
+is not a renderer bug: a real ceiling of metre-spaced bulbs behind a half-metre mesh
+washes out too. It is why the caged zombie on MAP01 stood in a shadowless glow.
+
+**Why this edit and not another.** The game already has a single-bulb flat (`SFLATCH`),
+and swapping to it does fix the shadow — but a flat anchors to the **world origin**, not
+to the sector, so a wall lands wherever it lands and cuts a bulb in half. The margin is
+the fix: with the bulb centred and 25 units of blank plate to the tile edge, a seam falls
+on plate, where it is invisible.
+
+**How it was made.** `tools/make_single_bulb_flat.py`. The authored `_e` mask says which
+texels are bulb; those are replaced by copying real plate from half a bulb-pitch away
+(wrapping, because flats tile), and then one of the original bulbs is stamped at the
+centre. The `_e` mask is rebuilt to match — leaving the four-blob mask against a one-bulb
+albedo would light three bulbs that are no longer painted.
 
 <br>
 
