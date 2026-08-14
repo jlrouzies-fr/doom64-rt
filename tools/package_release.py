@@ -166,17 +166,30 @@ def main():
     game = out / "game"
     game.mkdir()
     (game / "PUT-YOUR-GAME-FILES-HERE.txt").write_text(
-        "Doom 64 - Ray Traced needs four files that are not ours to ship.\n"
-        "Drop them in this folder, then run launch-doom64-rt.cmd:\n\n"
-        "  doom2.wad               a DOOM II you own (Steam or GOG).\n"
-        "                          The launcher finds Steam and GOG installs by\n"
-        "                          itself, so you may not need to copy it here.\n"
-        "  D64RTR_v15.WAD          Doom 64: Retribution v1.5, free:\n"
-        "                          https://www.moddb.com/mods/doom-64-retribution\n"
-        "  D64MUS.PK3              the OGG music pack (D64MUS.ZIP), same page:\n"
-        "                          .../addons/doom-64-retribution-ogg-music-pack-v13\n"
-        "  DOOMSND.SF2             optional, ships with Retribution. Without it\n"
-        "                          the few MIDI tracks stay silent.\n",
+        "Doom 64 - Ray Traced ships the renderer, not the game. Put the game files\n"
+        "in THIS folder, then run launch-doom64-rt.cmd one level up.\n"
+        "\n"
+        "1. Doom 64: Retribution v1.5   (free)\n"
+        "     https://www.moddb.com/mods/doom-64-retribution\n"
+        "\n"
+        "   Extract the WHOLE download in here, not just the WAD. It contains\n"
+        "   several files this needs and they are easy to miss one at a time:\n"
+        "     D64RTR[v1.5].WAD        the mod itself\n"
+        "     D64RTR_BRIGHTMAPS.PK3   every enemy eye and glowing panel is masked from it\n"
+        "     DOOMSND.SF2             without it the few MIDI tracks stay silent\n"
+        "     libfluidsynth*.dll      plays those MIDI tracks\n"
+        "\n"
+        "2. OGG music pack v1.3   (free, same ModDB page, file D64MUS.ZIP)\n"
+        "     .../addons/doom-64-retribution-ogg-music-pack-v13\n"
+        "   Unzip it here too - that gives you D64MUS.PK3.\n"
+        "\n"
+        "3. doom2.wad   -   a DOOM II you own, from Steam or GOG.\n"
+        "   The launcher finds Steam and GOG installs by itself, so you probably\n"
+        "   do not need to copy this at all. If yours lives somewhere unusual,\n"
+        "   the startup check has a Browse button.\n"
+        "\n"
+        "The launcher checks all of this on startup and tells you what is missing,\n"
+        "with a link to each download.\n",
         encoding="ascii")
 
     total = sum(f.stat().st_size for f in out.rglob("*") if f.is_file())

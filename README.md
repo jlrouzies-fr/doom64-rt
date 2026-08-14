@@ -82,11 +82,16 @@ rebuild it, not as something you can download and run.
 None of this is redistributed here. Get it from the mod's own ModDB page and drop it in
 `Doom64-Retribution\`:
 
-| File | Where |
+| Download | What to do with it |
 |---|---|
-| `D64RTR_v15.WAD` + `D64RTR_BRIGHTMAPS.PK3` | **Doom 64: Retribution v1.5** — [moddb.com/mods/doom-64-retribution](https://www.moddb.com/mods/doom-64-retribution) |
-| `DOOMSND.SF2` + `libfluidsynth.dll` + `libfluidsynth64.dll` | Same download. Copy them over too — **not every track is in the OGG pack**, and without the soundfont the MIDI ones fail with `Unable to load : Unable to read header` (the title screen and MAP00 are the two that show it). |
-| `D64MUS.PK3` | **OGG music pack v1.3** (download `D64MUS.ZIP`, unzip) — [the addon page](https://www.moddb.com/mods/doom-64-retribution/addons/doom-64-retribution-ogg-music-pack-v13) |
+| **Doom 64: Retribution v1.5** — [moddb.com/mods/doom-64-retribution](https://www.moddb.com/mods/doom-64-retribution) | **Extract the whole thing**, not just the WAD. It carries `D64RTR[v1.5].WAD`, `D64RTR_BRIGHTMAPS.PK3`, `DOOMSND.SF2` and the two `libfluidsynth` DLLs — all of them are used, and picking files out one at a time is how you end up missing one. |
+| **OGG music pack v1.3** — [the addon page](https://www.moddb.com/mods/doom-64-retribution/addons/doom-64-retribution-ogg-music-pack-v13) | Unzip `D64MUS.ZIP` in the same place. Not every track is in it, which is why the soundfont above still matters: without it the MIDI ones fail with `Unable to load : Unable to read header` (the title screen and MAP00 show this). |
+
+> [!NOTE]
+> The ModDB download is named **`D64RTR[v1.5].WAD`**. This repo also carries a shell-safe
+> `D64RTR_v15.WAD` copy, and the launcher accepts either — those square brackets are a
+> wildcard to PowerShell's `Test-Path`, so a naive check reports the file missing while it
+> is sitting right there.
 
 The launcher loads the OGG pack rather than the MIDI + `DOOMSND.SF2` route, so the music
 pack is required, not optional — `launch-retribution-rt.cmd` passes it on every start.

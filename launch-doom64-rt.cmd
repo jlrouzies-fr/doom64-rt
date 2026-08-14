@@ -53,8 +53,17 @@ rem --- the startup check window ----------------------------------------------
 rem  It owns the whole verification: registry lookup for Steam and GOG, the file
 rem  checks, Browse and Re-check. It writes the IWAD it settled on back to the
 rem  settings file, so the next launch starts from the answer.
+rem The ModDB download is named D64RTR[v1.5].WAD; this repo also carries a
+rem shell-safe D64RTR_v15.WAD copy. Accept whichever the user actually has.
+set "MOD="
+if exist "%GAME%\D64RTR[v1.5].WAD" set "MOD=%GAME%\D64RTR[v1.5].WAD"
+if not defined MOD if exist "%GAME%\D64RTR_v15.WAD" set "MOD=%GAME%\D64RTR_v15.WAD"
+
 if exist "%SETTINGS%" (
-  for /f "usebackq tokens=1,* delims==" %%A in ("%SETTINGS%") do if /i "%%A"=="iwad" set "IWAD=%%B"
+  for /f "usebackq tokens=1,* delims==" %%A in ("%SETTINGS%") do (
+    if /i "%%A"=="iwad" set "IWAD=%%B"
+    if /i "%%A"=="mod"  set "MOD=%%B"
+  )
 )
 
 if exist "%UI%" (
@@ -70,7 +79,7 @@ if exist "%UI%" (
   rem than failing somewhere inside gzdoom where nobody can read it.
   set "MISSING="
   if not exist "!IWAD!"                       set "MISSING=!MISSING!doom2.wad "
-  if not exist "%GAME%\D64RTR_v15.WAD"        set "MISSING=!MISSING!D64RTR_v15.WAD "
+  if not defined MOD                          set "MISSING=!MISSING!D64RTR[v1.5].WAD "
   if not exist "%GAME%\D64RTR_BRIGHTMAPS.PK3" set "MISSING=!MISSING!D64RTR_BRIGHTMAPS.PK3 "
   if not exist "%GAME%\D64MUS.PK3"            set "MISSING=!MISSING!D64MUS.PK3 "
   if not exist "%ENGINE%\gzdoom.exe"          set "MISSING=!MISSING!gzdoom.exe "
@@ -134,7 +143,7 @@ echo.
 
 cd /d "%ENGINE%"
 start "" "%ENGINE%\gzdoom.exe" -iwad "%IWAD%" ^
-  -file "%GAME%\D64RTR_v15.WAD" "%GAME%\D64RTR_BRIGHTMAPS.PK3" "%GAME%\D64MUS.PK3" ^
+  -file "%MOD%" "%GAME%\D64RTR_BRIGHTMAPS.PK3" "%GAME%\D64MUS.PK3" ^
   "%MODS%\d64r-lostsoul-rt.pk3" "%MODS%\d64r-rt-flashlight.pk3" ^
   "%MODS%\d64r-3dfloor-rtfix.wad" "%MODS%\d64r-seqlight-fix.wad" ^
   "%MODS%\d64r-bulb-textures.wad" "%MODS%\d64r-ctel-fix.wad" "%MODS%\d64r-rt-sky.pk3" ^

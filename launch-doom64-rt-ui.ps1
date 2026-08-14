@@ -217,10 +217,16 @@ function Get-Checks {
              LinkText='DOOM II on Steam'
              Confirm=($script:IwadPath -and -not $iwadOk) }
 
+    # The ModDB download is named D64RTR[v1.5].WAD. Two consequences: accept that
+    # name as well as the shell-safe D64RTR_v15.WAD, and use -LiteralPath -- to
+    # Test-Path, "[v1.5]" is a character-class wildcard, so the plain form reports
+    # the file missing while it is sitting right there.
+    $script:RetroWad = @("$GameDir\D64RTR[v1.5].WAD", "$GameDir\D64RTR_v15.WAD") |
+                       Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
     $c += @{ Key='retribution'; Name='Doom 64: Retribution v1.5'; Req=$true
-             Ok=(Test-Path "$GameDir\D64RTR_v15.WAD")
-             Good="D64RTR_v15.WAD"
-             Bad="Free, from the mod's own ModDB page. Put D64RTR_v15.WAD in the game folder."
+             Ok=[bool]$script:RetroWad
+             Good=(&{ if ($script:RetroWad) { Split-Path -Leaf $script:RetroWad } })
+             Bad="Free, from the mod's own ModDB page. Extract the whole download into the game folder - D64RTR[v1.5].WAD, the brightmaps and the soundfont are all needed."
              Link='https://www.moddb.com/mods/doom-64-retribution'; LinkText='Retribution on ModDB' }
 
     $c += @{ Key='brightmaps'; Name='Retribution brightmaps'; Req=$true
@@ -492,7 +498,12 @@ $launch = New-Btn 'RIP AND TEAR' 570 ($listTop + 8 * $rowH + 66) 122 $BLOOD
 $launch.Font = New-Object System.Drawing.Font('Consolas', 10, [System.Drawing.FontStyle]::Bold)
 $launch.Size = New-Object System.Drawing.Size(122, 34)
 $launch.Add_Click({
-    if ($script:IwadPath) { Set-Content -Path $Settings -Value "iwad=$($script:IwadPath)" -Encoding ASCII }
+    $lines = @()
+    if ($script:IwadPath)  { $lines += "iwad=$($script:IwadPath)" }
+    # Which Retribution filename was found, so the launcher does not have to
+    # guess between D64RTR[v1.5].WAD and D64RTR_v15.WAD a second time.
+    if ($script:RetroWad)  { $lines += "mod=$($script:RetroWad)" }
+    if ($lines) { Set-Content -Path $Settings -Value $lines -Encoding UTF8 }
     $form.Tag = 'launch'
     $form.Close()
 })
