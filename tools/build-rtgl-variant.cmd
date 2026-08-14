@@ -20,7 +20,21 @@ set "NAME=%~2"
 if "%REF%"=="" goto :usage
 if "%NAME%"=="" goto :usage
 
-call "C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\Common7\Tools\VsDevCmd.bat" -arch=x64 -host_arch=x64
+rem Visual Studio: ask vswhere where it is. The hardcoded
+rem "...\Microsoft Visual Studio\18\BuildTools\..." path was true on one machine and
+rem false on every CI runner and every developer with VS 2022 Community installed.
+set "VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
+set "VSDEV="
+if exist "%VSWHERE%" (
+  for /f "usebackq delims=" %%I in (`"%VSWHERE%" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do set "VSDEV=%%I\Common7\Tools\VsDevCmd.bat"
+)
+if not exist "%VSDEV%" set "VSDEV=C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\Common7\Tools\VsDevCmd.bat"
+if not exist "%VSDEV%" (
+  echo ERROR: no Visual Studio C++ toolset found.
+  echo        Install "Desktop development with C++" ^(Build Tools is enough^).
+  exit /b 1
+)
+call "%VSDEV%" -arch=x64 -host_arch=x64
 if errorlevel 1 exit /b 1
 
 set "RTGL=%PROJ%\deps\RTGL"

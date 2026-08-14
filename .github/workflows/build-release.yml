@@ -1,0 +1,148 @@
+name: Build release package
+
+# Builds the engine, the path tracer and the release zip on a clean Windows
+# runner. It cannot test the result: GitHub runners have no GPU, so nothing here
+# proves the renderer works -- only that a fresh machine can build and package it.
+#
+# Everything the package needs is public. What it deliberately does NOT contain:
+# the DOOM II IWAD, Doom 64: Retribution, its brightmaps, soundfont, or the OGG
+# music pack. The launcher asks the user for those on first run.
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+env:
+  STOCK_URL: https://github.com/vs-shirokii/gzdoom-rt/releases/download/rt-1.0.2/gzdoom-rt-1.0.2.zip
+
+jobs:
+  build:
+    runs-on: windows-2022
+    timeout-minutes: 180
+
+    steps:
+      - name: Checkout Doom64-RT
+        uses: actions/checkout@v4
+
+      # Both forks carry changes this project depends on. Upstream builds, then
+      # behaves wrong in ways nothing reports -- see the README.
+      - name: Checkout gzdoom-rt fork
+        uses: actions/checkout@v4
+        with:
+          repository: jlrouzies-fr/gzdoom-rt
+          ref: doom64-rt
+          submodules: recursive          # unordered_dense; a flat clone fails late
+          path: sourcecode/gzdoom-rt
+
+      - name: Checkout RTGL fork
+        uses: actions/checkout@v4
+        with:
+          repository: jlrouzies-fr/RTGL
+          ref: doom64-rt
+          submodules: recursive          # imgui, glfw, cgltf, glaze, glm, DX12
+          path: deps/RTGL
+
+      - name: Checkout DLSS SDK
+        uses: actions/checkout@v4
+        with:
+          repository: NVIDIA/DLSS
+          path: deps/DLSS
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install Pillow
+        run: python -m pip install --disable-pip-version-check pillow
+
+      # 500 MB, and only a handful of files survive packaging -- but the engine
+      # stages rt/ out of it, so it is not optional.
+      - name: Cache stock gzdoom-rt package
+        id: stock
+        uses: actions/cache@v4
+        with:
+          path: gzdoom-rt-1.0.2
+          key: stock-gzdoom-rt-1.0.2
+
+      - name: Download stock gzdoom-rt package
+        if: steps.stock.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri $env:STOCK_URL -OutFile stock.zip
+          Expand-Archive stock.zip -DestinationPath stock-extract
+          $inner = Get-ChildItem stock-extract -Directory | Select-Object -First 1
+          if ($inner -and -not (Test-Path "stock-extract\rt")) {
+            Move-Item $inner.FullName gzdoom-rt-1.0.2
+          } else {
+            Move-Item stock-extract gzdoom-rt-1.0.2
+          }
+          if (-not (Test-Path 'gzdoom-rt-1.0.2\rt')) { throw 'stock package has no rt/ folder' }
+
+      - name: Cache vcpkg
+        uses: actions/cache@v4
+        with:
+          path: sourcecode/gzdoom-rt/build/vcpkg_installed
+          key: vcpkg-${{ runner.os }}-${{ hashFiles('sourcecode/gzdoom-rt/vcpkg.json') }}
+
+      # The build scripts find Visual Studio through vswhere and the repo root
+      # through their own location, so they run here unmodified.
+      - name: Build engine
+        shell: cmd
+        run: .\tools\build-gzdoom-rt.cmd
+
+      - name: Build RTGL1
+        shell: cmd
+        run: .\tools\build-rtgl.cmd
+
+      - name: Package
+        run: python tools/package_release.py --out dist --zip
+
+      - name: Verify the package
+        shell: pwsh
+        run: |
+          $p = 'dist\Doom64-RT'
+          $need = @(
+            'gzdoom.exe', 'launch-doom64-rt.cmd', 'launch-doom64-rt-ui.ps1',
+            'rt\bin\RTGL1.dll', 'rt\RTGL1.json', 'rt\data\textures.json',
+            'mods\d64r-mugshot.pk3', 'mods\d64rt-pins.cfg',
+            'CREDITS.md', 'AI-DECLARATION.md', 'game\PUT-YOUR-GAME-FILES-HERE.txt'
+          )
+          $bad = $need | Where-Object { -not (Test-Path (Join-Path $p $_)) }
+          if ($bad) { throw "package is missing: $($bad -join ', ')" }
+
+          # The stock textures.json is ~30 KB and the authored one ~236 KB. Shipping
+          # the stock file silently disables every authored material.
+          $meta = (Get-Item "$p\rt\data\textures.json").Length
+          if ($meta -lt 100000) { throw "textures.json is $meta bytes - that is the stock file" }
+
+          # Nothing that belongs to somebody else's game, and nothing we cannot ship.
+          foreach ($f in @('D64RTR_v15.WAD','D64MUS.PK3','doom2.wad','DOOMSND.SF2','D64RTR_BRIGHTMAPS.PK3')) {
+            if (Get-ChildItem $p -Recurse -Filter $f -ErrorAction SilentlyContinue) {
+              throw "package must not contain $f"
+            }
+          }
+          if (Test-Path "$p\rt\replace_old") { throw 'replace_old should have been stripped' }
+          '{0:N0} MB packaged' -f ((Get-ChildItem $p -Recurse -File | Measure-Object Length -Sum).Sum / 1MB)
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Doom64-RT-${{ github.sha }}
+          path: dist/Doom64-RT.zip
+          compression-level: 0        # already a zip
+
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/Doom64-RT.zip
+          body: |
+            Built from ${{ github.sha }}.
+
+            This archive contains the renderer, not the game. On first run the
+            launcher will ask you for a DOOM II IWAD you own, and for Doom 64:
+            Retribution v1.5 plus its OGG music pack (both free, from ModDB).
+
+            Engine: GPLv3, sources at jlrouzies-fr/gzdoom-rt @ doom64-rt.
+            RTGL1: MIT, Sultim Tsyrendashiev and Vasilii Shirokii.
+            See CREDITS.md and AI-DECLARATION.md inside the archive.
