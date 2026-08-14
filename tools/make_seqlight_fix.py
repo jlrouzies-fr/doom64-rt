@@ -99,10 +99,20 @@ CHAINS = [
         [84, 72, 75, 76, 77, 78, 79, 80, 81, 82, 83, 87, 88, 89, 90, 91, 92, 93,
          94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108,
          109, 110, 111, 112, 113, 114],
-        enabled=False,
-        note="PENDING PLAYTEST. 39 sectors, SFLATAQ, base 180 -> all emitting. "
-             "Corridor from y -1664 that opens into a wide hall (x +/-416). "
-             "Same defect class as the stairs, same map.",
+        enabled=True,
+        note="39 sectors, base 180 -> all emitting at the crest. Corridor from "
+             "y -1664 opening into a wide hall (x +/-416). Same defect class as the "
+             "stairs, same map. PLAYTESTED 2026-08-14 and reported: the SPACEAK "
+             "walls self-emit as the wave passes. 18 of the 39 members wear SPACEAK "
+             "-- every SPACEAK sector on the map is in this chain, which is why the "
+             "report named that texture. Specials are 2/3/4 (one start, 19+19 "
+             "alternating), the LightSequence signature. It was reported as ACS, and "
+             "the substance was right even though the mechanism is a sector special: "
+             "the members STORE 180, well under the 220 threshold, so the map data "
+             "looks innocent and only the runtime wave pushes them over. Nothing in "
+             "MAP03's ACS touches SPACEAK -- its 11 calls are all in CLOSED scripts "
+             "9 and 12, and the only one that can cross the threshold is "
+             "Light_Glow(27) on sector 69, which wears SPACEC.",
     ),
     Chain(
         "MAP03", 150,
@@ -221,6 +231,27 @@ class Shaft:
 
 
 SHAFTS = [
+    # ---- MAP03 CHAIN-84 HEAD ---------------------------------------------------
+    # Ships WITH the MAP03 chain 84 repair in CHAINS, and only makes sense next to
+    # it. Clearing a chain removes the SPECIALS; it never touches lightlevels. Chain
+    # 84's head stores 255 (it is the LightSequenceStart, special 2 -- the value the
+    # wave propagates from), so with the wave gone it stops travelling and becomes a
+    # lone static glow in a corridor whose every other member sits at 180.
+    #
+    # Same shape as the MAP01 hall: strip the animation and whatever it was driving
+    # FROM is left pinned at the top of its own ramp. Worth checking after every
+    # chain that gets enabled.
+    #
+    # Checked for authorship first, the way MAP02's SFLATAR plate had to be:
+    # SPACEAP is bright on 8 of 177 sectors game-wide (4.5%) and has no authored _e,
+    # so this is ordinary panelling carrying a control value, not a motif. Contrast
+    # SFLATAR at 6 of 7, which is why that one was left alone.
+    Shaft(
+        "MAP03", [84], from_light=255, to_light=180,
+        enabled=True,
+        note="Chain 84's LightSequenceStart head, 16x32u SPACEAP, sole neighbour 72 at 180. Levelled with the corridor it fed now that the sequence is cleared.",
+    ),
+
     # ---- MAP02 SFLATAR FLOOR PLATE ---------------------------------------------
     # From the game (rt-console.log, MAP02):
     #
