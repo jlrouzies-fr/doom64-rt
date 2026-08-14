@@ -1308,3 +1308,48 @@ Full write-up, cvars and A/B ladder: **`docs/plan-light-shafts.md`**.
   budget and yields a single blob while the rest of the room gets nothing. The
   test is 3D — the walks tile in both axes, and a 2D gap would merge a light with
   the one above it, which is the mistake `PANEL_LAMPS`' `min_gap` made.
+
+### Light shafts: "it doesn't display very far" (2026-08-14, same day)
+
+Reported from play on the first build: a shaft is there under the lamp you stand
+by and gone a few metres away. **Two independent causes, and neither is
+brightness** — which is what the symptom looks like, and what a naive fix would
+have chased.
+
+**1. A lamp is inverse-square; the moon is not.** `sampleSphereLight` sets
+`dw = calcSolidAngleForSphere(radius, d)`, so a lamp's scattering falls as
+`1/d²` — 36× dimmer at 6 m than at 1 m. The shafts this renderer already had come
+from the **sun**, and a directional light has no distance term at all. *That*
+difference, not the intensity, is why the moon's shafts read across a whole level
+while a lamp's reads as a puddle around the bulb. New
+`rt_volume_shaft_falloff` (default **1**) gives the exponent back:
+`radiance *= pow(max(d,1), k)` — 0 physical, 2 sun-like. `max(d,1)` so it can
+never fight `rt_volume_shaft_nearfade`, which owns the first metre.
+
+**2. The per-froxel ray budget was spent in LIST ORDER, and the list is sorted by
+distance to the CAMERA.** With `rt_volume_shaft_mincontrib 0` the cull never
+fired, so the first `rt_volume_shaft_trace` (3) entries consumed *every* froxel's
+budget. A froxel ten metres down a corridor was tested against the three lamps
+behind the player and never against its own — so a distant lamp's shaft was
+**absent, not dim**, however bright it was. `traceShaftLights()` is now two
+passes: pass 1 finds the brightest candidate at that froxel (ALU only, no rays),
+pass 2 traces only those within `rt_volume_shaft_relcull` (0.05) of it.
+
+**The general lesson: "nearest first" has to mean nearest to the thing being
+shaded.** A camera-sorted list is the right thing to *send* — it decides which
+fixtures exist this frame — and the wrong thing to *spend a per-cell budget
+with*. The two orderings are indistinguishable in a small room and diverge
+exactly where the report said they did. The comment in the first version asserted
+the opposite in so many words, which is worth noting on its own: a comment
+claiming a property is not a test of it.
+
+Both fixes are behind arms: `lampshaft-phys` (falloff 0) and `lampshaft-flat`
+(falloff 2) bracket the first; `lampshaft-listorder` (`relcull 0`) keeps the
+second's old behaviour runnable, because the symptom looks like a brightness
+problem and is not one. If this comes back, raise `rt_volume_shaft_trace` to 16:
+distant shafts appearing means selection order, staying absent but brighter means
+falloff.
+
+Two spare uniform pads (`_padsh0`/`_padsh1`) were reserved for exactly this and
+were spent here, so the scalar run stayed a multiple of four and
+`check_uniform_layout` did not move (196 fields, 8368 bytes).

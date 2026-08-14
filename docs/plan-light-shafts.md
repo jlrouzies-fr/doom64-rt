@@ -67,14 +67,14 @@ single-light term. The moon and a corridor lamp are both in the air at once.
 | API | `RTGL1.h`, `DrawFrameInfo.h` | new struct + `RG_STRUCTURE_TYPE_DRAW_FRAME_LIGHT_SHAFT_PARAMS`, `RG_MAX_SHAFT_LIGHTS` 32 |
 | Uniform | `GenerateShaderCommon.py` | `volumeShaftLights[8]` as `uvec4`, plus 9 scalars taking the old `_pads10` slot |
 | Resolve | `VulkanDevice.cpp` | uniqueID → shader light index, **compacted** (a listed fixture may have been culled) |
-| Scatter | `RtVolumetric.rgen` | `traceShaftLights()` — walk, radiance cull, capped shadow rays, near fade, phase function |
+| Scatter | `RtVolumetric.rgen` | `traceShaftLights()` — **two passes**: find the brightest candidate at this froxel, then trace only those within `relcull` of it (§4a) |
 
 **It is deterministic, and that is the design.** One stochastically chosen light
 per froxel would be cheaper and would then need the reprojected history the
-all-lights branch has. Walking a short list with a radiance cull *in front of*
+all-lights branch has. Evaluating a short list with a radiance cull *in front of*
 the shadow ray costs a few ALU per candidate and produces no variance at all. In
-a typical cell only one or two lamps survive the cull, so the ray budget is
-rarely reached.
+a typical cell only one or two lamps clear the bar, so the ray budget is rarely
+reached.
 
 ### Which lights qualify
 
