@@ -40,8 +40,8 @@ theirs — the code is Claude's. <a href="AI-DECLARATION.md">Details</a>.
 
 - [**Features**](#features) — [lighting](#lighting) · [atmosphere](#atmosphere) · [sprites, monsters, gore](#sprites) · [HUD and menus](#hud) · [denoising and upscaling](#denoising)
 - [**Install and play**](#install) — download, extract, point it at your copy of Retribution
-- [**Launchers**](#launchers) — how the game and the A/B arms are started
 - [**Building it yourself**](#building) — [what you need](#requirements) · [dependencies](#dependencies) · [build](#build) · [first run](#first-run)
+- [**Launchers**](#launchers) — how the game and the A/B arms are started
 - [**For developers**](#developers) — the doc index, in [DEVELOPERS.md](DEVELOPERS.md)
 - [**Credits**](#credits) — RTGL1, gzdoom-rt, Retribution, Doom 64
 - [**AI declaration**](AI-DECLARATION.md) — what was written by AI, and what wasn't
@@ -182,36 +182,6 @@ download. Green ticks all the way down, then **RIP AND TEAR**.
 
 <br>
 
-<a id="launchers"></a>
-## ⛧ &nbsp;Launchers
-
-<table>
-<tr><th align="left">Command</th><th align="left">What you get</th></tr>
-<tr>
-  <td><code>tools\launch-retribution-rt.cmd [1-34|menu]</code></td>
-  <td>The game. Native RTGL1 path tracing, A-SVGF denoiser, DLSS or FSR upscaling.</td>
-</tr>
-<tr>
-  <td><code>tools\ab.cmd &lt;arm&gt; [map]</code></td>
-  <td>A/B runner. Arms are config files in <code>tools\arms\*.cfg</code>, never console commands.</td>
-</tr>
-<tr>
-  <td><code>tools\launch-enemy-gallery-rt.cmd</code></td>
-  <td>MAP98 — enemy eye / emissive debug hall.</td>
-</tr>
-<tr>
-  <td><code>tools\launch-texture-gallery-rt.cmd</code></td>
-  <td>MAP99 — texture PBR gallery.</td>
-</tr>
-</table>
-
-> [!NOTE]
-> The launcher pins ~390 cvars via `+exec tools\d64rt-pins.cfg` rather than on the command line.
-> That is deliberate: `cmd.exe` truncates at 8191 characters, and the old inline form silently
-> dropped the tail — arms ran on defaults while the tool printed values it never applied.
-
-<br>
-
 <a id="building"></a>
 ## ⛧ &nbsp;Building it yourself
 
@@ -349,6 +319,38 @@ after any clean rebuild because the stock `rt\` tree is restaged wholesale:
 None of that needs Python. The interpreter is only for the authoring tools —
 generators, scanners, gallery builders — and for RTGL1's own shader generation when you
 build it.
+
+<br>
+
+<a id="launchers"></a>
+## ⛧ &nbsp;Launchers
+
+*Also the developer path — these run the game out of a source checkout, not out of the release.*
+
+<table>
+<tr><th align="left">Command</th><th align="left">What you get</th></tr>
+<tr>
+  <td><code>tools\launch-retribution-rt.cmd [1-34|menu]</code></td>
+  <td>The game. Native RTGL1 path tracing, A-SVGF denoiser, DLSS or FSR upscaling.</td>
+</tr>
+<tr>
+  <td><code>tools\ab.cmd &lt;arm&gt; [map]</code></td>
+  <td>A/B runner. Arms are config files in <code>tools\arms\*.cfg</code>, never console commands.</td>
+</tr>
+<tr>
+  <td><code>tools\launch-enemy-gallery-rt.cmd</code></td>
+  <td>MAP98 — enemy eye / emissive debug hall.</td>
+</tr>
+<tr>
+  <td><code>tools\launch-texture-gallery-rt.cmd</code></td>
+  <td>MAP99 — texture PBR gallery.</td>
+</tr>
+</table>
+
+> [!NOTE]
+> The launcher pins ~390 cvars via `+exec tools\d64rt-pins.cfg` rather than on the command line.
+> That is deliberate: `cmd.exe` truncates at 8191 characters, and the old inline form silently
+> dropped the tail — arms ran on defaults while the tool printed values it never applied.
 
 <br>
 
