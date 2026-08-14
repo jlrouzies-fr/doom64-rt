@@ -122,8 +122,18 @@ def main():
         skip = RT_WAD_DROP if d == "wad" else None
         n = copy_tree(src, out / "rt" / d, skip=skip)
         print("  rt/%-9s %5d files   %s" % (d, n, why))
-    for f in (build / "rt").glob("*.json"):
-        shutil.copy2(f, out / "rt" / f.name)
+    # Loose files at the root of rt/. Not optional: BlueNoise_LDR_RGBA_128.ktx2,
+    # DirtMask.ktx2, SceneBuildWarning.ktx2 and WaterNormal_n.ktx2 are renderer
+    # inputs, and the renderer aborts with "Can't find blue noise file" without
+    # the first. Copying only *.json here is what shipped a broken v0.1.1.
+    RT_ROOT_SKIP = {
+        "devmode_settings.json",  # this machine's Dev window layout
+        "imgui.ini",              # ditto
+        "RTGL1.json",             # rewritten below with developerMode on
+    }
+    for f in (build / "rt").iterdir():
+        if f.is_file() and f.name not in RT_ROOT_SKIP:
+            shutil.copy2(f, out / "rt" / f.name)
 
     # a package must never ship developerMode off: without it every authored
     # PNG material is ignored and the game quietly looks stock.
@@ -203,6 +213,11 @@ def main():
         "ffx_frameinterpolation_x64.dll", "ffx_opticalflow_x64.dll",
         "ffx_backend_dx12_x64.dll", "ffx_backend_vk_x64.dll",
     ]
+    for tex in ["BlueNoise_LDR_RGBA_128.ktx2", "DirtMask.ktx2",
+                "SceneBuildWarning.ktx2", "WaterNormal_n.ktx2"]:
+        if not (out / "rt" / tex).exists():
+            sys.exit("rt/%s is missing - the renderer needs it at startup" % tex)
+
     lacking = [d for d in engine_dlls if not (out / "rt" / "bin" / d).exists()]
     if lacking:
         print("\n  ! rt/bin is missing %d DLL(s) the engine checks for:" % len(lacking))

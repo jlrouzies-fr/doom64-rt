@@ -183,6 +183,13 @@ jobs:
           $lack = $dlls | Where-Object { -not (Test-Path "$p\rt\bin\$_") }
           if ($lack) { throw "rt\bin is missing: $($lack -join ', ')" }
 
+          # Renderer inputs that live loose at the root of rt/. Without the blue
+          # noise one the renderer aborts on startup with "Can't find blue noise
+          # file", which is how v0.1.1 shipped.
+          $tex = 'BlueNoise_LDR_RGBA_128.ktx2','DirtMask.ktx2','SceneBuildWarning.ktx2','WaterNormal_n.ktx2'
+          $lack = $tex | Where-Object { -not (Test-Path "$p\rt\$_") }
+          if ($lack) { throw "rt\ is missing: $($lack -join ', ')" }
+
           # Nothing that belongs to somebody else's game, and nothing we cannot ship.
           foreach ($f in @('D64RTR_v15.WAD','D64MUS.PK3','doom2.wad','DOOMSND.SF2','D64RTR_BRIGHTMAPS.PK3')) {
             if (Get-ChildItem $p -Recurse -Filter $f -ErrorAction SilentlyContinue) {
