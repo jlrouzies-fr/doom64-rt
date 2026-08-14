@@ -16,6 +16,12 @@ on:
 env:
   STOCK_URL: https://github.com/vs-shirokii/gzdoom-rt/releases/download/rt-1.0.2/gzdoom-rt-1.0.2.zip
 
+# The default GITHUB_TOKEN is read-only, so creating the release on a tag fails
+# with "403 Resource not accessible by integration" after a successful build --
+# which is a long way to walk before finding out.
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: windows-2022
