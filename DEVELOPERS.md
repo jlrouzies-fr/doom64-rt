@@ -42,6 +42,15 @@ were written *after* losing a day to the thing they describe.
 | HUD mugshot | [`docs/hud-mugshot.md`](docs/hud-mugshot.md) | The Doom guy face Doom 64 never had — generated, plus the HUD rearranged around it. |
 | Ray Reconstruction | [`RAYRECONSTRUCTION.md`](RAYRECONSTRUCTION.md) | **Alpha, ships off, not recommended.** Start here always; it points into `docs/rayreconstruction/` when needed. |
 
+## Not built yet — plans
+
+| Doc | What it covers |
+|---|---|
+| [`docs/rt-feature-ideas.md`](docs/rt-feature-ideas.md) | The shortlist of candidate RT features, with what was **rejected and why** — read this before proposing a new effect. |
+| [`docs/plan-light-shafts.md`](docs/plan-light-shafts.md) | Shafts from ordinary lamps, not just the moon. The all-lights froxel estimate already exists for fog; the shaft pass just does not read it. |
+| [`docs/plan-heat-haze.md`](docs/plan-heat-haze.md) | Refractive air over lava and fire, via the unused `THIN_MEDIA` primitive flag. |
+| [`docs/plan-impact-fx.md`](docs/plan-impact-fx.md) | Impact sparks as real emitters, and scorch decals, riding the existing puff and decal paths. |
+
 ## Lighting — the repair pipeline
 
 The largest body of work in the project: the game paints light where it should emit it.
