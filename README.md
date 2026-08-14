@@ -38,28 +38,185 @@ theirs — the code is Claude's. <a href="AI-DECLARATION.md">Details</a>.
 
 ## ⛧ &nbsp;Contents
 
-- [**Status**](#status) — where the project is, and what "no release yet" means
-- [**Building it yourself**](#building) — [what you need](#requirements) · [dependencies](#dependencies) · [build](#build) · [first run](#first-run)
-- [**Launchers**](#launchers) — how the game and the A/B arms are started
 - [**Features**](#features) — [lighting](#lighting) · [atmosphere](#atmosphere) · [sprites, monsters, gore](#sprites) · [HUD and menus](#hud) · [denoising and upscaling](#denoising)
+- [**Install and play**](#install) — download, extract, point it at your copy of Retribution
+- [**Launchers**](#launchers) — how the game and the A/B arms are started
+- [**Building it yourself**](#building) — [what you need](#requirements) · [dependencies](#dependencies) · [build](#build) · [first run](#first-run)
 - [**For developers**](#developers) — the doc index, in [DEVELOPERS.md](DEVELOPERS.md)
 - [**Credits**](#credits) — RTGL1, gzdoom-rt, Retribution, Doom 64
 - [**AI declaration**](AI-DECLARATION.md) — what was written by AI, and what wasn't
 
 <br>
 
-<a id="status"></a>
-## ⛧ &nbsp;Status
+<a id="features"></a>
+## ⛧ &nbsp;Features
 
-Work in progress, built and played on one machine. **There is no release yet** — no
-packaged build, no installer, and the paths in the build scripts are absolute and mine.
-Until a release exists, treat this repo as the *source* of a mod plus the notes to
-rebuild it, not as something you can download and run.
+The renderer is RTGL1's. What this project adds is everything above it: the game's fake
+lighting replaced with real emitters, and a set of engine features Doom 64 never had.
+Every one of them is documented — the doc is the reference, this is the index.
+
+<a id="lighting"></a>
+### Lighting — the main body of work
+
+Doom 64 paints light. Sectors are set bright where a lamp *should* be, walls carry
+baked-in glow, and shafts are drawn into the floor texture. Under path tracing that reads
+as surfaces glowing for no reason, while the fixture beside them stays black. The bulk of
+this project is finding those and replacing them with something that actually emits.
+
+- **Painted light → real fixtures.** Nine repair families in one wad — sequence chains,
+  blinks, ACS light calls (literal *and* computed args), painted shafts, painted tints,
+  sector lamps, per-panel wall lamps. → [`docs/sequence-light-chains.md`](docs/sequence-light-chains.md)
+- **Finding them.** `scan_light_specials.py`, `scan_fake_lightshafts.py`,
+  `scan_painted_light.py` (1128 game-wide candidates, with a fixture-distance column), plus
+  in-game `whatsthat`, `rt_tex_probe` and `rt_lightlevel_watch`.
+  → [`docs/rt-lighting-practices.md`](docs/rt-lighting-practices.md)
+- **Wall monitors.** 48 flicker lights across 8 maps, one per 64×64 tile, placed at the
+  emissive mask's lit centroid rather than mid-tile. → [`AGENTS.md`](AGENTS.md)
+- **Inferred fixtures** — ceiling insets, wall strips, hanging tech, solo bulbs, spin
+  panels — derived from the texture rather than hand-placed.
+  → [`docs/solo-bulb-lamps.md`](docs/solo-bulb-lamps.md), [`docs/faux-lamp-panels.md`](docs/faux-lamp-panels.md)
+- **Flames.** All 84 torch/fire/candle sprites are lit engine-side, not by texture meta,
+  because meta can express neither the offset up onto the flame nor a flicker.
+  → [`docs/flame-lighting.md`](docs/flame-lighting.md)
+- **World emissives** — lava, monitors, keys, EXIT signs, teleporters as masked emitters
+  feeding GI. → [`docs/material-authoring-spec.md`](docs/material-authoring-spec.md)
+
+<a id="atmosphere"></a>
+### Atmosphere
+
+| Feature | Notes | Doc |
+|---|---|---|
+| **The moon** | A disc in the sky plus a real directional light, aimed alike; the disc alone casts nothing, because the sky cubemap is not importance-sampled. Aim with the `moon` CCMD, per-map table in `RT_MOON_PRESETS`. Shadow rays must prove they reached sky (`rt_sun_require_sky`) or the moon washes sealed rooms. | [`moon-and-sky-leaks`](docs/moon-and-sky-leaks.md) |
+| **Clouds + lightning** | A layered cloud deck (`rt_clouds_*`): 6–8 baked slices drawn as stacked sky-dome shells, so they parallax and occlude each other. It is sky *geometry*, not a participating medium — but moonlight is tinted and attenuated through the stack, and it flashes with MAP11's storm, whose schedule this puts back. `thunder` CCMD. | [`rt-clouds-and-lightning`](docs/rt-clouds-and-lightning.md) |
+| **Per-map fog** | A froxel volume with a near/far ramp, tuned per level (`rt_fog_*`, `RT_FOG_PRESETS`, `fog` CCMD). Needed two RTGL1 froxel changes. | [`rt-fog`](docs/rt-fog.md) · [implementation](docs/rt-fog-implementation.md) |
+| **Volumetric smoke** | Muzzle smoke as a real participating medium inside the fog's froxel volume, so it takes the colour of whatever lights the room. Six sources: weapons, monster guns, projectiles, barrels, flames. Sim is on the CPU, on purpose. `smoke` CCMD. | [`rt-smoke`](docs/rt-smoke.md) |
+| **Water** | Stylized surface with projected caustics; flats are tagged engine-side, no per-map setup. | [`rt-water`](docs/rt-water.md) |
+| **Lava** | The floor is the emitter — drifting quantized heat field (`rt_lava_flow*`), slow whole-surface breath, optional analytic light grid over the flats. | — |
+
+<a id="sprites"></a>
+### Sprites, monsters, gore
+
+- **Enemy eyes** — brightmap-only emissive masks. They glow; they never lantern the room
+  (no `lightIntensity`, and never `noShadow`, which kills the monster's shadow).
+- **Lost Souls** — the light rides on the fire frames themselves, A–F only, so a corpse
+  does not light the room.
+- **Persistent blood** — splats stay on the floor (`rt_gore_*`), explosive kills leave
+  blood at all, and per-monster blood colour finally renders: RTGL1 keys materials by
+  name, so every palette translation of a sprite uploaded as the same material and the
+  first one drawn won. → [`docs/blood-persist.md`](docs/blood-persist.md)
+- **Spectres** — rasterized translucent overlay with an alpha floor, rather than forced
+  water/glass. → [`docs/spectre-issue-log.md`](docs/spectre-issue-log.md)
+
+<a id="hud"></a>
+### HUD, menus, presentation
+
+- **The Doom guy mugshot** — Doom 64 dropped the status bar, so Retribution has no face.
+  All 42 frames are *generated* from one painted sheet and restyled to the D64 palette;
+  nothing in `d64r-mugshot.pk3` is hand-authored. → [`docs/hud-mugshot.md`](docs/hud-mugshot.md)
+- **Flashlight** — dim warm beam tipped toward the ground with a battery cycle and a HUD
+  meter (`rt_flsh*`, **F** by default). The beam angle and pitch are tuned to catch muzzle
+  smoke, not free parameters.
+- **Act title cards** and title/logo art. → [`docs/act-title-cards.md`](docs/act-title-cards.md)
+- **Menu patches** in Retribution's own font — `rt/wad` loads *last*, after every `-file`
+  PWAD, so RT's plain-Doom menu art was overriding the D64 art.
+  → [`compat-patches.md`](compat-patches.md)
+
+<a id="denoising"></a>
+### Denoising and upscaling
+
+**The A-SVGF denoiser is the shipping path, with DLSS 2 or FSR 2 for upscaling.**
+
+The development launcher pins DLSS (`rt_upscale_dlss 2`) because that is what this
+machine has. **The release launcher will not force it** — DLSS is NVIDIA-only, and on
+anything else the upscaler has to be FSR 2 (`rt_upscale_fsr2`) or none at all. Note the
+two share one upscaler slot and FSR is applied second, so a stale `rt_upscale_fsr2` in
+your ini silently disables DLSS; set one, not both.
+
+> [!WARNING]
+> **DLSS Ray Reconstruction is alpha here and does not render well — it ships OFF and is
+> not recommended.** It is wired up and can be switched on for experiments, but the image
+> is not stable enough to play with. A-SVGF is the intended path; treat anything in
+> [`RAYRECONSTRUCTION.md`](RAYRECONSTRUCTION.md) and `docs/rayreconstruction/` as an
+> experiment log rather than a recommendation.
+
+Also keep `rt_normalmap_stren` / `rt_heightmap_stren` near **1** — 10+ destabilises the
+denoiser regardless of which one you use.
+
+<br>
+
+
+<a id="install"></a>
+## ⛧ &nbsp;Install and play
+
+> [!NOTE]
+> **v0.1.0 is a pre-release.** It builds and runs here, but nobody outside this
+> machine has played it: the FSR path has never run on AMD hardware, and DLSS Ray
+> Reconstruction is alpha and ships off. Bug reports welcome.
+
+You need a GPU with hardware ray tracing (NVIDIA RTX, AMD RDNA 2+, Intel Arc) and
+a DOOM II you own. Everything else is free.
+
+**1. Download and extract this**
+
+[**Releases**](https://github.com/jlrouzies-fr/doom64-rt/releases) → `Doom64-RT.zip` (~110 MB).
+Extract it anywhere — it needs no installer and writes nothing outside its own folder.
+
+**2. Get Doom 64: Retribution and its music, and extract both into `game\`**
+
+| Download | |
+|---|---|
+| [Doom 64: Retribution v1.5](https://www.moddb.com/mods/doom-64-retribution) | Extract the **whole** download into `game\`, not just the WAD — the brightmaps, the soundfont and the fluidsynth DLLs are all used. |
+| [OGG music pack v1.3](https://www.moddb.com/mods/doom-64-retribution/addons/doom-64-retribution-ogg-music-pack-v13) | `D64MUS.ZIP` on the same page. Unzip it into `game\` too. |
+
+**3. Have DOOM II installed**
+
+Steam or GOG — the launcher finds either by itself, so usually there is nothing to
+do here. If your `doom2.wad` lives somewhere unusual, the startup check has a
+Browse button. [Freedoom Phase 2](https://freedoom.github.io/) works as a free
+stand-in, untested here.
+
+**4. Run `launch-doom64-rt.cmd`**
+
+It checks everything first and tells you what is missing, with a link to each
+download. Green ticks all the way down, then **RIP AND TEAR**.
+
+<br>
+
+<a id="launchers"></a>
+## ⛧ &nbsp;Launchers
+
+<table>
+<tr><th align="left">Command</th><th align="left">What you get</th></tr>
+<tr>
+  <td><code>tools\launch-retribution-rt.cmd [1-34|menu]</code></td>
+  <td>The game. Native RTGL1 path tracing, A-SVGF denoiser, DLSS or FSR upscaling.</td>
+</tr>
+<tr>
+  <td><code>tools\ab.cmd &lt;arm&gt; [map]</code></td>
+  <td>A/B runner. Arms are config files in <code>tools\arms\*.cfg</code>, never console commands.</td>
+</tr>
+<tr>
+  <td><code>tools\launch-enemy-gallery-rt.cmd</code></td>
+  <td>MAP98 — enemy eye / emissive debug hall.</td>
+</tr>
+<tr>
+  <td><code>tools\launch-texture-gallery-rt.cmd</code></td>
+  <td>MAP99 — texture PBR gallery.</td>
+</tr>
+</table>
+
+> [!NOTE]
+> The launcher pins ~390 cvars via `+exec tools\d64rt-pins.cfg` rather than on the command line.
+> That is deliberate: `cmd.exe` truncates at 8191 characters, and the old inline form silently
+> dropped the tail — arms ran on defaults while the tool printed values it never applied.
 
 <br>
 
 <a id="building"></a>
 ## ⛧ &nbsp;Building it yourself
+
+*For working on the project. To just play it, use the [release](#install) — it is the same
+thing, already built.*
 
 > [!IMPORTANT]
 > Almost nothing needed to *run* the game is in git — engine build, RTGL1 build, SDKs,
@@ -192,132 +349,6 @@ after any clean rebuild because the stock `rt\` tree is restaged wholesale:
 None of that needs Python. The interpreter is only for the authoring tools —
 generators, scanners, gallery builders — and for RTGL1's own shader generation when you
 build it.
-
-<br>
-
-<a id="launchers"></a>
-## ⛧ &nbsp;Launchers
-
-<table>
-<tr><th align="left">Command</th><th align="left">What you get</th></tr>
-<tr>
-  <td><code>tools\launch-retribution-rt.cmd [1-34|menu]</code></td>
-  <td>The game. Native RTGL1 path tracing, A-SVGF denoiser, DLSS or FSR upscaling.</td>
-</tr>
-<tr>
-  <td><code>tools\ab.cmd &lt;arm&gt; [map]</code></td>
-  <td>A/B runner. Arms are config files in <code>tools\arms\*.cfg</code>, never console commands.</td>
-</tr>
-<tr>
-  <td><code>tools\launch-enemy-gallery-rt.cmd</code></td>
-  <td>MAP98 — enemy eye / emissive debug hall.</td>
-</tr>
-<tr>
-  <td><code>tools\launch-texture-gallery-rt.cmd</code></td>
-  <td>MAP99 — texture PBR gallery.</td>
-</tr>
-</table>
-
-> [!NOTE]
-> The launcher pins ~390 cvars via `+exec tools\d64rt-pins.cfg` rather than on the command line.
-> That is deliberate: `cmd.exe` truncates at 8191 characters, and the old inline form silently
-> dropped the tail — arms ran on defaults while the tool printed values it never applied.
-
-<br>
-
-<a id="features"></a>
-## ⛧ &nbsp;Features
-
-The renderer is RTGL1's. What this project adds is everything above it: the game's fake
-lighting replaced with real emitters, and a set of engine features Doom 64 never had.
-Every one of them is documented — the doc is the reference, this is the index.
-
-<a id="lighting"></a>
-### Lighting — the main body of work
-
-Doom 64 paints light. Sectors are set bright where a lamp *should* be, walls carry
-baked-in glow, and shafts are drawn into the floor texture. Under path tracing that reads
-as surfaces glowing for no reason, while the fixture beside them stays black. The bulk of
-this project is finding those and replacing them with something that actually emits.
-
-- **Painted light → real fixtures.** Nine repair families in one wad — sequence chains,
-  blinks, ACS light calls (literal *and* computed args), painted shafts, painted tints,
-  sector lamps, per-panel wall lamps. → [`docs/sequence-light-chains.md`](docs/sequence-light-chains.md)
-- **Finding them.** `scan_light_specials.py`, `scan_fake_lightshafts.py`,
-  `scan_painted_light.py` (1128 game-wide candidates, with a fixture-distance column), plus
-  in-game `whatsthat`, `rt_tex_probe` and `rt_lightlevel_watch`.
-  → [`docs/rt-lighting-practices.md`](docs/rt-lighting-practices.md)
-- **Wall monitors.** 48 flicker lights across 8 maps, one per 64×64 tile, placed at the
-  emissive mask's lit centroid rather than mid-tile. → [`AGENTS.md`](AGENTS.md)
-- **Inferred fixtures** — ceiling insets, wall strips, hanging tech, solo bulbs, spin
-  panels — derived from the texture rather than hand-placed.
-  → [`docs/solo-bulb-lamps.md`](docs/solo-bulb-lamps.md), [`docs/faux-lamp-panels.md`](docs/faux-lamp-panels.md)
-- **Flames.** All 84 torch/fire/candle sprites are lit engine-side, not by texture meta,
-  because meta can express neither the offset up onto the flame nor a flicker.
-  → [`docs/flame-lighting.md`](docs/flame-lighting.md)
-- **World emissives** — lava, monitors, keys, EXIT signs, teleporters as masked emitters
-  feeding GI. → [`docs/material-authoring-spec.md`](docs/material-authoring-spec.md)
-
-<a id="atmosphere"></a>
-### Atmosphere
-
-| Feature | Notes | Doc |
-|---|---|---|
-| **The moon** | A disc in the sky plus a real directional light, aimed alike; the disc alone casts nothing, because the sky cubemap is not importance-sampled. Aim with the `moon` CCMD, per-map table in `RT_MOON_PRESETS`. Shadow rays must prove they reached sky (`rt_sun_require_sky`) or the moon washes sealed rooms. | [`moon-and-sky-leaks`](docs/moon-and-sky-leaks.md) |
-| **Clouds + lightning** | A layered cloud deck (`rt_clouds_*`): 6–8 baked slices drawn as stacked sky-dome shells, so they parallax and occlude each other. It is sky *geometry*, not a participating medium — but moonlight is tinted and attenuated through the stack, and it flashes with MAP11's storm, whose schedule this puts back. `thunder` CCMD. | [`rt-clouds-and-lightning`](docs/rt-clouds-and-lightning.md) |
-| **Per-map fog** | A froxel volume with a near/far ramp, tuned per level (`rt_fog_*`, `RT_FOG_PRESETS`, `fog` CCMD). Needed two RTGL1 froxel changes. | [`rt-fog`](docs/rt-fog.md) · [implementation](docs/rt-fog-implementation.md) |
-| **Volumetric smoke** | Muzzle smoke as a real participating medium inside the fog's froxel volume, so it takes the colour of whatever lights the room. Six sources: weapons, monster guns, projectiles, barrels, flames. Sim is on the CPU, on purpose. `smoke` CCMD. | [`rt-smoke`](docs/rt-smoke.md) |
-| **Water** | Stylized surface with projected caustics; flats are tagged engine-side, no per-map setup. | [`rt-water`](docs/rt-water.md) |
-| **Lava** | The floor is the emitter — drifting quantized heat field (`rt_lava_flow*`), slow whole-surface breath, optional analytic light grid over the flats. | — |
-
-<a id="sprites"></a>
-### Sprites, monsters, gore
-
-- **Enemy eyes** — brightmap-only emissive masks. They glow; they never lantern the room
-  (no `lightIntensity`, and never `noShadow`, which kills the monster's shadow).
-- **Lost Souls** — the light rides on the fire frames themselves, A–F only, so a corpse
-  does not light the room.
-- **Persistent blood** — splats stay on the floor (`rt_gore_*`), explosive kills leave
-  blood at all, and per-monster blood colour finally renders: RTGL1 keys materials by
-  name, so every palette translation of a sprite uploaded as the same material and the
-  first one drawn won. → [`docs/blood-persist.md`](docs/blood-persist.md)
-- **Spectres** — rasterized translucent overlay with an alpha floor, rather than forced
-  water/glass. → [`docs/spectre-issue-log.md`](docs/spectre-issue-log.md)
-
-<a id="hud"></a>
-### HUD, menus, presentation
-
-- **The Doom guy mugshot** — Doom 64 dropped the status bar, so Retribution has no face.
-  All 42 frames are *generated* from one painted sheet and restyled to the D64 palette;
-  nothing in `d64r-mugshot.pk3` is hand-authored. → [`docs/hud-mugshot.md`](docs/hud-mugshot.md)
-- **Flashlight** — dim warm beam tipped toward the ground with a battery cycle and a HUD
-  meter (`rt_flsh*`, **F** by default). The beam angle and pitch are tuned to catch muzzle
-  smoke, not free parameters.
-- **Act title cards** and title/logo art. → [`docs/act-title-cards.md`](docs/act-title-cards.md)
-- **Menu patches** in Retribution's own font — `rt/wad` loads *last*, after every `-file`
-  PWAD, so RT's plain-Doom menu art was overriding the D64 art.
-  → [`compat-patches.md`](compat-patches.md)
-
-<a id="denoising"></a>
-### Denoising and upscaling
-
-**The A-SVGF denoiser is the shipping path, with DLSS 2 or FSR 2 for upscaling.**
-
-The development launcher pins DLSS (`rt_upscale_dlss 2`) because that is what this
-machine has. **The release launcher will not force it** — DLSS is NVIDIA-only, and on
-anything else the upscaler has to be FSR 2 (`rt_upscale_fsr2`) or none at all. Note the
-two share one upscaler slot and FSR is applied second, so a stale `rt_upscale_fsr2` in
-your ini silently disables DLSS; set one, not both.
-
-> [!WARNING]
-> **DLSS Ray Reconstruction is alpha here and does not render well — it ships OFF and is
-> not recommended.** It is wired up and can be switched on for experiments, but the image
-> is not stable enough to play with. A-SVGF is the intended path; treat anything in
-> [`RAYRECONSTRUCTION.md`](RAYRECONSTRUCTION.md) and `docs/rayreconstruction/` as an
-> experiment log rather than a recommendation.
-
-Also keep `rt_normalmap_stren` / `rt_heightmap_stren` near **1** — 10+ destabilises the
-denoiser regardless of which one you use.
 
 <br>
 
