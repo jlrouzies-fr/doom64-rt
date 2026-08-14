@@ -29,7 +29,11 @@ if not exist "%GAME%" set "GAME=%PROJ%\Doom64-Retribution"
 set "PINS=%MODS%\d64rt-pins.cfg"
 if not exist "%PINS%" set "PINS=%PROJ%\tools\d64rt-pins.cfg"
 
-set "ERRWIN=%PROJ%\launch-doom64-rt-error.ps1"
+set "UI=%PROJ%\launch-doom64-rt-ui.ps1"
+set "SETTINGS=%PROJ%\doom64-rt-settings.txt"
+if not exist "%PROJ%\docs\img\doom64rt-banner.png" if not exist "%PROJ%\launcher-banner.png" (
+  rem no logo shipped: the window falls back to a text title, nothing breaks
+)
 
 rem --- the IWAD: the one file we cannot ship ---------------------------------
 if not defined D64RT_IWAD (
@@ -45,28 +49,40 @@ if not defined D64RT_IWAD (
 )
 set "IWAD=%D64RT_IWAD%"
 
-rem --- what the user must supply --------------------------------------------
-set "MISSING="
-if not exist "%IWAD%"                     set "MISSING=!MISSING!iwad;"
-if not exist "%GAME%\D64RTR_v15.WAD"      set "MISSING=!MISSING!retribution;"
-if not exist "%GAME%\D64RTR_BRIGHTMAPS.PK3" set "MISSING=!MISSING!brightmaps;"
-if not exist "%GAME%\D64MUS.PK3"          set "MISSING=!MISSING!music;"
+rem --- the startup check window ----------------------------------------------
+rem  It owns the whole verification: registry lookup for Steam and GOG, the file
+rem  checks, Browse and Re-check. It writes the IWAD it settled on back to the
+rem  settings file, so the next launch starts from the answer.
+if exist "%SETTINGS%" (
+  for /f "usebackq tokens=1,* delims==" %%A in ("%SETTINGS%") do if /i "%%A"=="iwad" set "IWAD=%%B"
+)
 
-rem --- what the package must have (a broken download, not a user mistake) ----
-if not exist "%ENGINE%\gzdoom.exe"        set "MISSING=!MISSING!engine;"
-if not exist "%ENGINE%\rt\bin\RTGL1.dll"  set "MISSING=!MISSING!rtgl;"
-
-if defined MISSING (
-  if exist "%ERRWIN%" (
-    powershell -NoProfile -ExecutionPolicy Bypass -STA -File "%ERRWIN%" -Missing "!MISSING!" -GameDir "%GAME%"
-  ) else (
+if exist "%UI%" (
+  powershell -NoProfile -ExecutionPolicy Bypass -STA -File "%UI%" ^
+    -Proj "%PROJ%" -EngineDir "%ENGINE%" -ModsDir "%MODS%" -GameDir "%GAME%" ^
+    -IwadHint "!IWAD!" -Settings "%SETTINGS%"
+  if errorlevel 1 exit /b 1
+  if exist "%SETTINGS%" (
+    for /f "usebackq tokens=1,* delims==" %%A in ("%SETTINGS%") do if /i "%%A"=="iwad" set "IWAD=%%B"
+  )
+) else (
+  rem No PowerShell UI present: still refuse to start half-configured, rather
+  rem than failing somewhere inside gzdoom where nobody can read it.
+  set "MISSING="
+  if not exist "!IWAD!"                       set "MISSING=!MISSING!doom2.wad "
+  if not exist "%GAME%\D64RTR_v15.WAD"        set "MISSING=!MISSING!D64RTR_v15.WAD "
+  if not exist "%GAME%\D64RTR_BRIGHTMAPS.PK3" set "MISSING=!MISSING!D64RTR_BRIGHTMAPS.PK3 "
+  if not exist "%GAME%\D64MUS.PK3"            set "MISSING=!MISSING!D64MUS.PK3 "
+  if not exist "%ENGINE%\gzdoom.exe"          set "MISSING=!MISSING!gzdoom.exe "
+  if not exist "%ENGINE%\rt\bin\RTGL1.dll"    set "MISSING=!MISSING!RTGL1.dll "
+  if defined MISSING (
     echo.
     echo  Doom 64 - Ray Traced cannot start. Missing: !MISSING!
-    echo  Put D64RTR_v15.WAD, D64RTR_BRIGHTMAPS.PK3 and D64MUS.PK3 in "%GAME%"
-    echo  and a doom2.wad you own beside them ^(or set D64RT_IWAD^).
+    echo  Put the Retribution files in "%GAME%" and a doom2.wad you own beside
+    echo  them, or set D64RT_IWAD to its full path.
     pause
+    exit /b 1
   )
-  exit /b 1
 )
 
 rem --- upscaler: pick one, then write BOTH cvars ----------------------------
