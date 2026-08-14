@@ -79,6 +79,17 @@ jobs:
           }
           if (-not (Test-Path 'gzdoom-rt-1.0.2\rt')) { throw 'stock package has no rt/ folder' }
 
+          # Prune before the cache is saved: 2.9 GB extracted, of which this
+          # project loads none. Keeps the cache small and the staging step quick.
+          foreach ($d in 'replace_old','scenes','scenes_doom2_backup','bin_remix','launcher','mat_src') {
+            Remove-Item -Recurse -Force "gzdoom-rt-1.0.2\rt\$d" -ErrorAction SilentlyContinue
+          }
+          foreach ($d in 'filter','sounds') {
+            Remove-Item -Recurse -Force "gzdoom-rt-1.0.2\rt\wad\$d" -ErrorAction SilentlyContinue
+          }
+          Remove-Item stock.zip -Force -ErrorAction SilentlyContinue
+          '{0:N0} MB kept from the stock package' -f ((Get-ChildItem 'gzdoom-rt-1.0.2' -Recurse -File | Measure-Object Length -Sum).Sum / 1MB)
+
       - name: Cache vcpkg
         uses: actions/cache@v4
         with:

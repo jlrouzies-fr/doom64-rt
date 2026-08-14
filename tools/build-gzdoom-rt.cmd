@@ -70,7 +70,21 @@ if %EC% neq 0 exit /b %EC%
 echo === Staging runtime from release package ===
 set "OUT=%ROOT%\build\RelWithDebInfo"
 set "REL=%PROJ%\gzdoom-rt-1.0.2"
-if not exist "%OUT%\rt" xcopy /E /I /Y "%REL%\rt" "%OUT%\rt"
+rem Stage the stock rt/ tree, minus the parts this project never loads. Copying
+rem them cost 2.2 GB and several minutes on every fresh build for nothing:
+rem   replace_old  1.9 GB of Doom II glTF replacements
+rem   scenes       Doom II static scenes; our maps log "no static scene" anyway
+rem   bin_remix    the D3D9/Remix path; we are native Vulkan
+rem   wad\filter, wad\sounds   224 MB of Doom II assets inside RT's resource wad
+rem They are all still in %REL% if anything ever needs them.
+if not exist "%OUT%\rt" (
+  robocopy "%REL%\rt" "%OUT%\rt" /E /NFL /NDL /NJH /NJS /NP ^
+    /XD replace_old scenes scenes_doom2_backup bin_remix filter sounds >nul
+  if errorlevel 8 (
+    echo ERROR: staging rt/ from the stock package failed
+    exit /b 1
+  )
+)
 copy /Y "%REL%\libsndfile-1.dll" "%OUT%\" >nul
 copy /Y "%REL%\openal32.dll" "%OUT%\" >nul
 copy /Y "%ROOT%\build\zmusic\build\source\Release\zmusic.dll" "%OUT%\" >nul 2>nul
