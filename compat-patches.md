@@ -1353,3 +1353,95 @@ falloff.
 Two spare uniform pads (`_padsh0`/`_padsh1`) were reserved for exactly this and
 were spent here, so the scalar run stayed a multiple of four and
 `check_uniform_layout` did not move (196 fields, 8368 bytes).
+
+### Light shafts: the reach limit was the CANDIDATE LIST (2026-08-14, second report)
+
+"They still don't render far enough." The inverse-square falloff fixed earlier
+the same day was a real cause and not the whole one — and fixing it produced a
+visible improvement, which is exactly how it confirmed a theory that was only
+half right.
+
+The remaining limit was never in the shader. `rt_volume_shaft_max` was **16**,
+handed out **nearest-first** with a 3 m dedupe. Sixteen points at 3 m spacing
+fill a disc of radius **≈7 m** around the camera — and a Doom 64 lamp room offers
+*hundreds* of candidates: the bulb lattice places one every 16 units
+(`rt_ceiling_bulb_spacing`), faux panels every 32 (`rt_faux_lamp_stride 2`), the
+perimeter walk every 64 (`rt_ceiling_edge_seglen`). Every slot went to the ceiling
+directly overhead, so a lamp ten metres down the corridor **was never sent**. Not
+dim — absent, with no shader knob able to touch it.
+
+`rt_volume_shaft_bands` (4) splits the slot budget across distance bands: each
+band takes its share, leftovers roll forward, and a final sweep hands anything
+unspent back to the nearest candidates, so an empty corridor loses nothing. With
+it, `max` 16 → 32, `RG_MAX_SHAFT_LIGHTS` 32 → 64, `maxdist` 1024 → 1920 (60 m =
+`rt_volume_far`, the froxel volume's own reach — past it there is no medium).
+
+**Why this survived two rounds of tuning**, which is the part worth keeping:
+
+- The symptom is shared. "Works near a lamp, dies a few metres away" is what a
+  falloff problem looks like *and* what an empty candidate list looks like.
+- The verbose line said `sent 16 of 300 offered`, which reads as a healthy cap
+  doing its job. It printed everything except the one number that mattered. It
+  now prints **`reach a..b m`** — the near and far distance of the set actually
+  sent — and that field alone would have ended this in one launch. **When a
+  budget is suspected, log the EXTENT of what it produced, not just the count.**
+- A per-frame budget and a per-cell budget need different orderings, and neither
+  is served by "nearest to the camera". Sorting a list is not covering a space.
+
+Arms: `lampshaft-noband` (bands 1, the old behaviour) and `lampshaft-wide`
+(8 bands, 64 lights, 60 m — the upper bound of the machinery).
+
+### Dust motes in the air (2026-08-14)
+
+Asked for as "a more global feature for shafts / volumes: dust specs floating in
+the air for more dramatic effect". New `rt_dust.cpp`, `rt_dust_*`, 13 cvars, all
+pinned. Full write-up: **`docs/plan-light-shafts.md` §4c**.
+
+A beam is only a beam because something is in it. The froxel medium supplies the
+smooth half — a haze — and cannot supply the sparkle: specks bright inside the
+beam and invisible outside it, which is what the eye reads as "there is air
+here".
+
+**Real traced geometry, lit by the scene**, and the two obvious shortcuts are
+both wrong:
+
+- **Emissive dust is fireflies.** A mote carrying its own light glows in a
+  pitch-black room, which is the opposite of the effect. `emissive` is 0.
+- **Rasterized dust is fullbright.** RTGL1 keeps a `TRANSLUCENT` primitive out of
+  the acceleration structure and shades it not at all — the trap the spark batch
+  lives with on purpose and debris was moved off. Dust is opaque, alpha 1, no
+  flags (RTGL1's rule for *entering* the AS), so its vertex colour is an albedo
+  the path tracer shades. It is therefore also correctly shadowed: a speck behind
+  the grating that makes the shaft goes dark, for free.
+
+**No pool, no state, no spawning.** Dust is a property of the room, not an event,
+so the motes live on a hashed lattice fixed in *world* space and the frame draws
+the cells near the camera. The whole system is a pure function of (camera, time):
+density is uniform and exact, motes do not pop as the player moves, walking away
+and back shows the same dust, and no budget can quietly run out. Drift is a
+bounded Lissajous wobble rather than an integrated velocity — integrating would
+need per-mote state and would eventually carry motes out of their cells, which is
+what makes a lattice system pop.
+
+**Size is angular, and it has to be.** A real mote is tens of microns; an 8 mm
+speck at 10 m subtends a fifth of a pixel, which under an upscaler is not a dim
+speck but a shimmering one. A mote is drawn at whichever is larger of its world
+size and a fixed angular size. `dust-honest` turns that off so the shimmer it
+prevents can be seen.
+
+Two couplings that will otherwise waste a session:
+
+- **`rt_dust_density` and `rt_dust_max` are not independent.** The cell spacing is
+  the coarser of what density asks and what the cap allows, so raising density
+  alone does nothing once the cap binds — and that is what makes the cap a real
+  hard bound rather than a cull after the fact, and why raising `rt_dust_far`
+  costs nothing (it thins). `rt_dust_debug` prints the resulting spacing.
+- **A mote cannot be faded out.** Below RTGL1's 0.98 alpha threshold the batch is
+  demoted to the rasterized overlay and goes fullbright, so distance is handled by
+  **shrinking**, exactly as debris is.
+
+Arms: `dust-fat` (the absurd arm — a mote is small enough that "I cannot see any"
+has two causes that look identical), `dust-off`/`on`/`heavy`/`still`/`honest`/
+`noshaft`. `dust-still` is not a look: freezing the field is the only way to check
+that the per-cell hashing hides the lattice, and visible rows there would be a bug
+in `rt_dust.cpp` rather than a value to tune.

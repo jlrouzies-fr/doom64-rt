@@ -1,6 +1,6 @@
 # Light shafts from ordinary lamps, not just the moon
 
-**Status:** implemented, **not yet judged in play.** Ships **on**
+**Status:** implemented; reach fixed twice from play reports (§4a, §4b), look not yet settled. Ships **on**
 (`rt_volume_shafts 1`, compiled default *and* pinned). Targets the **ceiling**
 and **solo bulb** fixture families; nothing else offers a shaft yet.
 
@@ -105,21 +105,22 @@ gap would merge a light with the one directly above it, which is the mistake
 |---|---|---|
 | `rt_volume_shafts` | `1` | master |
 | `rt_volume_shaft_src` | `7` | family bitmask (see above) |
-| `rt_volume_shaft_max` | `16` | fixtures sent per frame, nearest first (hard cap 32) |
-| `rt_volume_shaft_trace` | `3` | **shadow rays per froxel** — the real budget |
+| `rt_volume_shaft_bands` | `4` | split the slot budget across distance bands (1 = old nearest-first) |
+| `rt_volume_shaft_max` | `32` | fixtures sent per frame (hard cap 64) |
+| `rt_volume_shaft_trace` | `4` | **shadow rays per froxel** — the real budget |
 | `rt_volume_shaft_mult` | `1` | brightness of the lamp shafts only |
 | `rt_volume_shaft_nearfade` | `1.5` | metres; stops a bulb whiting out the froxels touching it |
 | `rt_volume_shaft_falloff` | `1` | how much of the inverse square is handed back (0 physical, 2 sun-like) |
 | `rt_volume_shaft_relcull` | `0.05` | skip a light below this fraction of the brightest **at that froxel** |
 | `rt_volume_shaft_mincontrib` | `0` | absolute radiance below which a light is skipped before its ray |
 | `rt_volume_shaft_asym` | `-2` | phase asymmetry for lamps only; below −1 = share `rt_volume_lassymetry` |
-| `rt_volume_shaft_maxdist` | `1024` | map units, camera cull |
+| `rt_volume_shaft_maxdist` | `1920` | map units (60 m = `rt_volume_far`), camera cull |
 | `rt_volume_shaft_mingap` | `96` | map units, dedupe |
 | `rt_volume_shaft_minint` | `0` | skip a fixture dimmer than this (blinking lamps) |
 | `rt_volume_shaft_debug` | `0` | shader probe, 1/2/3 |
 | `rt_volume_shaft_verbose` | `0` | per-family offered-vs-sent console line |
 
-All fifteen are pinned at their compiled defaults in `tools/d64rt-pins.cfg` —
+All sixteen are pinned at their compiled defaults in `tools/d64rt-pins.cfg` —
 they are `CVAR_ARCHIVE`, so without a pin the last arm run would follow you into
 play.
 
@@ -164,6 +165,92 @@ Distinguishing them, if this comes back: raise `rt_volume_shaft_trace` to 16. If
 distant shafts appear, it is selection order; if they stay absent but brighten,
 it is the falloff.
 
+## 4b. "They still don't render far enough" (2026-08-14, second report)
+
+The falloff in §4a was real and was not the whole story. The remaining limit was
+never in the shader at all — it was in **which fixtures get sent**.
+
+`rt_volume_shaft_max` was 16, handed out **nearest-first** with a 3 m dedupe.
+Sixteen points at 3 m spacing fill a disc of radius **≈7 m** around the camera —
+and a Doom 64 lamp room offers *hundreds* of candidates: the bulb lattice places
+one every 16 units (`rt_ceiling_bulb_spacing`), faux panels every 32
+(`rt_faux_lamp_stride 2`), the perimeter walk every 64
+(`rt_ceiling_edge_seglen`). So every slot went to the ceiling directly overhead,
+and a lamp ten metres down the corridor **was never sent**. Not dim — *absent*,
+with no shader knob able to touch it.
+
+The fix is `rt_volume_shaft_bands`: the budget is split across distance bands,
+each getting its own share, leftovers rolling forward, and a final sweep handing
+anything unspent back to the nearest candidates so an empty corridor loses
+nothing. With it: `max` 16 → 32, cap 32 → 64, `maxdist` 1024 → 1920 (60 m, the
+froxel volume's own reach — past it there is no medium to scatter in).
+
+**Why two rounds went past this.** The symptom — "works near a lamp, dies a few
+metres away" — is what a falloff problem looks like, and the falloff *was* also
+wrong, so fixing it produced a real improvement and confirmed the wrong theory.
+The verbose line said `sent 16 of 300 offered`, which reads as a healthy cap
+doing its job. It now prints **`reach a..b m`** — the near and far distance of
+the set actually sent — and that single field would have ended this in one
+launch. `lampshaft-noband` keeps the old behaviour runnable;
+`lampshaft-wide` (8 bands, 64 lights, 60 m) is the upper bound of the machinery.
+
+**The lesson, which is the same one as §4a in a different place:** a per-frame
+*budget* and a per-cell *budget* need different orderings, and neither is served
+by "nearest to the camera". Sorting a list is not covering a space.
+
+## 4c. Dust motes
+
+`rt_dust_*`, implemented in `rt_light_shafts.cpp`'s sibling `rt_dust.cpp`. A
+beam is only a beam because something is in it; the froxel medium supplies the
+smooth half of that, and dust supplies the sparkle — specks bright inside the
+beam and invisible outside it, so the shaft draws itself and the dark stays dark.
+
+**They are real traced geometry, lit by the scene.** No emission, no rasterized
+overlay, no hand-applied tint:
+
+- **Emissive dust is fireflies.** A mote carrying its own light glows in a
+  pitch-black room, which is the opposite of the effect.
+- **Rasterized dust is fullbright.** RTGL1 keeps a `TRANSLUCENT` primitive out of
+  the acceleration structure and does not shade it — the trap the spark batch
+  lives with deliberately and debris was moved off. Dust is opaque, alpha 1, no
+  flags, which is RTGL1's rule for *entering* the AS. Its vertex colour is an
+  **albedo the path tracer shades**, not a final pixel.
+- Which also means a mote is correctly **shadowed** — a speck in the shadow of
+  the grating that makes the shaft goes dark, for free.
+
+**No pool, no state, no spawning.** Dust is a property of the room, not an event.
+The motes live on a hashed lattice fixed in *world* space and the frame draws the
+cells near the camera, so the whole system is a pure function of (camera, time).
+Density is uniform and exact, motes do not drift or pop as the player moves,
+walking away and back shows the same dust, and no budget can quietly run out.
+
+**Size is angular, and it has to be.** A real mote is tens of microns; even a
+generous 8 mm speck at 10 m subtends about a fifth of a pixel, which under an
+upscaler is not a dim speck but a shimmering one. A mote is drawn at whichever is
+larger of its world size and a fixed **angular** size — a constant few pixels at
+any distance. `dust-honest` turns that off so the shimmer it prevents can be
+seen.
+
+Two consequences worth knowing before tuning:
+
+- **`rt_dust_density` and `rt_dust_max` are not independent.** The cell spacing is
+  the coarser of what the density asks for and what the cap allows, so raising
+  density alone does nothing once the cap binds. That is what makes `rt_dust_max`
+  a real hard bound rather than a cull applied after the work is done — and why
+  raising `rt_dust_far` costs nothing, it just thins. `rt_dust_debug` prints the
+  spacing that actually resulted, which is the only way to tell which is in
+  charge.
+- **A mote cannot be faded out.** Below RTGL1's 0.98 alpha threshold the whole
+  batch is demoted to the rasterized overlay and goes fullbright, so distance is
+  handled by **shrinking**, exactly as debris is.
+
+Arms: `dust-fat` (**run first** — the absurd arm; a mote is small enough that
+"I can't see any" has two causes that look identical), `dust-off`/`on`,
+`dust-heavy`, `dust-still` (freezes the field — the real test is whether the
+lattice is *visible*, which would be a bug in the hashing, not a value to tune),
+`dust-honest`, `dust-noshaft` (dust is lit by ordinary scene lighting, not by the
+shaft pass; this proves the two are independent).
+
 ## 5. How to judge it
 
     .\tools\ab.cmd lampshaft-fat 07      <- RUN THIS ONE FIRST
@@ -191,7 +278,10 @@ tuning.
 | `lampshaft-dense` / `lampshaft-bright` | more medium vs more light — judge separately |
 | `lampshaft-iso` | is the forward bias carrying the shaft (expect **dimmer**, not flatter) |
 | `lampshaft-phys` / `lampshaft-flat` | the falloff ladder: honest inverse square vs no falloff at all |
-| `lampshaft-listorder` | the reach bug, kept runnable (`relcull 0`) |
+| `lampshaft-listorder` | the ray-budget bug, kept runnable (`relcull 0`) |
+| `lampshaft-noband` / `lampshaft-wide` | the selection bug kept runnable, and the upper bound of the machinery |
+| `dust-fat` | **run first for dust** — is anything being drawn at all |
+| `dust-off` / `dust-on` / `dust-heavy` / `dust-still` / `dust-honest` / `dust-noshaft` | the dust ladder (§4c) |
 | `lampshaft-near0` | the near fade off, i.e. the physical answer |
 
 Good interior candidates: the MAP07 clad corridors, any room with a ceiling
@@ -227,6 +317,9 @@ outdoor area will show nothing, and that is correct, not a null result.
 
 ## 7. Not done
 
+- Dust is global and has no per-map control. If a level wants dustier air than
+  its neighbour, that belongs in an `RT_FOG_PRESETS`-style table in
+  `rt_presets.cpp`.
 - Only the ceiling and solo families offer shafts. Flames, switches, lava, the
   9800/9801/9802 map things and the SMON wall panels do not. SMON in particular
   should stay out until asked for — §20 of `rt-lighting-practices.md` is the
