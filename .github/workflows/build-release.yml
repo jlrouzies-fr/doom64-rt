@@ -156,6 +156,11 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: dist/Doom64-RT.zip
+          name: Doom 64 - Ray Traced ${{ github.ref_name }}
+          # Pre-release until someone other than the author has played a build:
+          # the FSR path has never run on AMD hardware, and Ray Reconstruction is
+          # alpha and shipped off.
+          prerelease: true
           body: |
             Built from ${{ github.sha }}.
 
