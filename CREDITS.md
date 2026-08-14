@@ -53,6 +53,15 @@ Doom source code © 1997 **id Software**, **Raven Software**, and contributors.
 - **Nevander** — author of the total conversion: every stock Doom 64 map converted fresh to
   UDMF, all map scripts and events rewritten by hand, and the weapon/monster/item work.
 
+> **Notice, 2026-08-14.** Nevander was contacted through the Doomworld thread listed in
+> `D64RTR_README.TXT` to say that this project distributes two patch WADs derived from
+> Retribution's maps — `d64r-3dfloor-rtfix.wad` (strips `Sector_Set3dFloor`, which hangs the
+> ray-traced upload) and `d64r-seqlight-fix.wad` (sector lighting painted for the software
+> renderer) — both of which keep the original `BEHAVIOR`/`ZNODES` and are inert without
+> `D64RTR_v15.WAD`. The offer stands to withdraw them and have the launcher build them on the
+> user's own copy instead; `tools/make_map_3dfloor_rtfix.py` and `tools/make_seqlight_fix.py`
+> already do exactly that.
+
 Retribution's own credits, in full (from `D64RTR_README.TXT`):
 
 - Weapons, monsters and items based on **Doom 64 WMI Redux** by **Dreadflame** (GuitarDeity)
