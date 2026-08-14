@@ -52,6 +52,14 @@ fog's froxel volume, and why the sim is on the CPU):
 
 → **`docs/rt-smoke.md`**
 
+Light shafts from **ordinary lamps**, not just the moon (`rt_volume_shaft_*`) —
+the froxel pass shadow-tests exactly ONE light, which is why beams only ever
+happened outdoors; this hands it a short explicit list of ceiling and solo-bulb
+fixtures as well, and why `rt_fog_illum` is **not** the answer even though it
+looks like it:
+
+→ **`docs/plan-light-shafts.md`**
+
 Impact sparks and wall debris (`rt_spark_*`) — the hitscan hook in `P_LineAttack`
 that *is* a real game hook, the PUFF palette the look comes from, per-material
 debris driven by the **texture surface classification**, and four bugs that each
@@ -395,6 +403,7 @@ feature code to `rt_main.cpp`.
 | `rt_lights_sector.cpp` | Sector lights, gzdoom dynlights (`RT_UploadGzDoomDynamicLights` — pitfalls 22/27/28), lightlevel watch, `rt_sector_emis` threshold |
 | `rt_lights_fixtures.cpp` | Lamps inferred from a TEXTURE: ceiling inset, wall strip, ceiling edge, spin panel, solo bulb, hanging tech, hand glow |
 | `rt_lights_fx.cpp` | Switches, lava, flames (`RT_UploadFlameLights` — see `docs/flame-lighting.md`) |
+| `rt_light_shafts.cpp` | Which fixtures get visible air around them (`rt_volume_shaft_*`). Places no lights of its own: the fixture walks OFFER theirs and this culls/sorts/dedupes/caps the list handed to RTGL1 (`docs/plan-light-shafts.md`) |
 | `rt_smoke.cpp` | Puff simulation + all six smoke sources: weapons, monster guns (`RT_MONSTER_GUNS`), projectiles (`RT_PROJECTILE_SMOKE`), barrels, flames (`RT_AMBIENT_FLAMES`) + `smoke` CCMD (`docs/rt-smoke.md`) |
 | `rt_sparks.cpp` | Impact sparks (`rt_spark_*`): the pool, the 3-tier collision, the batched quads and the per-impact flash + `sparks` CCMD. **The one FX source with a real game hook** — `P_LineAttack` in `p_map.cpp` (`docs/plan-impact-fx.md`) |
 | `rt_presets.cpp` | Per-map moon / cloud / tint / fog tables + `moon`, `clouds`, `fog` CCMDs |
@@ -447,6 +456,7 @@ declaration cannot drift from its definition. Put nothing in that file except an
 | `tools/ab-water.cmd` | Water A/B: `stock`/`styl`/`flat`/`mirror`/`noglow`/`nocaus`/`debug`, default MAP10. Flats are tagged engine-side (`l_waterflag`), no setup needed. See `docs/rt-water.md`. |
 | `tools/smoke-lab.cmd` | **Smoke lab — MAP97 dark / MAP96 bright beige** — unattended capture of muzzle smoke in a controlled room (`python tools/build_smoke_lab.py` first). `tools/smoke-sweep.cmd <cvar> <values...>` walks one cvar at a fixed tic; `python tools/smoke_gallery.py` renders named candidate looks into one labelled PNG. Judge smoke here, never in a real level — and colour/visibility questions belong on MAP96. |
 | `tools/ab.cmd smoke-<arm>` | Volumetric smoke A/B (arms are cfgs in `tools/arms/`, NOT command-line strings). `smoke-full`/`fat`/`thin`/`still`/`drift`/`walk`/`glued`; monsters `smoke-monster`/`nomonster`; sources `smoke-flames`/`noflames`/`proj`/`barrel`/`crowd`; look `smoke-stylize0`; traps `nearfade`/`blendslow`/`blendraw`; resolution `reach30`/`reach8`; isolation `off`/`nolight`/`debug`; and `fogsafe`/`fogsmoke`, the fog regression. See `docs/rt-smoke.md`. |
+| `tools/ab.cmd lampshaft-<arm>` | Light shafts from ordinary lamps. `lampshaft-fat` (**run first** — the absurd arm that separates plumbing from values), `lampshaft-off`/`on`; probes `probe` (uniform arriving), `lit`/`vis` (reach vs occlusion); families `inset`/`lattice`/`solo`; `nogap` (what the dedupe prevents), `nomoon` (nothing else in the air), `dense`/`bright` (medium vs light — judge separately), `iso`, `near0`. Ships **on**; judge in a dark interior, MAP07's clad corridors. See `docs/plan-light-shafts.md`. |
 | `tools/ab.cmd spark-<arm>` | Impact spark A/B: `spark-fat` (**run first** — the absurd arm that separates plumbing from values), `spark-on`/`off`, `nolight` (how much is the traced flash), `nogrid` (the before for the pixel look — judge while moving), `nocollide`, `still` (bounce with the fall taken out), `debug`. Ships **off**; judge in the smoke lab (MAP97 dark, MAP96 bright) before a real level. See `docs/plan-impact-fx.md`. |
 | `tools/ab-blood.cmd` | Persistent blood A/B: `off`/`on`/`uncapped`/`tight`/`plain`/`wild`/`roll`; explosion splash `boom`/`noboom`/`bigboom`; per-monster colour `color`/`nocolor` (try MAP03 or MAP14), default MAP01. The lifetime is DECORATE in the WAD, not a renderer setting; explosive kills leave no blood in stock GZDoom because `P_RadiusAttack` never calls `P_SpawnBlood`; and blood colour needs `rt_tex_translations` (pitfall 30). See `docs/blood-persist.md`. |
 

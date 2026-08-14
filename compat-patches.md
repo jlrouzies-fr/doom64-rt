@@ -1238,3 +1238,73 @@ Four things worth knowing before extending this:
   loud for the same reason: turning that cvar on *is* the request.
 - **`con_notifylines 0` is not the answer.** It would take pickups and level
   names with it. Game messages are untouched by any of this.
+
+---
+
+## Light shafts from ordinary lamps (2026-08-14)
+
+Beams of light in a dark room are the Doom 64 look, and until now this renderer
+could only produce them **outdoors**. RTGL1's froxel pass scatters exactly ONE
+light per frame — `LightManager::TryGetVolumetricLight` picks it, and it scans
+`staticLights` only, so a fixture gzdoom uploads per frame could never be picked
+at all. Every ceiling lamp, grate and doorway inside a level was a light with no
+visible air around it.
+
+Full write-up, cvars and A/B ladder: **`docs/plan-light-shafts.md`**.
+
+**RTGL1 (`deps/RTGL`)**
+
+- `Include/RTGL1/RTGL1.h` — new `RgDrawFrameLightShaftParams` (pNext on
+  `RgDrawFrameInfo`), `RG_STRUCTURE_TYPE_DRAW_FRAME_LIGHT_SHAFT_PARAMS = 37`,
+  `RG_MAX_SHAFT_LIGHTS 32`. A **separate struct**, not fields on
+  `RgDrawFrameVolumetricParams`, for the reason `RgDrawFrameSmokeParams` is one:
+  the fog is shipped and tuned on nine maps, and a struct that does not change
+  size cannot break it. `count 0` is the stock volume.
+- `Source/DrawFrameInfo.h` — trait, `CheckMembers` assert, link root, defaults.
+- `Source/Generated/GenerateShaderCommon.py` — `VOLUME_SHAFT_LIGHT_MAX 32`;
+  `volumeShaftLights` as `uvec4[8]` plus nine scalars **replacing the `_pads10`
+  slot**. Nine, not five: the scalar run from `smokeCount` must stay a multiple
+  of four or C and std140 disagree from the first vec4 array onward.
+  `tools/check_uniform_layout.py` is the gate and `build-rtgl.cmd` refuses to
+  build when it complains — 196 fields, 8368 bytes.
+- `Source/VulkanDevice.cpp` — resolves uniqueIDs to shader light indices via
+  `LightManager::GetLightIndexForShaders`, **compacting** as it goes: a fixture
+  the engine listed may have been culled before its light was uploaded, and a
+  `LIGHT_INDEX_NONE` hole mid-array would spend the shader's nearest-first budget
+  on nothing.
+- `Source/Shaders/RtVolumetric.rgen` — `traceShaftLights()`, added to the
+  single-light term and gated on `!allLightsCell` so it cannot double-count
+  inside smoke or on a fogged map.
+
+**gzdoom-rt**
+
+- New `rt_light_shafts.cpp` (registered in `src/CMakeLists.txt`) — the fixture
+  walks *offer* lights; this culls, sorts nearest-first, dedupes and caps.
+- `rt_lights_fixtures.cpp` — offer sites at the ceiling-inset upload and at the
+  merged ceiling-edge/lattice/faux/solo upload; `Cand` gained a `shaftSrc` field
+  so the family survives the merge.
+- `rt_main.cpp` — `RT_ShaftLightsBegin()` before the fixture walks,
+  `RT_ShaftLightsSelect()` where the params are built; chain is now
+  volumetric → shaft → smoke → sky.
+- 13 cvars in `rt_cvars.inc`, all pinned at their compiled defaults in
+  `tools/d64rt-pins.cfg`. 15 arms in `tools/arms/lampshaft-*.cfg`.
+
+**Three things worth knowing before extending this:**
+
+- **`rt_fog_illum` is not the answer, though it looks like it.** The all-lights
+  froxel estimate already exists and was the original plan's cheap route. It
+  *replaces* the single-light path — which is the only place the sun's sky-reach
+  probe lives, i.e. the only thing that makes the shafts the game already has —
+  and it shades the medium through a **surface** integrator with a fake normal
+  equal to `toviewer`, so a light directly overhead scores `dot ≈ 0` and is
+  multiplied to nothing. A ceiling lamp is exactly a light directly overhead.
+- **Deterministic, not stochastic, and on purpose.** One randomly chosen light
+  per froxel would be cheaper and would then need the reprojected temporal
+  history the all-lights branch has. A short list with a radiance cull in front
+  of the shadow ray has no variance at all, and in a typical cell only one or two
+  lamps survive the cull.
+- **The dedupe is load-bearing.** A lamp pane is ~16 point lights on a 16-unit
+  lattice; without `rt_volume_shaft_mingap` one pane takes the whole 16-slot
+  budget and yields a single blob while the rest of the room gets nothing. The
+  test is 3D — the walks tile in both axes, and a 2D gap would merge a light with
+  the one above it, which is the mistake `PANEL_LAMPS`' `min_gap` made.
