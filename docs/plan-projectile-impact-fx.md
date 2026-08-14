@@ -1,6 +1,23 @@
 # Plan — projectile impact FX: plasma arcs, Unmaker melt, rocket embers
 
-**Status:** planned, not started.
+**Status:** §2 (the hook) and §3 (the arcs) are BUILT and awaiting a play verdict.
+§1, §4 and §5 are planned. Scope decided in play review:
+
+| § | | |
+|---|---|---|
+| 2 | projectile impact hook | **built** — `RT_UpdateProjectileImpacts`, its own walk |
+| 3 | plasma / BFG / arachnotron arcs | **built** — `rt_arc*`, ships **on** |
+| 1 | plasma light instability | planned |
+| 4 | Unmaker melt | **dropped for now** — see below |
+| 5 | rocket embers + smoke | planned, and it is the ONLY impact that gets smoke |
+
+Two scope calls that override what the sections below propose:
+
+- **No smoke on plasma, and none on the Unmaker.** Embers and their smoke threads
+  belong to the **rocket** impact alone. §5 stands as written; §4's melt is set aside
+  rather than built with the scorch decal.
+- **The BFG reuses the arc**, in green, rather than getting an effect of its own. That
+  answered the open question below, and it cost one ramp table.
 
 Three effects that all sit on **one missing piece of plumbing**, plus one that does not.
 The shipped impact system is [`rt-impact-fx.md`](rt-impact-fx.md) and this extends it rather
@@ -32,6 +49,19 @@ pointlight PLASMABALL { color 0.0 0.1 1.0  size 64 }
 bolt in flight is already a real moving blue light in the path tracer. What it is not is
 *electric*: it is a perfectly steady lamp travelling in a straight line. **The gap is
 instability, not illumination.**
+
+**Plasma already leaves a scorch decal, and it may already be in the path tracer.**
+`64PlasmaBall` and `64ArachnotronPlasma` both declare `Decal "PlasmaScorchLower"` in the
+WAD's DECORATE (`tools/_decorate_extract.txt:1105`, `:3618`), and `PlasmaScorchLower` is
+defined in `D64RTR[v1.5].WAD`'s DECALDEF. That is GZDoom's own decal system, and RT does
+**not** ignore it: `rt_draw.cpp:282` maps `RtPrim::Decal` to `RG_MESH_PRIMITIVE_DECAL` and
+`:466` exempts decals from the export path, so an engine decal becomes an RTGL1 decal.
+
+**Verify this in play before building anything decal-shaped.** If plasma scorches already
+appear, then §4's melt is a *cooling ramp and a light on top of an existing decal*, not a
+new decal system — and the scorch decals in [`plan-impact-fx.md`](plan-impact-fx.md) may be
+substantially built already for the projectile weapons. Shooting the plasma rifle at a wall
+and looking answers it in ten seconds; assuming either way costs a day.
 
 **Projectiles never reach the impact hook.** `RT_SpawnImpactSparks` is called from exactly
 one place — `p_map.cpp:4900`, inside `P_LineAttack` — which is **hitscan only**. Plasma,
@@ -88,12 +118,24 @@ was continuous replacement. Losing the flag is the explosion, so the event fires
 right frame and needs no DECORATE edit, no ZScript, and no game-code hook. That matters
 because these classes are the WAD's, not ours.
 
-**Reuse the existing walk.** `rt_smoke.cpp` already iterates the thinker list every tic and
-already keeps `RocketMark` records with `lastPos`, `dir` and the matched row. Add a
-`RT_NoteProjectileImpact( AActor* )` call inside that walk rather than opening a second
-iteration — but **check the gating first**: if the walk is skipped when `rt_smoke` is off,
-impact FX would silently inherit the smoke cvar, which is exactly the kind of hidden
-coupling that costs a session. If it is gated, hoist the walk, do not duplicate it.
+**The existing walk cannot be reused as it stands — checked, and it is gated three deep.**
+The plan's own caution was the right one to act on. `RT_UpdateSmokePuffs` returns at
+`rt_smoke.cpp:1097` when `rt_smoke` is off, before the iterator is ever constructed; the
+walk body at `:1186` runs only if one of five `rt_smoke_*` sub-cvars is on; and inside it,
+`RT_ProjectileSmokeFor` (`:467`) answers `nullptr` for anything not in
+`RT_PROJECTILE_SMOKE` — a five-row table of **rocket, TRCR, RBAL, MANF, FIRE**. Plasma, the
+BFG and `UnmakerLaser` are in none of them, so they are not tracked, have no `RocketMark`,
+and have no `lastPos` or `dir` to trace from.
+
+So there are three couplings, not one, and the middle one is the trap: hooking the walk
+would make plasma impacts vanish when someone turns *rocket trails* off. **Hoist the
+iteration** — one walk, its own gate, feeding both systems — or give the impact hook its own
+`MF_MISSILE` walk. Do not extend `RT_PROJECTILE_SMOKE` with zero-smoke rows to get the
+tracking, which looks like the cheap option and buries an impact-FX dependency inside a
+smoke table.
+
+What *is* worth reusing verbatim is the mark structure and the `MF_MISSILE`-cleared edge
+(`:453`), which is the part that was expensive to get right.
 
 **Finding the surface.** The mark's last position is a tic of flight short of the wall, in
 mid-air, with no normal and no texture. Recover all three with a `Trace()` from `lastPos`
@@ -129,9 +171,27 @@ surface, and §4 and §5 must simply not fire. §3 still can — an arc in open 
 
 ## 3. Plasma impacts that arc
 
-With §2 in place this is a spawn rule, not a system: call the existing spark spawner with an
-electric colour ramp (the ramps are `constexpr` tables at the top of `rt_sparks.cpp`), a
-short life, and high initial speed so the particles crawl along the surface before dying.
+**This section was wrong, and the correction is the useful part of it.** It proposed a spawn
+rule rather than a system: call the existing spark spawner with an electric ramp, a short
+life, and high speed so the particles crawl along the surface. That was built, and it failed
+in play — *"just spawn many particles, square / rectangle over the place… not at all the
+improved scorched."*
+
+The mistake was assuming the **direction** of the particles was what separated an arc from a
+shower. It is not. What the eye reads as "sparks" is that the fragments are *discrete,
+separate and moving*, and a ring of quads is a spark shower however you aim it. An electric
+remain is none of those things: it is a **connected filigree that stays put and crackles**.
+
+So the arcs are **not particles and not in the spark pool**. The primitive is a polyline
+lying in the surface plane: one `ArcMark` per impact, `rt_arc_branches` random walks out of
+it, each segment a thin in-plane quad, plus a small core where the ball died. The geometry is
+regenerated from the mark's seed every frame — which is what lets branches drop out and
+return, and that flicker is more of what sells it than any brightness value.
+
+The general lesson, and it is the same one the debris whiteout taught: **when an effect reads
+as the wrong thing, check the construction before the values.** No setting of speed, spread,
+life or colour on a particle system would have produced this, because the problem was that it
+was a particle system.
 
 Two things worth taking from the shipped system rather than reinventing:
 
@@ -144,6 +204,14 @@ Two things worth taking from the shipped system rather than reinventing:
 The one genuinely new element is colour: everything in the spark system so far is a heat
 ramp (white → amber → red). Electric wants cyan-white → blue → dark, which is a new ramp
 table but nothing more.
+
+**Take the ramp from `PLSE`, the way the sparks took theirs from `PUFF`.** The plasma ball
+already has an impact animation — `Death: PLSE ABC 3, PLSE DEF 2 BRIGHT`, six frames,
+16 tics ≈ 0.23 s — that plays at exactly the point and moment the arc would spawn. Lifting
+the ramp from those lumps' own `PLTE` makes the two agree by construction rather than by
+eye, which is the single thing that made the spark colours stop needing tuning. It also
+sets the arc's life: much past ~0.25 s and the particles outlive the flash they came from,
+and the effect reads as two events rather than one.
 
 ---
 
@@ -230,10 +298,28 @@ the blob should fade in as the ember cools, not be present from the first frame.
 
 ## Open questions
 
-- Does the `rt_smoke` thinker walk run when `rt_smoke` is off? Decides whether §2 hooks into
-  it or hoists it.
-- Should the BFG get §3's treatment? It is the same projectile category and the same hook,
-  but its own light is enormous and may swamp any arc.
-- Is there an Unmaker *beam* to consider as well as the projectile, or is every shot a
-  `UnmakerLaser` actor? The DECORATE lists `UnmakerLaser`, `UnmakerLaserTrail` and
-  `OriginalUnmakerLaserTrail`; only the first should be an impact.
+**Answered — the walk.** It does not run when `rt_smoke` is off, and there are two further
+gates below that. See §2; the conclusion is hoist, not hook.
+
+**Answered — the Unmaker beam.** There is no beam. Every shot is one `UnmakerLaser`
+(`_decorate_extract.txt:1409`), and the actor is **invisible**: its Spawn state is `TNT1 A 1`
+and the visible bolt is a chain of ~30 `UnmakerLaserTrail` sprites (`LPUF C`, `RenderStyle
+Add`, `Scale 0.65`, `Speed 0`) that it drops behind itself each tic. Only `UnmakerLaser`
+should be an impact — the trails are stationary decoration and would each fire one.
+
+Two consequences for §4 that follow from the same DECORATE:
+
+- **`Speed 200`** against the plasma ball's `Speed 40`. This is the case §2's speed-derived
+  trace length exists for, and it is a factor of five, not a rounding margin.
+- Because the laser itself draws nothing, the melt is the *only* thing that marks where an
+  Unmaker shot landed. That raises its value and it also means there is no existing flash
+  whose colour it must agree with — unlike §3, this ramp is a free choice.
+
+**Still open.**
+
+- ~~Should the BFG get §3's treatment?~~ **Yes, decided and built** — green, from `BFE2`'s
+  own palette. Whether its own light swamps the arc is now a thing to *look at* rather than
+  reason about; `arc-nolight` is the arm that isolates it.
+- Does `Decal "PlasmaScorchLower"` actually appear in the path tracer today? See §0 — the
+  answer decides whether §4 and the scorch decals are new work or a ramp on existing work,
+  and it is a ten-second check in play.
