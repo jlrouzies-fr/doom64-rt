@@ -1194,6 +1194,10 @@ on the next build refresh.
 
 ## `rt_verbose` — the renderer stops talking over the game (2026-08-13)
 
+**Reference: `docs/rt-verbose.md`** — what it covers, what it deliberately does
+not, and which print level a new message should take. This entry is the
+changelog; that file is the one to read before adding a `Printf`.
+
 **Symptom:** every level load, and every press of the flashlight key, painted a
 line of text across the picture — `Can't find a file, no static scene will be
 present: ...`, `Denoiser path: A-SVGF (Denoise) ...`, `ReSTIR: initialSamples=32
