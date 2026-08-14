@@ -339,6 +339,10 @@ def write_html(records: list[dict], stats: dict) -> None:
   --timber-wash:#221509;
   --fluid:#4F8FD0;         /* water, blood, nukage, lava — splash */
   --fluid-wash:#0E1B29;
+  --flesh:#B0675F;         /* organic wall — blood */
+  --flesh-wash:#241211;
+  --dirt:#8C7A46;          /* loose ground — dust and scatter */
+  --dirt-wash:#1E1A0D;
   --park:#B8912F;          /* parked / ambiguous */
   --park-wash:#241B08;
   --mono:ui-monospace,"Cascadia Mono",Consolas,"SF Mono",monospace;
@@ -416,6 +420,8 @@ button {{ font:inherit; color:inherit; background:none; border:0; cursor:pointer
 .stage.s-concrete #big {{ box-shadow:0 0 0 1px var(--crete), 0 18px 48px -18px #000; }}
 .stage.s-wood     #big {{ box-shadow:0 0 0 1px var(--timber), 0 18px 48px -18px #000; }}
 .stage.s-fluid    #big {{ box-shadow:0 0 0 1px var(--fluid), 0 0 30px -8px rgba(79,143,208,.30), 0 18px 48px -18px #000; }}
+.stage.s-flesh    #big {{ box-shadow:0 0 0 1px var(--flesh), 0 18px 48px -18px #000; }}
+.stage.s-dirt     #big {{ box-shadow:0 0 0 1px var(--dirt), 0 18px 48px -18px #000; }}
 .stage.s-other    #big {{ box-shadow:0 0 0 1px var(--blood-dim), 0 18px 48px -18px #000; }}
 .stage.s-park     #big {{ box-shadow:0 0 0 1px var(--park), 0 18px 48px -18px #000; }}
 .plate {{
@@ -435,6 +441,8 @@ button {{ font:inherit; color:inherit; background:none; border:0; cursor:pointer
 .chip.concrete {{ color:var(--crete); border-color:var(--crete); background:var(--crete-wash); }}
 .chip.wood     {{ color:var(--timber); border-color:var(--timber); background:var(--timber-wash); }}
 .chip.fluid    {{ color:var(--fluid); border-color:var(--fluid); background:var(--fluid-wash); }}
+.chip.flesh    {{ color:var(--flesh); border-color:var(--flesh); background:var(--flesh-wash); }}
+.chip.dirt     {{ color:var(--dirt); border-color:var(--dirt); background:var(--dirt-wash); }}
 .chip.other    {{ color:var(--blood); border-color:var(--blood-dim); background:var(--blood-wash); }}
 .chip.park     {{ color:var(--park); border-color:var(--park); background:var(--park-wash); }}
 .chip .fx {{ color:var(--ink-3); text-transform:none; letter-spacing:.02em; }}
@@ -454,6 +462,8 @@ button {{ font:inherit; color:inherit; background:none; border:0; cursor:pointer
 .cell.s-concrete::after {{ background:var(--crete); }}
 .cell.s-wood::after     {{ background:var(--timber); }}
 .cell.s-fluid::after    {{ background:var(--fluid); }}
+.cell.s-flesh::after    {{ background:var(--flesh); }}
+.cell.s-dirt::after     {{ background:var(--dirt); }}
 .cell.s-other::after    {{ background:var(--blood); }}
 .cell.s-park::after     {{ background:var(--park); }}
 .cell.out {{ display:none; }}
@@ -481,6 +491,8 @@ button {{ font:inherit; color:inherit; background:none; border:0; cursor:pointer
 .call[data-call="concrete"].on {{ border-color:var(--crete); background:var(--crete-wash); }}
 .call[data-call="wood"].on     {{ border-color:var(--timber); background:var(--timber-wash); }}
 .call[data-call="fluid"].on    {{ border-color:var(--fluid); background:var(--fluid-wash); }}
+.call[data-call="flesh"].on    {{ border-color:var(--flesh); background:var(--flesh-wash); }}
+.call[data-call="dirt"].on     {{ border-color:var(--dirt); background:var(--dirt-wash); }}
 .call[data-call="other"].on    {{ border-color:var(--blood-dim); background:var(--blood-wash); }}
 .call[data-call="park"].on     {{ border-color:var(--park); background:var(--park-wash); }}
 .call em {{ font-style:normal; font-size:12px; }}
@@ -490,6 +502,8 @@ button {{ font:inherit; color:inherit; background:none; border:0; cursor:pointer
 .call[data-call="concrete"] {{ border-left:2px solid var(--crete); }}
 .call[data-call="wood"]     {{ border-left:2px solid var(--timber); }}
 .call[data-call="fluid"]    {{ border-left:2px solid var(--fluid); }}
+.call[data-call="flesh"]    {{ border-left:2px solid var(--flesh); }}
+.call[data-call="dirt"]     {{ border-left:2px solid var(--dirt); }}
 .call[data-call="clear"]    {{ grid-column:1 / -1; }}
 .call[data-call="other"]    {{ border-left:2px solid var(--blood-dim); }}
 .call[data-call="park"]     {{ border-left:2px solid var(--park); }}
@@ -569,9 +583,11 @@ textarea {{ min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
       <div class="calls">
         <button class="call" data-call="metal" type="button"><kbd>S</kbd><em>metal<small>steel, iron, grating &middot; sparks</small></em></button>
         <button class="call" data-call="concrete" type="button"><kbd>C</kbd><em>concrete<small>stone, brick, tile &middot; dust</small></em></button>
+        <button class="call" data-call="dirt" type="button"><kbd>R</kbd><em>dirt<small>gravel, soil, ash, rubble &middot; scatter</small></em></button>
         <button class="call" data-call="wood" type="button"><kbd>W</kbd><em>wood<small>planks, crates &middot; splinters</small></em></button>
         <button class="call" data-call="fluid" type="button"><kbd>Q</kbd><em>fluid<small>water, blood, nukage, lava &middot; splash</small></em></button>
-        <button class="call" data-call="other" type="button"><kbd>A</kbd><em>other<small>flesh, goo, glass, screens</small></em></button>
+        <button class="call" data-call="flesh" type="button"><kbd>E</kbd><em>flesh<small>skin walls, gore, hell meat &middot; blood</small></em></button>
+        <button class="call" data-call="other" type="button"><kbd>A</kbd><em>other<small>goo, glass, screens, cloth</small></em></button>
         <button class="call" data-call="park" type="button"><kbd>X</kbd><em>park it<small>decide later</small></em></button>
         <button class="call" data-call="clear" type="button"><kbd>&#9003;</kbd><em>clear<small>unlabel this one</small></em></button>
       </div>
@@ -604,9 +620,11 @@ textarea {{ min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
       <div class="keys">
         <div><kbd>S</kbd></div><div>metal &middot; rough 0.80 &middot; advance</div>
         <div><kbd>C</kbd></div><div>concrete &middot; advance</div>
+        <div><kbd>R</kbd></div><div>dirt &middot; advance</div>
         <div><kbd>W</kbd></div><div>wood &middot; advance</div>
         <div><kbd>Q</kbd></div><div>fluid &middot; advance</div>
-        <div><kbd>A</kbd></div><div>other, not metal &middot; advance</div>
+        <div><kbd>E</kbd></div><div>flesh &middot; advance</div>
+        <div><kbd>A</kbd></div><div>other, none of the above &middot; advance</div>
         <div><kbd>D</kbd><kbd>F</kbd></div><div>rough 0.80 / very rough 0.95</div>
         <div><kbd>1</kbd>&hellip;<kbd>6</kbd></div><div>roughness ladder, mirror &rarr; very rough</div>
         <div><kbd>X</kbd></div><div>park &amp; advance</div>

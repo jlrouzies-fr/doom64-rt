@@ -1,4 +1,954 @@
 {
+  "AZTEC01": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "AZTEC02A": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "AZTEC02B": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "AZTEC03": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "BFALL01": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "fluid"
+  },
+  "BFALLT1": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "fluid"
+  },
+  "BVINE64": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "fluid"
+  },
+  "C1": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C2": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C3": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C3F": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C4": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C5": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C6": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C8": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C9": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C10": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C10F": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C12": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C13": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C14": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C16": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C17": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C18": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C19": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C20": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C21": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "wood"
+  },
+  "C22": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C23": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C24": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C25": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C28": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C29": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C31": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C33": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C34": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C35": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C35B": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C35T": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "wood"
+  },
+  "C37": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C37CSTM": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C38": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C41": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C42": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C43": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C44": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C44B": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C45": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C45CSTM": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C46": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "wood"
+  },
+  "C47": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C48": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C49": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C50": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C51": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C52": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C53": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C54": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C55": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C56": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C57": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C58": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C59": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C60": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C61": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C62": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C63": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C64": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C65": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C66": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C67": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C72": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C74": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C75": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C76": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C77": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C78": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C79": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C80": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C81": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C82": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C83": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C86": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "wood"
+  },
+  "C87": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "wood"
+  },
+  "C88": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.4,
+    "surface": "metal"
+  },
+  "C89": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C90": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C91": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C92": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C97": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C97R": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C98": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C99": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "wood"
+  },
+  "C100": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C101": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C102": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "wood"
+  },
+  "C102B": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C104": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C108": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C109": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C200": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "wood"
+  },
+  "C201": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C204": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C206": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C211": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "wood"
+  },
+  "C301": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C302": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C303": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C306": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C307": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C307B": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C307B1": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C307B2": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C307B3": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C307B4": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C307B5": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C308": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C311": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C331": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C341": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C401": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C408": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C471": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "C500": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C911": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C911F": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C911F2": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C921": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C921F2": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C981": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "C2001": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "wood"
+  },
+  "C4011": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CASF07": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CASF11": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CASF12": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CASF20B": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CASF30": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CASF50": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CASF80": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "wood"
+  },
+  "CASF87": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CASF89": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CASF109": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CASF200": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CASF201": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CASF203": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CASF204": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CASFL1": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CASFL2": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CASFL3": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CASFL4": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CASFL5": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CASFL6": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CASFL7": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CASFL8": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CASFL9": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CASFL10": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CASFL20": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "CASFL21": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CASFL22": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CASFL23": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CASFL24": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CASFL25": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CASFL26": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CASFL27": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CASFL28": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "CASFL53": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CASFL70": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CASFL94": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "wood"
+  },
+  "CASFL96": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "wood"
+  },
+  "CASFL97": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CASFL98": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "fluid"
+  },
+  "CASFL99": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CASL13": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CASL19": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CBTRAKA": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "CDOR1": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CDOR2": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CDOR2BB": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CDOR2TA": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CDOR3": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CDOR3TA": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CDOR4": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "CDOR4BB": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "CDOR4TA": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "CDOR5": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "CDOR6": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CDOR7": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "CFACEA": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "CFACEB": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "CFACEC": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
   "CMPSW01A": {
     "metallicDefault": 0,
     "roughnessDefault": 0.8,
@@ -9,15 +959,1925 @@
     "roughnessDefault": 0.8,
     "surface": "other"
   },
+  "CMPSW03A": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CMPSW05A": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CMPSW06A": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CMPSW07A": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CMPSW08A": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "CMPSW09A": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "CMPSW10A": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CMPSW11A": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CMPSW12A": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CMPSW13A": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "CMPSW14A": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CMPSW15A": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CMPSW16B": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "CMPSW17A": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "CMPSW18A": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CMPSW19A": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CMPSW21A": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CMPSW23B": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "CMPSW24A": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "CMPSW25A": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CMPSW26B": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "wood"
+  },
+  "CMPSW27A": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "CMPSW28B": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "CMPSW29B": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "CMPSW30A": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "CMPSW31A": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "CMPSW32B": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CMPSW33B": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "CMPSW34A": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CMPSW35A": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CMPSW36A": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CMPSW37A": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "CMPSW38A": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CMPSW39A": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CMPSW40A": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CMPSW41A": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CMPSW42A": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CMPSW43A": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "wood"
+  },
+  "CMPSW44A": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "CMPSW45B": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CMPSW46A": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "wood"
+  },
+  "CMPSW47B": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CMPSW48A": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CMPSW49A": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CMPSW51A": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "wood"
+  },
+  "CMPSW52A": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CMPSW53A": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CNRTBLCK": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "CRATESM1": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "CRATESM2": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "CRATESM3": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "CRTRAKA": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "CTEL1": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "CTEL2": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "CTEL3": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "CTEL4": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "CTEL5": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "CTEL6": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "CTEL7": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "CTEL8": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "CTRAK0": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "CTRAK1": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "CYTRAKA": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "D64B1_01": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "fluid"
+  },
+  "D64B2_01": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "fluid"
+  },
+  "D64BLOD1": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "fluid"
+  },
+  "D64BLOD2": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "fluid"
+  },
+  "D64L1_01": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "fluid"
+  },
+  "D64LAVA1": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "fluid"
+  },
+  "D64LAVA2": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "fluid"
+  },
+  "D64N1_01": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "fluid"
+  },
+  "D64N2_01": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "fluid"
+  },
+  "D64NUKG1": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "fluid"
+  },
+  "D64NUKG2": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "fluid"
+  },
+  "D64S1_01": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "fluid"
+  },
+  "D64S2_01": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "fluid"
+  },
+  "D64SLDG1": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "fluid"
+  },
+  "D64SLDG2": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "fluid"
+  },
+  "D64W1_01": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "fluid"
+  },
+  "D64W2_01": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "fluid"
+  },
+  "D64WATR1": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "fluid"
+  },
+  "D64WATR2": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "fluid"
+  },
+  "DSLRTX01": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "DSLRTX02": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "DSLRTX03": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "DSLRTX04": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.2,
+    "surface": "metal"
+  },
+  "DSLRTX05": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.2,
+    "surface": "metal"
+  },
+  "DSLRTX06": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.2,
+    "surface": "metal"
+  },
+  "DTWMD01": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "DTWMD02": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "DTWMD03": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "DTWMD04": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "DTWMD05": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "DTWMD06": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "DTWMD07": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "DTWMD08": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "DTWMD09": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "DTWMD10": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "DTWMD11": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "DTWMD12": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "DTWMD13": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "DTWMD14": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "DTWMD15": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "DTWMD16": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "DTWMD17": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "DTWMD18": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "DTWMD19": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "DTWMD20": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "DTWMD21": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "DTWMD22": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "DTWMD23": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "DTWMD24": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "DTWMD25": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "DTWMD26": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "DTWMD27": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "DTWMD28": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "DTWMD29": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "DTWMD30": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "wood"
+  },
+  "DTWMD31": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "DTWMD32": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "DTWMD33": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "DTWMD34": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "DTWMD35": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "FACE1": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "GRAYVINE": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "GTEL1": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "GTEL2": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "GTEL3": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "GTEL4": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "GTEL5": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "GTEL6": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "GTEL7": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "GTEL8": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "GVINE64": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "fluid"
+  },
+  "H11": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "H12": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "H13": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "H14": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "H15": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "H16": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "H18": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "H20": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "H21": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "H23": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "H24": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "H25": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "H26": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "H27": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "wood"
+  },
+  "H28": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "H29": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "H30": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "H31": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "H32": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "H33": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "H41": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "H44": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "H48": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "H49": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "H49RGLOW": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "H50": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "H51": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "H52": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "H53": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "H54": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "H55": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "H56": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "H57": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "H58": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "H59": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "H60": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "H63": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "H64": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "H65": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "H66": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "H67": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "H68": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "H69": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "H77": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "H79": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "H82": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "H88": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "H89": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "H90": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "H91": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "H92": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "H93": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "H94": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "H95": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "wood"
+  },
+  "H95T": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "wood"
+  },
+  "H96": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "wood"
+  },
+  "H97": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "H98": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "wood"
+  },
+  "H99": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "H100": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "H110": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "H111": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "H112": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "H113": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "H116": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "H117": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "H118": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "H119": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "H122": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "H123": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "H124": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "H127": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "H128": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "H129": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "H130": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "H131": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "H261": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "H521": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "H531": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "H541": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "H581": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "H771": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "H881": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "H931": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "H991": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "H1221": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "H1301": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "HDOR1": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "HDOR1BB": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "HDOR1TA": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "HDOR2": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "HDOR2BB": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "HDOR2TA": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "HDOR3": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "HDOR3A": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "HDOR4": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "HDOR4A": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "HDOR6": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "HDOR6A": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "HDOR9": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "HDOR9A": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "HDOR10": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "HDOR10A": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "HDOR11B": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "HDOR12B": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "HELLAA": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "HELLAAA": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "HELLAB": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "HELLAC": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "HELLAD": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "HELLAE": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "HELLAE1": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "HELLAF": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "HELLAH": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "HELLAHT": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "HELLAI": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "HELLAJ": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "HELLAK": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "HELLAL": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "HELLAM": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "HELLAO": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "HELLAP": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "HELLAQ": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "HELLAR": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "HELLAS": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "HFL10": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "HFL12": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "HFL13": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "HFL15": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "HFL16": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "HFLATA": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "HFLATB": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "HFLATC": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "HFLATD": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "HFLATE": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "HFLATF": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "HFLATG": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "HFLATH": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "HFLATI": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "HFLATJ": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "HFLATJ2": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "HFLATK": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "HFLATL": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "HFLATM": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "HFLATN": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "HFLATO": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "HLAVA1": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "fluid"
+  },
+  "HLAVA2": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "fluid"
+  },
+  "HLAVA3": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "fluid"
+  },
+  "HLAVA4": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "fluid"
+  },
+  "HLAVA5": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "fluid"
+  },
+  "HTELA": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "HTELB": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "HTELC": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "HTELD": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "HTRAC1": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "HTRAC2": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "HTRAC3": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "HTRAC4": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "HTRAC6": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
   "ISUCK": {
     "metallicDefault": 0,
     "roughnessDefault": 0.8,
     "surface": "other"
   },
-  "SDFLTA": {
+  "NEWDOOR0": {
     "metallicDefault": 0,
     "roughnessDefault": 0.8,
-    "surface": "other"
+    "surface": "wood"
+  },
+  "OUTSW01A": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTSW01B": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTSW02A": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTSW02B": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTSW03A": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "OUTSW03B": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "OUTTEX01": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX02": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX03": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX04": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX05": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX06": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX07": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX08": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX09": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX10": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX11": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX12": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX13": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX14": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX15": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX16": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX17": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX18": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX19": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX20": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "OUTTEX21": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX22": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX23": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX24": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX25": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX26": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX27": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX28": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX29": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX30": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX31": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX32": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX33": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX34": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX35": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX36": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX37": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX38": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX39": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX40": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "OUTTEX41": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "OUTTEX42": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "OUTTEX43": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX44": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX45": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX46": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX47": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX48": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX49": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX50": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX51": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX52": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX53": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX54": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX55": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX56": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "OUTTEX57": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "OUTTEX58": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "OUTTEX59": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX60": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "OUTTEX61": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "OUTTEX62": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "OUTTEX63": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "OUTTEX64": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "OUTTEX65": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "OUTTEX66": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "OUTTEX67": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "OUTTEX68": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "OUTTEX82": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "OUTTEX83": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "PSXTLE01": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "PSXTLE02": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "PSXTLE03": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "PSXTLE04": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "PSXTLE05": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "PSXTLE06": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "PSXTLE07": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "PSXTLE08": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "PSXTLE09": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "PSXTLE10": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "PSXWMSGT": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SDFLTA": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
   },
   "SDFLTAB": {
     "metallicDefault": 0,
@@ -31,7 +2891,37 @@
   },
   "SDFLTAD": {
     "metallicDefault": 1,
-    "roughnessDefault": 0.4,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SDFLTAE": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SDFLTB": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SDFLTBB": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SDFLTC": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SDFLTCB": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SDFLTCC": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
     "surface": "metal"
   },
   "SDOOR1": {
@@ -39,12 +2929,82 @@
     "roughnessDefault": 0.8,
     "surface": "metal"
   },
+  "SDOOR2": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SDOOR3": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SDOOR4": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SDOOR5": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "SDOOR5A": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "SDOOR5B": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
   "SDOOR6": {
     "metallicDefault": 1,
     "roughnessDefault": 0.8,
     "surface": "metal"
   },
   "SDOOR10": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SDOOR11": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SDOORA": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SDOORB": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SDOORC": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SDOORD": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SDOORE": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SDOORFA": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SDOORFB": {
     "metallicDefault": 1,
     "roughnessDefault": 0.8,
     "surface": "metal"
@@ -63,6 +3023,16 @@
     "metallicDefault": 0,
     "roughnessDefault": 0.8,
     "surface": "other"
+  },
+  "SFALL01": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "fluid"
+  },
+  "SFALLT1": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "fluid"
   },
   "SFLATA": {
     "metallicDefault": 1,
@@ -94,10 +3064,40 @@
     "roughnessDefault": 0.8,
     "surface": "concrete"
   },
+  "SFLATAI": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
   "SFLATAJ": {
     "metallicDefault": 1,
     "roughnessDefault": 0.95,
     "surface": "metal"
+  },
+  "SFLATAK": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "SFLATAL": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "SFLATAM": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "SFLATAN": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SFLATAO": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
   },
   "SFLATAP": {
     "metallicDefault": 1,
@@ -105,14 +3105,19 @@
     "surface": "metal"
   },
   "SFLATAQ": {
-    "metallicDefault": 0,
+    "metallicDefault": 1,
     "roughnessDefault": 0.8,
-    "surface": "other"
+    "surface": "metal"
+  },
+  "SFLATAR": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
   },
   "SFLATAS": {
-    "metallicDefault": 0,
+    "metallicDefault": 1,
     "roughnessDefault": 0.8,
-    "surface": "other"
+    "surface": "metal"
   },
   "SFLATB": {
     "metallicDefault": 0,
@@ -144,7 +3149,32 @@
     "roughnessDefault": 0.8,
     "surface": "other"
   },
+  "SFLATCB": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SFLATCC": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
   "SFLATCD": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SFLATCE": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SFLATCF": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SFLATCG": {
     "metallicDefault": 1,
     "roughnessDefault": 0.8,
     "surface": "metal"
@@ -159,6 +3189,21 @@
     "roughnessDefault": 0.8,
     "surface": "concrete"
   },
+  "SFLATDC": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "SFLATDD": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "SFLATDE": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
   "SFLATDF": {
     "metallicDefault": 1,
     "roughnessDefault": 0.95,
@@ -169,22 +3214,137 @@
     "roughnessDefault": 0.95,
     "surface": "metal"
   },
-  "SMONAA": {
-    "metallicDefault": 0,
+  "SHWN1_LG": {
+    "metallicDefault": 1,
     "roughnessDefault": 0.8,
-    "surface": "other"
+    "surface": "metal"
+  },
+  "SHWN1_SM": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SKEYFLBL": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SKEYFLRD": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SKEYFLYL": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
   },
   "SMONBA": {
-    "metallicDefault": 0,
+    "metallicDefault": 1,
     "roughnessDefault": 0.8,
-    "surface": "other"
+    "surface": "metal"
   },
-  "SMONDA": {
-    "metallicDefault": 0,
+  "SMONBB": {
+    "metallicDefault": 1,
     "roughnessDefault": 0.8,
-    "surface": "other"
+    "surface": "metal"
+  },
+  "SMONBC": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SMONBD": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SMONCA": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SMONCB": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SMONCC": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SMONCD": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SMONEA": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SMONEB": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SMONEC": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SMONED": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SMONF": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SMONF1": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SMONF2": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SMONF3": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SMONF4": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SMONF5": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SMONLB1": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SMONLC1": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
   },
   "SPACAMM": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "SPACAMM1": {
     "metallicDefault": 0,
     "roughnessDefault": 0.8,
     "surface": "concrete"
@@ -209,12 +3369,47 @@
     "roughnessDefault": 0.8,
     "surface": "concrete"
   },
+  "SPACEAC1": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
   "SPACEAD": {
     "metallicDefault": 1,
     "roughnessDefault": 0.95,
     "surface": "metal"
   },
+  "SPACEAD1": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SPACEADB": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SPACEADT": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SPACEAE": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SPACEAE1": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
   "SPACEAF": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "SPACEAF1": {
     "metallicDefault": 0,
     "roughnessDefault": 0.8,
     "surface": "concrete"
@@ -224,7 +3419,22 @@
     "roughnessDefault": 0.8,
     "surface": "concrete"
   },
+  "SPACEAG1": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "SPACEAGS": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
   "SPACEAH": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SPACEAH1": {
     "metallicDefault": 1,
     "roughnessDefault": 0.8,
     "surface": "metal"
@@ -234,12 +3444,47 @@
     "roughnessDefault": 0.8,
     "surface": "concrete"
   },
+  "SPACEAI1": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "SPACEAJ": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "SPACEAJ1": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "SPACEAJ2": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "SPACEAJT": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
   "SPACEAK": {
     "metallicDefault": 1,
     "roughnessDefault": 0.8,
     "surface": "metal"
   },
+  "SPACEAK1": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
   "SPACEAL": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "SPACEAL1": {
     "metallicDefault": 0,
     "roughnessDefault": 0.8,
     "surface": "concrete"
@@ -269,7 +3514,27 @@
     "roughnessDefault": 0.95,
     "surface": "other"
   },
+  "SPACEAP1": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "SPACEAQ": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "SPACEAQ1": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
   "SPACEAR": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SPACEAT": {
     "metallicDefault": 1,
     "roughnessDefault": 0.8,
     "surface": "metal"
@@ -284,10 +3549,35 @@
     "roughnessDefault": 0.8,
     "surface": "metal"
   },
+  "SPACEAV1": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "SPACEAW": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SPACEAX": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SPACEAY": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
   "SPACEAZ": {
     "metallicDefault": 0,
     "roughnessDefault": 0.8,
     "surface": "other"
+  },
+  "SPACEB": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
   },
   "SPACEBA": {
     "metallicDefault": 0,
@@ -314,6 +3604,31 @@
     "roughnessDefault": 0.8,
     "surface": "other"
   },
+  "SPACEBF": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SPACEBG": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SPACEBG1": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SPACEBH": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SPACEBI": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
   "SPACEBJ": {
     "metallicDefault": 0,
     "roughnessDefault": 0.8,
@@ -324,30 +3639,150 @@
     "roughnessDefault": 0.8,
     "surface": "other"
   },
+  "SPACEBK1": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SPACEBL": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "SPACEBL1": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
   "SPACEBM": {
     "metallicDefault": 0,
     "roughnessDefault": 0.8,
     "surface": "other"
   },
-  "SPACEC": {
-    "metallicDefault": 0,
+  "SPACEBN": {
+    "metallicDefault": 1,
     "roughnessDefault": 0.8,
-    "surface": "concrete"
+    "surface": "metal"
+  },
+  "SPACEBO": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SPACEBQ": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SPACEBQ1": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SPACEBR": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SPACEBS": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SPACEBT": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SPACEC": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SPACEC2": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SPACEC7": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SPACEC9": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
   },
   "SPACECA": {
-    "metallicDefault": 0,
+    "metallicDefault": 1,
     "roughnessDefault": 0.8,
-    "surface": "other"
+    "surface": "metal"
+  },
+  "SPACECA1": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SPACECB": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SPACECC": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SPACECCB": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SPACECCT": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
   },
   "SPACECD": {
-    "metallicDefault": 0,
+    "metallicDefault": 1,
     "roughnessDefault": 0.8,
-    "surface": "other"
+    "surface": "metal"
+  },
+  "SPACECD1": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SPACECE": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SPACECF": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SPACECF1": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
   },
   "SPACECG": {
     "metallicDefault": 1,
     "roughnessDefault": 0.8,
     "surface": "metal"
+  },
+  "SPACECG1": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SPACECH": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
   },
   "SPACECH1": {
     "metallicDefault": 0,
@@ -359,73 +3794,508 @@
     "roughnessDefault": 0.8,
     "surface": "metal"
   },
-  "SPACECM": {
-    "metallicDefault": 0,
+  "SPACECI1": {
+    "metallicDefault": 1,
     "roughnessDefault": 0.8,
-    "surface": "other"
+    "surface": "metal"
+  },
+  "SPACECJ": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SPACECJ1": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SPACECL": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SPACECL1": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SPACECM": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
   },
   "SPACECN": {
     "metallicDefault": 1,
     "roughnessDefault": 0.8,
     "surface": "metal"
   },
+  "SPACECN1": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SPACECN2": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "SPACECO": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SPACECO1": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SPACECP": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SPACECP1": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SPACECQ": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SPACEE2": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
   "SPACELAT": {
     "metallicDefault": 1,
-    "roughnessDefault": 0.6,
+    "roughnessDefault": 0.8,
     "surface": "metal"
   },
   "SPORT1": {
-    "metallicDefault": 0,
+    "metallicDefault": 1,
     "roughnessDefault": 0.8,
-    "surface": "other"
+    "surface": "metal"
+  },
+  "SPORT2": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SPORT3": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SPORT4": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SPORT5": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
   },
   "SPORTA": {
-    "metallicDefault": 0,
+    "metallicDefault": 1,
     "roughnessDefault": 0.8,
-    "surface": "other"
+    "surface": "metal"
   },
   "SPORTB": {
-    "metallicDefault": 0,
+    "metallicDefault": 1,
     "roughnessDefault": 0.8,
-    "surface": "other"
+    "surface": "metal"
   },
   "STRACA": {
-    "metallicDefault": 0,
+    "metallicDefault": 1,
     "roughnessDefault": 0.8,
-    "surface": "other"
+    "surface": "metal"
   },
   "STRACB": {
-    "metallicDefault": 0,
+    "metallicDefault": 1,
     "roughnessDefault": 0.8,
-    "surface": "other"
+    "surface": "metal"
+  },
+  "STRAKB": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
   },
   "STRAKB1": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "STRAKB2": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "STRAKB3": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "STRAKB4": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "STRAKB5": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "STRAKFL": {
     "metallicDefault": 0,
     "roughnessDefault": 0.8,
-    "surface": "other"
+    "surface": "concrete"
+  },
+  "STRAKO": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "STRAKR": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "STRAKR1": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "STRAKR2": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "STRAKR3": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "STRAKR4": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "STRAKR5": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "STRAKX": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "STRAKY": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "STRAKY1": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "STRAKY2": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "STRAKY3": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "STRAKY4": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "STRAKY5": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SUPPORT6": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SWXAZ1A": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "SWXAZ1B": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "SWXAZ2A": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "SWXAZ2B": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "SWXCA": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "SWXCB": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "SWXCKA": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SWXCKB": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SWXCKLA": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SWXCKLB": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SWXCLA": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "SWXCLB": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "SWXHCA": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SWXHCB": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SWXNS01": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SWXS4A": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SWXS4B": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SWXS5A": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SWXS5B": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
   },
   "SWXSAA": {
     "metallicDefault": 1,
-    "roughnessDefault": 0.6,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SWXSAB": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SWXSCA": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SWXSCB": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SWXSDA": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SWXSDB": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SWXSEA": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SWXSEB": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
     "surface": "metal"
   },
   "SWXSFA": {
     "metallicDefault": 1,
-    "roughnessDefault": 0.4,
+    "roughnessDefault": 0.8,
     "surface": "metal"
   },
-  "__skipped": [],
+  "SWXSFB": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SWXSGA": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SWXSGB": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SWXSHA": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "SWXSHB": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "TITLEA": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "TITLEB": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "concrete"
+  },
+  "WFALL01": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "fluid"
+  },
+  "WFALLT1": {
+    "metallicDefault": 0,
+    "roughnessDefault": 0.8,
+    "surface": "fluid"
+  },
+  "__skipped": [
+    "C402",
+    "C403",
+    "C405",
+    "CASF70",
+    "CASF102",
+    "CASF103",
+    "CASF104",
+    "CASF105",
+    "CASF106",
+    "CASF107",
+    "CASF108",
+    "CASFL54",
+    "CASFL55",
+    "CASFL56",
+    "CASFL57",
+    "CASFL58",
+    "CLOUDBL2",
+    "CLOUDBLU",
+    "CLOUDBNW",
+    "CLOUDBRN",
+    "CLOUDCYN",
+    "CLOUDGR2",
+    "CLOUDGRN",
+    "CLOUDORN",
+    "CLOUDPNK",
+    "CLOUDPRP",
+    "CLOUDRED",
+    "CLOUDYEL",
+    "H10",
+    "H36",
+    "H36BGLOW",
+    "H36YGLOW",
+    "H37",
+    "HELLAN",
+    "HFL14",
+    "HFL17",
+    "HFL20",
+    "OUTTEX69",
+    "OUTTEX70",
+    "OUTTEX71",
+    "OUTTEX72",
+    "OUTTEX73",
+    "OUTTEX74",
+    "OUTTEX75",
+    "OUTTEX76",
+    "OUTTEX77",
+    "OUTTEX78",
+    "OUTTEX79",
+    "OUTTEX80",
+    "OUTTEX81",
+    "SKINFLA",
+    "SKINFLB",
+    "SKINFLC",
+    "SKINFLD",
+    "SKINWAL2",
+    "SMONAA",
+    "SMONAB",
+    "SMONAC",
+    "SMONAD",
+    "SMONDA",
+    "SMONDB",
+    "SMONDC",
+    "SMONDD",
+    "SPACEAS",
+    "VINES0_1",
+    "VINES0_2",
+    "VINES0_3"
+  ],
   "__meta": {
     "source": "tools/gen_material_labeller.py",
     "wad": "D64RTR_v15.WAD",
     "scope": "all",
     "total": 1345,
-    "labelled": 83,
+    "labelled": 843,
     "surfaces": {
-      "other": 38,
-      "concrete": 17,
-      "metal": 28
+      "concrete": 332,
+      "metal": 431,
+      "fluid": 33,
+      "wood": 24,
+      "other": 23
     },
-    "exported": "2026-08-14T15:50:24.436Z"
+    "exported": "2026-08-14T16:26:25.326Z"
   }
 }
