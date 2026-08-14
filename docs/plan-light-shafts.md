@@ -108,9 +108,9 @@ gap would merge a light with the one directly above it, which is the mistake
 | `rt_volume_shaft_bands` | `4` | split the slot budget across distance bands (1 = old nearest-first) |
 | `rt_volume_shaft_max` | `32` | fixtures sent per frame (hard cap 64) |
 | `rt_volume_shaft_trace` | `4` | **shadow rays per froxel** — the real budget |
-| `rt_volume_shaft_mult` | `1` | brightness of the lamp shafts only |
+| `rt_volume_shaft_mult` | `10` | brightness of the lamp shafts only — **judged in play** |
 | `rt_volume_shaft_nearfade` | `1.5` | metres; stops a bulb whiting out the froxels touching it |
-| `rt_volume_shaft_falloff` | `1` | how much of the inverse square is handed back (0 physical, 2 sun-like) |
+| `rt_volume_shaft_falloff` | `0.5` | how much of the inverse square is handed back (0 physical, 2 sun-like) — **judged in play** |
 | `rt_volume_shaft_relcull` | `0.05` | skip a light below this fraction of the brightest **at that froxel** |
 | `rt_volume_shaft_mincontrib` | `0` | absolute radiance below which a light is skipped before its ray |
 | `rt_volume_shaft_asym` | `-2` | phase asymmetry for lamps only; below −1 = share `rt_volume_lassymetry` |
@@ -130,6 +130,19 @@ sharing them would retune shipped content: `rt_volume_shaft_mult` against
 and `rt_volume_shaft_asym` against `rt_volume_lassymetry` (0.5, tuned on the moon
 and on nine fogged maps).
 
+**`rt_volume_shaft_mult` is 10, and the size of it is not a mistake.** A lamp is a
+small sphere and its scattering is a solid angle, so what reaches a froxel a few
+metres away is a tiny fraction of what the moon — a directional light with no
+distance term at all — delivers everywhere. The two are simply not in the same
+units, which is exactly why this knob is separate from `rt_volume_lintensity`
+rather than folded into it. Both values were settled from play on 2026-08-14.
+
+**When a shipping value moves, every arm defined as a MULTIPLE of it has to move
+too.** `lampshaft-bright` was `mult 4` against a shipping 1 and `lampshaft-fat`
+was 200; at a shipping 10 those would have become a *dimming* arm and a merely
+20× one, i.e. an inversion and a no-op, with their own comments still claiming
+otherwise. They are now 40 and 2000.
+
 ## 4a. "It works but it doesn't display very far" (2026-08-14, from play)
 
 Reported after the first build: a shaft is there under the lamp you are standing
@@ -142,8 +155,10 @@ neither is brightness.
 come from the *sun*, and a directional light has no distance term at all. That
 difference, not the intensity, is why one reads across a whole level and a lamp's
 reads as a puddle around the bulb. `rt_volume_shaft_falloff` hands the exponent
-back: `radiance *= pow(max(d,1), k)`, `0` physical, `1` (the new default) `1/d`,
-`2` sun-like. Ladder: `lampshaft-phys` → shipping → `lampshaft-flat`.
+back: `radiance *= pow(max(d,1), k)` — `0` physical, `1` is `1/d`, `2` sun-like.
+**Shipping 0.5**, which is where play landed: 0 read as a puddle around the bulb
+and 1 as fog with no shape to it, so the answer is between them and nearer the
+physical end. Ladder: `lampshaft-phys` → shipping → `lampshaft-flat`.
 
 **2. The per-froxel ray budget was spent in list order — and the list is sorted
 by distance to the CAMERA.** With `mincontrib 0` the cull never fired, so the

@@ -1505,3 +1505,30 @@ sector lookup is shared with the moon gate.
 pins and in every arm; the first pass of arms had them on, which is console noise
 during play. The arms that were documented as "watch the console" now say how to
 ask for it instead: `.\tools\ab.cmd dust-on 07 -- +rt_dust_debug 1`.
+
+### Light shafts: the shipping values, settled from play (2026-08-14)
+
+`rt_volume_shaft_mult` 1 → **10**, `rt_volume_shaft_falloff` 1 → **0.5**. Both
+compiled defaults *and* their pins in `tools/d64rt-pins.cfg` — a pin overrides the
+compiled default, so the two disagreeing is how a number gets "changed" for a week
+without taking effect.
+
+The falloff is where the ladder landed: 0 read as a puddle of light around the
+bulb (the honest inverse square) and 1 as fog with no shape to it, so the answer
+is between them and nearer the physical end.
+
+The multiplier being **10** is worth a line, because it looks like a typo. A lamp
+is a small sphere and its scattering is a solid angle, so what reaches a froxel a
+few metres away is a tiny fraction of what the moon — a directional light with no
+distance term at all — delivers everywhere. The two are not in the same units,
+which is exactly the reason this knob exists separately from
+`rt_volume_lintensity` instead of being folded into it.
+
+**An arm defined as a MULTIPLE of a shipping value has to move when that value
+does.** `lampshaft-bright` was `mult 4` against a shipping 1 and `lampshaft-fat`
+was 200. At a shipping 10 those become a *dimming* arm and a merely-20× one — an
+inversion and a near no-op — while their own comments go on claiming to be "4x
+the shipping value" and "the absurd arm". Rescaled to 40 and 2000 in the same
+commit. Same failure mode as the `rt_ceiling_edge_seglen` knob that went inert
+under seven ladders (AGENTS.md, §34b): the tool still runs and still prints
+numbers, about a baseline that moved underneath it.
