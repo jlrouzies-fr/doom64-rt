@@ -80,13 +80,24 @@ function Get-GogRoots {
     $out
 }
 
+# A doom2.wad found inside a Steam or GOG install is one the user demonstrably
+# owns. A doom2.wad lying in the game folder, next to the package or in Documents
+# is just a file of the right name -- it gets shown, never auto-accepted, and the
+# user has to confirm it. Confirmed choices are remembered in the settings file.
 function Find-Iwad {
     param([string] $Hint)
 
-    if ($Hint -and (Test-Path $Hint)) { return (Resolve-Path $Hint).Path }
-    if ($env:D64RT_IWAD -and (Test-Path $env:D64RT_IWAD)) { return (Resolve-Path $env:D64RT_IWAD).Path }
+    $ranked = @()   # ordered: confirmed, steam, gog, unverified
 
-    $candidates = @("$GameDir\doom2.wad", "$Proj\doom2.wad")
+    foreach ($h in @($Hint, $env:D64RT_IWAD)) {
+        if ($h -and (Test-Path $h) -and $script:Confirmed -contains (Resolve-Path $h).Path) {
+            $ranked += @{ Path = (Resolve-Path $h).Path; Source = 'user' }
+        }
+    }
+
+    $steam = @()
+    $gog   = @()
+    $other = @()
 
     foreach ($lib in Get-SteamRoots) {
         $common = Join-Path $lib 'steamapps\common'
@@ -95,41 +106,66 @@ function Find-Iwad {
         foreach ($sub in @('Doom 2\base', 'Doom 2\masterbase', 'Doom 2\finaldoombase',
                            'DOOM 2\base', 'Ultimate Doom\base',
                            'DOOM 3 BFG Edition\base\wads')) {
-            $candidates += (Join-Path $common "$sub\doom2.wad")
+            $steam += (Join-Path $common "$sub\doom2.wad")
         }
         # 2024 "DOOM + DOOM II" puts it under a rerelease folder that keeps moving
         try {
-            $candidates += (Get-ChildItem $common -Filter 'doom2.wad' -Recurse -Depth 3 -File -ErrorAction SilentlyContinue |
-                            Select-Object -First 4 -Expand FullName)
+            $steam += (Get-ChildItem $common -Filter 'doom2.wad' -Recurse -Depth 3 -File -ErrorAction SilentlyContinue |
+                       Select-Object -First 4 -Expand FullName)
         } catch { }
     }
     foreach ($g in Get-GogRoots) {
         try {
-            $candidates += (Get-ChildItem $g -Filter 'doom2.wad' -Recurse -Depth 2 -File -ErrorAction SilentlyContinue |
-                            Select-Object -First 2 -Expand FullName)
+            $gog += (Get-ChildItem $g -Filter 'doom2.wad' -Recurse -Depth 2 -File -ErrorAction SilentlyContinue |
+                     Select-Object -First 2 -Expand FullName)
         } catch { }
     }
-    $candidates += "$env:USERPROFILE\Documents\GZDoom\doom2.wad"
 
-    # A machine can hold several doom2.wads and they are not interchangeable:
-    # the Steam DOOM II is 14,604,584 bytes, while other bundles ship trimmed or
-    # re-release variants that load but differ. Prefer the known-good size, and
-    # show whatever we picked so a wrong one is visible rather than mysterious.
-    $found = @()
-    foreach ($c in $candidates) {
-        if ($c -and (Test-Path $c)) { $found += (Resolve-Path $c).Path }
+    # Everything below this line is a file of the right name in a plausible place.
+    # It is offered, not trusted.
+    $other += "$GameDir\doom2.wad"
+    $other += "$Proj\doom2.wad"
+    $other += "$env:USERPROFILE\Documents\GZDoom\doom2.wad"
+    foreach ($h in @($Hint, $env:D64RT_IWAD)) { if ($h) { $other += $h } }
+
+    # Several doom2.wads on one machine are not interchangeable: the Steam DOOM II
+    # is 14,604,584 bytes, other bundles ship variants that load but differ. Within
+    # a source, prefer the known-good size.
+    function Rank([string[]] $paths, [string] $src) {
+        $ok = @()
+        foreach ($p in $paths) { if ($p -and (Test-Path $p)) { $ok += (Resolve-Path $p).Path } }
+        $ok = $ok | Select-Object -Unique
+        $good = @($ok | Where-Object { (Get-Item $_).Length -eq 14604584 })
+        $rest = @($ok | Where-Object { (Get-Item $_).Length -ne 14604584 })
+        # parenthesised on purpose: `$good + $rest | ForEach` binds the pipeline to
+        # $rest alone and returns a mix of strings and hashtables.
+        $sorted = @($good) + @($rest)
+        return @($sorted | ForEach-Object { @{ Path = $_; Source = $src } })
     }
-    $found = $found | Select-Object -Unique
-    if (-not $found) { return $null }
-    $exact = $found | Where-Object { (Get-Item $_).Length -eq 14604584 } | Select-Object -First 1
-    if ($exact) { return $exact }
-    return $found[0]
+
+    $ranked += Rank $steam 'steam'
+    $ranked += Rank $gog   'gog'
+    $ranked += Rank $other 'other'
+
+    # a path the user already confirmed outranks everything
+    $conf = $ranked | Where-Object { $script:Confirmed -contains $_.Path } | Select-Object -First 1
+    if ($conf) { return @{ Path = $conf.Path; Source = 'user' } }
+    if ($ranked.Count) { return $ranked[0] }
+    return $null
 }
 
 # ---------------------------------------------------------------------------
 #  The checks themselves
 # ---------------------------------------------------------------------------
-$script:IwadPath = ""
+$script:IwadPath   = ""
+$script:IwadSource = ""
+$script:LastAuto   = ""
+# Paths the user has vouched for: whatever the settings file or D64RT_IWAD already
+# held (they put it there), plus anything they browse to or type this session.
+$script:Confirmed  = @()
+foreach ($h in @($IwadHint, $env:D64RT_IWAD)) {
+    if ($h -and (Test-Path $h)) { $script:Confirmed += (Resolve-Path $h).Path }
+}
 
 function Get-Checks {
     $c = @()
@@ -156,19 +192,30 @@ function Get-Checks {
              Bad="The authored material metadata is missing or is the stock file. Re-extract the download."
              Link=$null }
 
-    $iwadDetail = ""
+    $iwadOk     = $false
+    $iwadDetail = "Retribution is a PWAD - it needs a DOOM II you own. Buy it on Steam or GOG, or point at your copy below."
     if ($script:IwadPath) {
         $len   = (Get-Item $script:IwadPath).Length
         $parts = $script:IwadPath -split '\\'
         $short = if ($parts.Count -gt 3) { '...\' + ($parts[-3..-1] -join '\') } else { $script:IwadPath }
-        $note  = if ($len -eq 14604584) { "" } else { "  - unusual size, try another copy if the game looks wrong" }
-        $iwadDetail = "{0}`r`n{1:N0} bytes{2}" -f $short, $len, $note
+        $size  = if ($len -eq 14604584) { "{0:N0} bytes" -f $len }
+                 else { "{0:N0} bytes - unusual size" -f $len }
+
+        switch ($script:IwadSource) {
+            'steam' { $iwadOk = $true;  $iwadDetail = "{0}`r`n{1}  (Steam install)" -f $short, $size }
+            'gog'   { $iwadOk = $true;  $iwadDetail = "{0}`r`n{1}  (GOG install)"   -f $short, $size }
+            'user'  { $iwadOk = $true;  $iwadDetail = "{0}`r`n{1}  (confirmed)"     -f $short, $size }
+            default { $iwadOk = $false
+                      $iwadDetail = "Found a doom2.wad outside any Steam or GOG install:`r`n{0}  ({1}). Confirm it is your own copy." -f $short, $size }
+        }
     }
     $c += @{ Key='iwad'; Name='DOOM II IWAD'; Req=$true
-             Ok=[bool]$script:IwadPath
+             Ok=$iwadOk
              Good=$iwadDetail
-             Bad="Retribution is a PWAD - it needs a DOOM II you own. Buy it on Steam or GOG, or point at your copy below."
-             Link='https://store.steampowered.com/app/2300/DOOM_II/'; LinkText='DOOM II on Steam' }
+             Bad=$iwadDetail
+             Link=(&{ if ($script:IwadPath) { $null } else { 'https://store.steampowered.com/app/2300/DOOM_II/' } })
+             LinkText='DOOM II on Steam'
+             Confirm=($script:IwadPath -and -not $iwadOk) }
 
     $c += @{ Key='retribution'; Name='Doom 64: Retribution v1.5'; Req=$true
              Ok=(Test-Path "$GameDir\D64RTR_v15.WAD")
@@ -276,8 +323,28 @@ function Clear-Rows {
 
 function Draw-Checks {
     Clear-Rows
-    $script:IwadPath = Find-Iwad -Hint $iwadBox.Text
-    if ($script:IwadPath) { $iwadBox.Text = $script:IwadPath }
+
+    # Text typed or browsed into the box is a deliberate choice, so it counts as
+    # confirmation. Text we auto-filled ourselves does not.
+    $typed = $iwadBox.Text
+    $script:TypedBad = ""
+    if ($typed -and $typed -ne $script:LastAuto) {
+        if (Test-Path $typed) {
+            $script:Confirmed += (Resolve-Path $typed).Path
+        } else {
+            # Otherwise we silently fall back to auto-detection and the box text
+            # changes under the user, which reads as "it ignored what I typed".
+            $script:TypedBad = $typed
+        }
+    }
+
+    $info = Find-Iwad -Hint $typed
+    $script:IwadPath   = if ($info) { $info.Path }   else { "" }
+    $script:IwadSource = if ($info) { $info.Source } else { "" }
+    if ($script:IwadPath) {
+        $iwadBox.Text     = $script:IwadPath
+        $script:LastAuto  = $script:IwadPath
+    }
 
     $checks = Get-Checks
     $y = $listTop
@@ -312,6 +379,21 @@ function Draw-Checks {
         $d.Location  = New-Object System.Drawing.Point(286, 5)
         $p.Controls.Add($d)
 
+        if ($c.Confirm) {
+            $use           = New-Object System.Windows.Forms.Button
+            $use.Text      = 'Use this copy'
+            $use.FlatStyle = 'Flat'
+            $use.BackColor = $PANEL
+            $use.ForeColor = $AMBER
+            $use.Size      = New-Object System.Drawing.Size(104, 24)
+            $use.Location  = New-Object System.Drawing.Point(160, 13)
+            $use.Add_Click({
+                if ($script:IwadPath) { $script:Confirmed += $script:IwadPath }
+                Draw-Checks
+            })
+            $p.Controls.Add($use)
+        }
+
         if (-not $c.Ok -and $c.Link) {
             $lnk                 = New-Object System.Windows.Forms.LinkLabel
             $lnk.Text            = $c.LinkText
@@ -333,7 +415,10 @@ function Draw-Checks {
 
     $script:AllOk = ($missing -eq 0)
     $launch.Enabled = $script:AllOk
-    if ($script:AllOk) {
+    if ($script:TypedBad) {
+        $status.Text      = "No file at that path - check it and press Re-check."
+        $status.ForeColor = $AMBER
+    } elseif ($script:AllOk) {
         $status.Text      = "All checks passed  -  upscaler: $(Get-Upscaler)"
         $status.ForeColor = $GREEN
     } else {
@@ -376,7 +461,11 @@ $browse.Add_Click({
     $dlg = New-Object System.Windows.Forms.OpenFileDialog
     $dlg.Filter = 'DOOM II IWAD (doom2.wad)|doom2.wad|All WADs (*.wad)|*.wad'
     $dlg.Title  = 'Where is your doom2.wad?'
-    if ($dlg.ShowDialog() -eq 'OK') { $iwadBox.Text = $dlg.FileName; Draw-Checks }
+    if ($dlg.ShowDialog() -eq 'OK') {
+        $script:Confirmed += (Resolve-Path $dlg.FileName).Path
+        $iwadBox.Text = $dlg.FileName
+        Draw-Checks
+    }
 })
 $form.Controls.Add($browse)
 
