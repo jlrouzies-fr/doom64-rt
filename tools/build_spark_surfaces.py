@@ -48,9 +48,17 @@ TEXTURES_JSON = (
 )
 
 # Surface classes the renderer understands. Anything else in a label file is
-# passed through verbatim and treated as non-metal by the engine, so a new class
-# appearing upstream degrades to debris rather than to an error.
-KNOWN = ("metal", "concrete", "other")
+# passed through verbatim; the engine parses an unknown class to `other`, which
+# SPARKS -- so a class this build has not learned yet degrades to the shipped
+# behaviour rather than to an error or to something visibly wrong.
+#
+# `metal` and `other` spark. The rest throw debris, each with its own shape:
+#   concrete  grey chips
+#   wood      long thin splinters, light, tumbling
+#   dirt      small crumbs that do not bounce
+#   flesh     blood droplets that splat
+#   fluid     a wide fast splash in the liquid's own colour
+KNOWN = ("metal", "concrete", "wood", "dirt", "flesh", "fluid", "other")
 
 # Liquids are marked metallic for REFLECTIVITY, never because they are metal, and
 # they must never spark. The liquid gate in P_LineAttack already excludes them;
@@ -71,9 +79,14 @@ HEADER = """\
 # means metal, for backwards compatibility with the first version of this file.
 #
 #   metal      -> hot SPARKS
-#   concrete   -> pale grey DEBRIS
-#   other      -> darker neutral DEBRIS
-#   <anything> -> treated as non-metal, i.e. debris
+#   other      -> hot SPARKS (the fallback)
+#   concrete   -> grey chips
+#   wood       -> long thin splinters, light and tumbling
+#   dirt       -> small crumbs that do not bounce
+#   flesh      -> blood droplets that splat
+#   fluid      -> a wide fast splash, coloured like the liquid
+#   <anything> -> parsed as `other`, i.e. sparks -- an unknown class degrades to
+#                 the shipped behaviour rather than to something visibly wrong
 #
 # Anything NOT listed here is non-metal and gets debris when rt_spark_debris is
 # on. Use `rt_spark_surface_debug 1` and shoot a wall to see what a surface is

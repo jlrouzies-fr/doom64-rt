@@ -35,6 +35,7 @@ were written *after* losing a day to the thing they describe.
 | Per-map fog | [`docs/rt-fog.md`](docs/rt-fog.md) | What it is, which maps, how to tune it. |
 | …its implementation | [`docs/rt-fog-implementation.md`](docs/rt-fog-implementation.md) | The code path end to end, the two RTGL1 froxel changes, and its four traps. |
 | Volumetric smoke | [`docs/rt-smoke.md`](docs/rt-smoke.md) | `rt_smoke_*`, the six sources, the smoke lab, and why the sim is on the CPU. |
+| Impact sparks and debris | [`docs/rt-impact-fx.md`](docs/rt-impact-fx.md) | `rt_spark_*`. The hitscan hook that *is* a real game hook, the PUFF palette the look comes from, per-material debris, and **the texture surface classification** that drives it. Four bugs written up because each looked like the opposite of what it was. |
 | Water | [`docs/rt-water.md`](docs/rt-water.md) | Stylized surface + projected caustics, all cvars, four traps. |
 | Persistent blood | [`docs/blood-persist.md`](docs/blood-persist.md) | `rt_gore_*`, per-monster blood colour, and the material-naming bug that hid it. |
 | Flames | [`docs/flame-lighting.md`](docs/flame-lighting.md) | All 84 flame sprites are lit engine-side. Read before touching any torch, fire or candle. |
@@ -49,7 +50,7 @@ were written *after* losing a day to the thing they describe.
 | [`docs/rt-feature-ideas.md`](docs/rt-feature-ideas.md) | The shortlist of candidate RT features, with what was **rejected and why** — read this before proposing a new effect. |
 | [`docs/plan-light-shafts.md`](docs/plan-light-shafts.md) | Shafts from ordinary lamps, not just the moon. The all-lights froxel estimate already exists for fog; the shaft pass just does not read it. |
 | [`docs/plan-heat-haze.md`](docs/plan-heat-haze.md) | Refractive air over lava and fire, via the unused `THIN_MEDIA` primitive flag. |
-| [`docs/plan-impact-fx.md`](docs/plan-impact-fx.md) | Impact sparks as real emitters, and scorch decals, riding the existing puff and decal paths. |
+| [`docs/plan-impact-fx.md`](docs/plan-impact-fx.md) | **Scorch decals only** — the sparks and debris half of this shipped, and is [`docs/rt-impact-fx.md`](docs/rt-impact-fx.md). |
 
 ## Lighting — the repair pipeline
 

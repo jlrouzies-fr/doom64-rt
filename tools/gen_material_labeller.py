@@ -282,6 +282,18 @@ def gather() -> tuple[list[dict], dict]:
 
 # ------------------------------------------------------------------- the page
 
+# Surface class -> (metallicDefault, impact effect). Shading on one side, the impact
+# system on the other; see docs/plan-metal-labelling.md and docs/plan-impact-fx.md.
+SURFACES = [
+    ("metal", 1.0, "sparks"),
+    ("concrete", 0.0, "dust, chips"),
+    ("dirt", 0.0, "dust, scatter"),
+    ("wood", 0.0, "splinters"),
+    ("fluid", 0.0, "splash"),
+    ("flesh", 0.0, "blood"),
+    ("other", 0.0, "no sparks"),
+]
+
 BUCKETS = [
     ("mirror", 0.05, "chrome, still water, a deliberate mirror"),
     ("polished", 0.20, "buffed plate, clean glass, wet stone"),
@@ -299,6 +311,9 @@ def write_html(records: list[dict], stats: dict) -> None:
     total = len(records)
 
     map_opts = "".join(f'<option value="{i}">{m}</option>' for i, m in enumerate(stats["maps"]))
+    state_opts = "".join(
+        f'<option value="{n}">{n} &middot; {f}</option>' for n, _, f in SURFACES
+    )
 
     bucket_rows = "".join(
         f'<button class="bk" data-b="{i}" type="button">'
@@ -452,6 +467,13 @@ button {{ font:inherit; color:inherit; background:none; border:0; cursor:pointer
 /* ── filmstrip ─────────────────────────────────────────────────────────── */
 .strip {{ grid-area:strip; background:var(--void); border-top:1px solid var(--rule-soft); }}
 .strip-rail {{ display:flex; gap:5px; padding:11px 18px; overflow-x:auto; scrollbar-width:thin; }}
+.strip-rail[hidden], .railmsg[hidden], .void[hidden] {{ display:none; }}
+.railmsg {{ margin:0; padding:24px 18px; font-size:12px; color:var(--ink-3); }}
+.railmsg b {{ color:var(--blood); font-weight:400; }}
+.void {{ margin:0; max-width:44ch; text-align:center; font-size:13px; line-height:1.6;
+  color:var(--ink-3); }}
+.void b {{ color:var(--ink-2); font-weight:400; }}
+.stage.empty #big {{ display:none; }}
 .cell {{ position:relative; flex:0 0 auto; width:52px; height:52px; padding:0;
   border:1px solid var(--rule-soft); background:var(--pit); }}
 .cell img {{ width:100%; height:100%; object-fit:cover; image-rendering:pixelated; display:block; opacity:.62; }}
@@ -556,7 +578,7 @@ textarea {{ min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
       <div class="title"><b>Metal or not</b> &mdash; then how rough</div>
     </div>
     <div class="flag" id="flag" hidden>working set <b id="flagname">&mdash;</b>
-      <button type="button" id="flagoff">show all</button></div>
+      <button type="button" id="flagoff">clear filters</button></div>
     <div class="prog">
       <div class="meter" aria-hidden="true"><i id="mfill" style="width:0"></i><i id="pfill" class="park" style="width:0"></i></div>
       <div class="tally" id="tally">0 of {total} labelled</div>
@@ -564,7 +586,7 @@ textarea {{ min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
   </div>
 
   <main class="stage" id="stage">
-    <div class="canvaswrap"><img id="big" alt=""></div>
+    <div class="canvaswrap"><img id="big" alt=""><p class="void" id="void" hidden></p></div>
     <div class="plate">
       <div>
         <div class="name" id="tname">&nbsp;</div>
@@ -574,7 +596,10 @@ textarea {{ min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
     </div>
   </main>
 
-  <div class="strip"><div class="strip-rail" id="rail"></div></div>
+  <div class="strip">
+    <div class="strip-rail" id="rail"></div>
+    <p class="railmsg" id="railmsg" hidden></p>
+  </div>
 
   <aside class="side">
 
@@ -643,10 +668,18 @@ textarea {{ min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
         <select id="msel" aria-label="Limit to one map"><option value="-1">all maps</option>{map_opts}</select>
         <select id="gsel" aria-label="Jump to prefix"><option value="">&mdash; prefix &mdash;</option>{group_opts}</select>
       </div>
+      <select id="ssel" aria-label="Limit by label state">
+        <option value="all">any label state</option>
+        <option value="unlabelled">unlabelled only</option>
+        <option value="labelled">labelled (any class)</option>
+        <option value="parked">parked</option>
+        {state_opts}
+      </select>
       <p class="note">Pick a map to label just that map first, apply it, and look at the
-      result in game before committing to all {total}. Everything &mdash; arrows,
-      <kbd>&#9251;</kbd>, the strip &mdash; stays inside the set. Labels stay put when you
-      clear the filter; they are never scoped to a map.</p>
+      result in game before committing to all {total}. The two filters compose, so
+      <b>MAP01 + metal</b> is how you re-check a batch after seeing it. Everything &mdash;
+      arrows, <kbd>&#9251;</kbd>, the strip, the counter &mdash; stays inside the set. Labels
+      stay put when you clear a filter; they are never scoped to one.</p>
       <input type="search" id="find" placeholder="name or prefix, then Enter" aria-label="Jump to texture">
       <div class="row">
         <button class="btn" id="nextun" type="button">next unlabelled</button>
@@ -693,11 +726,14 @@ textarea {{ min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
   const SURF = {{
     metal:    {{ m: 1, fx: 'sparks' }},
     concrete: {{ m: 0, fx: 'dust, chips' }},
+    dirt:     {{ m: 0, fx: 'dust, scatter' }},
     wood:     {{ m: 0, fx: 'splinters' }},
     fluid:    {{ m: 0, fx: 'splash' }},
+    flesh:    {{ m: 0, fx: 'blood' }},
     other:    {{ m: 0, fx: 'no sparks' }}
   }};
-  const CLASSES = ['metal', 'concrete', 'wood', 'fluid', 'other', 'park'];
+  const CLASSES = ['metal', 'concrete', 'dirt', 'wood', 'fluid', 'flesh', 'other'];
+  const STATES = CLASSES.concat(['park']);
 
   // Labels saved before the surface axis existed carry only {{m, b}}. Read them as
   // metal/other rather than making anyone re-label work they already did.
@@ -710,7 +746,8 @@ textarea {{ min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
   let labels = {{}};                    // name -> {{m:0|1, b:bucketIndex}} | {{park:1}}
   let idx = 0;                         // index into T
   let mapf = -1;                       // -1 = all maps, else index into MAPS
-  let view = [];                       // indices into T that survive the filter
+  let statf = 'all';                   // 'all' | 'unlabelled' | 'labelled' | 'parked' | a class
+  let view = [];                       // indices into T that survive BOTH filters
   let history = [];
 
   try {{ labels = JSON.parse(localStorage.getItem(KEY) || '{{}}') || {{}}; }} catch (e) {{ labels = {{}}; }}
@@ -726,16 +763,42 @@ textarea {{ min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
     const m = s === null ? -1 : +s;
     if (m >= 0 && m < MAPS.length) mapf = m;
   }} catch (e) {{}}
+  try {{
+    const s = localStorage.getItem(KEY + ':stat');
+    if (s && (s === 'unlabelled' || s === 'labelled' || s === 'parked' || SURF[s])) statf = s;
+  }} catch (e) {{}}
 
   function save() {{
     try {{
       localStorage.setItem(KEY, JSON.stringify(labels));
       localStorage.setItem(KEY + ':at', String(idx));
       localStorage.setItem(KEY + ':map', String(mapf));
+      localStorage.setItem(KEY + ':stat', statf);
     }} catch (e) {{ say('Browser storage is full — copy your JSON out now.'); }}
   }}
 
-  const inFilter = i => mapf < 0 || T[i].m.indexOf(mapf) >= 0;
+  // The two filters COMPOSE -- "MAP01 + metal" is the whole point, since that is how
+  // you re-check a pilot batch after seeing it in game.
+  const inMap = i => mapf < 0 || T[i].m.indexOf(mapf) >= 0;
+
+  function inStat(i) {{
+    if (statf === 'all') return true;
+    const l = labels[T[i].n];
+    if (statf === 'unlabelled') return !l;
+    if (!l) return false;
+    if (statf === 'parked') return !!l.park;
+    if (statf === 'labelled') return !l.park;
+    return !l.park && surfaceOf(l) === statf;
+  }}
+
+  const inFilter = i => inMap(i) && inStat(i);
+
+  function filterLabel() {{
+    const bits = [];
+    if (mapf >= 0) bits.push(MAPS[mapf]);
+    if (statf !== 'all') bits.push(statf);
+    return bits.join(' + ');
+  }}
 
   // ---- element refs ------------------------------------------------------
   const big = document.getElementById('big');
@@ -756,6 +819,9 @@ textarea {{ min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
   const flagname = document.getElementById('flagname');
   const only = document.getElementById('only');
   const fluidnote = document.getElementById('fluidnote');
+  const ssel = document.getElementById('ssel');
+  const railmsg = document.getElementById('railmsg');
+  const voidEl = document.getElementById('void');
   const lobe = document.getElementById('lobe');
   const lctx = lobe.getContext('2d');
 
@@ -790,13 +856,13 @@ textarea {{ min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
     c.classList.toggle('cur', i === idx);
     c.classList.toggle('done', !!l);
     const s = !l ? null : (l.park ? 'park' : surfaceOf(l));
-    CLASSES.forEach(k => c.classList.toggle('s-' + k, s === k));
+    STATES.forEach(k => c.classList.toggle('s-' + k, s === k));
   }}
 
   // ---- the working set ---------------------------------------------------
   // One place decides what is in play. Navigation, the strip, the counter and the
   // "next unlabelled" hunt all read `view`, so nothing can step outside the filter.
-  function rebuildView() {{
+  function rebuildView(preferPos) {{
     view = [];
     let lastGroup = null;
     for (let i = 0; i < N; i++) {{
@@ -813,15 +879,23 @@ textarea {{ min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
       view.push(i);
     }}
     if (view.length && !inFilter(idx)) {{
-      // Snap to the nearest member rather than dumping the labeller at the top.
-      let best = view[0], bd = Infinity;
-      for (const i of view) {{ const d = Math.abs(i - idx); if (d < bd) {{ bd = d; best = i; }} }}
-      idx = best;
+      if (preferPos !== undefined) {{
+        // The current item just filtered itself out by being labelled. Hold the
+        // POSITION, which is now whatever came after it -- that is what makes
+        // "unlabelled only" feel like a queue that drains.
+        idx = view[Math.max(0, Math.min(view.length - 1, preferPos))];
+      }} else {{
+        // Snap to the nearest member rather than dumping the labeller at the top.
+        let best = view[0], bd = Infinity;
+        for (const i of view) {{ const d = Math.abs(i - idx); if (d < bd) {{ bd = d; best = i; }} }}
+        idx = best;
+      }}
     }}
-    const on = mapf >= 0;
+    const on = mapf >= 0 || statf !== 'all';
     flag.hidden = !on;
-    flagname.textContent = on ? MAPS[mapf] : '—';
+    flagname.textContent = on ? filterLabel() : '—';
     msel.value = String(mapf);
+    ssel.value = statf;
     only.disabled = !on;
     if (!on) only.checked = false;
   }}
@@ -861,6 +935,26 @@ textarea {{ min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
   const callEls = Array.from(document.querySelectorAll('.call'));
 
   function render() {{
+    // Empty combination: say which one, rather than presenting a blank rail.
+    const empty = view.length === 0;
+    stage.classList.toggle('empty', empty);
+    rail.hidden = empty;
+    railmsg.hidden = !empty;
+    voidEl.hidden = !empty;
+    if (empty) {{
+      const msg = 'Nothing is <b>' + filterLabel() + '</b>.';
+      railmsg.innerHTML = msg + ' Widen the working set to carry on.';
+      voidEl.innerHTML = 'No texture is <b>' + filterLabel() + '</b>.<br>'
+        + 'Change the map or the label state in the working set panel.';
+      tname.textContent = '—';
+      tfacts.innerHTML = '';
+      verdict.innerHTML = '';
+      STATES.forEach(k => stage.classList.remove('s-' + k));
+      fluidnote.hidden = true;
+      tallyUp();
+      return;
+    }}
+
     const r = T[idx], l = labels[r.n];
     big.src = src(r);
     big.alt = r.n;
@@ -873,7 +967,7 @@ textarea {{ min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
     const f = ['<span><b>' + r.w + '&times;' + r.h + '</b> px</span>',
                '<span>group <b>' + r.g + '</b></span>',
                '<span><b>' + (vpos() + 1) + '</b> / ' + view.length
-                 + (mapf >= 0 ? ' in ' + MAPS[mapf] : '') + '</span>'];
+                 + (filterLabel() ? ' in ' + filterLabel() : '') + '</span>'];
     // How widely a texture is reused is how much care it deserves: a wall in thirty
     // maps is worth a second look, a one-map trim is not.
     if (r.m.length) {{
@@ -895,7 +989,7 @@ textarea {{ min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
     }} else v.push('<span class="chip">unlabelled</span>');
     verdict.innerHTML = v.join('');
 
-    CLASSES.forEach(k => stage.classList.toggle('s-' + k, s === k));
+    STATES.forEach(k => stage.classList.toggle('s-' + k, s === k));
     // The roughness caveat surfaces only where it applies, rather than sitting there
     // as permanent noise on the 1300 textures it has nothing to do with.
     fluidnote.hidden = s !== 'fluid';
@@ -925,10 +1019,10 @@ textarea {{ min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
       if (l.park) park++; else done++;
     }}
     const n = view.length || 1;
-    const where = mapf >= 0 ? ' in ' + MAPS[mapf] : ' labelled';
+    const where = filterLabel() ? ' in ' + filterLabel() : ' labelled';
     tally.innerHTML = '<b>' + done + '</b> of ' + view.length + where
       + (park ? ' &middot; ' + park + ' parked' : '')
-      + (mapf >= 0 ? ' <span class="glob">&middot; ' + gdone + ' / ' + N + ' overall</span>' : '');
+      + (filterLabel() ? ' <span class="glob">&middot; ' + gdone + ' / ' + N + ' overall</span>' : '');
     mfill.style.width = (done / n * 100) + '%';
     pfill.style.width = (park / n * 100) + '%';
     pfill.style.left = (done / n * 100) + '%';
@@ -978,9 +1072,19 @@ textarea {{ min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
       s: kind
     }};
     pending = null;
-    save();
-    if (kind === 'clear') {{ render(); return; }}
     const p = vpos();
+    save();
+
+    // Under a label-state filter the item may have just filtered itself out. Rebuild
+    // and hold the position, so "unlabelled only" drains like a queue.
+    if (statf !== 'all') {{
+      rebuildView(p);
+      cells.forEach((c, i) => paintCell(i));
+      render();
+      return;
+    }}
+    paintCell(idx);
+    if (kind === 'clear') {{ render(); return; }}
     if (p < view.length - 1) goView(p + 1); else render();
   }}
 
@@ -989,8 +1093,9 @@ textarea {{ min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
     if (!h) {{ say('Nothing to undo.'); return; }}
     const [name, prior, at] = h;
     if (prior === null) delete labels[name]; else labels[name] = prior;
-    if (inFilter(at)) idx = at;          // never let undo walk out of the working set
     pending = null;
+    if (statf !== 'all') rebuildView();   // restoring a label can change what qualifies
+    if (inFilter(at)) idx = at;           // never let undo walk out of the working set
     cells.forEach((c, i) => paintCell(i));
     render();
     save();
@@ -1004,15 +1109,15 @@ textarea {{ min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
       const p = (start + s) % n;
       if (!labels[T[view[p]].n]) {{ goView(p); return; }}
     }}
-    say(mapf >= 0 ? 'Every texture in ' + MAPS[mapf] + ' has a call on it.'
-                  : 'Every texture has a call on it.');
+    say(filterLabel() ? 'Nothing left unlabelled in ' + filterLabel() + '.'
+                      : 'Every texture has a call on it.');
   }}
 
   // ---- export / import ---------------------------------------------------
   function exportObj() {{
     // Default is everything labelled, whatever the filter says. Narrowing is opt-in
     // so the applier never has to work out what scope it was handed.
-    const scoped = only.checked && mapf >= 0;
+    const scoped = only.checked && (mapf >= 0 || statf !== 'all');
     const out = {{}};
     const skipped = [];
     T.forEach((r, i) => {{
@@ -1036,7 +1141,7 @@ textarea {{ min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
     out.__meta = {{
       source: 'tools/gen_material_labeller.py',
       wad: 'D64RTR_v15.WAD',
-      scope: scoped ? MAPS[mapf] : 'all',
+      scope: scoped ? filterLabel() : 'all',
       total: scoped ? view.length : N,
       labelled: labelled,
       surfaces: counts,
@@ -1109,12 +1214,11 @@ textarea {{ min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
   document.getElementById('undo').addEventListener('click', undo);
   document.getElementById('nextun').addEventListener('click', nextUnlabelled);
 
-  function setMap(m) {{
+  // An empty combination is allowed and explained, not silently refused -- refusing it
+  // would make "MAP01 + wood" look broken when the honest answer is "there is none".
+  function setFilters(m, s) {{
     mapf = m;
-    if (!T.some((r, i) => inFilter(i))) {{
-      say('No texture in that map, filter left alone.');
-      mapf = -1;
-    }}
+    statf = s;
     pending = null;
     rebuildView();
     cells.forEach((c, i) => paintCell(i));
@@ -1122,15 +1226,16 @@ textarea {{ min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
     save();
   }}
 
-  msel.addEventListener('change', e => {{ setMap(+e.target.value); e.target.blur(); }});
-  document.getElementById('flagoff').addEventListener('click', () => setMap(-1));
+  msel.addEventListener('change', e => {{ setFilters(+e.target.value, statf); e.target.blur(); }});
+  ssel.addEventListener('change', e => {{ setFilters(mapf, e.target.value); e.target.blur(); }});
+  document.getElementById('flagoff').addEventListener('click', () => setFilters(-1, 'all'));
   only.addEventListener('change', () => {{ if (!io.hidden) io.value = exportText(); }});
 
   document.getElementById('gsel').addEventListener('change', e => {{
     const g = e.target.value;
     if (!g) return;
     const i = view.find(j => T[j].g === g);
-    if (i === undefined) say(g + ' is not in ' + (mapf >= 0 ? MAPS[mapf] : 'the set') + '.');
+    if (i === undefined) say(g + ' is not in ' + (filterLabel() || 'the set') + '.');
     else go(i);
     e.target.blur();
   }});
@@ -1146,8 +1251,8 @@ textarea {{ min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
     if (i === undefined) i = view.find(j => T[j].n.indexOf(q) >= 0);
     if (i === undefined) {{
       const anywhere = T.some(r => r.n.indexOf(q) >= 0);
-      say(anywhere && mapf >= 0
-        ? q + ' exists, but not in ' + MAPS[mapf] + '.'
+      say(anywhere && filterLabel()
+        ? q + ' exists, but not in ' + filterLabel() + '.'
         : 'No texture matches ' + q + '.');
       return;
     }}
@@ -1173,6 +1278,8 @@ textarea {{ min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
       case 'c': e.preventDefault(); call('concrete'); break;
       case 'w': e.preventDefault(); call('wood'); break;
       case 'q': e.preventDefault(); call('fluid'); break;
+      case 'e': e.preventDefault(); call('flesh'); break;
+      case 'r': e.preventDefault(); call('dirt'); break;
       case 'a': e.preventDefault(); call('other'); break;
       case 'd': e.preventDefault(); setBucket(4); break;
       case 'f': e.preventDefault(); setBucket(5); break;

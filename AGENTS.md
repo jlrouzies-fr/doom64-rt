@@ -19,6 +19,14 @@ Material / emissive authoring rules:
 
 → **`material-authoring-spec.md`**
 
+Hand-labelling every texture's surface class and roughness (the categorisation
+gallery, its export format, and the two appliers that consume it):
+
+→ **`docs/plan-metal-labelling.md`** — how to run it and how the JSON is applied
+
+→ **`docs/skill-texture-material-labeller.md`** — how to rebuild the page from
+  scratch: image sources, the 16 MB budget, and the decisions worth keeping
+
 Open lighting bugs / test log (wash, blink, ceiling lamps):
 
 → **`open-issues-rt-lighting.md`**
@@ -44,11 +52,14 @@ fog's froxel volume, and why the sim is on the CPU):
 
 → **`docs/rt-smoke.md`**
 
-Impact sparks (`rt_spark_*`) — the hitscan hook in `P_LineAttack` that *is* a real
-game hook, the PUFF palette the look is derived from, why additive is the feature
-rather than the bug, and the three collision tiers:
+Impact sparks and wall debris (`rt_spark_*`) — the hitscan hook in `P_LineAttack`
+that *is* a real game hook, the PUFF palette the look comes from, per-material
+debris driven by the **texture surface classification**, and four bugs that each
+looked like the opposite of what they were (`trace.HitTexture` is not filled in
+for walls; a rasterized primitive is fullbright; `.pNext` omitted drops a light
+silently; `rt/data/` is not in the lump filesystem):
 
-→ **`docs/plan-impact-fx.md`**
+→ **`docs/rt-impact-fx.md`**
 
 Blood splats that stay on the floor (`rt_gore_*`, why the one-second lifetime
 was in the WAD's DECORATE and not in the renderer, the explosion burst, and

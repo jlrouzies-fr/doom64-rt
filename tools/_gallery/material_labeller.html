@@ -27,6 +27,10 @@
   --timber-wash:#221509;
   --fluid:#4F8FD0;         /* water, blood, nukage, lava — splash */
   --fluid-wash:#0E1B29;
+  --flesh:#B0675F;         /* organic wall — blood */
+  --flesh-wash:#241211;
+  --dirt:#8C7A46;          /* loose ground — dust and scatter */
+  --dirt-wash:#1E1A0D;
   --park:#B8912F;          /* parked / ambiguous */
   --park-wash:#241B08;
   --mono:ui-monospace,"Cascadia Mono",Consolas,"SF Mono",monospace;
@@ -104,6 +108,8 @@ button { font:inherit; color:inherit; background:none; border:0; cursor:pointer;
 .stage.s-concrete #big { box-shadow:0 0 0 1px var(--crete), 0 18px 48px -18px #000; }
 .stage.s-wood     #big { box-shadow:0 0 0 1px var(--timber), 0 18px 48px -18px #000; }
 .stage.s-fluid    #big { box-shadow:0 0 0 1px var(--fluid), 0 0 30px -8px rgba(79,143,208,.30), 0 18px 48px -18px #000; }
+.stage.s-flesh    #big { box-shadow:0 0 0 1px var(--flesh), 0 18px 48px -18px #000; }
+.stage.s-dirt     #big { box-shadow:0 0 0 1px var(--dirt), 0 18px 48px -18px #000; }
 .stage.s-other    #big { box-shadow:0 0 0 1px var(--blood-dim), 0 18px 48px -18px #000; }
 .stage.s-park     #big { box-shadow:0 0 0 1px var(--park), 0 18px 48px -18px #000; }
 .plate {
@@ -123,6 +129,8 @@ button { font:inherit; color:inherit; background:none; border:0; cursor:pointer;
 .chip.concrete { color:var(--crete); border-color:var(--crete); background:var(--crete-wash); }
 .chip.wood     { color:var(--timber); border-color:var(--timber); background:var(--timber-wash); }
 .chip.fluid    { color:var(--fluid); border-color:var(--fluid); background:var(--fluid-wash); }
+.chip.flesh    { color:var(--flesh); border-color:var(--flesh); background:var(--flesh-wash); }
+.chip.dirt     { color:var(--dirt); border-color:var(--dirt); background:var(--dirt-wash); }
 .chip.other    { color:var(--blood); border-color:var(--blood-dim); background:var(--blood-wash); }
 .chip.park     { color:var(--park); border-color:var(--park); background:var(--park-wash); }
 .chip .fx { color:var(--ink-3); text-transform:none; letter-spacing:.02em; }
@@ -132,6 +140,13 @@ button { font:inherit; color:inherit; background:none; border:0; cursor:pointer;
 /* ── filmstrip ─────────────────────────────────────────────────────────── */
 .strip { grid-area:strip; background:var(--void); border-top:1px solid var(--rule-soft); }
 .strip-rail { display:flex; gap:5px; padding:11px 18px; overflow-x:auto; scrollbar-width:thin; }
+.strip-rail[hidden], .railmsg[hidden], .void[hidden] { display:none; }
+.railmsg { margin:0; padding:24px 18px; font-size:12px; color:var(--ink-3); }
+.railmsg b { color:var(--blood); font-weight:400; }
+.void { margin:0; max-width:44ch; text-align:center; font-size:13px; line-height:1.6;
+  color:var(--ink-3); }
+.void b { color:var(--ink-2); font-weight:400; }
+.stage.empty #big { display:none; }
 .cell { position:relative; flex:0 0 auto; width:52px; height:52px; padding:0;
   border:1px solid var(--rule-soft); background:var(--pit); }
 .cell img { width:100%; height:100%; object-fit:cover; image-rendering:pixelated; display:block; opacity:.62; }
@@ -142,6 +157,8 @@ button { font:inherit; color:inherit; background:none; border:0; cursor:pointer;
 .cell.s-concrete::after { background:var(--crete); }
 .cell.s-wood::after     { background:var(--timber); }
 .cell.s-fluid::after    { background:var(--fluid); }
+.cell.s-flesh::after    { background:var(--flesh); }
+.cell.s-dirt::after     { background:var(--dirt); }
 .cell.s-other::after    { background:var(--blood); }
 .cell.s-park::after     { background:var(--park); }
 .cell.out { display:none; }
@@ -169,6 +186,8 @@ button { font:inherit; color:inherit; background:none; border:0; cursor:pointer;
 .call[data-call="concrete"].on { border-color:var(--crete); background:var(--crete-wash); }
 .call[data-call="wood"].on     { border-color:var(--timber); background:var(--timber-wash); }
 .call[data-call="fluid"].on    { border-color:var(--fluid); background:var(--fluid-wash); }
+.call[data-call="flesh"].on    { border-color:var(--flesh); background:var(--flesh-wash); }
+.call[data-call="dirt"].on     { border-color:var(--dirt); background:var(--dirt-wash); }
 .call[data-call="other"].on    { border-color:var(--blood-dim); background:var(--blood-wash); }
 .call[data-call="park"].on     { border-color:var(--park); background:var(--park-wash); }
 .call em { font-style:normal; font-size:12px; }
@@ -178,6 +197,8 @@ button { font:inherit; color:inherit; background:none; border:0; cursor:pointer;
 .call[data-call="concrete"] { border-left:2px solid var(--crete); }
 .call[data-call="wood"]     { border-left:2px solid var(--timber); }
 .call[data-call="fluid"]    { border-left:2px solid var(--fluid); }
+.call[data-call="flesh"]    { border-left:2px solid var(--flesh); }
+.call[data-call="dirt"]     { border-left:2px solid var(--dirt); }
 .call[data-call="clear"]    { grid-column:1 / -1; }
 .call[data-call="other"]    { border-left:2px solid var(--blood-dim); }
 .call[data-call="park"]     { border-left:2px solid var(--park); }
@@ -230,7 +251,7 @@ textarea { min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
       <div class="title"><b>Metal or not</b> &mdash; then how rough</div>
     </div>
     <div class="flag" id="flag" hidden>working set <b id="flagname">&mdash;</b>
-      <button type="button" id="flagoff">show all</button></div>
+      <button type="button" id="flagoff">clear filters</button></div>
     <div class="prog">
       <div class="meter" aria-hidden="true"><i id="mfill" style="width:0"></i><i id="pfill" class="park" style="width:0"></i></div>
       <div class="tally" id="tally">0 of 1345 labelled</div>
@@ -238,7 +259,7 @@ textarea { min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
   </div>
 
   <main class="stage" id="stage">
-    <div class="canvaswrap"><img id="big" alt=""></div>
+    <div class="canvaswrap"><img id="big" alt=""><p class="void" id="void" hidden></p></div>
     <div class="plate">
       <div>
         <div class="name" id="tname">&nbsp;</div>
@@ -248,7 +269,10 @@ textarea { min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
     </div>
   </main>
 
-  <div class="strip"><div class="strip-rail" id="rail"></div></div>
+  <div class="strip">
+    <div class="strip-rail" id="rail"></div>
+    <p class="railmsg" id="railmsg" hidden></p>
+  </div>
 
   <aside class="side">
 
@@ -257,9 +281,11 @@ textarea { min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
       <div class="calls">
         <button class="call" data-call="metal" type="button"><kbd>S</kbd><em>metal<small>steel, iron, grating &middot; sparks</small></em></button>
         <button class="call" data-call="concrete" type="button"><kbd>C</kbd><em>concrete<small>stone, brick, tile &middot; dust</small></em></button>
+        <button class="call" data-call="dirt" type="button"><kbd>R</kbd><em>dirt<small>gravel, soil, ash, rubble &middot; scatter</small></em></button>
         <button class="call" data-call="wood" type="button"><kbd>W</kbd><em>wood<small>planks, crates &middot; splinters</small></em></button>
         <button class="call" data-call="fluid" type="button"><kbd>Q</kbd><em>fluid<small>water, blood, nukage, lava &middot; splash</small></em></button>
-        <button class="call" data-call="other" type="button"><kbd>A</kbd><em>other<small>flesh, goo, glass, screens</small></em></button>
+        <button class="call" data-call="flesh" type="button"><kbd>E</kbd><em>flesh<small>skin walls, gore, hell meat &middot; blood</small></em></button>
+        <button class="call" data-call="other" type="button"><kbd>A</kbd><em>other<small>goo, glass, screens, cloth</small></em></button>
         <button class="call" data-call="park" type="button"><kbd>X</kbd><em>park it<small>decide later</small></em></button>
         <button class="call" data-call="clear" type="button"><kbd>&#9003;</kbd><em>clear<small>unlabel this one</small></em></button>
       </div>
@@ -292,9 +318,11 @@ textarea { min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
       <div class="keys">
         <div><kbd>S</kbd></div><div>metal &middot; rough 0.80 &middot; advance</div>
         <div><kbd>C</kbd></div><div>concrete &middot; advance</div>
+        <div><kbd>R</kbd></div><div>dirt &middot; advance</div>
         <div><kbd>W</kbd></div><div>wood &middot; advance</div>
         <div><kbd>Q</kbd></div><div>fluid &middot; advance</div>
-        <div><kbd>A</kbd></div><div>other, not metal &middot; advance</div>
+        <div><kbd>E</kbd></div><div>flesh &middot; advance</div>
+        <div><kbd>A</kbd></div><div>other, none of the above &middot; advance</div>
         <div><kbd>D</kbd><kbd>F</kbd></div><div>rough 0.80 / very rough 0.95</div>
         <div><kbd>1</kbd>&hellip;<kbd>6</kbd></div><div>roughness ladder, mirror &rarr; very rough</div>
         <div><kbd>X</kbd></div><div>park &amp; advance</div>
@@ -313,10 +341,18 @@ textarea { min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
         <select id="msel" aria-label="Limit to one map"><option value="-1">all maps</option><option value="0">MAP00</option><option value="1">MAP01</option><option value="2">MAP02</option><option value="3">MAP03</option><option value="4">MAP04</option><option value="5">MAP05</option><option value="6">MAP06</option><option value="7">MAP07</option><option value="8">MAP08</option><option value="9">MAP09</option><option value="10">MAP10</option><option value="11">MAP11</option><option value="12">MAP12</option><option value="13">MAP13</option><option value="14">MAP14</option><option value="15">MAP15</option><option value="16">MAP16</option><option value="17">MAP17</option><option value="18">MAP18</option><option value="19">MAP19</option><option value="20">MAP20</option><option value="21">MAP21</option><option value="22">MAP22</option><option value="23">MAP23</option><option value="24">MAP24</option><option value="25">MAP25</option><option value="26">MAP26</option><option value="27">MAP27</option><option value="28">MAP28</option><option value="29">MAP29</option><option value="30">MAP30</option><option value="31">MAP31</option><option value="32">MAP32</option><option value="33">MAP33</option><option value="34">MAP34</option></select>
         <select id="gsel" aria-label="Jump to prefix"><option value="">&mdash; prefix &mdash;</option><option value="ALLBLACK">ALLBLACK</option><option value="AZTEC">AZTEC</option><option value="BFALL">BFALL</option><option value="BFALLT">BFALLT</option><option value="BVINE">BVINE</option><option value="C">C</option><option value="CASF">CASF</option><option value="CASFL">CASFL</option><option value="CASL">CASL</option><option value="CBTRAKA">CBTRAKA</option><option value="CDOR">CDOR</option><option value="CFACEA">CFACEA</option><option value="CFACEB">CFACEB</option><option value="CFACEC">CFACEC</option><option value="CLOUDBL">CLOUDBL</option><option value="CLOUDBLU">CLOUDBLU</option><option value="CLOUDBNW">CLOUDBNW</option><option value="CLOUDBRN">CLOUDBRN</option><option value="CLOUDCYN">CLOUDCYN</option><option value="CLOUDGR">CLOUDGR</option><option value="CLOUDGRN">CLOUDGRN</option><option value="CLOUDORN">CLOUDORN</option><option value="CLOUDPNK">CLOUDPNK</option><option value="CLOUDPRP">CLOUDPRP</option><option value="CLOUDRED">CLOUDRED</option><option value="CLOUDYEL">CLOUDYEL</option><option value="CMPSW">CMPSW</option><option value="CNRTBLCK">CNRTBLCK</option><option value="CRATESM">CRATESM</option><option value="CREDTEX">CREDTEX</option><option value="CRTRAKA">CRTRAKA</option><option value="CTEL">CTEL</option><option value="CTRAK">CTRAK</option><option value="CYTRAKA">CYTRAKA</option><option value="D">D</option><option value="DSLRTX">DSLRTX</option><option value="DTWMD">DTWMD</option><option value="ENDPIC">ENDPIC</option><option value="E_MAP">E_MAP</option><option value="FACE">FACE</option><option value="GRAYVINE">GRAYVINE</option><option value="GTEL">GTEL</option><option value="GVINE">GVINE</option><option value="H">H</option><option value="HDOR">HDOR</option><option value="HELLAA">HELLAA</option><option value="HELLAAA">HELLAAA</option><option value="HELLAB">HELLAB</option><option value="HELLAC">HELLAC</option><option value="HELLAD">HELLAD</option><option value="HELLAE">HELLAE</option><option value="HELLAF">HELLAF</option><option value="HELLAH">HELLAH</option><option value="HELLAHT">HELLAHT</option><option value="HELLAI">HELLAI</option><option value="HELLAJ">HELLAJ</option><option value="HELLAK">HELLAK</option><option value="HELLAL">HELLAL</option><option value="HELLAM">HELLAM</option><option value="HELLAN">HELLAN</option><option value="HELLAO">HELLAO</option><option value="HELLAP">HELLAP</option><option value="HELLAQ">HELLAQ</option><option value="HELLAR">HELLAR</option><option value="HELLAS">HELLAS</option><option value="HFL">HFL</option><option value="HFLATA">HFLATA</option><option value="HFLATB">HFLATB</option><option value="HFLATC">HFLATC</option><option value="HFLATD">HFLATD</option><option value="HFLATE">HFLATE</option><option value="HFLATF">HFLATF</option><option value="HFLATG">HFLATG</option><option value="HFLATH">HFLATH</option><option value="HFLATI">HFLATI</option><option value="HFLATJ">HFLATJ</option><option value="HFLATK">HFLATK</option><option value="HFLATL">HFLATL</option><option value="HFLATM">HFLATM</option><option value="HFLATN">HFLATN</option><option value="HFLATO">HFLATO</option><option value="HLAVA">HLAVA</option><option value="HTELA">HTELA</option><option value="HTELB">HTELB</option><option value="HTELC">HTELC</option><option value="HTELD">HTELD</option><option value="HTRAC">HTRAC</option><option value="ISUCK">ISUCK</option><option value="MOUNTA">MOUNTA</option><option value="MOUNTB">MOUNTB</option><option value="MOUNTC">MOUNTC</option><option value="NEWDOOR">NEWDOOR</option><option value="OUTSW">OUTSW</option><option value="OUTTEX">OUTTEX</option><option value="PSXTLE">PSXTLE</option><option value="PSXWMSGT">PSXWMSGT</option><option value="SDFLTA">SDFLTA</option><option value="SDFLTAB">SDFLTAB</option><option value="SDFLTAC">SDFLTAC</option><option value="SDFLTAD">SDFLTAD</option><option value="SDFLTAE">SDFLTAE</option><option value="SDFLTB">SDFLTB</option><option value="SDFLTBB">SDFLTBB</option><option value="SDFLTC">SDFLTC</option><option value="SDFLTCB">SDFLTCB</option><option value="SDFLTCC">SDFLTCC</option><option value="SDOOR">SDOOR</option><option value="SDOORA">SDOORA</option><option value="SDOORB">SDOORB</option><option value="SDOORC">SDOORC</option><option value="SDOORD">SDOORD</option><option value="SDOORE">SDOORE</option><option value="SDOORFA">SDOORFA</option><option value="SDOORFB">SDOORFB</option><option value="SDOORGA">SDOORGA</option><option value="SDOORGB">SDOORGB</option><option value="SEXIT">SEXIT</option><option value="SFALL">SFALL</option><option value="SFALLT">SFALLT</option><option value="SFLATA">SFLATA</option><option value="SFLATAB">SFLATAB</option><option value="SFLATAC">SFLATAC</option><option value="SFLATAD">SFLATAD</option><option value="SFLATAE">SFLATAE</option><option value="SFLATAF">SFLATAF</option><option value="SFLATAI">SFLATAI</option><option value="SFLATAJ">SFLATAJ</option><option value="SFLATAK">SFLATAK</option><option value="SFLATAL">SFLATAL</option><option value="SFLATAM">SFLATAM</option><option value="SFLATAN">SFLATAN</option><option value="SFLATAO">SFLATAO</option><option value="SFLATAP">SFLATAP</option><option value="SFLATAQ">SFLATAQ</option><option value="SFLATAR">SFLATAR</option><option value="SFLATAS">SFLATAS</option><option value="SFLATB">SFLATB</option><option value="SFLATBB">SFLATBB</option><option value="SFLATBC">SFLATBC</option><option value="SFLATBE">SFLATBE</option><option value="SFLATBF">SFLATBF</option><option value="SFLATC">SFLATC</option><option value="SFLATCB">SFLATCB</option><option value="SFLATCC">SFLATCC</option><option value="SFLATCD">SFLATCD</option><option value="SFLATCE">SFLATCE</option><option value="SFLATCF">SFLATCF</option><option value="SFLATCG">SFLATCG</option><option value="SFLATCH">SFLATCH</option><option value="SFLATD">SFLATD</option><option value="SFLATDC">SFLATDC</option><option value="SFLATDD">SFLATDD</option><option value="SFLATDE">SFLATDE</option><option value="SFLATDF">SFLATDF</option><option value="SFLATDG">SFLATDG</option><option value="SHWN">SHWN</option><option value="SKEYFLBL">SKEYFLBL</option><option value="SKEYFLRD">SKEYFLRD</option><option value="SKEYFLYL">SKEYFLYL</option><option value="SKINFLA">SKINFLA</option><option value="SKINFLB">SKINFLB</option><option value="SKINFLC">SKINFLC</option><option value="SKINFLD">SKINFLD</option><option value="SKINWAL">SKINWAL</option><option value="SKY">SKY</option><option value="SMONAA">SMONAA</option><option value="SMONAB">SMONAB</option><option value="SMONAC">SMONAC</option><option value="SMONAD">SMONAD</option><option value="SMONBA">SMONBA</option><option value="SMONBB">SMONBB</option><option value="SMONBC">SMONBC</option><option value="SMONBD">SMONBD</option><option value="SMONCA">SMONCA</option><option value="SMONCB">SMONCB</option><option value="SMONCC">SMONCC</option><option value="SMONCD">SMONCD</option><option value="SMONDA">SMONDA</option><option value="SMONDB">SMONDB</option><option value="SMONDC">SMONDC</option><option value="SMONDD">SMONDD</option><option value="SMONEA">SMONEA</option><option value="SMONEB">SMONEB</option><option value="SMONEC">SMONEC</option><option value="SMONED">SMONED</option><option value="SMONF">SMONF</option><option value="SMONLB">SMONLB</option><option value="SMONLC">SMONLC</option><option value="SPACAMM">SPACAMM</option><option value="SPACE">SPACE</option><option value="SPACEAA">SPACEAA</option><option value="SPACEAB">SPACEAB</option><option value="SPACEAC">SPACEAC</option><option value="SPACEAD">SPACEAD</option><option value="SPACEADB">SPACEADB</option><option value="SPACEADT">SPACEADT</option><option value="SPACEAE">SPACEAE</option><option value="SPACEAF">SPACEAF</option><option value="SPACEAG">SPACEAG</option><option value="SPACEAGS">SPACEAGS</option><option value="SPACEAH">SPACEAH</option><option value="SPACEAI">SPACEAI</option><option value="SPACEAJ">SPACEAJ</option><option value="SPACEAJT">SPACEAJT</option><option value="SPACEAK">SPACEAK</option><option value="SPACEAL">SPACEAL</option><option value="SPACEAM">SPACEAM</option><option value="SPACEAN">SPACEAN</option><option value="SPACEAO">SPACEAO</option><option value="SPACEAP">SPACEAP</option><option value="SPACEAQ">SPACEAQ</option><option value="SPACEAR">SPACEAR</option><option value="SPACEAS">SPACEAS</option><option value="SPACEAT">SPACEAT</option><option value="SPACEAU">SPACEAU</option><option value="SPACEAV">SPACEAV</option><option value="SPACEAW">SPACEAW</option><option value="SPACEAX">SPACEAX</option><option value="SPACEAY">SPACEAY</option><option value="SPACEAZ">SPACEAZ</option><option value="SPACEB">SPACEB</option><option value="SPACEBA">SPACEBA</option><option value="SPACEBB">SPACEBB</option><option value="SPACEBC">SPACEBC</option><option value="SPACEBD">SPACEBD</option><option value="SPACEBE">SPACEBE</option><option value="SPACEBF">SPACEBF</option><option value="SPACEBG">SPACEBG</option><option value="SPACEBH">SPACEBH</option><option value="SPACEBI">SPACEBI</option><option value="SPACEBJ">SPACEBJ</option><option value="SPACEBK">SPACEBK</option><option value="SPACEBL">SPACEBL</option><option value="SPACEBM">SPACEBM</option><option value="SPACEBN">SPACEBN</option><option value="SPACEBO">SPACEBO</option><option value="SPACEBQ">SPACEBQ</option><option value="SPACEBR">SPACEBR</option><option value="SPACEBS">SPACEBS</option><option value="SPACEBT">SPACEBT</option><option value="SPACEC">SPACEC</option><option value="SPACECA">SPACECA</option><option value="SPACECB">SPACECB</option><option value="SPACECC">SPACECC</option><option value="SPACECCB">SPACECCB</option><option value="SPACECCT">SPACECCT</option><option value="SPACECD">SPACECD</option><option value="SPACECE">SPACECE</option><option value="SPACECF">SPACECF</option><option value="SPACECG">SPACECG</option><option value="SPACECH">SPACECH</option><option value="SPACECI">SPACECI</option><option value="SPACECJ">SPACECJ</option><option value="SPACECL">SPACECL</option><option value="SPACECM">SPACECM</option><option value="SPACECN">SPACECN</option><option value="SPACECO">SPACECO</option><option value="SPACECP">SPACECP</option><option value="SPACECQ">SPACECQ</option><option value="SPACEE">SPACEE</option><option value="SPACELAT">SPACELAT</option><option value="SPORT">SPORT</option><option value="SPORTA">SPORTA</option><option value="SPORTB">SPORTB</option><option value="STRACA">STRACA</option><option value="STRACB">STRACB</option><option value="STRAKB">STRAKB</option><option value="STRAKFL">STRAKFL</option><option value="STRAKO">STRAKO</option><option value="STRAKR">STRAKR</option><option value="STRAKX">STRAKX</option><option value="STRAKY">STRAKY</option><option value="SUPPORT">SUPPORT</option><option value="SWXAZ">SWXAZ</option><option value="SWXCA">SWXCA</option><option value="SWXCB">SWXCB</option><option value="SWXCKA">SWXCKA</option><option value="SWXCKB">SWXCKB</option><option value="SWXCKLA">SWXCKLA</option><option value="SWXCKLB">SWXCKLB</option><option value="SWXCLA">SWXCLA</option><option value="SWXCLB">SWXCLB</option><option value="SWXHCA">SWXHCA</option><option value="SWXHCB">SWXHCB</option><option value="SWXNS">SWXNS</option><option value="SWXS">SWXS</option><option value="SWXSAA">SWXSAA</option><option value="SWXSAB">SWXSAB</option><option value="SWXSCA">SWXSCA</option><option value="SWXSCB">SWXSCB</option><option value="SWXSDA">SWXSDA</option><option value="SWXSDB">SWXSDB</option><option value="SWXSEA">SWXSEA</option><option value="SWXSEB">SWXSEB</option><option value="SWXSFA">SWXSFA</option><option value="SWXSFB">SWXSFB</option><option value="SWXSGA">SWXSGA</option><option value="SWXSGB">SWXSGB</option><option value="SWXSHA">SWXSHA</option><option value="SWXSHB">SWXSHB</option><option value="TITLE">TITLE</option><option value="TITLEA">TITLEA</option><option value="TITLEB">TITLEB</option><option value="TITLECRD">TITLECRD</option><option value="TITLEINV">TITLEINV</option><option value="TITLESKY">TITLESKY</option><option value="TSFCMONS">TSFCMONS</option><option value="TSFCNM">TSFCNM</option><option value="TSFCPLAY">TSFCPLAY</option><option value="VINES">VINES</option><option value="VOIDSKY">VOIDSKY</option><option value="VOIDSKYR">VOIDSKYR</option><option value="WFALL">WFALL</option><option value="WFALLT">WFALLT</option></select>
       </div>
+      <select id="ssel" aria-label="Limit by label state">
+        <option value="all">any label state</option>
+        <option value="unlabelled">unlabelled only</option>
+        <option value="labelled">labelled (any class)</option>
+        <option value="parked">parked</option>
+        <option value="metal">metal &middot; sparks</option><option value="concrete">concrete &middot; dust, chips</option><option value="dirt">dirt &middot; dust, scatter</option><option value="wood">wood &middot; splinters</option><option value="fluid">fluid &middot; splash</option><option value="flesh">flesh &middot; blood</option><option value="other">other &middot; no sparks</option>
+      </select>
       <p class="note">Pick a map to label just that map first, apply it, and look at the
-      result in game before committing to all 1345. Everything &mdash; arrows,
-      <kbd>&#9251;</kbd>, the strip &mdash; stays inside the set. Labels stay put when you
-      clear the filter; they are never scoped to a map.</p>
+      result in game before committing to all 1345. The two filters compose, so
+      <b>MAP01 + metal</b> is how you re-check a batch after seeing it. Everything &mdash;
+      arrows, <kbd>&#9251;</kbd>, the strip, the counter &mdash; stays inside the set. Labels
+      stay put when you clear a filter; they are never scoped to one.</p>
       <input type="search" id="find" placeholder="name or prefix, then Enter" aria-label="Jump to texture">
       <div class="row">
         <button class="btn" id="nextun" type="button">next unlabelled</button>
@@ -363,11 +399,14 @@ textarea { min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
   const SURF = {
     metal:    { m: 1, fx: 'sparks' },
     concrete: { m: 0, fx: 'dust, chips' },
+    dirt:     { m: 0, fx: 'dust, scatter' },
     wood:     { m: 0, fx: 'splinters' },
     fluid:    { m: 0, fx: 'splash' },
+    flesh:    { m: 0, fx: 'blood' },
     other:    { m: 0, fx: 'no sparks' }
   };
-  const CLASSES = ['metal', 'concrete', 'wood', 'fluid', 'other', 'park'];
+  const CLASSES = ['metal', 'concrete', 'dirt', 'wood', 'fluid', 'flesh', 'other'];
+  const STATES = CLASSES.concat(['park']);
 
   // Labels saved before the surface axis existed carry only {m, b}. Read them as
   // metal/other rather than making anyone re-label work they already did.
@@ -380,7 +419,8 @@ textarea { min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
   let labels = {};                    // name -> {m:0|1, b:bucketIndex} | {park:1}
   let idx = 0;                         // index into T
   let mapf = -1;                       // -1 = all maps, else index into MAPS
-  let view = [];                       // indices into T that survive the filter
+  let statf = 'all';                   // 'all' | 'unlabelled' | 'labelled' | 'parked' | a class
+  let view = [];                       // indices into T that survive BOTH filters
   let history = [];
 
   try { labels = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { labels = {}; }
@@ -396,16 +436,42 @@ textarea { min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
     const m = s === null ? -1 : +s;
     if (m >= 0 && m < MAPS.length) mapf = m;
   } catch (e) {}
+  try {
+    const s = localStorage.getItem(KEY + ':stat');
+    if (s && (s === 'unlabelled' || s === 'labelled' || s === 'parked' || SURF[s])) statf = s;
+  } catch (e) {}
 
   function save() {
     try {
       localStorage.setItem(KEY, JSON.stringify(labels));
       localStorage.setItem(KEY + ':at', String(idx));
       localStorage.setItem(KEY + ':map', String(mapf));
+      localStorage.setItem(KEY + ':stat', statf);
     } catch (e) { say('Browser storage is full — copy your JSON out now.'); }
   }
 
-  const inFilter = i => mapf < 0 || T[i].m.indexOf(mapf) >= 0;
+  // The two filters COMPOSE -- "MAP01 + metal" is the whole point, since that is how
+  // you re-check a pilot batch after seeing it in game.
+  const inMap = i => mapf < 0 || T[i].m.indexOf(mapf) >= 0;
+
+  function inStat(i) {
+    if (statf === 'all') return true;
+    const l = labels[T[i].n];
+    if (statf === 'unlabelled') return !l;
+    if (!l) return false;
+    if (statf === 'parked') return !!l.park;
+    if (statf === 'labelled') return !l.park;
+    return !l.park && surfaceOf(l) === statf;
+  }
+
+  const inFilter = i => inMap(i) && inStat(i);
+
+  function filterLabel() {
+    const bits = [];
+    if (mapf >= 0) bits.push(MAPS[mapf]);
+    if (statf !== 'all') bits.push(statf);
+    return bits.join(' + ');
+  }
 
   // ---- element refs ------------------------------------------------------
   const big = document.getElementById('big');
@@ -426,6 +492,9 @@ textarea { min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
   const flagname = document.getElementById('flagname');
   const only = document.getElementById('only');
   const fluidnote = document.getElementById('fluidnote');
+  const ssel = document.getElementById('ssel');
+  const railmsg = document.getElementById('railmsg');
+  const voidEl = document.getElementById('void');
   const lobe = document.getElementById('lobe');
   const lctx = lobe.getContext('2d');
 
@@ -460,13 +529,13 @@ textarea { min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
     c.classList.toggle('cur', i === idx);
     c.classList.toggle('done', !!l);
     const s = !l ? null : (l.park ? 'park' : surfaceOf(l));
-    CLASSES.forEach(k => c.classList.toggle('s-' + k, s === k));
+    STATES.forEach(k => c.classList.toggle('s-' + k, s === k));
   }
 
   // ---- the working set ---------------------------------------------------
   // One place decides what is in play. Navigation, the strip, the counter and the
   // "next unlabelled" hunt all read `view`, so nothing can step outside the filter.
-  function rebuildView() {
+  function rebuildView(preferPos) {
     view = [];
     let lastGroup = null;
     for (let i = 0; i < N; i++) {
@@ -483,15 +552,23 @@ textarea { min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
       view.push(i);
     }
     if (view.length && !inFilter(idx)) {
-      // Snap to the nearest member rather than dumping the labeller at the top.
-      let best = view[0], bd = Infinity;
-      for (const i of view) { const d = Math.abs(i - idx); if (d < bd) { bd = d; best = i; } }
-      idx = best;
+      if (preferPos !== undefined) {
+        // The current item just filtered itself out by being labelled. Hold the
+        // POSITION, which is now whatever came after it -- that is what makes
+        // "unlabelled only" feel like a queue that drains.
+        idx = view[Math.max(0, Math.min(view.length - 1, preferPos))];
+      } else {
+        // Snap to the nearest member rather than dumping the labeller at the top.
+        let best = view[0], bd = Infinity;
+        for (const i of view) { const d = Math.abs(i - idx); if (d < bd) { bd = d; best = i; } }
+        idx = best;
+      }
     }
-    const on = mapf >= 0;
+    const on = mapf >= 0 || statf !== 'all';
     flag.hidden = !on;
-    flagname.textContent = on ? MAPS[mapf] : '—';
+    flagname.textContent = on ? filterLabel() : '—';
     msel.value = String(mapf);
+    ssel.value = statf;
     only.disabled = !on;
     if (!on) only.checked = false;
   }
@@ -531,6 +608,26 @@ textarea { min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
   const callEls = Array.from(document.querySelectorAll('.call'));
 
   function render() {
+    // Empty combination: say which one, rather than presenting a blank rail.
+    const empty = view.length === 0;
+    stage.classList.toggle('empty', empty);
+    rail.hidden = empty;
+    railmsg.hidden = !empty;
+    voidEl.hidden = !empty;
+    if (empty) {
+      const msg = 'Nothing is <b>' + filterLabel() + '</b>.';
+      railmsg.innerHTML = msg + ' Widen the working set to carry on.';
+      voidEl.innerHTML = 'No texture is <b>' + filterLabel() + '</b>.<br>'
+        + 'Change the map or the label state in the working set panel.';
+      tname.textContent = '—';
+      tfacts.innerHTML = '';
+      verdict.innerHTML = '';
+      STATES.forEach(k => stage.classList.remove('s-' + k));
+      fluidnote.hidden = true;
+      tallyUp();
+      return;
+    }
+
     const r = T[idx], l = labels[r.n];
     big.src = src(r);
     big.alt = r.n;
@@ -543,7 +640,7 @@ textarea { min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
     const f = ['<span><b>' + r.w + '&times;' + r.h + '</b> px</span>',
                '<span>group <b>' + r.g + '</b></span>',
                '<span><b>' + (vpos() + 1) + '</b> / ' + view.length
-                 + (mapf >= 0 ? ' in ' + MAPS[mapf] : '') + '</span>'];
+                 + (filterLabel() ? ' in ' + filterLabel() : '') + '</span>'];
     // How widely a texture is reused is how much care it deserves: a wall in thirty
     // maps is worth a second look, a one-map trim is not.
     if (r.m.length) {
@@ -565,7 +662,7 @@ textarea { min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
     } else v.push('<span class="chip">unlabelled</span>');
     verdict.innerHTML = v.join('');
 
-    CLASSES.forEach(k => stage.classList.toggle('s-' + k, s === k));
+    STATES.forEach(k => stage.classList.toggle('s-' + k, s === k));
     // The roughness caveat surfaces only where it applies, rather than sitting there
     // as permanent noise on the 1300 textures it has nothing to do with.
     fluidnote.hidden = s !== 'fluid';
@@ -595,10 +692,10 @@ textarea { min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
       if (l.park) park++; else done++;
     }
     const n = view.length || 1;
-    const where = mapf >= 0 ? ' in ' + MAPS[mapf] : ' labelled';
+    const where = filterLabel() ? ' in ' + filterLabel() : ' labelled';
     tally.innerHTML = '<b>' + done + '</b> of ' + view.length + where
       + (park ? ' &middot; ' + park + ' parked' : '')
-      + (mapf >= 0 ? ' <span class="glob">&middot; ' + gdone + ' / ' + N + ' overall</span>' : '');
+      + (filterLabel() ? ' <span class="glob">&middot; ' + gdone + ' / ' + N + ' overall</span>' : '');
     mfill.style.width = (done / n * 100) + '%';
     pfill.style.width = (park / n * 100) + '%';
     pfill.style.left = (done / n * 100) + '%';
@@ -648,9 +745,19 @@ textarea { min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
       s: kind
     };
     pending = null;
-    save();
-    if (kind === 'clear') { render(); return; }
     const p = vpos();
+    save();
+
+    // Under a label-state filter the item may have just filtered itself out. Rebuild
+    // and hold the position, so "unlabelled only" drains like a queue.
+    if (statf !== 'all') {
+      rebuildView(p);
+      cells.forEach((c, i) => paintCell(i));
+      render();
+      return;
+    }
+    paintCell(idx);
+    if (kind === 'clear') { render(); return; }
     if (p < view.length - 1) goView(p + 1); else render();
   }
 
@@ -659,8 +766,9 @@ textarea { min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
     if (!h) { say('Nothing to undo.'); return; }
     const [name, prior, at] = h;
     if (prior === null) delete labels[name]; else labels[name] = prior;
-    if (inFilter(at)) idx = at;          // never let undo walk out of the working set
     pending = null;
+    if (statf !== 'all') rebuildView();   // restoring a label can change what qualifies
+    if (inFilter(at)) idx = at;           // never let undo walk out of the working set
     cells.forEach((c, i) => paintCell(i));
     render();
     save();
@@ -674,15 +782,15 @@ textarea { min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
       const p = (start + s) % n;
       if (!labels[T[view[p]].n]) { goView(p); return; }
     }
-    say(mapf >= 0 ? 'Every texture in ' + MAPS[mapf] + ' has a call on it.'
-                  : 'Every texture has a call on it.');
+    say(filterLabel() ? 'Nothing left unlabelled in ' + filterLabel() + '.'
+                      : 'Every texture has a call on it.');
   }
 
   // ---- export / import ---------------------------------------------------
   function exportObj() {
     // Default is everything labelled, whatever the filter says. Narrowing is opt-in
     // so the applier never has to work out what scope it was handed.
-    const scoped = only.checked && mapf >= 0;
+    const scoped = only.checked && (mapf >= 0 || statf !== 'all');
     const out = {};
     const skipped = [];
     T.forEach((r, i) => {
@@ -706,7 +814,7 @@ textarea { min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
     out.__meta = {
       source: 'tools/gen_material_labeller.py',
       wad: 'D64RTR_v15.WAD',
-      scope: scoped ? MAPS[mapf] : 'all',
+      scope: scoped ? filterLabel() : 'all',
       total: scoped ? view.length : N,
       labelled: labelled,
       surfaces: counts,
@@ -779,12 +887,11 @@ textarea { min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
   document.getElementById('undo').addEventListener('click', undo);
   document.getElementById('nextun').addEventListener('click', nextUnlabelled);
 
-  function setMap(m) {
+  // An empty combination is allowed and explained, not silently refused -- refusing it
+  // would make "MAP01 + wood" look broken when the honest answer is "there is none".
+  function setFilters(m, s) {
     mapf = m;
-    if (!T.some((r, i) => inFilter(i))) {
-      say('No texture in that map, filter left alone.');
-      mapf = -1;
-    }
+    statf = s;
     pending = null;
     rebuildView();
     cells.forEach((c, i) => paintCell(i));
@@ -792,15 +899,16 @@ textarea { min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
     save();
   }
 
-  msel.addEventListener('change', e => { setMap(+e.target.value); e.target.blur(); });
-  document.getElementById('flagoff').addEventListener('click', () => setMap(-1));
+  msel.addEventListener('change', e => { setFilters(+e.target.value, statf); e.target.blur(); });
+  ssel.addEventListener('change', e => { setFilters(mapf, e.target.value); e.target.blur(); });
+  document.getElementById('flagoff').addEventListener('click', () => setFilters(-1, 'all'));
   only.addEventListener('change', () => { if (!io.hidden) io.value = exportText(); });
 
   document.getElementById('gsel').addEventListener('change', e => {
     const g = e.target.value;
     if (!g) return;
     const i = view.find(j => T[j].g === g);
-    if (i === undefined) say(g + ' is not in ' + (mapf >= 0 ? MAPS[mapf] : 'the set') + '.');
+    if (i === undefined) say(g + ' is not in ' + (filterLabel() || 'the set') + '.');
     else go(i);
     e.target.blur();
   });
@@ -816,8 +924,8 @@ textarea { min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
     if (i === undefined) i = view.find(j => T[j].n.indexOf(q) >= 0);
     if (i === undefined) {
       const anywhere = T.some(r => r.n.indexOf(q) >= 0);
-      say(anywhere && mapf >= 0
-        ? q + ' exists, but not in ' + MAPS[mapf] + '.'
+      say(anywhere && filterLabel()
+        ? q + ' exists, but not in ' + filterLabel() + '.'
         : 'No texture matches ' + q + '.');
       return;
     }
@@ -843,6 +951,8 @@ textarea { min-height:104px; resize:vertical; white-space:pre; overflow:auto; }
       case 'c': e.preventDefault(); call('concrete'); break;
       case 'w': e.preventDefault(); call('wood'); break;
       case 'q': e.preventDefault(); call('fluid'); break;
+      case 'e': e.preventDefault(); call('flesh'); break;
+      case 'r': e.preventDefault(); call('dirt'); break;
       case 'a': e.preventDefault(); call('other'); break;
       case 'd': e.preventDefault(); setBucket(4); break;
       case 'f': e.preventDefault(); setBucket(5); break;
