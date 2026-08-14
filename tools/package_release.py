@@ -192,6 +192,25 @@ def main():
         "with a link to each download.\n",
         encoding="ascii")
 
+    # The engine checks for these at startup (rt_main.cpp) and shows a "DLL check
+    # failure" dialog naming whatever is absent. The stock package ships none of
+    # the NVIDIA ones, so they have to arrive from the RTGL1 release bundle.
+    engine_dlls = [
+        "D3D12Core.dll", "nvngx_dlss.dll", "nvngx_dlssd.dll", "nvngx_dlssg.dll",
+        "NvLowLatencyVk.dll", "sl.dlss.dll", "sl.dlss_g.dll", "sl.reflex.dll",
+        "sl.pcl.dll", "sl.common.dll", "sl.interposer.dll",
+        "ffx_fsr2_x64.dll", "ffx_fsr3_x64.dll", "ffx_fsr3upscaler_x64.dll",
+        "ffx_frameinterpolation_x64.dll", "ffx_opticalflow_x64.dll",
+        "ffx_backend_dx12_x64.dll", "ffx_backend_vk_x64.dll",
+    ]
+    lacking = [d for d in engine_dlls if not (out / "rt" / "bin" / d).exists()]
+    if lacking:
+        print("\n  ! rt/bin is missing %d DLL(s) the engine checks for:" % len(lacking))
+        for d in lacking:
+            print("      " + d)
+        print("    The user gets a 'DLL check failure' dialog. Take them from")
+        print("    https://github.com/vs-shirokii/RTGL/releases (rt/bin inside the zip).")
+
     total = sum(f.stat().st_size for f in out.rglob("*") if f.is_file())
     files = sum(1 for f in out.rglob("*") if f.is_file())
     print("\npackage: %s\n  %d files, %.0f MB" % (out, files, total / 1e6))

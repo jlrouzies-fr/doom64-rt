@@ -15,6 +15,11 @@ on:
 
 env:
   STOCK_URL: https://github.com/vs-shirokii/gzdoom-rt/releases/download/rt-1.0.2/gzdoom-rt-1.0.2.zip
+  # The stock package ships NO NVIDIA redistributables -- its rt/bin holds 11
+  # files, all AMD FFX -- so the engine opens a "DLL check failure" dialog on
+  # first run offering to fetch them. This is the page that dialog points at, so
+  # the Streamline versions match the engine that was built against them.
+  RTGL_BUNDLE_URL: https://github.com/vs-shirokii/RTGL/releases/download/1.6.3/rtgl-1.6.3.zip
 
 # The default GITHUB_TOKEN is read-only, so creating the release on a tag fails
 # with "403 Resource not accessible by integration" after a successful build --
@@ -111,9 +116,40 @@ jobs:
         shell: cmd
         run: .\tools\build-gzdoom-rt.cmd
 
+      - name: Cache NVIDIA runtime DLLs
+        id: nvruntime
+        uses: actions/cache@v4
+        with:
+          path: deps/nv-runtime
+          key: nv-runtime-rtgl-1.6.3
+
+      - name: Fetch NVIDIA runtime DLLs
+        if: steps.nvruntime.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri $env:RTGL_BUNDLE_URL -OutFile rtgl.zip
+          Expand-Archive rtgl.zip -DestinationPath rtgl-extract
+          New-Item -ItemType Directory -Force deps/nv-runtime | Out-Null
+          $want = 'NvLowLatencyVk.dll','nvngx_dlssg.dll','sl.common.dll','sl.dlss.dll',
+                  'sl.dlss_g.dll','sl.interposer.dll','sl.pcl.dll','sl.reflex.dll'
+          foreach ($f in $want) {
+            $src = Get-ChildItem rtgl-extract -Recurse -File -Filter $f |
+                   Where-Object { $_.FullName -match '\\rt\\bin\\' } | Select-Object -First 1
+            if (-not $src) { throw "the RTGL bundle does not contain $f" }
+            Copy-Item $src.FullName "deps/nv-runtime/$f" -Force
+          }
+          Remove-Item rtgl.zip -Force
+          Remove-Item rtgl-extract -Recurse -Force
+          '{0:N0} MB of NVIDIA runtime' -f ((Get-ChildItem deps/nv-runtime -File | Measure-Object Length -Sum).Sum / 1MB)
+
       - name: Build RTGL1
         shell: cmd
         run: .\tools\build-rtgl.cmd
+
+      # After build-rtgl.cmd, which is what creates rt/bin.
+      - name: Stage NVIDIA runtime DLLs
+        shell: pwsh
+        run: Copy-Item deps/nv-runtime/* sourcecode/gzdoom-rt/build/RelWithDebInfo/rt/bin/ -Force
 
       - name: Package
         run: python tools/package_release.py --out dist --zip
@@ -135,6 +171,17 @@ jobs:
           # the stock file silently disables every authored material.
           $meta = (Get-Item "$p\rt\data\textures.json").Length
           if ($meta -lt 100000) { throw "textures.json is $meta bytes - that is the stock file" }
+
+          # Every DLL the engine's own startup check looks for. Missing any of
+          # them means a "DLL check failure" dialog in the user's face before the
+          # game has drawn a frame -- which is how v0.1.0 shipped.
+          $dlls = 'D3D12Core.dll','nvngx_dlss.dll','nvngx_dlssd.dll','nvngx_dlssg.dll',
+                  'NvLowLatencyVk.dll','sl.dlss.dll','sl.dlss_g.dll','sl.reflex.dll',
+                  'sl.pcl.dll','sl.common.dll','sl.interposer.dll','ffx_fsr2_x64.dll',
+                  'ffx_fsr3_x64.dll','ffx_fsr3upscaler_x64.dll','ffx_frameinterpolation_x64.dll',
+                  'ffx_opticalflow_x64.dll','ffx_backend_dx12_x64.dll','ffx_backend_vk_x64.dll'
+          $lack = $dlls | Where-Object { -not (Test-Path "$p\rt\bin\$_") }
+          if ($lack) { throw "rt\bin is missing: $($lack -join ', ')" }
 
           # Nothing that belongs to somebody else's game, and nothing we cannot ship.
           foreach ($f in @('D64RTR_v15.WAD','D64MUS.PK3','doom2.wad','DOOMSND.SF2','D64RTR_BRIGHTMAPS.PK3')) {
