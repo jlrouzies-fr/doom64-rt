@@ -676,6 +676,41 @@ Clear all enemy `_e` + strip meta: `python tools/clear_enemy_eye_emissives.py` t
     path before touching its magnitude — and if the value provably arrives, the
     next suspect is the STATE it is being interpreted in, not the value.**
 
+33. **A traced primitive with no albedo texture takes its colour from
+    `RgMeshPrimitiveInfo::color` — the PER-PRIMITIVE one. The per-VERTEX colour is
+    stored and never read.** `HitInfo.inl`:
+
+    ```glsl
+    // if no albedo textures, use primary color
+    dst = mix( unpackUintColor( layerColors[0] ).rgb, dst, float( hasAnyAlbedoTexture ) );
+    ```
+
+    `ShVertex` really does carry a `color` field, so the data arrives intact and
+    nothing warns — but `layerColors[0]` is per-geometry. The **rasterized** path
+    (`RsWorld.inl`) *does* use vertex colour, so the same geometry changes meaning
+    when it moves between the two: impact debris was correct while rasterized and
+    turned uniformly white the moment it became BLAS geometry, with
+    `prim.color` left at `RG_PACKED_COLOR_WHITE`. No albedo or tint value could
+    move it, and an arm at albedo **0.02** still rendered white — which is what
+    identified it. Per-particle colour therefore needs particles **grouped into
+    one primitive per colour** (`rt_sparks.cpp` buckets them), not vertex colours.
+    Two neighbours of this, both real: a decal's `emissive` must be 0 or
+    `RsDecal.frag` falls back to `ldrEmis = albedo` and the decal glows; and
+    packed alpha below `MESH_TRANSLUCENT_ALPHA_THRESHOLD` (0.98) silently demotes
+    a primitive to the rasterized overlay, i.e. back to fullbright.
+    See `docs/rt-impact-fx.md`.
+
+34. **A decal is one primitive per blob. Batching many fans into one produces
+    geometry artefacts that survive every other explanation.** The sprite AO
+    (`rt_draw.cpp`) uploads one fan per actor and is correct; impact-debris AO
+    batched all its fans into a single `RG_MESH_PRIMITIVE_DECAL` primitive and
+    drew lines reaching away from the blobs. The batched version is geometrically
+    sound — no triangle spans two blobs — and the documented 5 cm grazing-floor
+    limit was ruled out with a distance cull first. **Match the shape of the
+    implementation that works rather than reasoning further about why a novel one
+    should**; distinct `uniqueObjectID` per blob, since RTGL1 keeps one upload per
+    ID and the later one loses.
+
 ## Suggested next work
 
 1. **`RAYRECONSTRUCTION.md`** — RR is working and the worm artifact is solved (a stuck cvar, not a renderer bug). Open levers: `rt_spp_direct`/`rt_spp_indirect`, `rt_restir_initial`.

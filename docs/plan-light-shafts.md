@@ -109,7 +109,9 @@ gap would merge a light with the one directly above it, which is the mistake
 | `rt_volume_shaft_trace` | `3` | **shadow rays per froxel** — the real budget |
 | `rt_volume_shaft_mult` | `1` | brightness of the lamp shafts only |
 | `rt_volume_shaft_nearfade` | `1.5` | metres; stops a bulb whiting out the froxels touching it |
-| `rt_volume_shaft_mincontrib` | `0` | radiance below which a light is skipped before its ray |
+| `rt_volume_shaft_falloff` | `1` | how much of the inverse square is handed back (0 physical, 2 sun-like) |
+| `rt_volume_shaft_relcull` | `0.05` | skip a light below this fraction of the brightest **at that froxel** |
+| `rt_volume_shaft_mincontrib` | `0` | absolute radiance below which a light is skipped before its ray |
 | `rt_volume_shaft_asym` | `-2` | phase asymmetry for lamps only; below −1 = share `rt_volume_lassymetry` |
 | `rt_volume_shaft_maxdist` | `1024` | map units, camera cull |
 | `rt_volume_shaft_mingap` | `96` | map units, dedupe |
@@ -117,7 +119,7 @@ gap would merge a light with the one directly above it, which is the mistake
 | `rt_volume_shaft_debug` | `0` | shader probe, 1/2/3 |
 | `rt_volume_shaft_verbose` | `0` | per-family offered-vs-sent console line |
 
-All thirteen are pinned at their compiled defaults in `tools/d64rt-pins.cfg` —
+All fifteen are pinned at their compiled defaults in `tools/d64rt-pins.cfg` —
 they are `CVAR_ARCHIVE`, so without a pin the last arm run would follow you into
 play.
 
@@ -126,6 +128,41 @@ sharing them would retune shipped content: `rt_volume_shaft_mult` against
 `rt_volume_lintensity` (global to the volume, and what the moon is tuned with),
 and `rt_volume_shaft_asym` against `rt_volume_lassymetry` (0.5, tuned on the moon
 and on nine fogged maps).
+
+## 4a. "It works but it doesn't display very far" (2026-08-14, from play)
+
+Reported after the first build: a shaft is there under the lamp you are standing
+by, and a few metres away it is gone. **Two independent causes, both real**, and
+neither is brightness.
+
+**1. A lamp is inverse-square; the moon is not.** `sampleSphereLight` sets
+`dw = calcSolidAngleForSphere(radius, d)`, so a lamp's scattering falls as
+`1/d²` — **36× dimmer at 6 m than at 1 m**. The shafts this renderer already had
+come from the *sun*, and a directional light has no distance term at all. That
+difference, not the intensity, is why one reads across a whole level and a lamp's
+reads as a puddle around the bulb. `rt_volume_shaft_falloff` hands the exponent
+back: `radiance *= pow(max(d,1), k)`, `0` physical, `1` (the new default) `1/d`,
+`2` sun-like. Ladder: `lampshaft-phys` → shipping → `lampshaft-flat`.
+
+**2. The per-froxel ray budget was spent in list order — and the list is sorted
+by distance to the CAMERA.** With `mincontrib 0` the cull never fired, so the
+first `rt_volume_shaft_trace` (3) entries consumed *every* froxel's budget. A
+froxel ten metres down a corridor was tested against the three lamps behind the
+player and never against its own, which was therefore **absent, not dim**,
+however bright it was. `traceShaftLights()` is now two passes: pass 1 finds the
+brightest candidate at that froxel (ALU only, no rays), pass 2 traces only those
+within `rt_volume_shaft_relcull` of it. `lampshaft-listorder` keeps the old
+behaviour runnable.
+
+The general lesson, and it is the one this file already had in §2: **"nearest
+first" has to mean nearest to the thing being shaded.** A camera-sorted list is
+the right thing to *send* — it decides which fixtures exist this frame — and the
+wrong thing to *spend a per-cell budget with*. The two orderings look identical
+in a small room and diverge exactly where the report said they did.
+
+Distinguishing them, if this comes back: raise `rt_volume_shaft_trace` to 16. If
+distant shafts appear, it is selection order; if they stay absent but brighten,
+it is the falloff.
 
 ## 5. How to judge it
 
@@ -153,6 +190,8 @@ tuning.
 | `lampshaft-nomoon` | lamp shafts with nothing else in the air (`rt_sun 0`) |
 | `lampshaft-dense` / `lampshaft-bright` | more medium vs more light — judge separately |
 | `lampshaft-iso` | is the forward bias carrying the shaft (expect **dimmer**, not flatter) |
+| `lampshaft-phys` / `lampshaft-flat` | the falloff ladder: honest inverse square vs no falloff at all |
+| `lampshaft-listorder` | the reach bug, kept runnable (`relcull 0`) |
 | `lampshaft-near0` | the near fade off, i.e. the physical answer |
 
 Good interior candidates: the MAP07 clad corridors, any room with a ceiling

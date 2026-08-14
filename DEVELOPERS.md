@@ -36,6 +36,7 @@ were written *after* losing a day to the thing they describe.
 | …its implementation | [`docs/rt-fog-implementation.md`](docs/rt-fog-implementation.md) | The code path end to end, the two RTGL1 froxel changes, and its four traps. |
 | Volumetric smoke | [`docs/rt-smoke.md`](docs/rt-smoke.md) | `rt_smoke_*`, the six sources, the smoke lab, and why the sim is on the CPU. |
 | Impact sparks and debris | [`docs/rt-impact-fx.md`](docs/rt-impact-fx.md) | `rt_spark_*`. The hitscan hook that *is* a real game hook, the PUFF palette the look comes from, per-material debris, and **the texture surface classification** that drives it. Four bugs written up because each looked like the opposite of what it was. |
+| Lamp light shafts | [`docs/plan-light-shafts.md`](docs/plan-light-shafts.md) | **Shipped** — `rt_volume_shafts` and `rt_light_shafts.cpp`. The froxel pass scatters one light (the moon), so beams only ever happened outdoors; this adds an explicit fixture list on top. Covers **three lamp families only** — flames and lava still light surfaces without entering the medium. |
 | Water | [`docs/rt-water.md`](docs/rt-water.md) | Stylized surface + projected caustics, all cvars, four traps. |
 | Persistent blood | [`docs/blood-persist.md`](docs/blood-persist.md) | `rt_gore_*`, per-monster blood colour, and the material-naming bug that hid it. |
 | Flames | [`docs/flame-lighting.md`](docs/flame-lighting.md) | All 84 flame sprites are lit engine-side. Read before touching any torch, fire or candle. |
@@ -47,10 +48,10 @@ were written *after* losing a day to the thing they describe.
 
 | Doc | What it covers |
 |---|---|
-| [`docs/rt-feature-ideas.md`](docs/rt-feature-ideas.md) | The shortlist of candidate RT features, with what was **rejected and why** — read this before proposing a new effect. |
-| [`docs/plan-light-shafts.md`](docs/plan-light-shafts.md) | Shafts from ordinary lamps, not just the moon. The all-lights froxel estimate already exists for fog; the shaft pass just does not read it. |
+| [`docs/rt-feature-ideas.md`](docs/rt-feature-ideas.md) | The shortlist of candidate RT features, with what was **rejected and why** — read this before proposing a new effect. Glass and mirrors are rejected on the *art*, not the plumbing: the game has neither. |
 | [`docs/plan-heat-haze.md`](docs/plan-heat-haze.md) | Refractive air over lava and fire, via the unused `THIN_MEDIA` primitive flag. |
 | [`docs/plan-impact-fx.md`](docs/plan-impact-fx.md) | **Scorch decals only** — the sparks and debris half of this shipped, and is [`docs/rt-impact-fx.md`](docs/rt-impact-fx.md). |
+| [`docs/plan-projectile-impact-fx.md`](docs/plan-projectile-impact-fx.md) | Plasma arcs, Unmaker melt, rocket embers. Establishes that the impact hook is **hitscan only**, so no projectile in the game reacts to what it hits — that missing hook is the keystone for all three. |
 
 ## Lighting — the repair pipeline
 

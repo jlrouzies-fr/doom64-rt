@@ -5,7 +5,7 @@ nothing else; it now throws **sparks** off metal and **debris** off everything p
 labelled as something softer, with the material class coming from the same hand-labelling
 pass that authors the PBR metallic/roughness values.
 
-Cvars: `rt_spark_*` (38 of them). Ships with the master **off** (`rt_spark 0`) pending a
+Cvars: `rt_spark_*` (45 of them). Ships with the master **off** (`rt_spark 0`) pending a
 play verdict; everything else is on and tuned.
 
 Still planned, not built: scorch decals — [`plan-impact-fx.md`](plan-impact-fx.md).
@@ -142,7 +142,7 @@ Reload in-game with **`spark_surfaces`** — no restart, no rebuild.
 
 **Sparks are the default and only a positive label opts out.** This is a reversal of the
 first rule ("metal sparks, everything else is debris"), which was wrong for the state of the
-data: with 83 textures labelled of 2331, *everything else* meant almost the whole game, and
+data: with 83 textures labelled of 2331 at the time, *everything else* meant almost the whole game, and
 one unlabelled map would have turned every surface in it to chips. Opt-in means an unlabelled
 texture can only ever look un-upgraded, never wrong — and that is what makes
 `rt_spark_debris` safe to ship **on**.
@@ -234,6 +234,68 @@ Two consequences that are not optional:
 are separate batches: the blend mode is chosen by `emissive`, and additive can only ever
 *add*, whereas a chip must be able to be darker than the wall behind it.
 
+#### The traced albedo is PER-PRIMITIVE, not per-vertex
+
+Moving debris into the acceleration structure fixed the lighting and broke the colour, and
+the second half was silent. `HitInfo.inl`:
+
+```glsl
+// if no albedo textures, use primary color
+dst = mix( unpackUintColor( layerColors[ 0 ] ).rgb, dst, float( hasAnyAlbedoTexture ) );
+```
+
+`layerColors[0]` is `RgMeshPrimitiveInfo::color`, per **geometry**. `ShVertex` really does
+carry a `color` field, so the per-vertex data arrives intact and nothing warns — the traced
+albedo path simply never reads it. The **rasterized** path (`RsWorld.inl`) *does* use vertex
+colour, so the same geometry changes meaning as it moves between the two. Debris was correct
+while rasterized and went uniformly white the instant it became BLAS geometry, with
+`prim.color` still at `RG_PACKED_COLOR_WHITE`.
+
+**Chips were white by construction**, which is why the saturation fix, the tint and
+`rt_spark_debris_albedo` all failed to move them — and why the arm that settled it set albedo
+to **0.02** and they *stayed white*. A surface reflecting 2 % of what hits it cannot read as
+white under any light, so one run eliminated every brightness hypothesis at once.
+
+**So debris is batched by COLOUR.** A primitive carries exactly one albedo, and per-particle
+colour needs either one primitive per particle (thousands of uploads and BLAS entries) or
+particles grouped by colour. Grouping is far cheaper and the quantisation is invisible: chip
+colour comes from a handful of wall textures and a slow age ramp, so a room uses a few of the
+32 buckets. The key carries the class as well as the colour, so a class that later names a
+sprite still gets its own material.
+
+Two constraints on the bucket colour, both load-bearing:
+
+- **Packed alpha stays 1.0.** Below `MESH_TRANSLUCENT_ALPHA_THRESHOLD` (0.98) RTGL1 demotes
+  the primitive back to the rasterized overlay — i.e. straight back to fullbright, the thing
+  this whole path exists to escape.
+- **At the bucket cap a chip folds into bucket 0** rather than being dropped. A slightly
+  wrong colour is a far smaller artefact than debris vanishing.
+
+#### PBR is not the whiteout lever, and the header says so
+
+Asked in play, after the chips still blew out: *"should we give them light absorption
+property? like PBR?"* Right instinct, wrong lever. `RgMeshPrimitivePBREXT` exists and
+`ASManager.cpp:885` consumes it for exactly this geometry — but it documents its defaults as
+**roughness 1.0, metallic 0.0** when no roughness-metallic texture is present, which debris
+has none of. The chips were *already* the roughest, least-shiny dielectric available, and a
+rough diffuse surface returns `albedo × E / π` whatever its roughness. Lowering roughness
+makes them **shinier, not darker**.
+
+It is set explicitly anyway (`rt_spark_debris_rough` / `_metal`), because "no material at
+all" leaves the `ASManager` fallback unstated, and an unstated default is exactly the class
+of thing that costs days here. But it was never the fix — the albedo plumbing above was.
+
+#### Scattered normals
+
+Every chip used to carry the **surface** normal it came off. The flashlight is at the camera
+and chips fly toward the camera, so `N·L ≈ 1` for every chip at once — maximum irradiance,
+identically, on all of them. Reported as debris going white under the flashlight, and it is
+a genuinely separate cause from the albedo bug above; both were live at the same time.
+
+Normals are now scattered per particle, still biased **35 %** toward the surface normal: a
+chip did just come off that wall, and a uniform sphere of normals faces half of them into it.
+Real rubble has normals pointing everywhere, so only some fragments catch a light.
+
 ### 3.3 Chips take the colour of the wall
 
 Averaged with gzdoom's own `averageColor()` over the texture bitmap — the same call
@@ -255,6 +317,62 @@ sample.
   would put an albedo of 0.8 on a lump of concrete — which is precisely what made the first
   ramps read as *"too bright colors"*. **These ramps are albedos, not pixel colours**, and
   that changed meaning silently when debris moved to traced geometry.
+- **Chroma is expanded** (`rt_spark_debris_sat`, 3.0) — see below.
+
+**A whole-texture mean is a chroma killer, and that is the fourth bug.** Reported from play:
+chips are grey off a wall that is *"definitely beige / orange"*. The pipeline was working;
+the data was too dull to use. Measured, with the probe printing the sampled value:
+
+| texture | mean | chip at sat 1 | at sat 3 | at sat 5 |
+|---|---|---|---|---|
+| `SPACEAL` | `#574D4B` | `#544B49` | `#644741` | `#734339` |
+| `SPACECH1` | `#504848` | `#534B4B` | `#604747` | `#6D4444` |
+
+Both means *are* warm — R > G > B — but by about **14 %**, because beige highlights average
+against shadow and black gaps and collapse toward neutral. Normalizing luminance scales all
+three channels equally and faithfully preserves that 14 %, so the chip came out grey.
+
+**gzdoom hits the identical wall and solves it the other way:** `GetGlowColor` passes
+`maxout = 153` to `averageColor` precisely because a plain mean is too dull to be a glow
+colour. That normalizes the **peak channel**, which also blows brightness out — right for a
+glow, wrong for an albedo. So this expands chroma about the pixel's own luminance instead,
+leaving brightness to `rt_spark_debris_albedo`, and the two corrections stay independent.
+
+**The general lesson:** two of the four bugs on this page were an input that looked
+reasonable — a mean that *is* warm, a `FTextureID` that *is* a valid type — feeding maths
+that was correct. Instrumenting the value's whole path found both in one run each;
+adjusting magnitudes would have found neither.
+
+### 3.3a Contact occlusion under settled debris
+
+Straight from [`sprite-shadows-and-ao.md`](sprite-shadows-and-ao.md) §2: with no contact term
+a chip reads as hovering, and a cast shadow cannot supply one because a flat fragment lit at
+a shallow angle throws almost nothing. A blob answers *is something touching this floor*,
+which has the same answer from every light direction.
+
+An RTGL1 decal multiplied into the floor's albedo, so it scales with the light already there
+and is invisible in an unlit room, and it can never occlude or be hit. All three of that
+document's hard-won rules apply unchanged: **world-space verts with identity transform** (the
+`RsDecal.vert` trap), **a single fan** with no high-alpha ring, and **`emissive = 0`** or the
+decal shader falls back to `ldrEmis = albedo` and the blob glows.
+
+**Only SETTLED chips get one.** The claim a blob makes is that the thing is touching this
+floor, and a bouncing chip is not — the same honesty `rt_sprite_ao_fade` buys for a flying
+enemy.
+
+**One primitive per blob, and that was a bug fix.** The first version batched every fan into
+a single decal primitive and drew *lines reaching away from the blobs*. That version is
+geometrically sound — no triangle spans two blobs, each fan interpolates only its own
+vertices — and the documented 5 cm grazing-floor limit was ruled out first with a distance
+cull (`rt_spark_debris_ao_dist`, kept: it is a real limit). What actually fixed it was
+matching the shape of the implementation that works: the sprite AO uploads one fan per actor.
+Distinct `uniqueObjectID` per blob, since RTGL1 keeps one upload per ID and the **later** one
+loses. Bounded by `rt_spark_debris_ao_max` (64), because a decal upload is not free and a
+20 s debris life settles far more chips than are worth one each.
+
+**The generalisable part:** when a novel structure misbehaves and the obvious explanations
+have been ruled out by test, adopt the shape of the known-good implementation rather than
+reasoning further about why the novel one *should* work.
 
 ### 3.4 Two style modes
 
@@ -292,7 +410,7 @@ is the reference row of all 1s.
 | class | reads as |
 |---|---|
 | concrete | blocky chips, heavy, barely bouncy |
-| wood | splinters — aspect **0.12–0.35**, 0.62× gravity so it floats down further, 2.2× spin |
+| wood | splinters — aspect **0.12–0.35**, 0.62× gravity so it floats down further, 2.2× spin. Note these are genuinely line-shaped (~8:1); a "line" attached to a chip is this, not the AO |
 | dirt | crumbs — 1.8× count, small, **0.12× bounce** so it hits and stops, high friction |
 | flesh | blood droplets — fat, slow, **0.05× bounce**, short-lived |
 | fluid | splash — 2.4× count, small and fast, thrown wide, **full texture colour** |
@@ -488,6 +606,7 @@ screen**, and this project has lost sessions to not being able to tell them apar
 | `spark-still` | no gravity, long life, high restitution — the arm for reading collision |
 | `spark-debris` / `spark-nodebris` | classification on with the probe, and off |
 | `spark-debrisheavy` | more/bigger/longer chips, to confirm they darken **instantly** |
+| `spark-debrisdark` | albedo 0.02 — the **absurd arm** that proved the traced albedo was per-primitive |
 | `spark-debug` | the staged ladder |
 
 **Where:** the smoke lab, not a real level first — `python tools/build_smoke_lab.py`, then

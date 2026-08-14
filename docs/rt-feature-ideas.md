@@ -8,25 +8,31 @@ Ordered by payoff per unit of work when it was drawn up (2026-08-14).
 
 | # | Idea | Status |
 |---|---|---|
-| 1 | Light shafts from ordinary lamps, not just the moon | **planned** → [`plan-light-shafts.md`](plan-light-shafts.md) |
-| 2 | Glass and refraction on windows and grates | open |
-| 3 | Mirrors on polished floors and metal | open |
-| 4 | Finish metal/roughness authoring for real reflections | **rejected** — see below |
+| 1 | Light shafts from ordinary lamps, not just the moon | **done** — `rt_volume_shafts`, `rt_light_shafts.cpp` |
+| 2 | Glass and refraction on windows and grates | **rejected** — see below |
+| 3 | Mirrors on polished floors and metal | **rejected** — see below |
+| 4 | Finish metal/roughness authoring for real reflections | **done** — 898 textures, seven classes |
 | 5 | `ACID` liquid type for nukage and slime | **rejected** — see below |
 | 6 | Heat haze over lava and fire | **planned** → [`plan-heat-haze.md`](plan-heat-haze.md) |
 | 7 | Impact sparks and scorch decals | sparks **done** (`rt_spark_*`, ships off); scorch still planned → [`plan-impact-fx.md`](plan-impact-fx.md) |
 | 8 | Shootable lights — kill the fixture, kill the light | open |
+| 9 | Projectile impacts: plasma arcs, Unmaker melt, rocket embers | **planned** → [`plan-projectile-impact-fx.md`](plan-projectile-impact-fx.md) |
+| 10 | Flames and lava in the froxel medium, not just lamps | open |
+| 11 | Dust motes drifting in the lit shafts | open |
+| 12 | Underwater volumetrics below the water plane | open |
 
 ---
 
 ## Rejected
 
-**4. Finish the metal/roughness authoring.** The idea was that once `metallic` and
-`roughness` are right, path tracing gives reflections and highlights for free, with no
-engine work. It is a data problem, and the data cannot be produced: **no AI parsing of the
-textures was able to reliably tell metal from non-metal**, and doing 1000+ textures by hand
-is not worth it. `tools/fix_orm_metallic_ai.py` is the record of that attempt. Do not
-re-propose it as "just an authoring pass" — the authoring is the hard part.
+**2. Glass and refraction.** `RG_MESH_PRIMITIVE_GLASS` exists and tagging by texture name
+would have been cheap — but **Doom 64 has no glass**. The midtex "windows" and control-room
+screens this was aimed at are opaque panels in the art, not panes. There is nothing to tag.
+
+**3. Mirrors.** Same verdict for the same reason: **the game has no polished surfaces**.
+`MIRROR` stays water-only, which is the one genuinely reflective thing in it. Note this is a
+judgement about the *art*, not about the plumbing — the flag works; there are simply no
+customers for it.
 
 **5. `ACID` liquid type.** RTGL1 has a dedicated acid/nukage primitive flag that this
 project has never set, and on paper Doom 64's slime should use it. In practice **the game
@@ -35,16 +41,24 @@ map, and it is not even visible there. Nothing to apply it to.
 
 ## Still open, not planned
 
-**2. Glass and refraction.** `RG_MESH_PRIMITIVE_GLASS` and `GLASS_IF_SMOOTH` exist and are
-used in exactly one place (`rt_draw.cpp:306`). Doom 64 is full of midtex windows and
-control-room screens that render opaque or alpha-tested. Tagging them by texture name, the
-way `l_waterflag` tags water at `rt_draw.cpp:869`, would need no per-map work. This is
-probably the most unmistakably ray-traced effect available for the least engine work.
+**10. Flames and lava in the froxel medium.** Idea 1 shipped, but its fixture list is
+exactly three *lamp* families — inset, edge/lattice and solo bulbs (`rt_light_shafts.cpp:69`,
+selected by the `rt_volume_shaft_src` bitmask). Flames (`rt_flame_light_on`) and lava
+(`rt_lava_light_on`) get analytic lights that illuminate **surfaces only**, and never enter
+the medium. The result is a renderer that contradicts itself: walk past a ceiling grate on a
+fogged map and there is a beam; walk past a torch and the wall lights up while the air around
+it stays dead. Adding two source kinds to the existing mask reuses the cull, the budget and
+the per-cell contribution test that already shipped.
 
-**3. Mirrors.** `MIRROR_IF_SMOOTH` keyed on flat name, used sparingly — a few hell-marble
-floors, some tech-base metal. `MIRROR` is currently water-only. Note this partly overlaps
-idea 4: a mirror flag sidesteps the metal-authoring problem by naming the handful of
-surfaces that should reflect, instead of trying to classify every texture.
+**11. Dust motes in the shafts.** Sparse drifting particles in lit air — the thing that makes
+volumetrics read as volume rather than as a gradient. The particle path is already wired:
+`rgSpawnFluid` is live and `rt_sparks.cpp` drives it for impact debris. Needs no per-map
+work and pays off on every map already lit.
+
+**12. Underwater volumetrics.** Water is flagged, reflective and casts caustics — but only
+from above; submerged sectors have clear air under the surface. A scattering medium below
+the plane, with light refracted through it, reuses the froxel machinery rather than adding a
+pass.
 
 **8. Shootable lights.** Retribution lights fixtures with 9800/9801/9802 things; making a
 few destructible means shooting a lamp actually drops the room into darkness. The only
