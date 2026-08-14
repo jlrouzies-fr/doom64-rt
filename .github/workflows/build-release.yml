@@ -81,7 +81,10 @@ jobs:
 
           # Prune before the cache is saved: 2.9 GB extracted, of which this
           # project loads none. Keeps the cache small and the staging step quick.
-          foreach ($d in 'replace_old','scenes','scenes_doom2_backup','bin_remix','launcher','mat_src') {
+          # 'replace' is the name in a fresh package (1.9 GB of Doom II glTF
+          # models that RTGL1 would load); 'replace_old' is only what a developer
+          # renames it to locally to disable it. Both listed on purpose.
+          foreach ($d in 'replace','replace_old','scenes','scenes_doom2_backup','bin_remix','launcher','mat_src') {
             Remove-Item -Recurse -Force "gzdoom-rt-1.0.2\rt\$d" -ErrorAction SilentlyContinue
           }
           foreach ($d in 'filter','sounds') {

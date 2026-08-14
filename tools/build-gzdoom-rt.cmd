@@ -72,14 +72,18 @@ set "OUT=%ROOT%\build\RelWithDebInfo"
 set "REL=%PROJ%\gzdoom-rt-1.0.2"
 rem Stage the stock rt/ tree, minus the parts this project never loads. Copying
 rem them cost 2.2 GB and several minutes on every fresh build for nothing:
-rem   replace_old  1.9 GB of Doom II glTF replacements
+rem   replace      1.9 GB of Doom II glTF model replacements. NOTE the name: a
+rem                fresh stock package calls it "replace" and RTGL1 loads it.
+rem                "replace_old" is only what it gets renamed to locally to
+rem                switch it off, so both spellings are excluded here.
 rem   scenes       Doom II static scenes; our maps log "no static scene" anyway
 rem   bin_remix    the D3D9/Remix path; we are native Vulkan
 rem   wad\filter, wad\sounds   224 MB of Doom II assets inside RT's resource wad
-rem They are all still in %REL% if anything ever needs them.
+rem They are all still in %REL% if anything ever needs them. If this project ever
+rem ships its OWN rt\replace models, they go into %OUT% after this step, not here.
 if not exist "%OUT%\rt" (
   robocopy "%REL%\rt" "%OUT%\rt" /E /NFL /NDL /NJH /NJS /NP ^
-    /XD replace_old scenes scenes_doom2_backup bin_remix filter sounds >nul
+    /XD replace replace_old scenes scenes_doom2_backup bin_remix filter sounds >nul
   if errorlevel 8 (
     echo ERROR: staging rt/ from the stock package failed
     exit /b 1

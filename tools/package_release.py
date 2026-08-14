@@ -38,8 +38,12 @@ RT_KEEP_DIRS = {
     "mat_dev":  "our authored PNG materials - what developerMode reads",
     "wad":      "our menu overlay",
 }
+# The keep-list above is what actually decides the package, so these are dropped
+# by omission. Listed for the record -- and if this project ever ships its own
+# rt/replace models, "replace" has to move up into RT_KEEP_DIRS.
 RT_DROP_DIRS = {
-    "replace_old":        "1.9 GB of Doom II glTF replacements, unused here",
+    "replace":            "1.9 GB of Doom II glTF model replacements (the stock name)",
+    "replace_old":        "the same folder, renamed locally to switch it off",
     "scenes":             "Doom II static scenes; our maps have none",
     "scenes_doom2_backup": "backup of the above",
     "bin_remix":          "the D3D9/Remix path; we are native Vulkan",
