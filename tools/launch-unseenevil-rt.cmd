@@ -57,12 +57,26 @@ if /i "%~1"=="doom1" (
   shift
 )
 
+rem Steam's modern "Ultimate Doom" depot is a BUNDLE: one app folder holds every
+rem classic IWAD, with DOOM.WAD at base\ and the rest one level down in
+rem base\doom2\, base\tnt\, base\plutonia\. Both layouts are searched.
+rem
+rem base\ IS PREFERRED OVER rerelease\ ON PURPOSE, and the order below is the
+rem whole of that decision. The 2024 KEX re-release ships its own doom.wad and
+rem doom2.wad next to the classic ones with DIFFERENT contents and sizes
+rem (doom2: 14951361 vs the classic 14604584). AGENTS.md pins 14604584 as the
+rem known-good size for this project and warns against a differently-sized copy,
+rem so rerelease\ is never listed here -- if it were found first, everything
+rem downstream would silently be running against a different game.
 if not defined D64RT_UE_IWAD (
   for %%W in (
     "D:\Games\GZDoom\%WANT%"
+    "G:\SteamLibrary\steamapps\common\Ultimate Doom\base\%WANT%"
+    "G:\SteamLibrary\steamapps\common\Ultimate Doom\base\doom2\%WANT%"
     "%ProgramFiles(x86)%\Steam\steamapps\common\Doom 2\base\%WANT%"
     "%ProgramFiles(x86)%\Steam\steamapps\common\Doom 2\masterbase\%WANT%"
     "%ProgramFiles(x86)%\Steam\steamapps\common\Ultimate Doom\base\%WANT%"
+    "%ProgramFiles(x86)%\Steam\steamapps\common\Ultimate Doom\base\doom2\%WANT%"
     "C:\Program Files (x86)\GOG Galaxy\Games\DOOM II\%WANT%"
     "%USERPROFILE%\Documents\GZDoom\%WANT%"
     "%PROJ%\%WANT%"
