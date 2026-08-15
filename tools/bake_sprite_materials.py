@@ -138,8 +138,15 @@ def bake(export_path: Path, dry_run: bool) -> int:
 
     for code, entry in sorted(codes.items()):
         clusters = entry.get("clusters") or []
-        centroids = [c["rgb"] if c else None for c in clusters]
-        if not any(c is not None for c in centroids):
+        # EVERY centroid, called or not. A pixel belongs to whichever cluster
+        # the page put it in; whether the human got round to calling that
+        # cluster changes what it BAKES AS, never which cluster it is. Matching
+        # against called centroids only is what made a half-finished sprite
+        # bake wrong instead of merely incomplete -- skin snapping to the
+        # barrel because the barrel was the only thing named.
+        # (`None` survives only for exports written before this shape.)
+        centroids = [(c or {}).get("rgb") for c in clusters]
+        if not any(c and c.get("surface") for c in clusters):
             continue
 
         frames = [f for f in entry.get("frames", []) if f in images]
@@ -170,7 +177,7 @@ def bake(export_path: Path, dry_run: bool) -> int:
                     if hit is None:
                         k = nearest(key, centroids)
                         c = clusters[k] if k >= 0 else None
-                        if c is None:
+                        if c is None or c.get("surface") is None:
                             met, rgh = UNLABELLED_METALLIC, UNLABELLED_ROUGHNESS
                             unlabelled_hits += 1
                         else:

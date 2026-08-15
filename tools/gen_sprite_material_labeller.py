@@ -718,18 +718,26 @@ function exportObj() {{
   DATA.forEach(d => {{
     const L = labels[d.code];
     if (!L || !L.cls || !L.cls.filter(Boolean).length) return;
+    // EVERY cluster is exported, called or not, and the uncalled ones keep
+    // their rgb. Dropping them entirely is what made a half-finished sprite
+    // bake wrong rather than merely incomplete: with the uncalled centroids
+    // missing, the baker had nowhere to put those pixels and snapped them to
+    // the nearest CALLED cluster instead -- so labelling a gun's barrel and
+    // stopping made the hands metal. The baker needs the whole cluster set to
+    // tell "this pixel is skin" from "this pixel is barrel".
     const cl = d.clusters.map((c, i) => {{
-      if (!L.cls[i]) return null;
-      const s = byName[L.cls[i]];
+      const name = L.cls[i] || null;
+      const s = name ? byName[name] : null;
       return {{
         rgb: c,
-        surface: L.cls[i],
-        metallicDefault: s.m,
-        roughnessDefault: (L.rgh[i] === undefined || L.rgh[i] === null) ? s.r : L.rgh[i]
+        surface: name,
+        metallicDefault: s ? s.m : null,
+        roughnessDefault: !s ? null
+          : ((L.rgh[i] === undefined || L.rgh[i] === null) ? s.r : L.rgh[i])
       }};
     }});
     out.codes[d.code] = {{ clusters: cl, frames: d.frames.map(f => f.lump) }};
-    n += cl.filter(Boolean).length;
+    n += cl.filter(c => c.surface).length;
   }});
   out.__meta = {{ scope: "{cat}", clusters_labelled: n }};
   return out;
@@ -748,7 +756,7 @@ $("bImport").onclick = () => {{
   Object.entries(o.codes || {{}}).forEach(([code, v]) => {{
     const L = labels[code] || (labels[code] = {{ cls:[], rgh:[] }});
     (v.clusters || []).forEach((c, i) => {{
-      if (!c) return;
+      if (!c || !c.surface) return;   // uncalled clusters now ship as rgb-only
       L.cls[i] = c.surface;
       L.rgh[i] = c.roughnessDefault;
     }});
