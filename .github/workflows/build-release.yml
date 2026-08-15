@@ -209,6 +209,13 @@ jobs:
           foreach ($c in 'rt_sprite_pbr_mix','rt_tex_pbr_mix','rt_metallic') {
             if ($pins -notmatch [regex]::Escape($c)) { throw "d64rt-pins.cfg does not pin $c" }
           }
+          # developerMode must be ON (the material loader is KTX2-only without it)
+          # and debugWindows must be OFF (it opens RTGL1's ImGui window over the
+          # game). They used to be the same flag; shipping the window is the kind of
+          # thing a player sees instantly and CI never would.
+          $rtgl = Get-Content "$p\rt\RTGL1.json" -Raw | ConvertFrom-Json
+          if (-not $rtgl.developerMode) { throw 'RTGL1.json: developerMode is off - authored materials would be ignored' }
+          if ($rtgl.debugWindows)       { throw 'RTGL1.json: debugWindows is on - the release would open the debug window' }
           # Nothing that belongs to somebody else's game, and nothing we cannot ship.
           foreach ($f in @('D64RTR_v15.WAD','D64MUS.PK3','doom2.wad','DOOMSND.SF2','D64RTR_BRIGHTMAPS.PK3')) {
             if (Get-ChildItem $p -Recurse -Filter $f -ErrorAction SilentlyContinue) {

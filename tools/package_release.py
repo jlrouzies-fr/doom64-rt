@@ -135,10 +135,17 @@ def main():
         if f.is_file() and f.name not in RT_ROOT_SKIP:
             shutil.copy2(f, out / "rt" / f.name)
 
-    # a package must never ship developerMode off: without it every authored
-    # PNG material is ignored and the game quietly looks stock.
+    # A package must never ship developerMode off: the main material path uses
+    # RTGL1's OnlyKTX2LoaderIfNonDevMode(), which outside devmode is KTX2-ONLY,
+    # so every authored PNG material is ignored and the game quietly looks stock.
+    #
+    # developerMode also used to open the ImGui debug window, which a player must
+    # never see. RTGL1 now takes a separate "debugWindows" flag, so the loader and
+    # the window can be asked for independently -- this writes the one combination
+    # a release wants: materials yes, window no.
     (out / "rt" / "RTGL1.json").write_text(
-        '{\n  "version": 0,\n  "developerMode": true,\n  "vulkanValidation": false,\n'
+        '{\n  "version": 0,\n  "developerMode": true,\n  "debugWindows": false,\n'
+        '  "vulkanValidation": false,\n'
         '  "dx12Validation": false,\n  "dlssValidation": false,\n  "fpsMonitor": false\n}\n',
         encoding="ascii")
 
