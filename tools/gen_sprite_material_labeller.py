@@ -78,6 +78,18 @@ SURFACES = [
 
 ROUGH_BUCKETS = [0.05, 0.20, 0.40, 0.60, 0.80, 0.95]
 
+# The WAD's own section dividers decide which page a code lands on, and mostly
+# they are right. These are the ones where they are not, judged by WHAT THE
+# LABELLER NEEDS TO SEE TOGETHER rather than by what the sprite technically is.
+#
+# BEXP is the barrel's explosion. The WAD files it under EFFECTS with the
+# fireballs, which is true of its role and useless for this job: its materials
+# are the barrel's materials mid-destruction, so it wants to be labelled beside
+# BAR1 on the props page, not beside a plasma bolt.
+CODE_SECTION_OVERRIDES = {
+    "BEXP": "STATIC",
+}
+
 
 def read_lumps(data: bytes) -> list[tuple[str, int, int]]:
     n, o = struct.unpack_from("<II", data, 4)
@@ -146,14 +158,15 @@ def collect(cat_filter: set[str] | None, code_filter: set[str] | None):
         if not m:
             continue
         code = m.group(1)
-        if cat_filter and category not in cat_filter:
+        section = CODE_SECTION_OVERRIDES.get(code, category)
+        if cat_filter and section not in cat_filter:
             continue
         if code_filter and code not in code_filter:
             continue
         im = load_sprite(data[off : off + sz])
         if im is None:
             continue
-        rec = by_code.setdefault(code, {"code": code, "cat": category, "frames": []})
+        rec = by_code.setdefault(code, {"code": code, "cat": section, "frames": []})
         # Only the stored image. The mirrored half of a rotation pair is the
         # same pixels and the engine flips the _orm with the albedo.
         rec["frames"].append({"lump": nm, "im": im})
