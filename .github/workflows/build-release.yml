@@ -192,14 +192,14 @@ jobs:
 
           # THE AUTHORED MATERIALS. 898 wall/flat textures and 132 sprite codes were
           # hand-classified; they reach the package only because build-gzdoom-rt.cmd
-          # copies Retribution-RT-Materialst over the stock rt\. If that copy ever
+          # copies Retribution-RT-Materials\rt over the stock rt\. If that copy ever
           # stops happening the package still builds, still runs, and silently looks
           # like the stock game -- exactly the failure the textures.json size check
           # above exists for, one directory along.
-          $orm = @(Get-ChildItem "$pt\mat_dev" -Filter '*_orm.png' -ErrorAction SilentlyContinue).Count
+          $orm = @(Get-ChildItem "$p\rt\mat_dev" -Filter '*_orm.png' -ErrorAction SilentlyContinue).Count
           if ($orm -lt 1500) { throw "rt\mat_dev has $orm _orm maps - the authored materials did not make it" }
           foreach ($m in 'SHTGA0_orm.png','POSSA1_orm.png') {
-            if (-not (Test-Path "$pt\mat_dev\$m")) { throw "rt\mat_dev is missing $m - the SPRITE materials did not make it" }
+            if (-not (Test-Path "$p\rt\mat_dev\$m")) { throw "rt\mat_dev is missing $m - the SPRITE materials did not make it" }
           }
 
           # The launcher reads mods\d64rt-pins.cfg and its +cvar pins OVERRIDE the
@@ -209,7 +209,6 @@ jobs:
           foreach ($c in 'rt_sprite_pbr_mix','rt_tex_pbr_mix','rt_metallic') {
             if ($pins -notmatch [regex]::Escape($c)) { throw "d64rt-pins.cfg does not pin $c" }
           }
-
           # Nothing that belongs to somebody else's game, and nothing we cannot ship.
           foreach ($f in @('D64RTR_v15.WAD','D64MUS.PK3','doom2.wad','DOOMSND.SF2','D64RTR_BRIGHTMAPS.PK3')) {
             if (Get-ChildItem $p -Recurse -Filter $f -ErrorAction SilentlyContinue) {
