@@ -38,7 +38,7 @@ theirs — the code is Claude's. <a href="AI-DECLARATION.md">Details</a>.
 
 ## ⛧ &nbsp;Contents
 
-- [**Features**](#features) — [lighting](#lighting) · [atmosphere](#atmosphere) · [materials](#materials) · [sprites, monsters, gore](#sprites) · [HUD and menus](#hud) · [denoising and upscaling](#denoising)
+- [**Features**](#features) — [lighting](#lighting) · [atmosphere](#atmosphere) · [materials](#materials) · [sprites, monsters, gore](#sprites) · [impacts and destruction](#impacts) · [HUD and menus](#hud) · [denoising and upscaling](#denoising)
 - [**Install and play**](#install) — download, extract, point it at your copy of Retribution
 - [**Building it yourself**](#building) — [what you need](#requirements) · [dependencies](#dependencies) · [build](#build) · [first run](#first-run)
 - [**Launchers**](#launchers) — how the game and the A/B arms are started
@@ -91,6 +91,8 @@ this project is finding those and replacing them with something that actually em
 | **Clouds + lightning** | A layered cloud deck (`rt_clouds_*`): 6–8 baked slices drawn as stacked sky-dome shells, so they parallax and occlude each other. It is sky *geometry*, not a participating medium — but moonlight is tinted and attenuated through the stack, and it flashes with MAP11's storm, whose schedule this puts back. `thunder` CCMD. | [`rt-clouds-and-lightning`](docs/rt-clouds-and-lightning.md) |
 | **Per-map fog** | A froxel volume with a near/far ramp, tuned per level (`rt_fog_*`, `RT_FOG_PRESETS`, `fog` CCMD). Needed two RTGL1 froxel changes. | [`rt-fog`](docs/rt-fog.md) · [implementation](docs/rt-fog-implementation.md) |
 | **Volumetric smoke** | Muzzle smoke as a real participating medium inside the fog's froxel volume, so it takes the colour of whatever lights the room. Six sources: weapons, monster guns, projectiles, barrels, flames. Sim is on the CPU, on purpose. `smoke` CCMD. | [`rt-smoke`](docs/rt-smoke.md) |
+| **Light shafts from lamps** | The froxel pass shadow-tests one light per frame — the sun — which is why beams only ever happened outdoors. An explicit fixture list puts ordinary ceiling lamps, bulb lattices and solo bulbs in the air too (`rt_volume_shafts`, `rt_volume_shaft_src` as a family bitmask). | [`plan-light-shafts`](docs/plan-light-shafts.md) |
+| **Dust motes** | Tiny quads on a hashed world grid, drawn where a shaft can actually light them (`rt_dust_*`). Bounded by construction: the cap sets the cell spacing rather than a counter. | — |
 | **Water** | Stylized surface with projected caustics; flats are tagged engine-side, no per-map setup. | [`rt-water`](docs/rt-water.md) |
 | **Lava** | The floor is the emitter — drifting quantized heat field (`rt_lava_flow*`), slow whole-surface breath, optional analytic light grid over the flats. | — |
 
@@ -152,6 +154,25 @@ tools, the export format and the bakers.
   first one drawn won. → [`docs/blood-persist.md`](docs/blood-persist.md)
 - **Spectres** — rasterized translucent overlay with an alpha floor, rather than forced
   water/glass. → [`docs/spectre-issue-log.md`](docs/spectre-issue-log.md)
+
+<a id="impacts"></a>
+### Impacts and destruction
+
+Everything a shot leaves behind. All of it is renderer-side — no DECORATE edits, so it
+works on the WAD's own classes.
+
+- **Sparks and debris** (`rt_spark_*`) — a real hook in `P_LineAttack` with the true
+  surface normal and the hit texture in hand. What a surface throws is decided by the
+  **material classification**: metal sparks, concrete chips, flesh does neither. Chips
+  bounce, settle, and get a contact-occlusion blob under them.
+  → [`docs/rt-impact-fx.md`](docs/rt-impact-fx.md)
+- **Projectile impacts** (`rt_arc_*`) — that hitscan hook is hitscan only, so no projectile
+  in the game reacted to what it hit. Plasma, the arachnotron's bolt and the BFG now leave
+  a branching electric mark with its own light and its own colour ramp.
+  → [`docs/plan-projectile-impact-fx.md`](docs/plan-projectile-impact-fx.md)
+- **Exploding barrels** (`rt_barrel_*`) — the barrel comes apart into curved plate pieces
+  that fly, tumble, settle and scorch the floor under them, instead of vanishing into a
+  sprite animation.
 
 <a id="hud"></a>
 ### HUD, menus, presentation
