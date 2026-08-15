@@ -166,3 +166,4 @@ doom64-rt-settings.txt
 # tools/bake_material_labels_orm.py before the first write. Local undo state:
 # "--revert" reads them, and they are regenerable by reverting and re-applying.
 *.pre_material_labels
+*.pre_sprite_materials

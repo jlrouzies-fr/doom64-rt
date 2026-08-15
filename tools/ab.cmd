@@ -61,7 +61,14 @@ echo.
 echo     Read the arm back in game with `smoke` (or the cvar name) to confirm it
 echo     applied -- a tool printing a value is not evidence that the game took it.
 echo.
-call "%~dp0launch-retribution-rt.cmd" %MAP% debug -- +exec "%CFG%" %EXTRA%
+rem THE LOADOUT, on every A/B run. Most arms are for a weapon the player does
+rem not start the level holding, and an arc arm with no plasma rifle shows
+rem nothing -- indistinguishable from the arm having failed to apply.
+rem
+rem After the arm, so a one-off "-- +give ..." still wins. It contains a `wait`
+rem because `give` from the pins (which run before +map) is silently dropped
+rem even though `god` from the same place is not. See ab-cheats.cfg.
+call "%~dp0launch-retribution-rt.cmd" %MAP% debug -- +exec "%CFG%" +exec "%~dp0ab-cheats.cfg" %EXTRA%
 exit /b %ERRORLEVEL%
 
 :list

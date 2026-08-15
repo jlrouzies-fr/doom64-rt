@@ -39,6 +39,50 @@ one weapon with a lit element in its art.
 So the shotgun barrel, the chaingun and the Unmaker are flat dielectrics at default
 roughness, held six inches from the camera, in front of 898 hand-labelled walls.
 
+## 0b. The tool — built, weapons page published
+
+**Generator:** `tools/gen_sprite_material_labeller.py` → `tools/_gallery/sprite_labeller_<cat>.html`
+**Baker:** `tools/bake_sprite_materials.py` (wrapper: `tools/apply-sprite-labels.cmd`)
+**Published (weapons):** https://claude.ai/code/artifact/d964ae8f-4160-4620-9335-9bc6d8b1598f
+
+**It labels COLOUR CLUSTERS, not images or pixels**, and that is the decision the
+whole tool turns on. A sprite cannot take one answer per image — a shotgun is a
+metal receiver, a wooden stock and two hands. But painting 1387 sprite lumps by
+hand is a job nobody finishes. A sprite *code* reuses one small colour set across
+every frame and rotation it has, so labelling the colours once labels them all:
+**TROO is 68 frames sharing 219 distinct colours.** Clicking a cluster still
+highlights exactly the barrel or exactly the flesh, which is the "select a part"
+gesture the work needs.
+
+**Sprites are not one format, which is why clustering is needed rather than
+reading a palette.** Monsters are indexed PNGs with tight palettes; several
+weapon sprites are truecolour — `SHTG` spans **4898** distinct colours over 10
+frames, `PLSG` **6823**. Exact-colour labelling works for the first group and
+explodes on the second, so everything is quantised to a common ceiling (28 by
+default) and the human labels the quantised set.
+
+Nine classes, each with a metallic and a default roughness: metal, flesh, cloth,
+leather, wood, bone, rubber, lens, other.
+
+**Mirrored rotations are deliberately not emitted.** The WAD stores one image for
+e.g. rotations 2 and 8 and the engine flips it at draw time — it flips the `_orm`
+the same way, so labelling the mirror would be labelling the same pixels twice.
+
+Two things the baker gets right that are worth not re-deriving:
+
+- **The albedo is never rewritten.** Sprite PNGs carry `grAb` offset chunks and
+  Pillow drops them; a regenerated sprite renders sunk into the floor, or
+  misplaced on screen for a viewmodel. Only `_orm` companions are written.
+- **A zero-byte backup means "this file did not exist".** No weapon sprite has an
+  `_orm` today, so the first real bake *creates* every file it writes — and a
+  revert that only restores overwrites leaves all of them behind. Found by
+  running it: the first `--revert` reported "restored 0" while four new files sat
+  in the tree.
+
+Pixels whose cluster was never called take a **dielectric** default, never metal:
+a wrongly-metal surface in a dark room goes black and reads as a rendering bug
+rather than as a labelling gap.
+
 ## 1. The contract, restated because it decides the whole plan
 
 From [`sprite-illumination.md`](sprite-illumination.md), and it is the reason this page is

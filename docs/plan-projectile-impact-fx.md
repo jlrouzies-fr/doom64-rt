@@ -12,6 +12,7 @@
 | 5 | rocket embers + smoke | planned — the ONLY *projectile* impact that gets smoke |
 | 6 | barrel fire, floor scorch, smoking debris, acid | planned — shares §5's ember mechanism |
 | 7 | bullet holes with relief | planned — cheapest item here, and the most often on screen |
+| 8 | ejected shell casings | **already built in the WAD, shipped off** — a pin, then RT polish |
 
 Two scope calls that override what the sections below propose:
 
@@ -423,6 +424,48 @@ Also: RTGL1 resolves materials through `rt/data/textures.json` only — the spli
 `textures_*.json` overlays are inert, and the live build-directory copy has to be edited too.
 Budget for that, it has cost this project a session before.
 
+## 8. Ejected shell casings — already built, shipped OFF
+
+**Do not build this.** Retribution ships the entire feature and it is switched off by a
+cvar. The work here is turning it on and then making it look right under path tracing; there
+is no gameplay code, no DECORATE and no art to author.
+
+What is already in `D64RTR_v15.WAD`:
+
+| | |
+|---|---|
+| actors | `BulletCasing` and `ShellCasing`, both from `CasingBase` |
+| physics | `BounceFactor 0.5`, `WallBounceFactor 0.4`, `BounceCount 5`, `BounceType Doom`, `+MOVEWITHSECTOR`, `+FLOORCLIP`, `+CLIENTSIDEONLY` |
+| sprites | 13 × `BCAS` — 8 tumble frames plus **5 different rest poses** chosen at random on landing — 8 × `SCAS`, 6 × `SHDY` |
+| sound | 28 lumps: random bounce sets per casing type, impact sets, and a separate liquid-hit set |
+| liquid | a casing landing in blood or slime vanishes with its own sound |
+| per-weapon ejection | pistol and chaingun throw `BulletCasing` from `(12, 0, 35)`; shotgun throws `ShellCasing` from `(30, 0, 35)`; **the SSG throws two**, at `Random(0,1)` and `Random(-2,-3)` lateral |
+
+The switch is `d64_dropcasings`, declared `server int d64_dropcasings = 0;` and read by an ACS
+script that every weapon's Fire state jumps on (`A_JumpIf(CallACS("DropCasings") == 1,
+"CasingsFire")`). A menu entry is authored for it too: `Option "Eject Casings",
+"d64_dropcasings", "DropCasingsToggler"`.
+
+So step one is **one line in `tools/d64rt-pins.cfg`**, and then look at it.
+
+### What the RT side would actually owe
+
+- **Contact occlusion.** A casing is a sprite: a camera-facing quad with no thickness, so a
+  settled one reads as HOVERING and a cast shadow cannot fix it — a flat fragment lit at a
+  shallow angle throws almost nothing. This is exactly what `docs/sprite-shadows-and-ao.md`
+  exists for and what `rt_spark_debris_ao` already does for chips. Shipped machinery, pointed
+  at a new population.
+- **Brass is metal**, and these will render as flat dielectrics until they have a PBR entry.
+  That is the `tools/_material_labels` pipeline, which belongs to the other agent — flag it
+  there rather than editing `textures.json` by hand.
+- **Population, and this is the one to check before pinning it on.** The chaingun fires
+  ~8.5/s and the casings' Death states are `-1` — they lie there for the rest of the level.
+  A sustained fight puts a great many sprites on the floor, each a candidate for a shadow
+  proxy and an AO blob. Measure it with a frame time on screen and a held trigger before
+  deciding the default, the same way `spark-glowmax` and `arc-glowmax` exist as cost probes.
+- **If the sprites are ever regenerated, PIL drops the `grAb` chunk** and they will sink into
+  the floor. They should not need regenerating — but a PBR pass that round-trips them would.
+
 ## Suggested order
 
 1. **§1** — self-contained, no new plumbing, immediately changes how the weapon feels.
@@ -438,6 +481,10 @@ Budget for that, it has cost this project a session before.
 **§7 sits outside this order and can be done at any point** — it depends on nothing above,
 needs no new plumbing, and is the only item on this page that shows up on every single shot
 rather than on one weapon. If the list stalls, do that one.
+
+**§8 is not really on this list at all** — it is one pin plus a look, since the WAD already
+ships the whole feature. Do it whenever there is an idle five minutes; the only real question
+it raises is the population cost, and that is answered by looking rather than by planning.
 
 ## Open questions
 
