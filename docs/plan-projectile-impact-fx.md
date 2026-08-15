@@ -1,8 +1,19 @@
-# Plan — projectile impact FX: plasma arcs, Unmaker melt, rocket embers
+# Plan — projectile impact FX: plasma arcs, Unmaker burn, rocket embers, barrels
 
-**Status:** §2, §3 and §5 are BUILT and accepted in play, and the scorch decal came with
-them — which also delivers what `plan-impact-fx.md` had been carrying as unbuilt. §1, §6 and
-§7 remain; §4 is set aside; §8 turns out to need no building at all.
+**Status: DONE.** Everything on this page is built, judged in play and shipping on, with
+one deliberate exception: **§7, bullet holes with relief, is set aside** — impact depth is
+not being pursued for now.
+
+Two items were delivered differently from how they were written, and the difference is
+worth reading before trusting the section text below:
+
+- **§4 was "Unmaker melt" and shipped as an Unmaker BURN** — a small red crackle with a
+  churn and one smoke thread, reusing the plasma filigree rather than the melt/drip idea
+  the section describes. See the note on §4.
+- **§6's barrels shipped without the fire and without the acid.** The scorch, the plate
+  and the smoking coals are all in; the short-lived flame emitter (§6.2) and the acid
+  (§6.3, which was always a design decision before it was code) were not built and are
+  not currently wanted.
 
 Impacts that leave a mark today: the player's rocket and plasma, the BFG, and — added after
 a play note that they were missing — the cyberdemon's rocket, the revenant's tracer (`TRCR`),
@@ -17,19 +28,45 @@ Scope decided in play review:
 |---|---|---|
 | 2 | projectile impact hook | **built** — `RT_UpdateProjectileImpacts`, its own walk |
 | 3 | plasma / BFG / arachnotron arcs | **built** — `rt_arc*`, ships **on** |
-| 1 | plasma light instability | planned |
-| 4 | Unmaker melt | **dropped for now** — see below |
+| 1 | plasma light instability | **built** — the light-density fix landed here instead: `rt_arc_glow_max` 10 → 100, and one light per Unmaker mark instead of 26 |
+| 4 | Unmaker impact | **built** — `rt_laser*`; a red crackle, small churn, one smoke thread, cold in 10 s. Not the melt this section describes |
 | — | the scorch decal | **built** as part of §3/§5 (`rt_arc_burn*`), which also delivers `plan-impact-fx.md` |
 | 5 | rocket embers + smoke | **built** — `rt_ember*`; embers live ON the mark, not as particles |
-| 6 | barrel fire, floor scorch, smoking debris, acid | planned — shares §5's ember mechanism |
-| 7 | bullet holes with relief | planned — cheapest item here, and the most often on screen |
-| 8 | ejected shell casings | **already built in the WAD; pinned ON** — RT polish is what remains |
+| 6 | barrel scorch, plate, smoking coals | **built** — `rt_barrel*`, hand-cut art in `rt/mat/d64rt/barrel/`. Fire (§6.2) and acid (§6.3) NOT built |
+| 7 | bullet holes with relief | **set aside** — impact depth is not being pursued |
+| 8 | ejected shell casings | **built** — the WAD's own system, `d64_dropcasings` pinned ON |
+
+### What shipped, in one place
+
+Every impact in the game now leaves something, and each has its own knobs so tuning one
+cannot move another — a rule this system had to learn three times:
+
+| source | mark | cvars |
+|---|---|---|
+| plasma / arachnotron / BFG | electric filigree + scorch | `rt_arc*` |
+| rocket, cyberdemon rocket, `TRCR`, `RBAL`, `MANF` | scorch + glowing coals + smoke | `rt_ember*` |
+| Unmaker laser | small red crackle + churn + one smoke thread, 10 s | `rt_laser*` |
+| exploding barrel | floor scorch, ~50 coals, 60 pieces of hand-cut plate, permanent | `rt_barrel*` |
+| hitscan | sparks and material debris | `rt_spark*`, now shipping **on** |
+
+Still unmarked by choice: imp fireballs (`64DoomImpBall`, `64NightmareImpBall`) and
+`64MotherFire` — a judgement about how marked-up a normal firefight should get, one table
+row each if that changes.
+
+**The lesson worth carrying out of this plan** is not in any section. The Unmaker mark was
+tuned for an afternoon in the impact lab and produced *nothing at all* in game, because
+`arc_here` plants a mark directly and therefore validates the RENDERER while never once
+exercising the TRIGGER. `UnmakerLaser` is a `FastProjectile` at Speed 200 that explodes
+inside the tic it was fired, so the disappearance rule every other projectile uses could
+never see it. A lab that only draws the effect will happily certify a feature nothing asks
+for. `tools/impact-lab.ps1 -Weapon <class>` now fires the real weapon, and every impact
+here is worth one run through it.
 
 Two scope calls that override what the sections below propose:
 
-- **No smoke on plasma, and none on the Unmaker.** Embers and their smoke threads
-  belong to the **rocket** impact alone. §5 stands as written; §4's melt is set aside
-  rather than built with the scorch decal.
+- **No smoke on plasma.** ~~and none on the Unmaker~~ — the Unmaker DOES get one thread,
+  decided when §4 was built: a laser burn that glows and does not breathe reads as a
+  decal. Plasma still gets none.
 - **The BFG reuses the arc**, in green, rather than getting an effect of its own. That
   answered the open question below, and it cost one ramp table.
 
@@ -87,6 +124,15 @@ and should be built first even though §1 is cheaper.
 ---
 
 ## 1. Plasma light instability — no new lights, no new geometry
+
+> **BUILT, though not the way this section proposes.** The pulse-the-intensity idea below
+> was never needed: what actually turned out to be wrong with impact lighting was DENSITY,
+> not stability. One mark was emitting 26 light candidates (1 ember + `rt_arc_branches` +
+> `rt_arc_creep`) against a global cap of 10, so a dozen marks contested ten slots
+> nearest-first and only whichever one you stood on was lit. Fixed by raising
+> `rt_arc_glow_max` to 100 and cutting an Unmaker mark to a single light. The trap this
+> section documents — drive intensity, never radius, because above `rt_dynlight_rsoft` a
+> bigger radius is *dimmer* — still stands and is still worth reading.
 
 The cheapest item on this page and the only one that needs no new plumbing. Modulate the
 dynamic light the bolt already carries: intensity noise (crackle), and a small positional
@@ -231,6 +277,18 @@ and the effect reads as two events rather than one.
 
 ## 4. Unmaker melt
 
+> **SUPERSEDED — the Unmaker impact shipped as a BURN, not a melt.** Everything below
+> describes a dripping/melting decal that was never built. What ships is `rt_laser*`: the
+> plasma filigree at `rt_laser_arc_scale 0.18` in the LPUF sprite's own reds, a small churn
+> (`rt_laser_burn_scale 0.55`), one glowing point and one smoke thread, cold in ten
+> seconds. Reusing a rig built for another weapon cost a table row and a per-flavour ramp.
+>
+> Two things it needed that no other impact did, both recorded in the cvar help: its own
+> detection door (it is a `FastProjectile` and is found already dead, by its `LPUF` death
+> sprite, then probes six ways for the surface), and size and lifetime prised apart —
+> every other flavour multiplies one style scale into both, which is right for a BFG and
+> fatal for something deliberately tiny.
+
 `UnmakerLaser` (a `FastProjectile`, per the WAD's DECORATE) hitting a wall should leave a
 spot that is briefly **molten** — glowing white-hot, cooling through orange to a dark
 scorch — rather than a puff of sparks.
@@ -302,6 +360,23 @@ the blob should fade in as the ember cools, not be present from the first frame.
 ---
 
 ## 6. Barrel destruction — fire, a scorched floor, smoking debris, spilled acid
+
+> **BUILT, minus the fire and the acid.** `rt_barrel*` ships the floor scorch, ~50 glowing
+> coals with smoke threads, and 60 pieces of barrel plate that lie where they land
+> (`rt_barrel_life 0` = until the pool evicts them, about thirty barrels).
+>
+> The plate is **hand-cut art**, not generated geometry: four cut-outs in
+> `rt/mat/d64rt/barrel/`, drawn as world-oriented alpha-tested traced quads, mixed with a
+> share of small procedural grit (`rt_barrel_small_frac`). The generated version came
+> first and was rejected on sight — no procedural tear generator arrives at charred metal
+> with hot orange along the break, because what makes those read is that someone drew
+> them. Adding a fifth piece is dropping a fifth PNG into **both** `rt/mat` and
+> `rt/mat_dev`; one tree alone resolves to a transparent placeholder and the piece
+> silently vanishes.
+>
+> §6.2's flame emitter and §6.3's acid were NOT built and are not currently wanted. The
+> acid was always a design decision before it was code — see that section, the constraint
+> is real and has not changed.
 
 An exploding barrel currently produces a smoke burst and nothing else. It should leave a
 scene: a small fire burning down over a few seconds, a scorch churned into the floor under
@@ -382,6 +457,9 @@ trigger). The fire is a small new emitter type. The acid is a design decision fi
 second. Do them in that order, and do the smoking-debris part **with §5**, not separately.
 
 ## 7. Bullet holes with relief
+
+> **SET ASIDE.** Impact depth is not being pursued for now. The section stands as written;
+> nothing below it was built.
 
 Impacts currently leave flat marks. A hitscan hole should read as a **hole** — a punched
 cavity in concrete, a shallow dent in metal — and the difference costs one texture set plus a
@@ -481,6 +559,13 @@ that line the whole feature was inert. What remains is looking at it.
 
 ## Suggested order
 
+> **HISTORICAL — the order below was followed and the work is done.** Kept because the
+> reasoning about what unlocks what is the useful part, and because two of its predictions
+> were wrong in instructive ways: §1 was not the cheap self-contained item it looked
+> (the real problem was light DENSITY, found only when the Unmaker made it visible), and
+> §6's barrels were not "nearly free" — the plate needed hand-cut art and four separate
+> renderer fixes before it read as anything.
+
 1. **§1** — self-contained, no new plumbing, immediately changes how the weapon feels.
 2. **§2** — the keystone. Nothing else moves until the hook exists, and it also unlocks the
    scorch decals in [`plan-impact-fx.md`](plan-impact-fx.md) for free.
@@ -518,7 +603,17 @@ Two consequences for §4 that follow from the same DECORATE:
   Unmaker shot landed. That raises its value and it also means there is no existing flash
   whose colour it must agree with — unlike §3, this ramp is a free choice.
 
-**Still open.**
+**Answered by building it — the `Speed 200` above was worse than a trace-length problem.**
+It is not that the probe is too short; it is that a `FastProjectile` covers its whole
+velocity inside one `Tick()`, so the laser is spawned, crosses the room and explodes
+*before the renderer's walk has run once*. `P_ExplodeMissile` clears `MF_MISSILE`, so it is
+never observed as a projectile at all and the disappearance rule cannot fire. It is caught
+by its `LPUF` death sprite instead — the technique `RT_BarrelSmoke` uses on `BEXP` — and
+then probes six ways for the surface, having no heading left to trace along. This cost a
+whole tuning session before it was noticed, because the lab plants marks directly and never
+fires the weapon.
+
+**Still open — nothing blocking; these are taste calls left deliberately unmade.**
 
 - ~~Should the BFG get §3's treatment?~~ **Yes, decided and built** — green, from `BFE2`'s
   own palette. Whether its own light swamps the arc is now a thing to *look at* rather than

@@ -33,6 +33,12 @@ deps/
 
 # --- Game / mod content not authored here (redistribute separately) ---
 DoomCE/
+# Other Doom 64 ports kept alongside Retribution for comparison. Somebody
+# else's game data, so the whole folder stays out -- unlike Doom64-Retribution/,
+# which is listed file by file below because this project DOES author things
+# inside it (the fix wads, the pk3s, Retribution-RT-Materials).
+Doom64-Beta64/
+Doom64-UnseenEvil/
 Doom64-Retribution/D64RTR_v15.WAD
 Doom64-Retribution/D64RTR\[v1.5\].WAD
 Doom64-Retribution/D64MUS.PK3

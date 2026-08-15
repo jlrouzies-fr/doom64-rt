@@ -31,7 +31,7 @@ param(
   # into the air off the floor rather than burnt onto a wall, so there is
   # nothing to walk up to, and the two things worth looking at -- the plate in
   # flight and the plate at rest -- are seconds apart. That run captures both.
-  [ValidateSet('plasma','bfg','arach','ember','barrel','barrel-shards','barrel-scorch')]
+  [ValidateSet('plasma','bfg','arach','ember','laser','barrel','barrel-shards','barrel-scorch')]
   [string]$Kind = 'plasma',
   # Free-text label for the capture filename -- put the thing you changed in it.
   [string]$Tag = '',
@@ -57,6 +57,19 @@ param(
   # system off the answer is always no -- which looks exactly like a bug in the
   # embers. Use this only for that.
   [switch]$Smoke,
+  # FIRE THE ACTUAL WEAPON instead of planting a mark, e.g. -Weapon 64Unmaker.
+  #
+  # THIS IS THE GAP THAT LET THE UNMAKER SHIP BROKEN. `arc_here` plants a mark
+  # directly, which validates how it LOOKS and nothing about whether anything
+  # ever asks for one -- so the laser mark was tuned for an afternoon in here
+  # while the game produced none at all, because a FastProjectile explodes
+  # inside the tic it was fired and the detection never saw it. A lab that only
+  # exercises the renderer will certify a feature with no trigger.
+  #
+  # Slower and less repeatable than a planted mark (the shot lands where it
+  # lands), so it is for answering "does firing this produce a mark" rather than
+  # for judging one.
+  [string]$Weapon = '',
   # How close to stand. The mark is planted at the crosshair, so this decides how
   # much of the screen it fills -- point blank is where the tessellation shows.
   [int]$Approach = 150,
@@ -72,7 +85,12 @@ param(
   # up filling the whole screen with no clean wall to judge it against. Walk all
   # the way in so the mark always lands on the same spot at the same angle, then
   # back off by this much to choose how big it is in frame.
-  [int]$Back = 45
+  # WAS 45, AND THAT WAS TOO FAR. Backing off that much puts the wall several
+  # metres away, so a small mark -- the laser's is a few map units across --
+  # lands as a handful of pixels and nothing about it can be judged. Close
+  # enough to fill a useful part of the frame is the default; raise it when the
+  # question is about the mark's SPREAD rather than its detail.
+  [int]$Back = 12
 )
 
 $ErrorActionPreference = 'Stop'
@@ -120,6 +138,7 @@ $lab = @(
   'rt_arc 1',
   'rt_arc_burn 1',
   'rt_ember 1',
+  'rt_laser 1',
   'rt_barrel 1'
   # NO `freeze` HERE, and it cost a run. It looks like exactly the right thing
   # for a still capture -- nothing moves, nothing wanders into frame -- but
@@ -137,7 +156,35 @@ $tag = if ($Tag) { "$Kind-$Tag" } else { $Kind }
 
 $isBarrel = $Kind -like 'barrel*'
 
-if ($isBarrel) {
+if ($Weapon) {
+  # THE FIRING RUN. Cheats come from ab-cheats.cfg's rule: `give` is silently
+  # dropped before the level exists, so it has to wait for one.
+  $seq = @(
+    "wait 70",
+    "sv_cheats 1",
+    $lab,
+    "give weapons",
+    "give ammo",
+    "wait 10",
+    # `use <class>` selects a weapon the player is carrying. If the name is
+    # wrong nothing happens and the shot below fires whatever is in hand --
+    # which is why the capture is checked rather than assumed.
+    "use $Weapon",
+    "wait 20",
+    "+forward",
+    "wait $Approach",
+    "-forward",
+    "wait 10",
+    "+attack",
+    "wait 6",
+    "-attack",
+    "+back",
+    "wait $Back",
+    "-back",
+    "wait $Settle",
+    "screenshot"
+  )
+} elseif ($isBarrel) {
   # THE BARREL RUN, and it differs from the mark run in three ways that all come
   # from the same fact: this effect is thrown into the room, not burnt onto a
   # wall.
