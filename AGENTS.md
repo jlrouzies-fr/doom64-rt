@@ -784,6 +784,43 @@ enforced at the one place that writes it.
     should**; distinct `uniqueObjectID` per blob, since RTGL1 keeps one upload per
     ID and the later one loses.
 
+35. **GIVING A TEXTURE A PBR LABEL SILENTLY DELETES ITS SECTOR SELF-EMISSION.**
+    `TextureMeta.cpp` does, unless the caller set `RG_MESH_PRIMITIVE_EMISSIVE_OVERRIDE`:
+
+    ```cpp
+    prim.emissive = std::max( 0.0f, meta->emissiveMult );
+    ```
+
+    and `JsonParser.h` defaults `emissiveMult` to `0.0f`. So an entry that says
+    **nothing whatsoever about emission** — a `metallicDefault`/`roughnessDefault`
+    label — still overwrites whatever gzdoom computed with **zero**.
+    `rt_sector_emis` was therefore resting on the *absence* of a `textures.json`
+    entry. The metal/roughness labelling passes (`e1c8944`, then `8976584` across
+    898 textures) removed that absence, and every painted light feature on a
+    labelled texture went dark at once — **2091 of 3015 entries carry no
+    `emissiveMult`**. MAP02's red corridor panels, the exact case `rt_sector_emis`
+    was written for, were among them.
+
+    **It fails silently, and the diagnostics all look healthy.** gzdoom computes
+    and sends the right number, so `whatsthat` still prints *"this surface
+    SELF-EMITS"* and `rt_tex_probe` still prints `sector_emis=0.350`. Both are
+    true. Neither is evidence the emission reached the screen — the value is
+    discarded one call later. Treat "the engine says it emits" as a statement
+    about the **engine side only**.
+
+    Fixed by **`rt_sector_emis_override`** (default on, pinned): the sector ramp
+    claims the same flag the lamp-pane path already claimed for its own value.
+    Only the ramp claims it — surfaces with an authored `_e` (`l_isemis`) must
+    keep deferring to the material, or an SMON panel's `emissiveMult` 2.8 becomes
+    `rt_emis_additive_dflt` 0.15. `+rt_sector_emis_override 0` restores the broken
+    behaviour for an A/B.
+
+    **Generalise it: a value computed by the caller and a value owned by the
+    material are two owners of one field, and the flag is the only thing that says
+    which wins.** Adding metadata of *any* kind to a texture opts it into the
+    material's answer for **every** field the material can express, including the
+    ones the new metadata is silent about.
+
 ## Suggested next work
 
 1. **`RAYRECONSTRUCTION.md`** — RR is working and the worm artifact is solved (a stuck cvar, not a renderer bug). Open levers: `rt_spp_direct`/`rt_spp_indirect`, `rt_restir_initial`.
