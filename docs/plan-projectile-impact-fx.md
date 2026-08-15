@@ -23,7 +23,7 @@ Scope decided in play review:
 | 5 | rocket embers + smoke | **built** — `rt_ember*`; embers live ON the mark, not as particles |
 | 6 | barrel fire, floor scorch, smoking debris, acid | planned — shares §5's ember mechanism |
 | 7 | bullet holes with relief | planned — cheapest item here, and the most often on screen |
-| 8 | ejected shell casings | **already built in the WAD, shipped off** — a pin, then RT polish |
+| 8 | ejected shell casings | **already built in the WAD; pinned ON** — RT polish is what remains |
 
 Two scope calls that override what the sections below propose:
 
@@ -435,7 +435,7 @@ Also: RTGL1 resolves materials through `rt/data/textures.json` only — the spli
 `textures_*.json` overlays are inert, and the live build-directory copy has to be edited too.
 Budget for that, it has cost this project a session before.
 
-## 8. Ejected shell casings — already built, shipped OFF
+## 8. Ejected shell casings — already built, now pinned ON
 
 **Do not build this.** Retribution ships the entire feature and it is switched off by a
 cvar. The work here is turning it on and then making it look right under path tracing; there
@@ -457,7 +457,9 @@ script that every weapon's Fire state jumps on (`A_JumpIf(CallACS("DropCasings")
 "CasingsFire")`). A menu entry is authored for it too: `Option "Eject Casings",
 "d64_dropcasings", "DropCasingsToggler"`.
 
-So step one is **one line in `tools/d64rt-pins.cfg`**, and then look at it.
+So step one was **one line in `tools/d64rt-pins.cfg`** — `d64_dropcasings 1`, now pinned
+alongside the other `d64_*` pins. Nothing else in the repo referenced the cvar, so before
+that line the whole feature was inert. What remains is looking at it.
 
 ### What the RT side would actually owe
 
@@ -493,9 +495,9 @@ So step one is **one line in `tools/d64rt-pins.cfg`**, and then look at it.
 needs no new plumbing, and is the only item on this page that shows up on every single shot
 rather than on one weapon. If the list stalls, do that one.
 
-**§8 is not really on this list at all** — it is one pin plus a look, since the WAD already
-ships the whole feature. Do it whenever there is an idle five minutes; the only real question
-it raises is the population cost, and that is answered by looking rather than by planning.
+**§8 is not really on this list at all** — it was one pin plus a look, since the WAD already
+ships the whole feature. **The pin is in.** The only real question it raises is the population
+cost, and that is answered by looking rather than by planning.
 
 ## Open questions
 

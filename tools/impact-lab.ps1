@@ -50,9 +50,20 @@ param(
   [string]$Extra = '',
   # Leave the game running for a human instead of capturing.
   [switch]$Play,
+  # SMOKE BACK ON, for the one question the lab cannot otherwise answer.
+  # Everything here normally runs with rt_smoke off, because smoke in front of
+  # the mark is the single biggest source of "it looks different this time".
+  # But "do the embers breathe" is a question ABOUT the smoke, and with the
+  # system off the answer is always no -- which looks exactly like a bug in the
+  # embers. Use this only for that.
+  [switch]$Smoke,
   # How close to stand. The mark is planted at the crosshair, so this decides how
   # much of the screen it fills -- point blank is where the tessellation shows.
   [int]$Approach = 150,
+  # BARREL RUNS ONLY: how far in front of the camera the burst is planted, in
+  # map units. Close reads the SHAPE of a piece, far reads the SPREAD of the
+  # burst, and no single distance does both.
+  [int]$Dist = 150,
   # Tics of backing away AFTER planting the mark, before the settle.
   #
   # This is what makes the framing repeatable. Walking a fixed distance toward
@@ -99,13 +110,17 @@ foreach ($lab in @('d64rsmokelab.wad', 'd64r-smokelab-mapinfo.pk3')) {
 # THE LAB'S OWN OVERRIDES, applied after the pins so they win. Everything here is
 # about removing variables, not about looking good.
 $lab = @(
-  'rt_smoke 0',                 # the big one: nothing between camera and mark
+  # THE SMOKE PAIR. Off by default -- smoke in front of the mark is the single
+  # biggest source of "it looks different this time", and it is almost never
+  # what is being judged. -Smoke turns both back on for the one case where it
+  # IS the question.
+  "rt_smoke $(if ($Smoke) {1} else {0})",
+  "rt_ember_smoke $(if ($Smoke) {1} else {0})",
   'rt_spark 0',                 # no hitscan shower in the same frame
   'rt_arc 1',
   'rt_arc_burn 1',
   'rt_ember 1',
-  'rt_barrel 1',
-  'rt_ember_smoke 0'            # embers still glow, but breathe nothing
+  'rt_barrel 1'
   # NO `freeze` HERE, and it cost a run. It looks like exactly the right thing
   # for a still capture -- nothing moves, nothing wanders into frame -- but
   # `wait` counts TICS, and freezing the game stops the clock those tics come
@@ -137,13 +152,13 @@ if ($isBarrel) {
   $sub = switch ($Kind) {
     'barrel-shards' { 'shards' }
     'barrel-scorch' { 'scorch' }
-    default         { '' }
+    default         { 'all' }
   }
   $seq = @(
     "wait 70",
     "sv_cheats 1",
     $lab,
-    "barrel_here $sub",
+    "barrel_here $sub $Dist",
     # ~0.7 s: still airborne, still tumbling. This is the frame that answers
     # "does it read as plate coming off a barrel" rather than as a spray.
     "wait 25",

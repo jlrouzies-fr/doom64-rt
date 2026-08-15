@@ -103,6 +103,53 @@ def sprite_images(codes: set[str]) -> dict[str, Image.Image]:
     return out
 
 
+def smooth_values(vals: list[float], mask: list[bool], w: int, h: int,
+                  radius: int) -> list[float]:
+    """Average a material channel over its neighbourhood, opaque pixels only.
+
+    THE DITHER PROBLEM. Doom 64 sprites fake gradients by dithering -- adjacent
+    pixels alternate between two colours. Those two colours land in different
+    clusters, so when the human calls them differently (leather 0.70 beside
+    flesh 0.60) the material map comes out as a CHECKERBOARD at dither
+    frequency, and under specular light the sprite reads as a mosaic of beige
+    and dark blocks. Measured on POSSA1 before this existed: 25.4% of
+    neighbouring pixels carried a different material.
+
+    A MODE FILTER CANNOT FIX THIS AND WAS TRIED FIRST. A checkerboard is
+    majority-stable: in any odd window the centre's own colour is already the
+    plurality, so the pattern survives every pass. It took 25.4% only to 13.6%.
+
+    Averaging does fix it, because roughness is a CONTINUOUS quantity: the mean
+    of a 0.60/0.70 checkerboard is a flat 0.65, which is the material the art
+    was dithering toward in the first place. Real part boundaries -- a barrel
+    against a hand -- are many pixels wide, so they survive as a one-pixel ramp
+    instead of a hard edge, which is what a renderer wants anyway."""
+    if radius <= 0:
+        return vals
+    out = list(vals)
+    for y in range(h):
+        for x in range(w):
+            i = y * w + x
+            if not mask[i]:
+                continue
+            acc = n = 0.0
+            for dy in range(-radius, radius + 1):
+                yy = y + dy
+                if yy < 0 or yy >= h:
+                    continue
+                for dx in range(-radius, radius + 1):
+                    xx = x + dx
+                    if xx < 0 or xx >= w:
+                        continue
+                    j = yy * w + xx
+                    if mask[j]:
+                        acc += vals[j]
+                        n += 1.0
+            if n:
+                out[i] = acc / n
+    return out
+
+
 def nearest(rgb, centroids):
     best, bd = -1, 1 << 30
     for i, c in enumerate(centroids):
@@ -147,7 +194,8 @@ def parse_overrides(specs: list[str]) -> dict[str, dict[str, float]]:
 
 
 def bake(export_paths: list[Path], dry_run: bool,
-         overrides: dict[str, dict[str, float]] | None = None) -> int:
+         overrides: dict[str, dict[str, float]] | None = None,
+         smooth: int = 1) -> int:
     overrides = overrides or {}
     # SEVERAL EXPORTS, ONE BAKE. There is a page per sprite section -- weapons,
     # monsters, projectiles, scenery -- and they are labelled at different
@@ -202,38 +250,65 @@ def bake(export_paths: list[Path], dry_run: bool,
             orm = Image.new("RGB", (w, h))
             out = orm.load()
             src = im.load()
-            cache: dict[tuple, tuple] = {}
 
+            # Pass 1: which cluster each pixel belongs to. Kept as ids so the
+            # mode filter can work on identity rather than on the ORM values --
+            # averaging roughness across a boundary would invent a material that
+            # nobody called.
+            idcache: dict[tuple, int] = {}
+            ids = [-1] * (w * h)
             for y in range(h):
                 for x in range(w):
                     r, g, b, a = src[x, y]
                     if a == 0:
-                        out[x, y] = (255, 204, 0)
                         continue
                     key = (r, g, b)
-                    hit = cache.get(key)
-                    if hit is None:
+                    k = idcache.get(key)
+                    if k is None:
                         k = nearest(key, centroids)
-                        c = clusters[k] if k >= 0 else None
-                        if c is None or c.get("surface") is None:
-                            met, rgh = UNLABELLED_METALLIC, UNLABELLED_ROUGHNESS
-                            unlabelled_hits += 1
-                        else:
-                            met = float(c.get("metallicDefault", 0.0))
-                            rgh = float(c.get("roughnessDefault", 0.8))
-                            ov = overrides.get(str(c.get("surface", "")).lower())
-                            if ov:
-                                met = ov.get("metal", met)
-                                rgh = ov.get("rough", rgh)
-                                if "roughmin" in ov:
-                                    rgh = max(rgh, ov["roughmin"])
-                        hit = (
-                            int(round(max(0.0, min(1.0, rgh)) * 255)),
-                            int(round(max(0.0, min(1.0, met)) * 255)),
-                        )
-                        cache[key] = hit
+                        idcache[key] = k
+                    ids[y * w + x] = k
+
+            # Pass 2: ids -> material values, then SMOOTHED before writing.
+            valcache: dict[int, tuple] = {}
+            rgh_a = [0.0] * (w * h)
+            met_a = [0.0] * (w * h)
+            mask = [False] * (w * h)
+            for i, k in enumerate(ids):
+                if k < 0:
+                    continue
+                hit = valcache.get(k)
+                if hit is None:
+                    c = clusters[k] if k >= 0 else None
+                    if c is None or c.get("surface") is None:
+                        met, rgh = UNLABELLED_METALLIC, UNLABELLED_ROUGHNESS
+                        unlabelled_hits += 1
+                    else:
+                        met = float(c.get("metallicDefault", 0.0))
+                        rgh = float(c.get("roughnessDefault", 0.8))
+                        ov = overrides.get(str(c.get("surface", "")).lower())
+                        if ov:
+                            met = ov.get("metal", met)
+                            rgh = ov.get("rough", rgh)
+                            if "roughmin" in ov:
+                                rgh = max(rgh, ov["roughmin"])
+                    hit = (max(0.0, min(1.0, rgh)), max(0.0, min(1.0, met)))
+                    valcache[k] = hit
+                rgh_a[i], met_a[i], mask[i] = hit[0], hit[1], True
+
+            rgh_a = smooth_values(rgh_a, mask, w, h, smooth)
+            met_a = smooth_values(met_a, mask, w, h, smooth)
+
+            for y in range(h):
+                for x in range(w):
+                    i = y * w + x
+                    if not mask[i]:
+                        out[x, y] = (255, 204, 0)
+                        continue
                     occ = ao_px[x, y][0] if ao_px else 255
-                    out[x, y] = (occ, hit[0], hit[1])
+                    out[x, y] = (occ,
+                                 int(round(rgh_a[i] * 255)),
+                                 int(round(met_a[i] * 255)))
 
             for d in MAT_DIRS:
                 if not d.is_dir():
@@ -291,6 +366,10 @@ def main() -> None:
                     help="JSON export(s) from the labelling pages")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--revert", action="store_true")
+    ap.add_argument("--smooth", type=int, default=1, metavar="RADIUS",
+                    help="neighbourhood radius for smoothing the material channels, "
+                         "which stops DITHERED art producing a checkerboard "
+                         "material map. 0 disables it. Default 1 (a 3x3).")
     ap.add_argument("--rough", action="append", default=[], metavar="CLASS=VALUE",
                     help="override a whole class's roughness, e.g. leather=0.75")
     ap.add_argument("--roughmin", action="append", default=[], metavar="CLASS=VALUE",
@@ -326,7 +405,7 @@ def main() -> None:
                           ("roughmin", args.roughmin)])
     for name, vals in sorted(ov.items()):
         print("  override: %s -> %s" % (name, vals))
-    sys.exit(bake(paths, args.dry_run, ov))
+    sys.exit(bake(paths, args.dry_run, ov, args.smooth))
 
 
 if __name__ == "__main__":

@@ -300,9 +300,9 @@
       0,
       0
      ],
-     "surface": null,
-     "metallicDefault": null,
-     "roughnessDefault": null
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
     },
     {
      "rgb": [
@@ -310,9 +310,9 @@
       8,
       8
      ],
-     "surface": null,
-     "metallicDefault": null,
-     "roughnessDefault": null
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
     },
     {
      "rgb": [
@@ -330,9 +330,9 @@
       16,
       16
      ],
-     "surface": null,
-     "metallicDefault": null,
-     "roughnessDefault": null
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
     },
     {
      "rgb": [
@@ -340,9 +340,9 @@
       16,
       16
      ],
-     "surface": null,
-     "metallicDefault": null,
-     "roughnessDefault": null
+     "surface": "lens",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.15
     },
     {
      "rgb": [
@@ -350,9 +350,9 @@
       16,
       0
      ],
-     "surface": null,
-     "metallicDefault": null,
-     "roughnessDefault": null
+     "surface": "lens",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.15
     },
     {
      "rgb": [
@@ -360,9 +360,9 @@
       66,
       0
      ],
-     "surface": null,
-     "metallicDefault": null,
-     "roughnessDefault": null
+     "surface": "lens",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.15
     },
     {
      "rgb": [
@@ -370,9 +370,9 @@
       107,
       0
      ],
-     "surface": null,
-     "metallicDefault": null,
-     "roughnessDefault": null
+     "surface": "lens",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.15
     },
     {
      "rgb": [
@@ -380,9 +380,9 @@
       33,
       33
      ],
-     "surface": null,
-     "metallicDefault": null,
-     "roughnessDefault": null
+     "surface": "lens",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.15
     },
     {
      "rgb": [
@@ -5439,8 +5439,8 @@
       0,
       0
      ],
-     "surface": "other",
-     "metallicDefault": 0,
+     "surface": "metal",
+     "metallicDefault": 1,
      "roughnessDefault": 0.2
     },
     {
@@ -6058,9 +6058,9 @@
       57,
       99
      ],
-     "surface": null,
-     "metallicDefault": null,
-     "roughnessDefault": null
+     "surface": "lens",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.15
     },
     {
      "rgb": [
@@ -6098,9 +6098,9 @@
       74,
       140
      ],
-     "surface": null,
-     "metallicDefault": null,
-     "roughnessDefault": null
+     "surface": "lens",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.15
     },
     {
      "rgb": [
@@ -6108,9 +6108,9 @@
       99,
       206
      ],
-     "surface": null,
-     "metallicDefault": null,
-     "roughnessDefault": null
+     "surface": "lens",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.15
     },
     {
      "rgb": [
@@ -6138,9 +6138,9 @@
       16,
       148
      ],
-     "surface": null,
-     "metallicDefault": null,
-     "roughnessDefault": null
+     "surface": "lens",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.15
     },
     {
      "rgb": [
@@ -6165,9 +6165,9 @@
       219,
       234
      ],
-     "surface": null,
-     "metallicDefault": null,
-     "roughnessDefault": null
+     "surface": "lens",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.15
     },
     {
      "rgb": [
@@ -6175,9 +6175,9 @@
       182,
       233
      ],
-     "surface": null,
-     "metallicDefault": null,
-     "roughnessDefault": null
+     "surface": "lens",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.15
     },
     {
      "rgb": [
@@ -6215,9 +6215,9 @@
       133,
       214
      ],
-     "surface": null,
-     "metallicDefault": null,
-     "roughnessDefault": null
+     "surface": "lens",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.15
     },
     {
      "rgb": [
@@ -6285,9 +6285,9 @@
       92,
       138
      ],
-     "surface": null,
-     "metallicDefault": null,
-     "roughnessDefault": null
+     "surface": "lens",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.15
     },
     {
      "rgb": [
@@ -6295,9 +6295,9 @@
       33,
       59
      ],
-     "surface": null,
-     "metallicDefault": null,
-     "roughnessDefault": null
+     "surface": "lens",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.15
     },
     {
      "rgb": [
@@ -6305,9 +6305,9 @@
       50,
       84
      ],
-     "surface": null,
-     "metallicDefault": null,
-     "roughnessDefault": null
+     "surface": "lens",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.15
     },
     {
      "rgb": [
@@ -6315,9 +6315,9 @@
       69,
       119
      ],
-     "surface": null,
-     "metallicDefault": null,
-     "roughnessDefault": null
+     "surface": "lens",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.15
     },
     {
      "rgb": [
@@ -6325,9 +6325,9 @@
       107,
       185
      ],
-     "surface": null,
-     "metallicDefault": null,
-     "roughnessDefault": null
+     "surface": "lens",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.15
     },
     {
      "rgb": [
@@ -6435,9 +6435,9 @@
       32,
       49
      ],
-     "surface": null,
-     "metallicDefault": null,
-     "roughnessDefault": null
+     "surface": "lens",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.15
     }
    ],
    "frames": [
@@ -6463,9 +6463,9 @@
       178,
       223
      ],
-     "surface": null,
-     "metallicDefault": null,
-     "roughnessDefault": null
+     "surface": "lens",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.15
     },
     {
      "rgb": [
@@ -6493,9 +6493,9 @@
       105,
       182
      ],
-     "surface": null,
-     "metallicDefault": null,
-     "roughnessDefault": null
+     "surface": "lens",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.15
     },
     {
      "rgb": [
@@ -6533,9 +6533,9 @@
       73,
       104
      ],
-     "surface": null,
-     "metallicDefault": null,
-     "roughnessDefault": null
+     "surface": "lens",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.15
     },
     {
      "rgb": [
@@ -6543,9 +6543,9 @@
       130,
       189
      ],
-     "surface": null,
-     "metallicDefault": null,
-     "roughnessDefault": null
+     "surface": "lens",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.15
     },
     {
      "rgb": [
@@ -6573,9 +6573,9 @@
       49,
       83
      ],
-     "surface": null,
-     "metallicDefault": null,
-     "roughnessDefault": null
+     "surface": "lens",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.15
     },
     {
      "rgb": [
@@ -6713,9 +6713,9 @@
       23,
       34
      ],
-     "surface": null,
-     "metallicDefault": null,
-     "roughnessDefault": null
+     "surface": "lens",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.15
     },
     {
      "rgb": [
@@ -7593,9 +7593,9 @@
       45,
       51
      ],
-     "surface": null,
-     "metallicDefault": null,
-     "roughnessDefault": null
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
     },
     {
      "rgb": [
@@ -7603,9 +7603,9 @@
       8,
       14
      ],
-     "surface": null,
-     "metallicDefault": null,
-     "roughnessDefault": null
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.7
     }
    ],
    "frames": [
@@ -7621,9 +7621,9 @@
       40,
       40
      ],
-     "surface": null,
-     "metallicDefault": null,
-     "roughnessDefault": null
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
     },
     {
      "rgb": [
@@ -7881,9 +7881,9 @@
       46,
       51
      ],
-     "surface": null,
-     "metallicDefault": null,
-     "roughnessDefault": null
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.7
     },
     {
      "rgb": [
@@ -7891,9 +7891,9 @@
       10,
       16
      ],
-     "surface": null,
-     "metallicDefault": null,
-     "roughnessDefault": null
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.7
     }
    ],
    "frames": [
@@ -8382,8 +8382,8 @@
       24,
       24
      ],
-     "surface": "metal",
-     "metallicDefault": 1,
+     "surface": "wood",
+     "metallicDefault": 0,
      "roughnessDefault": 0.4
     },
     {
@@ -8472,8 +8472,8 @@
       24,
       16
      ],
-     "surface": "metal",
-     "metallicDefault": 1,
+     "surface": "wood",
+     "metallicDefault": 0,
      "roughnessDefault": 0.4
     },
     {
@@ -8868,8 +8868,8 @@
       73,
       66
      ],
-     "surface": "leather",
-     "metallicDefault": 0,
+     "surface": "metal",
+     "metallicDefault": 1,
      "roughnessDefault": 0.2
     },
     {
@@ -8888,8 +8888,8 @@
       88,
       69
      ],
-     "surface": "leather",
-     "metallicDefault": 0,
+     "surface": "metal",
+     "metallicDefault": 1,
      "roughnessDefault": 0.2
     },
     {
@@ -9414,9 +9414,9 @@
       2,
       7
      ],
-     "surface": null,
-     "metallicDefault": null,
-     "roughnessDefault": null
+     "surface": "lens",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.15
     }
    ],
    "frames": [
@@ -9426,6 +9426,6 @@
  },
  "__meta": {
   "scope": "WEAPONS,CLSANIMS",
-  "clusters_labelled": 782
+  "clusters_labelled": 815
  }
 }

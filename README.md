@@ -38,7 +38,7 @@ theirs — the code is Claude's. <a href="AI-DECLARATION.md">Details</a>.
 
 ## ⛧ &nbsp;Contents
 
-- [**Features**](#features) — [lighting](#lighting) · [atmosphere](#atmosphere) · [sprites, monsters, gore](#sprites) · [HUD and menus](#hud) · [denoising and upscaling](#denoising)
+- [**Features**](#features) — [lighting](#lighting) · [atmosphere](#atmosphere) · [materials](#materials) · [sprites, monsters, gore](#sprites) · [HUD and menus](#hud) · [denoising and upscaling](#denoising)
 - [**Install and play**](#install) — download, extract, point it at your copy of Retribution
 - [**Building it yourself**](#building) — [what you need](#requirements) · [dependencies](#dependencies) · [build](#build) · [first run](#first-run)
 - [**Launchers**](#launchers) — how the game and the A/B arms are started
@@ -93,6 +93,51 @@ this project is finding those and replacing them with something that actually em
 | **Volumetric smoke** | Muzzle smoke as a real participating medium inside the fog's froxel volume, so it takes the colour of whatever lights the room. Six sources: weapons, monster guns, projectiles, barrels, flames. Sim is on the CPU, on purpose. `smoke` CCMD. | [`rt-smoke`](docs/rt-smoke.md) |
 | **Water** | Stylized surface with projected caustics; flats are tagged engine-side, no per-map setup. | [`rt-water`](docs/rt-water.md) |
 | **Lava** | The floor is the emitter — drifting quantized heat field (`rt_lava_flow*`), slow whole-surface breath, optional analytic light grid over the flats. | — |
+
+<a id="materials"></a>
+### Materials — *limited* PBR, on purpose
+
+Doom 64's walls, floors and sprites were painted, not modelled. Nothing in them was ever
+authored for a physically based renderer, so every surface starts out as a flat dielectric:
+no metal anywhere, one roughness for the whole game. Since then **898 wall and flat
+textures have been hand-classified**, plus **132 sprite codes covering 1,087 frames** —
+metal, concrete, flesh, cloth, leather, wood, bone, rubber, lens — and baked into per-texel
+roughness and metalness maps.
+
+Then it is deliberately held back. Two dials decide how much of that authored material the
+renderer is allowed to use, and **both ship at 0.35 rather than 1**:
+
+| cvar | default | what it does |
+|---|---|---|
+| `rt_sprite_pbr_mix` | `0.35` | how much of a sprite's material is applied, 0..1 |
+| `rt_tex_pbr_mix` | `0.35` | the same for walls and flats |
+| `rt_sprite_pbr` | `1` | hard off switch for the whole sprite material pass |
+
+At 0 the surface is the plain dielectric it was before any of this existed — not an
+approximation of the old look, but exactly it.
+
+**Why hold it back at all.** Three reasons, in the order they were found:
+
+1. **Sprites are flat, and full PBR makes that obvious.** A sprite is one quad carrying one
+   normal, so its indirect specular reflection vector is *identical for every texel* — the
+   whole body samples the room in a single direction and takes one colour from it. A warm
+   wall off to the side turns a soldier beige. Walls never do this; their normal maps vary
+   the reflection per texel. This is a property of billboards, not a bug to fix, so the
+   answer is to use less of the effect rather than more of it.
+2. **The art is dithered.** Doom 64 fakes gradients by alternating two colours pixel by
+   pixel. Classified independently, those two colours can end up with different materials,
+   and the sprite renders as a checkerboard mosaic. The baker now averages the material
+   channels to kill that, but a lower mix makes what remains matter less.
+3. **Noise.** Every glossy surface is another specular lobe the path tracer has to resolve
+   and the denoiser has to clean up. This project would rather have slightly less precise
+   lighting than visible boiling — so the mix is also a noise dial.
+
+The result is a game that reacts to light like Doom 64 with *materials*, rather than one
+pretending to be a modern shooter. If you want the full authored set, raise both mixes to
+1; if you want none of it, `rt_sprite_pbr 0` and `rt_tex_pbr_mix 0`.
+
+→ [`docs/plan-sprite-materials.md`](docs/plan-sprite-materials.md) for the labelling
+tools, the export format and the bakers.
 
 <a id="sprites"></a>
 ### Sprites, monsters, gore
