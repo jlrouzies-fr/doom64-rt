@@ -106,7 +106,7 @@ DEFAULT_DIAMETER_DEG = 12.0
 # carries a halo out beyond that -- so the disc composites through alpha and the
 # halo screens on, each doing the job it was drawn for. Falls back to the
 # procedural disc below if the file is missing, so the sky always builds.
-MOON_ART = PROJ_ROOT / r"moontexture.png"
+MOON_ART = PROJ_ROOT / "tools" / "_assets" / "moontexture.png"
 
 
 def load_moon_art() -> tuple[Image.Image, Image.Image, float] | None:
