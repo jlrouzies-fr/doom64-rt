@@ -765,7 +765,7 @@ drop it to 55 to reverse it.
 
 ## 9. The painted moon art
 
-`moontexture.png` at the repo root is composited by `gen_moon_sky.py`. Its
+`tools/_assets/moontexture.png` is composited by `gen_moon_sky.py`. Its
 **alpha channel is the disc mask** (opaque to ~r=476 of a 1536×1024 canvas,
 feathered out by r=500) and its RGB carries a halo beyond that — so the disc
 pastes through alpha and the halo screens on, each doing the job it was drawn
