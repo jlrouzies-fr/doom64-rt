@@ -26,7 +26,12 @@
 # pair is two files you can open side by side rather than two runs you have to
 # remember.
 param(
-  [ValidateSet('plasma','bfg','arach','ember')]
+  # barrel / barrel-shards / barrel-scorch go through `barrel_here` instead of
+  # `arc_here`, and take a DIFFERENT SEQUENCE (below): a barrel burst is thrown
+  # into the air off the floor rather than burnt onto a wall, so there is
+  # nothing to walk up to, and the two things worth looking at -- the plate in
+  # flight and the plate at rest -- are seconds apart. That run captures both.
+  [ValidateSet('plasma','bfg','arach','ember','barrel','barrel-shards','barrel-scorch')]
   [string]$Kind = 'plasma',
   # Free-text label for the capture filename -- put the thing you changed in it.
   [string]$Tag = '',
@@ -99,6 +104,7 @@ $lab = @(
   'rt_arc 1',
   'rt_arc_burn 1',
   'rt_ember 1',
+  'rt_barrel 1',
   'rt_ember_smoke 0'            # embers still glow, but breathe nothing
   # NO `freeze` HERE, and it cost a run. It looks like exactly the right thing
   # for a still capture -- nothing moves, nothing wanders into frame -- but
@@ -113,28 +119,66 @@ $lab = @(
 # +args runs screenshot and quit at startup, before a frame has ever been
 # presented, and the screenshot flag is set and never consumed.
 $tag = if ($Tag) { "$Kind-$Tag" } else { $Kind }
-$seq = @(
-  "wait 70",                    # let the level finish loading
-  "sv_cheats 1",
-  $lab,
-  "+forward",                   # walk up to the wall
-  "wait $Approach",
-  "-forward",
-  "wait 10",
-  "arc_here $Kind",
-  "+back",
-  "wait $Back",
-  "-back",
-  # The denoiser needs stationary history: a capture taken while still moving is
-  # temporal smear, not the effect. The full settle runs AFTER the backing off.
-  "wait $Settle",
-  # BARE `screenshot`, not `screenshot <name>`. With a name gzdoom writes that
-  # exact filename relative to the working directory and -shotdir is not
-  # consulted at all, so the capture lands in the build tree instead of the lab
-  # folder and this script reports NO SCREENSHOT while the file exists. The
-  # auto-numbered form honours -shotdir; the run is renamed below.
-  "screenshot"
-)
+
+$isBarrel = $Kind -like 'barrel*'
+
+if ($isBarrel) {
+  # THE BARREL RUN, and it differs from the mark run in three ways that all come
+  # from the same fact: this effect is thrown into the room, not burnt onto a
+  # wall.
+  #
+  #  1. NO APPROACH. `barrel_here` plants the burst 72 units in front of the
+  #     camera on the floor; walking into a wall first would put it inside one.
+  #  2. NO BACKING OFF EITHER -- the burst comes to the player rather than the
+  #     player to it, so the framing is already fixed by that 72.
+  #  3. TWO CAPTURES. Plate in flight and plate at rest are the two things worth
+  #     judging and they are seconds apart, so one run takes both rather than
+  #     two runs taking one each and differing in seed as well as in time.
+  $sub = switch ($Kind) {
+    'barrel-shards' { 'shards' }
+    'barrel-scorch' { 'scorch' }
+    default         { '' }
+  }
+  $seq = @(
+    "wait 70",
+    "sv_cheats 1",
+    $lab,
+    "barrel_here $sub",
+    # ~0.7 s: still airborne, still tumbling. This is the frame that answers
+    # "does it read as plate coming off a barrel" rather than as a spray.
+    "wait 25",
+    "screenshot",
+    # Settled. This is the frame that answers "is it wreckage on the floor" --
+    # whether pieces lie flat, whether they are sunk, whether the AO blobs sit
+    # under them, and whether the scorch under it all is the right size.
+    "wait $Settle",
+    "screenshot"
+  )
+} else {
+  $seq = @(
+    "wait 70",                    # let the level finish loading
+    "sv_cheats 1",
+    $lab,
+    "+forward",                   # walk up to the wall
+    "wait $Approach",
+    "-forward",
+    "wait 10",
+    "arc_here $Kind",
+    "+back",
+    "wait $Back",
+    "-back",
+    # The denoiser needs stationary history: a capture taken while still moving
+    # is temporal smear, not the effect. The full settle runs AFTER the backing
+    # off.
+    "wait $Settle",
+    # BARE `screenshot`, not `screenshot <name>`. With a name gzdoom writes that
+    # exact filename relative to the working directory and -shotdir is not
+    # consulted at all, so the capture lands in the build tree instead of the lab
+    # folder and this script reports NO SCREENSHOT while the file exists. The
+    # auto-numbered form honours -shotdir; the run is renamed below.
+    "screenshot"
+  )
+}
 if (-not $Play) { $seq += 'wait 20'; $seq += 'quit' }
 $cmd = ($seq -join '; ')
 
@@ -176,9 +220,17 @@ $new = @(Get-ChildItem $OutDir -Filter '*.png' -ErrorAction SilentlyContinue |
          Where-Object { $before -notcontains $_.Name } | Sort-Object LastWriteTime)
 if ($new) {
   # Rename to something a before/after pair can be read from, since the capture
-  # itself has to be auto-numbered (see the note on `screenshot` above).
-  $dest = Join-Path $OutDir "lab-$tag.png"
-  if (Test-Path $dest) { Remove-Item $dest -Force }
-  Move-Item $new[-1].FullName $dest
-  "SHOT: $dest"
+  # itself has to be auto-numbered (see the note on `screenshot` above). A run
+  # may produce more than one -- the barrel takes two, in flight and at rest --
+  # so they are numbered in the order they were taken rather than the last one
+  # winning silently.
+  $i = 0
+  foreach ($shot in $new) {
+    $i++
+    $suffix = if ($new.Count -gt 1) { "-$i" } else { '' }
+    $dest = Join-Path $OutDir "lab-$tag$suffix.png"
+    if (Test-Path $dest) { Remove-Item $dest -Force }
+    Move-Item $shot.FullName $dest
+    "SHOT: $dest"
+  }
 } else { "NO SCREENSHOT -- see $LogPath" }

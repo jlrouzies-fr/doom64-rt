@@ -32,6 +32,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import glob
 import io
 import json
 import re
@@ -126,7 +127,28 @@ def existing_ao(lump: str, size) -> Image.Image | None:
     return None
 
 
-def bake(export_paths: list[Path], dry_run: bool) -> int:
+def parse_overrides(specs: list[str]) -> dict[str, dict[str, float]]:
+    """--rough leather=0.75 --metal leather=0
+
+    RETUNING WITHOUT RE-LABELLING. A class's roughness is stored per cluster at
+    the moment it is called, so changing the default in the page's SURFACES
+    table does nothing to work already done -- and "leather reads flat" is a
+    judgement made in game, long after the calling. This lets the whole class
+    move in one pass, so a look can be A/B'd in seconds instead of re-called
+    across five pages."""
+    out: dict[str, dict[str, float]] = {}
+    for kind, items in specs:
+        for spec in items:
+            name, _, val = spec.partition("=")
+            if not val:
+                sys.exit(f"--{kind} wants CLASS=VALUE, got {spec!r}")
+            out.setdefault(name.strip().lower(), {})[kind] = float(val)
+    return out
+
+
+def bake(export_paths: list[Path], dry_run: bool,
+         overrides: dict[str, dict[str, float]] | None = None) -> int:
+    overrides = overrides or {}
     # SEVERAL EXPORTS, ONE BAKE. There is a page per sprite section -- weapons,
     # monsters, projectiles, scenery -- and they are labelled at different
     # times, so applying one must not look like a reason to un-apply the rest.
@@ -199,6 +221,12 @@ def bake(export_paths: list[Path], dry_run: bool) -> int:
                         else:
                             met = float(c.get("metallicDefault", 0.0))
                             rgh = float(c.get("roughnessDefault", 0.8))
+                            ov = overrides.get(str(c.get("surface", "")).lower())
+                            if ov:
+                                met = ov.get("metal", met)
+                                rgh = ov.get("rough", rgh)
+                                if "roughmin" in ov:
+                                    rgh = max(rgh, ov["roughmin"])
                         hit = (
                             int(round(max(0.0, min(1.0, rgh)) * 255)),
                             int(round(max(0.0, min(1.0, met)) * 255)),
@@ -263,6 +291,14 @@ def main() -> None:
                     help="JSON export(s) from the labelling pages")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--revert", action="store_true")
+    ap.add_argument("--rough", action="append", default=[], metavar="CLASS=VALUE",
+                    help="override a whole class's roughness, e.g. leather=0.75")
+    ap.add_argument("--roughmin", action="append", default=[], metavar="CLASS=VALUE",
+                    help="raise a class to at least VALUE, keeping anything already "
+                         "rougher. Preferred over --rough for a correction pass: the "
+                         "per-cluster variation was deliberate work.")
+    ap.add_argument("--metal", action="append", default=[], metavar="CLASS=VALUE",
+                    help="override a whole class's metalness")
     args = ap.parse_args()
 
     if args.revert:
@@ -273,7 +309,9 @@ def main() -> None:
     paths: list[Path] = []
     for spec in args.export:
         if any(ch in spec for ch in "*?"):
-            hits = sorted(Path().glob(spec)) or sorted(Path(spec).parent.glob(Path(spec).name))
+            # glob.glob, not Path().glob: the wrapper passes an ABSOLUTE
+            # pattern and pathlib refuses those outright.
+            hits = sorted(Path(p) for p in glob.glob(spec))
             if not hits:
                 sys.exit(f"no file matches {spec}")
             paths.extend(hits)
@@ -284,7 +322,11 @@ def main() -> None:
         sys.exit("no such file: " + ", ".join(str(p) for p in missing))
     if not paths:
         ap.error("give at least one export JSON, or --revert")
-    sys.exit(bake(paths, args.dry_run))
+    ov = parse_overrides([("rough", args.rough), ("metal", args.metal),
+                          ("roughmin", args.roughmin)])
+    for name, vals in sorted(ov.items()):
+        print("  override: %s -> %s" % (name, vals))
+    sys.exit(bake(paths, args.dry_run, ov))
 
 
 if __name__ == "__main__":

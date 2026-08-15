@@ -1,0 +1,811 @@
+{
+ "version": 1,
+ "codes": {
+  "DART": {
+   "clusters": [
+    {
+     "rgb": [
+      0,
+      0,
+      0
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      8,
+      8,
+      8
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      16,
+      16,
+      16
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      24,
+      24,
+      24
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      32,
+      32,
+      32
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      40,
+      40,
+      40
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      48,
+      48,
+      48
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      56,
+      56,
+      56
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      40,
+      0,
+      0
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      56,
+      0,
+      0
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    }
+   ],
+   "frames": [
+    "DARTA1",
+    "DARTA2A8",
+    "DARTA3A7",
+    "DARTA4A6",
+    "DARTA5"
+   ]
+  },
+  "DRTV": {
+   "clusters": [
+    {
+     "rgb": [
+      8,
+      8,
+      8
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      16,
+      16,
+      16
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      24,
+      24,
+      24
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      32,
+      32,
+      32
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      40,
+      40,
+      40
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      40,
+      0,
+      0
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      56,
+      0,
+      0
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    }
+   ],
+   "frames": [
+    "DRTVA1",
+    "DRTVA2A8",
+    "DRTVA3A7",
+    "DRTVA4A6",
+    "DRTVA5"
+   ]
+  },
+  "MANF": {
+   "clusters": [
+    {
+     "rgb": [
+      16,
+      16,
+      16
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      24,
+      24,
+      24
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      32,
+      32,
+      32
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      48,
+      48,
+      48
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      64,
+      64,
+      64
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      104,
+      32,
+      8
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      136,
+      48,
+      8
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      176,
+      64,
+      16
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      216,
+      80,
+      16
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      248,
+      104,
+      32
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      48,
+      16,
+      0
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      152,
+      80,
+      24
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      176,
+      96,
+      32
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      216,
+      112,
+      40
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      248,
+      128,
+      40
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      64,
+      32,
+      8
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      80,
+      40,
+      8
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      40,
+      16,
+      0
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      216,
+      128,
+      56
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      104,
+      56,
+      16
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      128,
+      72,
+      24
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      248,
+      152,
+      56
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      248,
+      176,
+      80
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      248,
+      160,
+      48
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      248,
+      216,
+      96
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      248,
+      200,
+      56
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      248,
+      240,
+      168
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      248,
+      248,
+      224
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    }
+   ],
+   "frames": [
+    "MANFA1",
+    "MANFA2A8",
+    "MANFA3A7",
+    "MANFA4A6",
+    "MANFA5",
+    "MANFB1",
+    "MANFB2B8",
+    "MANFB3B7",
+    "MANFB4B6",
+    "MANFB5",
+    "MANFC1",
+    "MANFC2C8",
+    "MANFC3C7",
+    "MANFC4C6",
+    "MANFC5",
+    "MANFD0",
+    "MANFE0",
+    "MANFF0",
+    "MANFG0",
+    "MANFH0",
+    "MANFI0"
+   ]
+  },
+  "TRCR": {
+   "clusters": [
+    {
+     "rgb": [
+      0,
+      0,
+      0
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      16,
+      16,
+      16
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      24,
+      24,
+      24
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      32,
+      32,
+      32
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      48,
+      48,
+      48
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      64,
+      64,
+      64
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      168,
+      72,
+      40
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      72,
+      24,
+      8
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      88,
+      24,
+      8
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      104,
+      32,
+      8
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      128,
+      40,
+      16
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      152,
+      48,
+      16
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      176,
+      56,
+      16
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      208,
+      64,
+      16
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      232,
+      72,
+      24
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      96,
+      40,
+      16
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      128,
+      56,
+      24
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      200,
+      88,
+      40
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      248,
+      112,
+      40
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      248,
+      88,
+      32
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      248,
+      96,
+      32
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      48,
+      16,
+      0
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      232,
+      136,
+      64
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      232,
+      120,
+      56
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      248,
+      136,
+      48
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      248,
+      152,
+      72
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      232,
+      160,
+      64
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      232,
+      184,
+      72
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    }
+   ],
+   "frames": [
+    "TRCRA1",
+    "TRCRA2A8",
+    "TRCRA3A7",
+    "TRCRA4A6",
+    "TRCRA5",
+    "TRCRB1",
+    "TRCRB2B8",
+    "TRCRB3B7",
+    "TRCRB4B6",
+    "TRCRB5",
+    "TRCRC0",
+    "TRCRD0",
+    "TRCRE0",
+    "TRCRF0",
+    "TRCRG0",
+    "TRCRH0",
+    "TRCRI0"
+   ]
+  }
+ },
+ "__meta": {
+  "scope": "EFFECTS",
+  "clusters_labelled": 24
+ }
+}

@@ -26,6 +26,23 @@ if not exist "%PY%" set "PY=python"
 
 set "LABELS=%~1"
 
+rem Class-level corrections live in apply-sprite-labels.cfg, so a retune is an
+rem edit to one file rather than a re-labelling pass. See that file for why only
+rem the dielectrics are corrected.
+rem
+rem PARSED HERE, OUTSIDE EVERY BLOCK, and that is not style. cmd expands %OVR% at
+rem the moment it PARSES a parenthesised block, so building it inside the
+rem `if "%LABELS%"==""` block below gave the bake an empty string every time --
+rem it ran, wrote all 4284 files, and silently ignored the corrections.
+rem eol=# drops the comment lines; `call set` accumulates without needing
+rem delayed expansion.
+set "OVR="
+if exist "%PROJ%\tools\apply-sprite-labels.cfg" (
+  for /f "usebackq eol=# delims=" %%L in ("%PROJ%\tools\apply-sprite-labels.cfg") do (
+    call set "OVR=%%OVR%% %%L"
+  )
+)
+
 rem The game holds the material PNGs open; writing under it is asking for a
 rem half-written map and a puzzling render.
 taskkill /IM gzdoom.exe /F >nul 2>&1
@@ -47,8 +64,19 @@ if "%LABELS%"=="" (
     echo        Paste a page's JSON export there first, e.g. sprites_weapons.json
     exit /b 1
   )
+  rem Class-level corrections live in apply-sprite-labels.cfg, so a retune is an
+  rem edit to one file rather than a re-labelling pass. See that file for why
+  rem only the dielectrics are corrected.
+  rem eol=# skips the comment lines for us, so no delayed expansion is needed --
+  rem and `call set` accumulates without it, which is what makes this readable.
+  set "OVR="
+  if exist "%PROJ%\tools\apply-sprite-labels.cfg" (
+    for /f "usebackq eol=# delims=" %%L in ("%PROJ%\tools\apply-sprite-labels.cfg") do (
+      call set "OVR=%%OVR%% %%L"
+    )
+  )
   echo === sprite _orm.png maps ===
-  "%PY%" "%PROJ%\tools\bake_sprite_materials.py" "%PROJ%\tools\_material_labels\sprites_*.json"
+  call "%PY%" "%PROJ%\tools\bake_sprite_materials.py" "%PROJ%\tools\_material_labels\sprites_*.json"%OVR%
   if errorlevel 1 exit /b 1
   goto :done
 )
