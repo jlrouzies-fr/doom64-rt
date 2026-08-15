@@ -1,7 +1,17 @@
 # Plan — projectile impact FX: plasma arcs, Unmaker melt, rocket embers
 
-**Status:** §2 (the hook) and §3 (the arcs) are BUILT and awaiting a play verdict.
-§1, §4 and §5 are planned. Scope decided in play review:
+**Status:** §2, §3 and §5 are BUILT and accepted in play, and the scorch decal came with
+them — which also delivers what `plan-impact-fx.md` had been carrying as unbuilt. §1, §6 and
+§7 remain; §4 is set aside; §8 turns out to need no building at all.
+
+Impacts that leave a mark today: the player's rocket and plasma, the BFG, and — added after
+a play note that they were missing — the cyberdemon's rocket, the revenant's tracer (`TRCR`),
+the Mother Demon's ball (`RBAL`) and the mancubus's `MANF`, all at rocket scale. Still
+unmarked: imp fireballs (`64DoomImpBall`, `64NightmareImpBall`) and `64MotherFire`. Those are
+a judgement call about how marked-up a normal firefight should get, not a technical gap — one
+table row each.
+
+Scope decided in play review:
 
 | § | | |
 |---|---|---|
@@ -9,7 +19,8 @@
 | 3 | plasma / BFG / arachnotron arcs | **built** — `rt_arc*`, ships **on** |
 | 1 | plasma light instability | planned |
 | 4 | Unmaker melt | **dropped for now** — see below |
-| 5 | rocket embers + smoke | planned — the ONLY *projectile* impact that gets smoke |
+| — | the scorch decal | **built** as part of §3/§5 (`rt_arc_burn*`), which also delivers `plan-impact-fx.md` |
+| 5 | rocket embers + smoke | **built** — `rt_ember*`; embers live ON the mark, not as particles |
 | 6 | barrel fire, floor scorch, smoking debris, acid | planned — shares §5's ember mechanism |
 | 7 | bullet holes with relief | planned — cheapest item here, and the most often on screen |
 | 8 | ejected shell casings | **already built in the WAD, shipped off** — a pin, then RT polish |

@@ -130,7 +130,7 @@ def load_sprite(raw: bytes) -> Image.Image | None:
     return decode_doompic_grayscale(raw)
 
 
-def collect(cat_filter: str | None, code_filter: set[str] | None):
+def collect(cat_filter: set[str] | None, code_filter: set[str] | None):
     data = WAD.read_bytes()
     lumps = read_lumps(data)
     names = [nm for nm, _, _ in lumps]
@@ -146,7 +146,7 @@ def collect(cat_filter: str | None, code_filter: set[str] | None):
         if not m:
             continue
         code = m.group(1)
-        if cat_filter and category != cat_filter:
+        if cat_filter and category not in cat_filter:
             continue
         if code_filter and code not in code_filter:
             continue
@@ -251,13 +251,17 @@ def idmap_b64(buf: bytes, w: int, h: int) -> str:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--cat", default="WEAPONS", help="sprite section, or ALL")
+    ap.add_argument("--cat", default="WEAPONS",
+                    help="sprite section(s), comma-separated, or ALL")
     ap.add_argument("--codes", default="", help="comma-separated 4-letter codes")
     ap.add_argument("--clusters", type=int, default=DEFAULT_CLUSTERS)
+    ap.add_argument("--slug", default="", help="output filename stem")
+    ap.add_argument("--title", default="", help="page title, when --cat spans sections")
     ap.add_argument("--out", default="")
     args = ap.parse_args()
 
-    cat = None if args.cat.upper() == "ALL" else args.cat.upper()
+    cats = [c.strip().upper() for c in args.cat.split(",") if c.strip()]
+    cat = None if cats == ["ALL"] else set(cats)
     codes = {c.strip().upper() for c in args.codes.split(",") if c.strip()} or None
 
     by_code = collect(cat, codes)
@@ -296,9 +300,9 @@ def main() -> None:
         )
 
     OUTDIR.mkdir(parents=True, exist_ok=True)
-    slug = (args.cat or "all").lower()
+    slug = args.slug.lower() or "_".join(c.lower() for c in cats)
     out = Path(args.out) if args.out else OUTDIR / f"sprite_labeller_{slug}.html"
-    html = render_html(payload, args.cat.upper(), total_frames)
+    html = render_html(payload, ",".join(cats), total_frames, args.title)
     out.write_text(html, encoding="utf-8")
     size = out.stat().st_size / 1e6
     print(f"{out}  {size:.2f} MB")
@@ -307,7 +311,7 @@ def main() -> None:
         print("WARNING: over 15 MB -- the artifact ceiling is 16 MB. Split the category.")
 
 
-def render_html(payload, cat: str, total_frames: int) -> str:
+def render_html(payload, cat: str, total_frames: int, title_override: str = "") -> str:
     data = json.dumps(payload, separators=(",", ":"))
     surf = json.dumps(
         [{"name": n, "key": k, "m": m, "r": r, "c": c} for n, k, m, r, c in SURFACES],
@@ -318,9 +322,9 @@ def render_html(payload, cat: str, total_frames: int) -> str:
     # A name, not a caption: "Weapon sprite materials" sits in a gallery beside
     # the wall/flat labeller and has to be told apart from it at a glance.
     nice = {"WEAPONS": "Weapon", "MONSTERS": "Monster", "ITEMS": "Item",
-            "POWERUPS": "Powerup", "EFFECTS": "Effect", "STATIC": "Scenery",
+            "POWERUPS": "Powerup", "EFFECTS": "Projectile", "STATIC": "Scenery",
             "CASINGS": "Casing", "CLSANIMS": "Classic-anim", "ALL": "Every"}
-    title = f"{nice.get(cat, cat.title())} sprite materials"
+    title = title_override or f"{nice.get(cat, cat.title())} sprite materials"
     return TEMPLATE.format(
         cat=cat, title=title, ncodes=ncodes, nframes=total_frames,
         data=data, surf=surf, rough=rough

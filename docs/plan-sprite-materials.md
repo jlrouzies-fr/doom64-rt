@@ -41,9 +41,29 @@ roughness, held six inches from the camera, in front of 898 hand-labelled walls.
 
 ## 0b. The tool — built, weapons page published
 
-**Generator:** `tools/gen_sprite_material_labeller.py` → `tools/_gallery/sprite_labeller_<cat>.html`
+**Generator:** `tools/gen_sprite_material_labeller.py` → `tools/_gallery/sprite_labeller_<slug>.html`
 **Baker:** `tools/bake_sprite_materials.py` (wrapper: `tools/apply-sprite-labels.cmd`)
-**Published (weapons):** https://claude.ai/code/artifact/d964ae8f-4160-4620-9335-9bc6d8b1598f
+
+One page per sprite section, because they get labelled at different sittings and
+applying one must never un-apply the rest. Each exports to its own
+`tools/_material_labels/sprites_<slug>.json`; the wrapper with no argument bakes
+**every** `sprites_*.json` it finds, in one pass.
+
+| page | section | codes | frames | size | published |
+|---|---|---|---|---|---|
+| weapons | `WEAPONS` | 43 | 166 | 1.6 MB | https://claude.ai/code/artifact/d964ae8f-4160-4620-9335-9bc6d8b1598f |
+| monsters | `MONSTERS` | 16 | 768 | 7.4 MB | https://claude.ai/code/artifact/a0b609af-a3e3-4b2a-a7ce-a556efa79c5c |
+| projectiles | `EFFECTS` | 24 | 197 | 0.5 MB | https://claude.ai/code/artifact/739cc596-5625-4cb1-a720-b0d75032f070 |
+| props | `STATIC` | 49 | 102 | 0.3 MB | https://claude.ai/code/artifact/43534a82-eb82-4dbc-bb59-3591b0f9c262 |
+| pickups | `ITEMS`+`POWERUPS`+`CASINGS`+`CLSANIMS` | 48 | 146 | 0.5 MB | https://claude.ai/code/artifact/cce4b869-3ab2-4962-9e2a-3ac5c7ffe114 |
+
+**The exploding barrel is in `EFFECTS`, not `STATIC`.** `BAR1` sits with the
+fireballs and explosion frames, which is where the WAD's own section dividers put
+it — worth knowing before hunting for it on the scenery page.
+
+Monsters is the only page anywhere near the 16 MB artifact ceiling, and it is the
+one that pays best: 768 frames over 16 codes, and those are indexed PNGs with
+tight palettes, so a handful of clusters covers a whole monster.
 
 **It labels COLOUR CLUSTERS, not images or pixels**, and that is the decision the
 whole tool turns on. A sprite cannot take one answer per image — a shotgun is a

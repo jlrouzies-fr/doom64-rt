@@ -126,11 +126,27 @@ def existing_ao(lump: str, size) -> Image.Image | None:
     return None
 
 
-def bake(export_path: Path, dry_run: bool) -> int:
-    doc = json.loads(export_path.read_text(encoding="utf-8"))
-    codes = doc.get("codes") or {}
+def bake(export_paths: list[Path], dry_run: bool) -> int:
+    # SEVERAL EXPORTS, ONE BAKE. There is a page per sprite section -- weapons,
+    # monsters, projectiles, scenery -- and they are labelled at different
+    # times, so applying one must not look like a reason to un-apply the rest.
+    # Merging here rather than making the human paste four files into one keeps
+    # each section's export the thing the page actually produced.
+    codes: dict[str, dict] = {}
+    for p in export_paths:
+        doc = json.loads(p.read_text(encoding="utf-8"))
+        got = doc.get("codes") or {}
+        if not got:
+            print(f"  {p.name}: no 'codes' -- did you press 'copy JSON'? skipped")
+            continue
+        clash = set(got) & set(codes)
+        if clash:
+            print(f"  {p.name}: {len(clash)} code(s) already given by an earlier "
+                  f"file, later wins: {', '.join(sorted(clash)[:4])}")
+        codes.update(got)
+        print(f"  {p.name}: {len(got)} code(s)")
     if not codes:
-        sys.exit("export has no 'codes' -- did you press 'copy JSON' in the page?")
+        sys.exit("nothing to bake")
 
     images = sprite_images(set(codes))
     written = 0
@@ -243,16 +259,32 @@ def revert() -> int:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("export", nargs="?", help="JSON exported from the labelling page")
+    ap.add_argument("export", nargs="*",
+                    help="JSON export(s) from the labelling pages")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--revert", action="store_true")
     args = ap.parse_args()
 
     if args.revert:
         sys.exit(revert())
-    if not args.export:
-        ap.error("give an export JSON, or --revert")
-    sys.exit(bake(Path(args.export), args.dry_run))
+    # cmd.exe does not expand wildcards for the callee, so a caller passing
+    # sprites_*.json hands us the literal string. Expand it here or the wrapper
+    # silently bakes nothing.
+    paths: list[Path] = []
+    for spec in args.export:
+        if any(ch in spec for ch in "*?"):
+            hits = sorted(Path().glob(spec)) or sorted(Path(spec).parent.glob(Path(spec).name))
+            if not hits:
+                sys.exit(f"no file matches {spec}")
+            paths.extend(hits)
+        else:
+            paths.append(Path(spec))
+    missing = [p for p in paths if not p.is_file()]
+    if missing:
+        sys.exit("no such file: " + ", ".join(str(p) for p in missing))
+    if not paths:
+        ap.error("give at least one export JSON, or --revert")
+    sys.exit(bake(paths, args.dry_run))
 
 
 if __name__ == "__main__":
