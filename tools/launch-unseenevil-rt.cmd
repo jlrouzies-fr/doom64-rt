@@ -33,6 +33,7 @@ rem   .\tools\launch-unseenevil-rt.cmd 30         -> MAP30, the custom Icon of S
 rem   .\tools\launch-unseenevil-rt.cmd menu       -> title screen, no +map
 rem   .\tools\launch-unseenevil-rt.cmd doom1      -> doom.wad, E1M1
 rem   .\tools\launch-unseenevil-rt.cmd doom1 e3m8 -> doom.wad, the custom Dis
+rem   .\tools\launch-unseenevil-rt.cmd bare       -> no Retribution patches at all
 rem   .\tools\launch-unseenevil-rt.cmd 5 -- +rt_sky 40      -> extra cvars win
 rem
 rem Anything that is not a number and not a keyword is passed to +map verbatim,
@@ -45,17 +46,63 @@ set "ENGINE=%PROJ%\sourcecode\gzdoom-rt\build\RelWithDebInfo"
 
 set "MOD=%PROJ%\Doom64-UnseenEvil\D64UnseenEvil-v1.0.3.pk3"
 set "TONE=%PROJ%\Doom64-UnseenEvil\d64ue-brightmap-tone.pk3"
+
+rem ---- Retribution patches carried over -------------------------------------
+rem WHICH OF OURS TRANSFER, AND WHY MOST DO NOT. Every d64r-*.pk3 was checked for
+rem what it inherits from and replaces. The great majority are Retribution-shaped
+rem and cannot come here:
+rem
+rem   d64r-blood-persist.pk3  NO -- and this is the tempting one, because it is
+rem       what DECLARES the nine rt_gore_* cvars the pins set, so the "Unknown
+rem       command" lines at startup point straight at it. Its DECORATE is
+rem       "ACTOR RTBloodPersist : 64Blood replaces 64Blood", plus 64Blood2,
+rem       64InvisiBlood, 64Cacodemon, 64Arachnotron, 64NightmareImp,
+rem       64PainElemental, 64SpiderMastermind. None of those actors exist here --
+rem       DOOM's blood is `Blood` -- so loading it is a startup script error, not
+rem       persistent blood. The nine unknown-command lines are the correct and
+rem       harmless result of sharing one pins file across two mods.
+rem   d64r-seqlight-fix.wad / d64r-3dfloor-rtfix.wad / d64r-ctel-fix.wad /
+rem   d64r-bulb-textures.wad  NO -- map and texture replacements for Retribution's
+rem       own MAP01-34. Nothing here has those maps.
+rem   d64r-mugshot.pk3 / d64r-widescreen-gfx.pk3 / d64r-rt-titlelogo.pk3  NO --
+rem       they override the status bar, TITLEPIC and title music, and Unseen Evil
+rem       ships its own (StatusBarClass = D64UE_StatusBar, a custom TITLEMAP).
+rem   d64r-rt-sky.pk3  NO -- Unseen Evil has its own sky system, GLDEFS.skies plus
+rem       the sky_3d.fp and skyfire.fp shaders.
+rem
+rem   d64r-rt-flashlight.pk3  YES. Self-contained and free of Doom 64 actor
+rem       dependencies: one EventHandler, a KEYCONF binding F to the engine's
+rem       rt_flsh_toggle, two sound cvars of its own, three wavs. AddEventHandlers
+rem       is additive, so it sits alongside Unseen Evil's handlers rather than
+rem       replacing them. Worth having precisely because this is a dark
+rem       path-traced game.
+rem
+rem       CAVEAT, untested in play: the battery HUD is authored against
+rem       Retribution's ForceScaled 320x240 bar, so on Unseen Evil's own status
+rem       bar it may not land where intended. It draws from RenderOverlay, which
+rem       is independent of the status bar, so the worst case is cosmetic. Launch
+rem       with "bare" as the first argument to drop it and every other patch.
+set "FLSH=%PROJ%\Doom64-Retribution\d64r-rt-flashlight.pk3"
+rem The quotes live INSIDE the value: PROJ is derived from this script's path and
+rem a clone can sit somewhere with a space in it, at which point an unquoted
+rem expansion would split into two bogus -file arguments.
+set "PATCHES="%FLSH%""
+if not exist "%FLSH%" set "PATCHES="
 set "PINS=%PROJ%\tools\d64rt-pins.cfg"
 rem A separate log from rt-console.log on purpose: that one is the Retribution
 rem transcript and gets read after a session, so this must not clobber it.
 set "LOGF=%PROJ%\rt-console-unseenevil.log"
 
-rem ---- which IWAD -----------------------------------------------------------
+rem ---- leading keywords -----------------------------------------------------
+rem ONE loop for all of them, deliberately, so they compose in ANY order. Written
+rem first as two separate "if ... shift" blocks, which worked for "bare doom1" and
+rem quietly broke "doom1 bare": the second keyword had already slid into %1 by the
+rem time its own test was reached, so it fell through to the map parser and became
+rem "+map bare". Consuming them in a loop removes the ordering entirely.
 set "WANT=doom2.wad"
-if /i "%~1"=="doom1" (
-  set "WANT=doom.wad"
-  shift
-)
+:flags
+if /i "%~1"=="bare"  ( set "PATCHES=" & shift & goto :flags )
+if /i "%~1"=="doom1" ( set "WANT=doom.wad" & shift & goto :flags )
 
 rem Steam's modern "Ultimate Doom" depot is a BUNDLE: one app folder holds every
 rem classic IWAD, with DOOM.WAD at base\ and the rest one level down in
@@ -151,8 +198,12 @@ echo Unseen Evil ^(RT^)
 echo   iwad    %IWAD%
 echo   mod     %MOD%
 echo   tone    %TONE%   ^(18 brightmaps 255 -^> 192^)
+if defined PATCHES (echo   patches %PATCHES%) else (echo   patches none ^("bare"^))
 echo   map     %MAPLUMP%
 echo   log     %LOGF%
+echo.
+echo   Nine "Unknown command rt_gore_*" lines at startup are EXPECTED here: those
+echo   cvars are declared by Retribution's blood pk3, which cannot load on DOOM.
 echo.
 
 rem The tone overlay is listed LAST so it wins the load order. The pins run
@@ -164,7 +215,7 @@ rem pin out here, hit cmd.exe's 8191-character limit, and silently dropped the
 rem trailing passthrough while still printing the values it believed it had set.
 rem That is why the pins live in a cfg and arrive via +exec.
 start "" gzdoom.exe ^
-  -iwad "%IWAD%" -file "%MOD%" "%TONE%" -rtnolauncher -width 1280 -height 720 ^
+  -iwad "%IWAD%" -file "%MOD%" %PATCHES% "%TONE%" -rtnolauncher -width 1280 -height 720 ^
   +logfile "%LOGF%" ^
   +exec "%PINS%" ^
   %MAPARG% %MAPLUMP% %EXTRA%
