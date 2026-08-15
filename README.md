@@ -93,7 +93,6 @@ this project is finding those and replacing them with something that actually em
 | **Per-map fog** | A froxel volume with a near/far ramp, tuned per level (`rt_fog_*`, `RT_FOG_PRESETS`, `fog` CCMD). Needed two RTGL1 froxel changes. | [`rt-fog`](docs/rt-fog.md) · [implementation](docs/rt-fog-implementation.md) |
 | **Volumetric smoke** | Muzzle smoke as a real participating medium inside the fog's froxel volume, so it takes the colour of whatever lights the room. Six sources: weapons, monster guns, projectiles, barrels, flames. Sim is on the CPU, on purpose. `smoke` CCMD. | [`rt-smoke`](docs/rt-smoke.md) |
 | **Light shafts from lamps** | The froxel pass shadow-tests one light per frame — the sun — which is why beams only ever happened outdoors. An explicit fixture list puts ordinary ceiling lamps, bulb lattices and solo bulbs in the air too (`rt_volume_shafts`, `rt_volume_shaft_src` as a family bitmask). | [`plan-light-shafts`](docs/plan-light-shafts.md) |
-| **Volumetric depth gate** | The medium resolves on the froxel grid, far coarser than the image, so a cell straddling a silhouette carried a depth belonging to neither side and left a thin black outline along the edge — worst in fog, smoke and inside a beam. `rt_volume_depthgate` (on) gates the volume against depth; `_bias`, `_feather` and `_taps` tune it, and 0 restores the old behaviour. | — |
 | **Dust motes** | Tiny quads on a hashed world grid, drawn where a shaft can actually light them (`rt_dust_*`). Bounded by construction: the cap sets the cell spacing rather than a counter. | — |
 | **Water** | Stylized surface with projected caustics; flats are tagged engine-side, no per-map setup. | [`rt-water`](docs/rt-water.md) |
 | **Lava** | The floor is the emitter — drifting quantized heat field (`rt_lava_flow*`), slow whole-surface breath, optional analytic light grid over the flats. | — |
@@ -220,6 +219,17 @@ denoiser regardless of which one you use.
 ## ⛧ &nbsp;Known issues
 
 Things that are wrong and known to be wrong.
+
+**Black outlines behind volumetrics.** Where a participating medium meets a geometric
+edge, a thin dark line can appear along that edge — most visible in fog, smoke, and inside
+a volumetric beam or lamp shaft. The medium is resolved on the froxel grid, which is far
+coarser than the image, so a cell that straddles a silhouette gets a depth that belongs to
+neither side of it.
+*Mitigated, not solved:* `rt_volume_depthgate` (on by default) gates the volume against
+depth and removes most of it; `rt_volume_depthgate_bias`, `_feather` and `_taps` tune how
+hard it gates, and `0` returns to the ungated behaviour. If an edge still shows, less
+medium is the other lever — `rt_volume_scatter`, or `rt_fog_density` on a fogged map, or
+`rt_volume_shaft_mult` if it is only around lamps.
 
 **Sky smears during lightning.** On MAP11, a lightning flash while the view is moving can
 leave a streak across the sky. The flash is a one-frame change over the largest, furthest
