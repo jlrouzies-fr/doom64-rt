@@ -39,7 +39,7 @@ theirs — the code is Claude's. <a href="AI-DECLARATION.md">Details</a>.
 ## ⛧ &nbsp;Contents
 
 - [**Features**](#features) — [lighting](#lighting) · [atmosphere](#atmosphere) · [materials](#materials) · [sprites, monsters, gore](#sprites) · [impacts and destruction](#impacts) · [HUD and menus](#hud) · [denoising and upscaling](#denoising)
-- [**Known issues**](#known-issues) — the two artefacts worth knowing about before you play
+- [**Known issues**](#known-issues) — what is still wrong, before you play
 - [**Install and play**](#install) — download, extract, point it at your copy of Retribution
 - [**Building it yourself**](#building) — [what you need](#requirements) · [dependencies](#dependencies) · [build](#build) · [first run](#first-run)
 - [**Launchers**](#launchers) — how the game and the A/B arms are started
@@ -93,6 +93,7 @@ this project is finding those and replacing them with something that actually em
 | **Per-map fog** | A froxel volume with a near/far ramp, tuned per level (`rt_fog_*`, `RT_FOG_PRESETS`, `fog` CCMD). Needed two RTGL1 froxel changes. | [`rt-fog`](docs/rt-fog.md) · [implementation](docs/rt-fog-implementation.md) |
 | **Volumetric smoke** | Muzzle smoke as a real participating medium inside the fog's froxel volume, so it takes the colour of whatever lights the room. Six sources: weapons, monster guns, projectiles, barrels, flames. Sim is on the CPU, on purpose. `smoke` CCMD. | [`rt-smoke`](docs/rt-smoke.md) |
 | **Light shafts from lamps** | The froxel pass shadow-tests one light per frame — the sun — which is why beams only ever happened outdoors. An explicit fixture list puts ordinary ceiling lamps, bulb lattices and solo bulbs in the air too (`rt_volume_shafts`, `rt_volume_shaft_src` as a family bitmask). | [`plan-light-shafts`](docs/plan-light-shafts.md) |
+| **Volumetric depth gate** | The medium resolves on the froxel grid, far coarser than the image, so a cell straddling a silhouette carried a depth belonging to neither side and left a thin black outline along the edge — worst in fog, smoke and inside a beam. `rt_volume_depthgate` (on) gates the volume against depth; `_bias`, `_feather` and `_taps` tune it, and 0 restores the old behaviour. | — |
 | **Dust motes** | Tiny quads on a hashed world grid, drawn where a shaft can actually light them (`rt_dust_*`). Bounded by construction: the cap sets the cell spacing rather than a counter. | — |
 | **Water** | Stylized surface with projected caustics; flats are tagged engine-side, no per-map setup. | [`rt-water`](docs/rt-water.md) |
 | **Lava** | The floor is the emitter — drifting quantized heat field (`rt_lava_flow*`), slow whole-surface breath, optional analytic light grid over the flats. | — |
@@ -171,6 +172,8 @@ works on the WAD's own classes.
   in the game reacted to what it hit. Plasma, the arachnotron's bolt and the BFG now leave
   a branching electric mark with its own light and its own colour ramp.
   → [`docs/plan-projectile-impact-fx.md`](docs/plan-projectile-impact-fx.md)
+- **The Unmaker burns the wall** (`rt_laser_*`) — its laser leaves a hot spot, a glow and
+  a short-lived arc where it lands, rather than passing through the world unmarked.
 - **Exploding barrels** (`rt_barrel_*`) — the barrel comes apart into curved plate pieces
   that fly, tumble, settle and scorch the floor under them, instead of vanishing into a
   sprite animation.
@@ -216,19 +219,7 @@ denoiser regardless of which one you use.
 <a id="known-issues"></a>
 ## ⛧ &nbsp;Known issues
 
-Things that are wrong and known to be wrong. Both are renderer-level and neither has a
-setting that fixes it outright — the workarounds below trade the artefact for less of the
-effect that causes it.
-
-**Black outlines behind volumetrics.** Where a participating medium meets a geometric
-edge, a thin dark line can appear along that edge — most visible in fog, smoke, and inside
-a volumetric beam or lamp shaft. The medium is resolved on the froxel grid, which is far
-coarser than the image, so a cell that straddles a silhouette gets a depth that belongs to
-neither side of it. It shows up most on high-contrast edges with a bright medium behind
-them.
-*If it bothers you:* lower `rt_volume_scatter` (or `rt_fog_density` on a fogged map), or
-`rt_volume_shaft_mult` if it is only around lamps. Reducing the medium reduces the
-mismatch it is drawn from.
+Things that are wrong and known to be wrong.
 
 **Sky smears during lightning.** On MAP11, a lightning flash while the view is moving can
 leave a streak across the sky. The flash is a one-frame change over the largest, furthest
