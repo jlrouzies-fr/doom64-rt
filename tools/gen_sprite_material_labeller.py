@@ -82,11 +82,13 @@ ROUGH_BUCKETS = [0.05, 0.20, 0.40, 0.60, 0.80, 0.95]
 # they are right. These are the ones where they are not, judged by WHAT THE
 # LABELLER NEEDS TO SEE TOGETHER rather than by what the sprite technically is.
 #
-# BEXP is the barrel's explosion. The WAD files it under EFFECTS with the
-# fireballs, which is true of its role and useless for this job: its materials
-# are the barrel's materials mid-destruction, so it wants to be labelled beside
-# BAR1 on the props page, not beside a plasma bolt.
+# The barrel is the case in point. BAR1 is a standing object you walk around and
+# shoot, and BEXP is that same object mid-destruction -- the WAD files both under
+# EFFECTS with the fireballs, which is true of their role and useless for this
+# job. They share one set of greens and rusts and have to be called the same way,
+# so they belong together on the props page, not beside a plasma bolt.
 CODE_SECTION_OVERRIDES = {
+    "BAR1": "STATIC",
     "BEXP": "STATIC",
 }
 

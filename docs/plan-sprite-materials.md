@@ -53,8 +53,8 @@ applying one must never un-apply the rest. Each exports to its own
 |---|---|---|---|---|---|
 | weapons | `WEAPONS` + `CLSANIMS` | 52 | 207 | 1.9 MB | https://claude.ai/code/artifact/d964ae8f-4160-4620-9335-9bc6d8b1598f |
 | monsters | `MONSTERS` | 16 | 768 | 7.4 MB | https://claude.ai/code/artifact/a0b609af-a3e3-4b2a-a7ce-a556efa79c5c |
-| projectiles | `EFFECTS` | 23 | 188 | 0.4 MB | https://claude.ai/code/artifact/739cc596-5625-4cb1-a720-b0d75032f070 |
-| props | `STATIC` + `BEXP` | 50 | 111 | 0.3 MB | https://claude.ai/code/artifact/43534a82-eb82-4dbc-bb59-3591b0f9c262 |
+| projectiles | `EFFECTS` | 22 | 186 | 0.4 MB | https://claude.ai/code/artifact/739cc596-5625-4cb1-a720-b0d75032f070 |
+| props | `STATIC` + `BAR1` + `BEXP` | 51 | 113 | 0.3 MB | https://claude.ai/code/artifact/43534a82-eb82-4dbc-bb59-3591b0f9c262 |
 | pickups | `ITEMS`+`POWERUPS`+`CASINGS` | 38 | 105 | 0.2 MB | https://claude.ai/code/artifact/cce4b869-3ab2-4962-9e2a-3ac5c7ffe114 |
 
 **`CLSANIMS` is the classic-mode weapon set, not an animation curiosity.** All ten
@@ -68,16 +68,15 @@ the pickups page for one revision because the section name did not say so.
 calls, and a code's clusters are computed from its own frames alone — nothing
 else on the page shifts them.
 
-**The exploding barrel is in `EFFECTS`, not `STATIC`.** `BAR1` sits with the
-fireballs, which is where the WAD's own section dividers put it — worth knowing
-before hunting for it on the scenery page.
-
 **`CODE_SECTION_OVERRIDES` moves a code to a different page**, and the rule for
 using it is *what the labeller needs to see together*, not what the sprite
-technically is. The one entry so far is `BEXP` → props: the barrel's explosion is
-filed under effects, which is true of its role and useless for this job, because
-its materials are the barrel's materials mid-destruction. It belongs beside
-`BAR1`, not beside a plasma bolt.
+technically is.
+
+The barrel is the case in point, and both its codes are entries. The WAD files
+`BAR1` (the standing object) and `BEXP` (that same object mid-destruction) under
+`EFFECTS` with the fireballs — true of their role, useless for this job. They
+share one set of greens and rusts and have to be called the same way, so they sit
+together on the props page.
 
 Monsters is the only page anywhere near the 16 MB artifact ceiling, and it is the
 one that pays best: 768 frames over 16 codes, and those are indexed PNGs with
