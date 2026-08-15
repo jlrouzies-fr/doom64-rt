@@ -1,0 +1,57 @@
+
+      "D64FADES.PK3" USAGE AND EXAMPLES
+
+
+--- IMPORTANT NOTE: -----------------------------------------------------------------------------------------
+
+It is critical that you separate out newTIDs between actors with different alpha values or renderstyles.
+You will get undesirable results if you try to spawn things with a pre-set alpha value with the same
+newTID of a thing with a normal renderstyle. The last thing to spawn will get priority and all previous
+actors sharing the same newTID will be affected. This means that you should always give different
+newTIDs to things which have different renderstyles / alphas.
+
+As an example, let's say you are fading in Imps and Hell Knights and want to make them have their ambush
+flag get set when spawned. You give them a both newTID of 255. No problem since they both use a renderstyle
+of Normal... except, on Doomslayer difficulty, Imps become Nightmare Imps. They have an alpha of 0.60 and
+use Translucent renderstyle. This means if that the last thing spawned will cause the previous things to
+inherit this renderstyle. If you end up having Nightmare Imps that are fully opaque instead of translucent,
+this is likely your problem.
+
+
+--- USAGE: --------------------------------------------------------------------------------------------------
+
+Thing_FadeIn(int tid);
+
+      tid = thing ID of any thing to fade in, usually one previously faded out
+
+Thing_FadeSpawn(int spotTID, int spawnID, int newTID);
+
+   spotTID = MapSpot or TID of the thing to spawn the new thing at
+   spawnID = the spawnID or T_ name identifier of the thing to spawn
+    newTID = the new TID to give the spawned thing, if 0 a unique TID is assigned
+
+Thing_FadeSpawnForced(int spotTID, str className, int newTID);
+
+     spotTID = MapSpot or TID of the thing to force spawn the new thing at
+   className = the class name of the actor to be spawned
+      newTID = the new TID to give the spawned thing, if 0 a unique TID is assigned
+
+Thing_FadeOut(int thingID, bool keepThing);
+
+     thingID = the TID of the thing to fade out
+   keepThing = set to 1 to only fade out the thing, 0 will also remove the thing
+
+
+--- EXAMPLES: -----------------------------------------------------------------------------------------------
+
+Thing_FadeIn(1);
+   Fades in any thing with a TID of 1, should be used on a thing with TID of 1 that was faded out
+
+Thing_FadeSpawn(1, T_IMP, 0);
+   Fades in a normal Imp at MapSpot 1, then assigns a unique newTID to the spawned thing
+
+Thing_FadeSpawnForced(1, "DoomImp", 42);
+   Fades in a normal Imp at MapSpot 1 with a preset newTID of 42
+
+Thing_FadeOut(42, 0);
+   Fades out the Imp that would have been faded in from above and then removes it from the map

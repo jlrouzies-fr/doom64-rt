@@ -1,0 +1,9 @@
+# tools/.venv-ai — local Marigold normals for companion maps
+torch
+diffusers>=0.32
+transformers
+accelerate
+safetensors
+pillow
+numpy
+# install torch from: https://download.pytorch.org/whl/cu128

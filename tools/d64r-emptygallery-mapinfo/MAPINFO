@@ -1,0 +1,9 @@
+map MAP99 "Empty Gallery Hall (no pillars)"
+{
+	levelnum = 99
+	next = "MAP99"
+	secretnext = "MAP99"
+	sky1 = "RSKY1"
+	cluster = 1
+	music = ""
+}

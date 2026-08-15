@@ -1,0 +1,47 @@
+[
+  {
+    "texture": "SPACEBE",
+    "size": [
+      32,
+      128
+    ],
+    "mode": "detail",
+    "metal_frac": 0.082
+  },
+  {
+    "texture": "SPACEBD",
+    "size": [
+      32,
+      128
+    ],
+    "mode": "detail",
+    "metal_frac": 0.033
+  },
+  {
+    "texture": "SPACEBO1",
+    "size": [
+      64,
+      128
+    ],
+    "mode": "detail",
+    "metal_frac": 0.069
+  },
+  {
+    "texture": "SPACEAA",
+    "size": [
+      64,
+      64
+    ],
+    "mode": "detail",
+    "metal_frac": 0.0
+  },
+  {
+    "texture": "SPACEART",
+    "size": [
+      64,
+      24
+    ],
+    "mode": "detail",
+    "metal_frac": 0.135
+  }
+]

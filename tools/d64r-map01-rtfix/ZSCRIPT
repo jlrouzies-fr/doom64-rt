@@ -1,0 +1,41 @@
+version "4.12"
+
+class D64Map01RtFix : EventHandler
+{
+    void KillMap01Noise()
+    {
+        // Stop OPEN scripts
+        ACS_Terminate(12, 0);
+        ACS_Terminate(1, 0);
+        ACS_Terminate(4, 0);
+        ACS_Terminate(669, 0);
+
+        // Undo conveyor / texture scrolls applied by script 1
+        Scroll_Floor(7, 0, 0, 0);
+        Scroll_Floor(8, 0, 0, 0);
+        Scroll_Floor(16, 0, 0, 0);
+        Scroll_Texture_Both(1, 0, 0, 0, 0);
+        Scroll_Texture_Both(2, 0, 0, 0, 0);
+        Scroll_Texture_Both(3, 0, 0, 0, 0);
+        Scroll_Texture_Both(4, 0, 0, 0, 0);
+
+        // Stop glow from script 669
+        Light_Stop(5);
+        Light_ChangeToValue(5, 200);
+    }
+
+    override void WorldLoaded(WorldEvent e)
+    {
+        if (level.MapName ~== "MAP01")
+        {
+            KillMap01Noise();
+            Console.Printf("D64Map01RtFix: MAP01 scrolls+ACS neutralized");
+        }
+    }
+
+    override void WorldTick()
+    {
+        if (level.MapName ~== "MAP01" && level.maptime > 0 && level.maptime < 70)
+            KillMap01Noise();
+    }
+}

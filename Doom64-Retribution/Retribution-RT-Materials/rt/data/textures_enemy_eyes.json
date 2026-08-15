@@ -1,0 +1,906 @@
+{
+  "version": 0,
+  "array": [
+    {
+      "textureName": "SKULA1",
+      "emissiveMult": 0.12
+    },
+    {
+      "textureName": "SKULB1",
+      "emissiveMult": 0.12
+    },
+    {
+      "textureName": "SKULC1",
+      "emissiveMult": 0.12
+    },
+    {
+      "textureName": "SKULD1",
+      "emissiveMult": 0.12
+    },
+    {
+      "textureName": "SKULE1",
+      "emissiveMult": 0.12
+    },
+    {
+      "textureName": "SKULF1",
+      "emissiveMult": 0.12
+    },
+    {
+      "textureName": "SKULA2A8",
+      "emissiveMult": 0.12
+    },
+    {
+      "textureName": "SKULB2B8",
+      "emissiveMult": 0.12
+    },
+    {
+      "textureName": "SKULC2C8",
+      "emissiveMult": 0.12
+    },
+    {
+      "textureName": "SKULD2D8",
+      "emissiveMult": 0.12
+    },
+    {
+      "textureName": "SKULE2E8",
+      "emissiveMult": 0.12
+    },
+    {
+      "textureName": "SKULF2F8",
+      "emissiveMult": 0.12
+    },
+    {
+      "textureName": "SKULA3A7",
+      "emissiveMult": 0.12
+    },
+    {
+      "textureName": "SKULB3B7",
+      "emissiveMult": 0.12
+    },
+    {
+      "textureName": "SKULC3C7",
+      "emissiveMult": 0.12
+    },
+    {
+      "textureName": "SKULD3D7",
+      "emissiveMult": 0.12
+    },
+    {
+      "textureName": "SKULE3E7",
+      "emissiveMult": 0.12
+    },
+    {
+      "textureName": "SKULF3F7",
+      "emissiveMult": 0.12
+    },
+    {
+      "textureName": "SKULA4A6",
+      "emissiveMult": 0.12
+    },
+    {
+      "textureName": "SKULB4B6",
+      "emissiveMult": 0.12
+    },
+    {
+      "textureName": "SKULC4C6",
+      "emissiveMult": 0.12
+    },
+    {
+      "textureName": "SKULD4D6",
+      "emissiveMult": 0.12
+    },
+    {
+      "textureName": "SKULE4E6",
+      "emissiveMult": 0.12
+    },
+    {
+      "textureName": "SKULF4F6",
+      "emissiveMult": 0.12
+    },
+    {
+      "textureName": "SKULA5",
+      "emissiveMult": 0.12
+    },
+    {
+      "textureName": "SKULB5",
+      "emissiveMult": 0.12
+    },
+    {
+      "textureName": "SKULC5",
+      "emissiveMult": 0.12
+    },
+    {
+      "textureName": "SKULD5",
+      "emissiveMult": 0.12
+    },
+    {
+      "textureName": "SKULE5",
+      "emissiveMult": 0.12
+    },
+    {
+      "textureName": "SKULF5",
+      "emissiveMult": 0.12
+    },
+    {
+      "textureName": "SKULG0",
+      "emissiveMult": 0.12
+    },
+    {
+      "textureName": "SKULH0",
+      "emissiveMult": 0.12
+    },
+    {
+      "textureName": "SKULI0",
+      "emissiveMult": 0.12
+    },
+    {
+      "textureName": "SKULJ0",
+      "emissiveMult": 0.12
+    },
+    {
+      "textureName": "SKULK0",
+      "emissiveMult": 0.12
+    },
+    {
+      "textureName": "SKULL0",
+      "emissiveMult": 0.12
+    },
+    {
+      "textureName": "SKULM0",
+      "emissiveMult": 0.12
+    },
+    {
+      "textureName": "SKULN0",
+      "emissiveMult": 0.12
+    },
+    {
+      "textureName": "SKULO0",
+      "emissiveMult": 0.12
+    },
+    {
+      "textureName": "SKULP0",
+      "emissiveMult": 0.12
+    },
+    {
+      "textureName": "SARGA1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SARGB1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SARGC1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SARGD1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SARGE1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SARGF1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SARGG1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SARGA2A8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SARGB2B8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SARGC2C8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SARGD2D8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SARGE2E8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SARGF2F8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SARGG2G8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TROOA1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TROOA2A8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TROOB1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TROOB2B8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TROOC1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TROOC2C8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TROOD1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TROOD2D8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TROOE1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TROOE2E8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TROOF2F8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TROOG1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TROOG2G8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "BOS2F4F6",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "FATTA1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "FATTA2A8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "FATTA3A7",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "FATTA4A6",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "FATTB1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "FATTB2B8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "FATTB3B7",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "FATTB4B6",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "FATTC1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "FATTC2C8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "FATTC3C7",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "FATTC4C6",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "FATTD1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "FATTD2D8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "FATTD3D7",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "FATTD4D6",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "FATTE1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "FATTE2E8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "FATTE4E6",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "FATTF1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "FATTF2F8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "FATTF3F7",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "FATTF4F6",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "FATTG1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "FATTG2G8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "FATTG3G7",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "FATTG4G6",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "CYBRA1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "CYBRA8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "CYBRB1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "CYBRB8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "CYBRC1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "CYBRC2",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "CYBRC8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "CYBRD1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "CYBRD2",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "CYBRD8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "CYBRF1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "CYBRF2",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "BSPIA1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "BSPIA2A8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "BSPIA3A7",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "BSPIB2B8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "BSPIB3B7",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "BSPIC1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "BSPIC2C8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "BSPIC3C7",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "BSPID2D8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2A1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2B1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2C1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2D1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2E1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2G1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2A2A8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2B2B8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2C2C8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2D2D8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2E2E8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2F2F8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2G2G8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SAR2A1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SAR2A2A8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SAR2B1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SAR2B2B8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SAR2C1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SAR2C2C8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SAR2D1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SAR2D2D8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SAR2E1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SAR2E2E8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SAR2F1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SAR2F2F8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SAR2G1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SAR2G2G8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SAR2A3A7",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SAR2A4A6",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SAR2A5",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SAR2B3B7",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SAR2B4B6",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SAR2B5",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SAR2C3C7",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SAR2C4C6",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SAR2C5",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SAR2D3D7",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SAR2D4D6",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SAR2D5",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SAR2E3E7",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SAR2E4E6",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SAR2E5",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SAR2F3F7",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SAR2F4F6",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SAR2F5",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SAR2G3G7",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SAR2G4G6",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SAR2G5",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SAR2H1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SAR2H2H8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SAR2H3H7",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SAR2H4H6",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SAR2H5",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SAR2I0"
+    },
+    {
+      "textureName": "SAR2J0"
+    },
+    {
+      "textureName": "SAR2K0"
+    },
+    {
+      "textureName": "SAR2L0"
+    },
+    {
+      "textureName": "SAR2M0"
+    },
+    {
+      "textureName": "SAR2N0"
+    },
+    {
+      "textureName": "TRO2A3A7",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2A4A6",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2A5",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2B3B7",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2B4B6",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2B5",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2C3C7",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2C4C6",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2C5",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2D3D7",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2D4D6",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2D5",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2E3E7",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2E4E6",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2E5",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2F1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2F3F7",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2F4F6",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2F5",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2G3G7",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2G4G6",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2G5",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2H1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2H2H8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2H3H7",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2H4H6",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2H5",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2I1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2I2I8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2I3I7",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2I4I6",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2I5",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2J1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2J2J8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2J3J7",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2J4J6",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2J5",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2K1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2K2K8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2K3K7",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2K4K6",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2K5",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "TRO2L0"
+    },
+    {
+      "textureName": "TRO2M0"
+    },
+    {
+      "textureName": "TRO2N0"
+    },
+    {
+      "textureName": "TRO2O0"
+    },
+    {
+      "textureName": "TRO2P0"
+    },
+    {
+      "textureName": "TRO2Q0"
+    },
+    {
+      "textureName": "TRO2R0"
+    },
+    {
+      "textureName": "TRO2S0"
+    },
+    {
+      "textureName": "TRO2T0"
+    },
+    {
+      "textureName": "TRO2U0"
+    },
+    {
+      "textureName": "TRO2V0"
+    },
+    {
+      "textureName": "TRO2W0"
+    },
+    {
+      "textureName": "TRO2X0"
+    }
+  ]
+}

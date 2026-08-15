@@ -1,0 +1,162 @@
+version "4.12"
+
+class D64RtSkyFix : EventHandler
+{
+	// Give every map back the sky its author drew for it.
+	//
+	// WHY A ZSCRIPT HANDLER AT ALL. Retribution does not set a sky in MAPINFO --
+	// all 34 maps say `sky1 = "ISUCK"`, a 64x64 dummy. The real sky is a sector
+	// SKYBOX ROOM: a ring of sectors parked off the side of the map with a
+	// SkyViewpoint (thing 9080) in it, the cloud layer as its ceiling flat and
+	// the mountain silhouette as a masked middle texture on the ring walls.
+	// F_SKY1 ceilings in the level show that room.
+	//
+	// Under RT those rooms are never drawn -- HWSkyboxPortal geometry is not
+	// submitted (the white/black bug) -- and rt_sky_always fills every F_SKY1
+	// opening with the flat sky DOME instead. So the sky has to be a dome
+	// texture, and the only place to choose one per map is here.
+	//
+	// This used to force MOONSKY on everything, which is why MAP22's fire sky,
+	// MAP10's brown mountains, MAP12's purple weather and MAP31's void all came
+	// out as the same starfield. The table below is what the skybox rooms
+	// actually contain, read straight off the WAD (tools/gen_d64_skies.py
+	// --report prints the same survey with the geometry it measures).
+	//
+	// THREE FAMILIES NEED NO GENERATED ART and point at the WAD's own textures:
+	//
+	//   FRSKYNRM / FRSKYGRN  the 100-frame ANIMDEFS fire skies. hw_sky.cpp
+	//                        fetches the sky with GetGameTexture(tex, true), so
+	//                        the animation runs on the dome. The art is black at
+	//                        the top and bright at the bottom, which is exactly
+	//                        what the dome wants: fire at the horizon, black
+	//                        above, and the cap above the dome takes the top row.
+	//   VOIDSKY              flat dark teal. The MAP25/26/31 rooms are a box
+	//                        with that on the walls, floor and ceiling alike --
+	//                        there is nothing to bake.
+	//   MOONSKY              the starfield, already generated, already the sky
+	//                        the moon and rt_sun are aimed against.
+	//
+	// THE REST ARE BAKED by tools/gen_d64_skies.py, which projects each room's
+	// cloud flat as the plane it is and composites the mountain ring at the
+	// altitude that room's geometry puts it at. All of them are 1024x128 like
+	// MOONSKY so every sky in the game takes the same branch of SetupMatrices
+	// and the horizon does not move from map to map.
+	//
+	// A map's cloud comes from exactly one of two places, never both. If the
+	// map is in RT_CLOUD_PRESETS (rt_main.cpp) its cloud is the volumetric DECK
+	// drawn as geometry, tinted to that room's own hue -- MAP10/16 orange,
+	// MAP12/30 dark purple, MAP14 a lighter purple, MAP11 storm grey -- and its
+	// dome texture is a flat backdrop with the mountain ring and no painted
+	// cloud at all. Painting cloud there too would put two unrelated cloud
+	// layers on screen. Only MAP09/15/17/18/19/20/27 still take their cloud
+	// from the dome, and those are the SKYCLD* pair.
+	//
+	// That is why SKYMTNB and SKYMTNC are backdrops rather than skies: every map
+	// they serve is on the deck now. If a map is ever taken back off the deck,
+	// its sky has to go back to a projected one in gen_d64_skies.py or it will
+	// have no cloud whatsoever.
+	//
+	// The moon disc (rt_moon_geo) is still global and still drawn on every map,
+	// including the hell maps that now have a fire sky behind it. That is an
+	// engine-side table, not something this handler can reach.
+	// Keyed on Name, not String: ZScript's switch takes an integer or a Name
+	// (FxSwitchStatement casts anything else to int, which a String cannot do).
+	// Names are case sensitive, hence the MakeUpper below.
+	static String SkyForMap(Name map)
+	{
+		switch (map)
+		{
+			// -- fire. Hell's animated sky, two palettes. -----------------
+			case 'MAP22': case 'MAP24': case 'MAP28': return "FRSKYNRM";
+			case 'MAP23': case 'MAP32':               return "FRSKYGRN";
+
+			// -- void. Flat dark teal box, nothing else in the room. ------
+			case 'MAP25': case 'MAP26': case 'MAP31': return "VOIDSKY";
+
+			// -- starfield + the tall MOUNTA ring (rooms are 176 up). -----
+			case 'MAP02': case 'MAP04': case 'MAP05': case 'MAP34':
+				return "SKYMTNA";
+
+			// -- MOUNTB, orange backdrop; the cloud is the RT deck. -------
+			case 'MAP10': case 'MAP16': return "SKYMTNB";
+
+			// -- MOUNTC, purple backdrop; the cloud is the RT deck. -------
+			case 'MAP12': case 'MAP14': case 'MAP30': return "SKYMTNC";
+
+			// -- overcast, no mountain ring in the room. ------------------
+			case 'MAP09': case 'MAP15': case 'MAP18': case 'MAP19':
+			case 'MAP20':
+				return "SKYCLDPK";
+			case 'MAP17': case 'MAP27': return "SKYCLDBR";
+
+			// -- the storm map: backdrop only, the deck draws the weather. -
+			case 'MAP11': return "SKYSTORM";
+
+			// Everything else is a SPACE starfield room: MAP00/01/03/06/07/
+			// 08/13/29/33 and TITLEMAP. MAP03, MAP06 and MAP21 have no F_SKY1
+			// at all and never show a sky either way.
+			default: return "MOONSKY";
+		}
+	}
+
+	// Print level for this pk3's diagnostics. Under `rt_verbose 0` (the engine's
+	// release default) they keep off the on-screen notify overlay but still
+	// reach the console buffer and the logfile, so "D64RtSkyFix: MAP01 sky ->
+	// MOONSKY" stops painting across the picture on every single level load
+	// without becoming undiagnosable. Set `rt_verbose 1` to see them again.
+	static int DiagLevel()
+	{
+		let cv = CVar.FindCVar("rt_verbose");
+		return (cv && cv.GetBool()) ? PRINT_HIGH : PRINT_HIGH | PRINT_NONOTIFY;
+	}
+
+	override void WorldLoaded(WorldEvent e)
+	{
+		String map = level.MapName.MakeUpper();
+		String want = SkyForMap(map);
+
+		TextureID sky = TexMan.CheckForTexture(want, TexMan.Type_Any);
+
+		// Fall back through the night sky rather than leaving the map on
+		// ISUCK, so a missing or misnamed texture degrades to the old
+		// one-sky-everywhere behaviour instead of a 64x64 dummy stretched
+		// across the dome. Never RSKY1 -- that bright Doom II fallback washed
+		// indoor sky seams like daylight.
+		String used = want;
+		if (!sky.IsValid())
+		{
+			used = "MOONSKY";
+			sky = TexMan.CheckForTexture("MOONSKY", TexMan.Type_Any);
+		}
+		if (!sky.IsValid())
+		{
+			used = "SPACE";
+			sky = TexMan.CheckForTexture("SPACE", TexMan.Type_Any);
+		}
+		if (!sky.IsValid())
+		{
+			used = "SPACEAA";
+			sky = TexMan.CheckForTexture("SPACEAA", TexMan.Type_Any);
+		}
+		if (!sky.IsValid())
+		{
+			used = "ISUCK";
+			sky = TexMan.CheckForTexture("ISUCK", TexMan.Type_Any);
+		}
+
+		if (sky.IsValid())
+		{
+			level.ChangeSky(sky, sky);
+			if (used != want)
+				Console.PrintfEx(DiagLevel(), "D64RtSkyFix: %s wants %s -- MISSING, fell back to %s",
+					map, want, used);
+			else
+				Console.PrintfEx(DiagLevel(), "D64RtSkyFix: %s sky -> %s", map, want);
+		}
+		else
+		{
+			Console.PrintfEx(DiagLevel(), "D64RtSkyFix: %s -- no sky texture found at all (wanted %s)",
+				map, want);
+		}
+	}
+}

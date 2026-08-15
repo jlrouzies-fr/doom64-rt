@@ -1,0 +1,26 @@
+// Anything that physically alters Actor angles MUST be a server CVar, otherwise desyncs in multiplayer WILL happen!!!
+
+// HAVE_RT: replaced '1' to '0'
+server int cheello_spinningpickups = 0;
+
+server bool cheello_smoothmonsterrotation = false;
+server bool cheello_monsterpitchtotarget = false;
+server bool cheello_monsterfaceskiller = true;
+
+// HAVE_RT: replaced 'false' to 'true'
+server bool cheello_noprecache = true;
+
+// HAVE_RT: whole-status-bar opacity, 0..100 in steps of 10.
+// Read by the ifcvarint ladder in d64r-mugshot.pk3's SBARINFO and set from
+// the RT_HudMenu option menu. Declared here (rt/wad, always loaded) rather
+// than in the pk3 so the menu slider never points at a missing cvar.
+// 'nosave' = CVAR_CONFIG_ONLY: saved to the config, never networked.
+// ParseCVarInfo REQUIRES one of server/user/nosave - a bare 'int' aborts startup.
+nosave int d64_hud_alpha = 100;
+
+// HAVE_RT: HUD layout style. 0 = Classic (Doom 64's own arrangement, no
+// mugshot), 1 = Modern (mugshot + regrouped BATTERY|HEALTH|face .. keys|ARMOR|AMMO).
+// Both layouts are emitted into d64r-mugshot.pk3's SBARINFO and selected by an
+// ifcvarint branch, because FullScreenOffsets is a StatusBar-header flag and
+// cannot itself be switched per branch.
+nosave int d64_hud_style = 1;

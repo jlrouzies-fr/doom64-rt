@@ -1,0 +1,86 @@
+version "4.12"
+
+// Auto-generated sparse tour — indices [350, 279, 229] view=front
+class D64RtGalleryTour : EventHandler
+{
+	const COUNT = 3;
+	const DWELL = 105;
+	const SHOT_AT = 45;
+	private int idx;
+	private int wait;
+	private bool done;
+	private bool shot;
+
+	static const double PosX[] = { 4060.0, 7700.0, 1540.0 };
+	static const double PosY[] = { 3304.0, 2464.0, 2184.0 };
+	static const double Ang[] = { 90.0, 90.0, 90.0 };
+	static const double Pitch[] = { 0.0, 0.0, 0.0 };
+	static const int AbsIndex[] = { 350, 279, 229 };
+	static const String TexName[] = {
+		"BFALL01",
+		"SFALL01",
+		"WFALL01"
+	};
+
+	override void WorldLoaded(WorldEvent e)
+	{
+		idx = 0;
+		wait = 25;
+		done = false;
+		shot = true;
+	}
+
+	private void HoldView(int booth)
+	{
+		Actor mo = players[consoleplayer].mo;
+		if (mo == null)
+			return;
+		players[consoleplayer].camera = mo;
+		mo.SetOrigin((PosX[booth], PosY[booth], 0), false);
+		mo.SetOrigin((PosX[booth], PosY[booth], mo.floorz), false);
+		mo.angle = Ang[booth];
+		mo.pitch = Pitch[booth];
+		mo.vel = (0, 0, 0);
+	}
+
+	override void WorldTick()
+	{
+		if (done || level.maptime < 8)
+			return;
+		if (players[consoleplayer].mo == null)
+			return;
+
+		if (wait > 0)
+		{
+			Actor mo = players[consoleplayer].mo;
+			if (mo != null)
+			{
+				int b = idx > 0 ? idx - 1 : 0;
+				mo.angle = Ang[b];
+				mo.pitch = Pitch[b];
+				mo.vel = (0, 0, 0);
+			}
+			if (!shot && idx > 0 && wait == (DWELL - SHOT_AT))
+			{
+				level.MakeScreenShot();
+				Console.Printf("D64RtGalleryShot: %d %s", AbsIndex[idx - 1], TexName[idx - 1]);
+				shot = true;
+			}
+			wait--;
+			return;
+		}
+
+		if (idx >= COUNT)
+		{
+			Console.Printf("D64RtGalleryTour: done (%d booths)", COUNT);
+			done = true;
+			return;
+		}
+
+		HoldView(idx);
+		Console.Printf("D64RtGalleryTour: %d %s", AbsIndex[idx], TexName[idx]);
+		idx++;
+		wait = DWELL;
+		shot = false;
+	}
+}

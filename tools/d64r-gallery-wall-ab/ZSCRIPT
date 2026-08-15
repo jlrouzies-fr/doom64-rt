@@ -1,0 +1,77 @@
+version "4.12"
+
+class D64RtGalleryWallAb : EventHandler
+{
+	const WARMUP = 45;
+	const WALK = 40;
+	const SHOT_AT = 20;
+	const STEP = 18.0;
+	const POS_X = 8250.0;
+	const POS_Y = 3600.0;
+	const YAW = 90.0;
+	private int phase;
+	private int t;
+	private bool done;
+	private bool shot;
+	private bool goingFwd;
+	private double curY;
+
+	override void WorldLoaded(WorldEvent e)
+	{
+		phase = 0; t = 0; done = false; shot = false; goingFwd = true; curY = POS_Y;
+	}
+
+	private void Place(double px, double py)
+	{
+		Actor mo = players[consoleplayer].mo;
+		if (mo == null) return;
+		players[consoleplayer].camera = mo;
+		mo.SetOrigin((px, py, 0), false);
+		mo.SetOrigin((px, py, mo.floorz), false);
+		mo.angle = YAW;
+		mo.pitch = 0;
+		mo.vel = (0, 0, 0);
+	}
+
+	override void WorldTick()
+	{
+		if (done || level.maptime < 8) return;
+		if (players[consoleplayer].mo == null) return;
+
+		if (phase == 0)
+		{
+			Place(POS_X, POS_Y);
+			t++;
+			if (t >= WARMUP)
+			{
+				phase = 1; t = 0; shot = false; goingFwd = true; curY = POS_Y;
+				Console.Printf("D64RtWallAb: wallturned walk yaw=90");
+			}
+			return;
+		}
+
+		if (phase == 1)
+		{
+			t++;
+			if ((t % 12) == 0) goingFwd = !goingFwd;
+			double dir = goingFwd ? 1.0 : -1.0;
+			// Facing north: forward = +Y
+			curY = curY + STEP * dir;
+			if (curY > 4200.0) { curY = 4200.0; goingFwd = false; }
+			if (curY < 3000.0) { curY = 3000.0; goingFwd = true; }
+			Place(POS_X, curY);
+
+			if (!shot && t == SHOT_AT)
+			{
+				level.MakeScreenShot();
+				Console.Printf("D64RtWallAbShot: wallturned t=%d", t);
+				shot = true;
+			}
+			if (t >= WALK)
+			{
+				Console.Printf("D64RtWallAb: done");
+				done = true;
+			}
+		}
+	}
+}

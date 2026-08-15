@@ -1,0 +1,277 @@
+{
+  "mode": "categories",
+  "rooms": [
+    {
+      "index": 0,
+      "id": "CONTROL",
+      "note": "non-emissive baseline",
+      "textures": [
+        "SFLATA",
+        "SFLATAB",
+        "SFLATAC",
+        "SFLATAD",
+        "SFLATAE",
+        "SFLATAF",
+        "SFLATAI",
+        "SFLATAJ"
+      ],
+      "count": 8,
+      "x": 320.0,
+      "y": 180.0,
+      "angle": 90,
+      "room_origin_x": 0.0
+    },
+    {
+      "index": 1,
+      "id": "MIRROR",
+      "note": "mirrors only",
+      "textures": [
+        "SPACEBE",
+        "SPACEBD",
+        "SPACEBO1",
+        "SPACEAA",
+        "SPACEART",
+        "SPACECN",
+        "SPACEAGS",
+        "SPACECM",
+        "SPACEAD",
+        "SPACEAI",
+        "SPACEBC",
+        "SPACEAL"
+      ],
+      "count": 12,
+      "x": 1088.0,
+      "y": 180.0,
+      "angle": 90,
+      "room_origin_x": 768.0
+    },
+    {
+      "index": 2,
+      "id": "SMON",
+      "note": "blink monitors (sample 16)",
+      "textures": [
+        "SMONAA",
+        "SMONAB",
+        "SMONAC",
+        "SMONAD",
+        "SMONBA",
+        "SMONBB",
+        "SMONBC",
+        "SMONBD",
+        "SMONCA",
+        "SMONCB",
+        "SMONCC",
+        "SMONCD",
+        "SMONDA",
+        "SMONEA",
+        "SMONF",
+        "SMONLB1"
+      ],
+      "count": 16,
+      "x": 1856.0,
+      "y": 180.0,
+      "angle": 90,
+      "room_origin_x": 1536.0
+    },
+    {
+      "index": 3,
+      "id": "LAVA",
+      "note": "lava + lights",
+      "textures": [
+        "D64LAVA1",
+        "D64LAVA2",
+        "HLAVA1",
+        "HLAVA2",
+        "HLAVA3",
+        "HLAVA4",
+        "HLAVA5"
+      ],
+      "count": 7,
+      "x": 2624.0,
+      "y": 180.0,
+      "angle": 90,
+      "room_origin_x": 2304.0
+    },
+    {
+      "index": 4,
+      "id": "CRT_LOGO",
+      "note": "CRT / logo / faces",
+      "textures": [
+        "C22",
+        "C23",
+        "CFACEA",
+        "CFACEB",
+        "CFACEC",
+        "CRTRAKA",
+        "D64LOGO"
+      ],
+      "count": 7,
+      "x": 3392.0,
+      "y": 180.0,
+      "angle": 90,
+      "room_origin_x": 3072.0
+    },
+    {
+      "index": 5,
+      "id": "GLOW_EXIT",
+      "note": "glow + exit",
+      "textures": [
+        "H36BGLOW",
+        "H36YGLOW",
+        "H49RGLOW",
+        "SEXIT"
+      ],
+      "count": 4,
+      "x": 4160.0,
+      "y": 180.0,
+      "angle": 90,
+      "room_origin_x": 3840.0
+    },
+    {
+      "index": 6,
+      "id": "OUTTEX_SWX",
+      "note": "OUTTEX/SWX brightmaps",
+      "textures": [
+        "OUTTEX02",
+        "OUTTEX07",
+        "OUTTEX08",
+        "OUTTEX09",
+        "OUTTEX24",
+        "OUTTEX50",
+        "SWXCB",
+        "SWXCKB",
+        "SWXCKLA",
+        "SWXCLA",
+        "SWXS4B",
+        "SWXSAB",
+        "SWXSCB",
+        "SWXSDB",
+        "SWXSEB",
+        "SWXSFB",
+        "SWXSGB"
+      ],
+      "count": 17,
+      "x": 4928.0,
+      "y": 180.0,
+      "angle": 90,
+      "room_origin_x": 4608.0
+    }
+  ],
+  "batches": [
+    {
+      "id": "CONTROL",
+      "textures": [
+        "SFLATA",
+        "SFLATAB",
+        "SFLATAC",
+        "SFLATAD",
+        "SFLATAE",
+        "SFLATAF",
+        "SFLATAI",
+        "SFLATAJ"
+      ],
+      "note": "non-emissive baseline"
+    },
+    {
+      "id": "MIRROR",
+      "textures": [
+        "SPACEBE",
+        "SPACEBD",
+        "SPACEBO1",
+        "SPACEAA",
+        "SPACEART",
+        "SPACECN",
+        "SPACEAGS",
+        "SPACECM",
+        "SPACEAD",
+        "SPACEAI",
+        "SPACEBC",
+        "SPACEAL"
+      ],
+      "note": "mirrors only"
+    },
+    {
+      "id": "SMON",
+      "textures": [
+        "SMONAA",
+        "SMONAB",
+        "SMONAC",
+        "SMONAD",
+        "SMONBA",
+        "SMONBB",
+        "SMONBC",
+        "SMONBD",
+        "SMONCA",
+        "SMONCB",
+        "SMONCC",
+        "SMONCD",
+        "SMONDA",
+        "SMONEA",
+        "SMONF",
+        "SMONLB1"
+      ],
+      "note": "blink monitors (sample 16)"
+    },
+    {
+      "id": "LAVA",
+      "textures": [
+        "D64LAVA1",
+        "D64LAVA2",
+        "HLAVA1",
+        "HLAVA2",
+        "HLAVA3",
+        "HLAVA4",
+        "HLAVA5"
+      ],
+      "note": "lava + lights"
+    },
+    {
+      "id": "CRT_LOGO",
+      "textures": [
+        "C22",
+        "C23",
+        "CFACEA",
+        "CFACEB",
+        "CFACEC",
+        "CRTRAKA",
+        "D64LOGO"
+      ],
+      "note": "CRT / logo / faces"
+    },
+    {
+      "id": "GLOW_EXIT",
+      "textures": [
+        "H36BGLOW",
+        "H36YGLOW",
+        "H49RGLOW",
+        "SEXIT"
+      ],
+      "note": "glow + exit"
+    },
+    {
+      "id": "OUTTEX_SWX",
+      "textures": [
+        "OUTTEX02",
+        "OUTTEX07",
+        "OUTTEX08",
+        "OUTTEX09",
+        "OUTTEX24",
+        "OUTTEX50",
+        "SWXCB",
+        "SWXCKB",
+        "SWXCKLA",
+        "SWXCLA",
+        "SWXS4B",
+        "SWXSAB",
+        "SWXSCB",
+        "SWXSDB",
+        "SWXSEB",
+        "SWXSFB",
+        "SWXSGB"
+      ],
+      "note": "OUTTEX/SWX brightmaps"
+    }
+  ],
+  "map": "MAP97",
+  "scene": "d64remisiso_map97"
+}

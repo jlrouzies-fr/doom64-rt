@@ -1,0 +1,1521 @@
+/* --- EPISODE SETUP -------------------------------------------------------- */
+
+clearepisodes
+
+episode MAP00 // Change to MAP01 if testing, change back to MAP00 for release!
+{
+	name = "DOOM 64"
+	picname = "E_DOOM64"
+	key = "d"
+}
+
+episode FUN00
+{
+	name = "Bonus Fun Maps"
+	picname = "E_BONUS"
+	key = "b"
+}
+
+/*
+episode RTR01
+{
+	name = "Retribution"
+	picname = "E_RTR"
+	key = "r"
+}
+*/
+
+episode ABS01
+{
+	name = "Absolution Levels"
+	picname = "E_ABS"
+	key = "a"
+}
+
+episode OUT01
+{
+	name = "Outcast Levels"
+	picname = "E_OUT"
+	key = "o"
+}
+
+episode RDM01
+{
+	name = "Redemption Denied"
+	picname = "E_RDM"
+	key = "r"
+}
+
+/*
+episode REC01
+{
+	name = "The Reckoning"
+	picname = "E_REC"
+	key = "r"
+}
+*/
+
+/* --- GAME SETUP ----------------------------------------------------------- */
+
+gameinfo
+{
+	titlepage = "TITLEPIC"
+	titlemusic = "$MUS_MENU"
+	creditpage = "INTERPIC"
+	infopage = "HELP", "CREDIT"
+	cursorpic = "CURSOR"
+	drawreadthis = true
+	swapmenu = true
+	borderflat = "BLACKPAT"
+	playerclasses = "64DoomPlayer"
+	dimcolor = "00 00 00"
+	dimamount = 0.5
+	menubackbutton = "M_BCKBTN"
+	pausesign = "M_PAUSE"
+	quitmessages = "Quit DOOM 64?"
+	maparrow = "ARROW", "DDTARROW"
+}
+
+gamedefaults
+{
+	/* --- GAME SETTINGS ------------------------------- */
+	sucktime = 1
+	//gravity = 360 // DEFAULT IS 800, NOW SET ON PLAYER CLASS
+	aircontrol = 0 // DEFAULT IS 0.00390625
+	nojump
+	nocrouch
+	clipmidtextures
+	//checkswitchrange // This is set on a per switch basis
+	evenlighting
+	//smoothlighting
+	useplayerstartz
+	nosoundclipping
+	strictmonsteractivation
+	intermusic = "$MUS_INTER"
+	
+	/* --- GLOBAL COMPAT SETTINGS ---------------------- */
+	compat_limitpain = 1		// Limit spawned Lost Souls to 17 at one time
+	//compat_soundtarget = 1	// Use original sound target handling, per map
+	compat_notossdrops = 1		// Disable drop item tossing like Doom 64
+	
+	/* --- GL OPTIONS ---------------------------------- */
+	fogdensity = 255		// DEFAULT IS 255, SET ON A PER MAP BASIS
+	lightmode = 3			// Forces default lighting mode to Dark for each map
+	pixelratio = 1.0		// Makes the game view render as square pixels
+}
+
+skill "doomslayer"
+{
+	name = "Doomslayer"
+	picname = "M_DSLAYR"
+	spawnfilter = 5 // nightmare spawns
+	spawnfilter = 6 // doomslayer only items
+	ammofactor = 3.0
+	damagefactor = 1.2
+	monsterhealth = 0.8
+	aggressiveness = 1.0
+	acsreturn = 6
+	key = "d"
+	disablecheats
+	nopain
+	noinfighting
+	mustconfirm = "$SKILL_DSLAYR"
+	
+	replaceactor = "ZombieMan", "ShotgunGuy"
+	replaceactor = "DoomImp", "64NightmareImp"
+	replaceactor = "Spectre", "HellKnight"
+	replaceactor = "HellKnight", "BaronOfHell"
+	replaceactor = "Demon", "Spectre"
+	
+	replaceactor = "ShellBox", "Shell"
+	replaceactor = "ClipBox", "Clip"
+	replaceactor = "RocketBox", "RocketAmmo"
+	replaceactor = "CellPack", "Cell"
+	
+	replaceactor = "Medikit", "Stimpack"
+	replaceactor = "BlurSphere", "Medikit"
+	replaceactor = "InvulnerabilitySphere", "Soulsphere"
+	replaceactor = "64InvulnerabilitySphereGiver", "Soulsphere"
+}
+
+map TITLEMAP lookup "D64HUSTR_T" // Main Menu
+{
+	noinfighting
+	compat_crossdropoff = 0
+	// NOTE: This MUST be 0 or else the moving HateTarget will get stuck!
+}
+
+/* --- MAIN GAME LEVELS ----------------------------------------------------- */
+
+map MAP00 lookup "D64HUSTR_0" // The Story so Far
+{
+	levelnum = 0
+	next = "MAP01"
+	secretnext = "MAP01"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 0
+	music = "D_SILENT" // Changes automatically to $MUS_INTRO if unskipped!
+	nointermission
+	noautosavehint
+}
+
+map MAP01 lookup "D64HUSTR_1" // Staging Area
+{
+	levelnum = 1
+	titlepatch = "CWILV00"
+	next = "MAP02"
+	secretnext = "INTER01"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 45
+	music = "$MUS_MAP01"
+}
+
+map MAP02 lookup "D64HUSTR_2" // The Terraformer
+{
+	levelnum = 2
+	titlepatch = "CWILV01"
+	next = "MAP03"
+	secretnext = "MAP03"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 180
+	music = "$MUS_MAP02"
+}
+
+map MAP03 lookup "D64HUSTR_3" // Main Engineering
+{
+	levelnum = 3
+	titlepatch = "CWILV02"
+	next = "MAP04"
+	secretnext = "MAP04"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 115
+	music = "$MUS_MAP03"
+}
+
+map MAP04 lookup "D64HUSTR_4" // Holding Area
+{
+	levelnum = 4
+	titlepatch = "CWILV03"
+	next = "MAP05"
+	secretnext = "INTER02"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 85
+	music = "$MUS_MAP04"
+}
+
+map MAP05 lookup "D64HUSTR_5" // Tech Center
+{
+	levelnum = 5
+	titlepatch = "CWILV04"
+	next = "MAP06"
+	secretnext = "MAP06"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 170
+	music = "$MUS_MAP05"
+}
+
+map MAP06 lookup "D64HUSTR_6" // Alpha Quadrant
+{
+	levelnum = 6
+	titlepatch = "CWILV05"
+	next = "MAP07"
+	secretnext = "MAP07"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 170
+	music = "$MUS_MAP06"
+}
+
+map MAP07 lookup "D64HUSTR_7" // Research Lab
+{
+	levelnum = 7
+	titlepatch = "CWILV06"
+	next = "MAP08"
+	secretnext = "MAP08"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 180
+	music = "$MUS_MAP07"
+}
+
+map MAP08 lookup "D64HUSTR_8" // Final Outpost
+{
+	levelnum = 8
+	titlepatch = "CWILV07"
+	next = "INTER03"
+	secretnext = "INTER03"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 155
+	music = "$MUS_MAP08"
+}
+
+map MAP09 lookup "D64HUSTR_9" // Even Simpler
+{
+	levelnum = 9
+	titlepatch = "CWILV08"
+	next = "MAP10"
+	secretnext = "MAP10"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 90
+	music = "$MUS_MAP09"
+	compat_soundtarget = 1
+}
+
+map MAP10 lookup "D64HUSTR_10" // The Bleeding
+{
+	levelnum = 10
+	titlepatch = "CWILV09"
+	next = "MAP11"
+	secretnext = "MAP11"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 120
+	music = "$MUS_MAP10"
+}
+
+map MAP11 lookup "D64HUSTR_11" // Terror Core
+{
+	levelnum = 11
+	titlepatch = "CWILV10"
+	next = "MAP12"
+	secretnext = "MAP12"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 175
+	music = "$MUS_MAP11"
+	lightning
+}
+
+map MAP12 lookup "D64HUSTR_12" // Altar of Pain
+{
+	levelnum = 12
+	titlepatch = "CWILV11"
+	next = "MAP13"
+	secretnext = "INTER04"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 155
+	music = "$MUS_MAP12"
+	lightning
+}
+
+map MAP13 lookup "D64HUSTR_13" // Dark Citadel
+{
+	levelnum = 13
+	titlepatch = "CWILV12"
+	next = "MAP14"
+	secretnext = "MAP14"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 170
+	music = "$MUS_MAP13"
+}
+
+map MAP14 lookup "D64HUSTR_14" // Eye of the Storm
+{
+	levelnum = 14
+	titlepatch = "CWILV13"
+	next = "MAP15"
+	secretnext = "MAP15"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 120
+	music = "$MUS_MAP14"
+	lightning
+}
+
+map MAP15 lookup "D64HUSTR_15" // Dark Entries
+{
+	levelnum = 15
+	titlepatch = "CWILV14"
+	next = "MAP16"
+	secretnext = "MAP16"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 135
+	music = "$MUS_MAP15"
+}
+
+map MAP16 lookup "D64HUSTR_16" // Blood Keep
+{
+	levelnum = 16
+	titlepatch = "CWILV15"
+	next = "MAP17"
+	secretnext = "MAP17"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 190
+	music = "$MUS_MAP16"
+}
+
+map MAP17 lookup "D64HUSTR_17" // Watch Your Step
+{
+	levelnum = 17
+	titlepatch = "CWILV16"
+	next = "MAP18"
+	secretnext = "MAP18"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 140
+	music = "$MUS_MAP17"
+	fade = "3C 14 0A" // old value = 80 1E 00
+	fogdensity = 200
+}
+
+map MAP18 lookup "D64HUSTR_18" // Spawned Fear
+{
+	levelnum = 18
+	titlepatch = "CWILV17"
+	next = "MAP19"
+	secretnext = "INTER05"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 315
+	music = "$MUS_MAP18"
+}
+
+map MAP19 lookup "D64HUSTR_19" // The Spiral
+{
+	levelnum = 19
+	titlepatch = "CWILV18"
+	next = "MAP20"
+	secretnext = "MAP20"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 60
+	music = "$MUS_MAP19"
+}
+
+map MAP20 lookup "D64HUSTR_20" // Breakdown
+{
+	levelnum = 20
+	titlepatch = "CWILV19"
+	next = "MAP21"
+	secretnext = "MAP21"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 160
+	music = "$MUS_MAP20"
+}
+
+map MAP21 lookup "D64HUSTR_21" // Pitfalls
+{
+	levelnum = 21
+	titlepatch = "CWILV20"
+	next = "MAP22"
+	secretnext = "MAP22"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 175
+	music = "$MUS_MAP21"
+}
+
+map MAP22 lookup "D64HUSTR_22" // Burnt Offerings
+{
+	levelnum = 22
+	titlepatch = "CWILV21"
+	next = "MAP23"
+	secretnext = "MAP23"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 165
+	music = "$MUS_MAP22"
+}
+
+map MAP23 lookup "D64HUSTR_23" // Unholy Temple
+{
+	levelnum = 23
+	titlepatch = "CWILV22"
+	next = "MAP24"
+	secretnext = "MAP24"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 305
+	music = "$MUS_MAP23"
+}
+
+map MAP24 lookup "D64HUSTR_24" // No Escape
+{
+	levelnum = 24
+	titlepatch = "CWILV23"
+	next = "MAP28"
+	secretnext = "MAP28"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 90
+	music = "$MUS_MAP24"
+}
+
+map MAP28 lookup "D64HUSTR_28" // The Absolution
+{
+	levelnum = 28
+	titlepatch = "CWILV27"
+	next = "INTER06"
+	secretnext = "INTER06"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 140
+	music = "$MUS_MAP28"
+	noinfighting
+}
+
+/* --- SECRET LEVELS (MAP29 - MAP32) ---------------------------------------- */
+
+map MAP29 lookup "D64HUSTR_29" // Outpost Omega
+{
+	levelnum = 29
+	titlepatch = "CWILV28"
+	next = "MAP05"
+	secretnext = "MAP05"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 135
+	music = "$MUS_MAP29"
+}
+
+map MAP30 lookup "D64HUSTR_30" // The Lair
+{
+	levelnum = 30
+	titlepatch = "CWILV29"
+	next = "MAP13"
+	secretnext = "MAP13"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 105
+	music = "$MUS_MAP30"
+	lightning
+}
+
+map MAP31 lookup "D64HUSTR_31" // In the Void
+{
+	levelnum = 31
+	titlepatch = "CWILV30"
+	next = "MAP19"
+	secretnext = "MAP19"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 125
+	music = "$MUS_MAP31"
+	fade = "00 56 56"
+	fogdensity = 200
+}
+
+map MAP32 lookup "D64HUSTR_32" // Hectic
+{
+	levelnum = 32
+	titlepatch = "CWILV31"
+	next = "MAP02"
+	secretnext = "MAP02"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 60
+	music = "$MUS_MAP32"
+}
+
+/* --- BONUS FUN LEVELS ----------------------------------------------------- */
+
+map FUN00 lookup "D64HUSTR_B" // Bonus Fun Map Hub
+{
+	levelnum = 0
+	titlepatch = "CWILVFUN"
+	next = "EndTitle"
+	secretnext = "EndTitle"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 0
+	music = "$MUS_FUN00"
+	nointermission
+	noautosavehint
+	resethealth
+	resetinventory
+}
+
+map MAP25 lookup "D64HUSTR_25" // Cat and Mouse
+{
+	levelnum = 25
+	titlepatch = "CWILV24"
+	next = "FUN00"
+	secretnext = "FUN00"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 75
+	music = "$MUS_MAP25"
+	fade = "00 56 56"
+	fogdensity = 200
+}
+
+map MAP26 lookup "D64HUSTR_26" // Hardcore
+{
+	levelnum = 26
+	titlepatch = "CWILV25"
+	next = "FUN00"
+	secretnext = "FUN00"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 135
+	music = "$MUS_MAP26"
+	fade = "00 56 56"
+	fogdensity = 200
+	compat_soundtarget = 1
+}
+
+map MAP27 lookup "D64HUSTR_27" // Playground
+{
+	levelnum = 27
+	titlepatch = "CWILV26"
+	next = "FUN00"
+	secretnext = "FUN00"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 95
+	music = "$MUS_MAP27"
+	fade = "80 1E 00"
+	fogdensity = 200
+	compat_crossdropoff = 1
+	compat_soundtarget = 1
+}
+
+map MAP33 lookup "D64HUSTR_33" // Titlemap
+{
+	levelnum = 33
+	titlepatch = "CWILV32"
+	next = "FUN00"
+	secretnext = "FUN00"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 0
+	music = "$MUS_MAP33"
+}
+
+map MAP34 lookup "D64HUSTR_34" // Test Facility
+{
+	levelnum = 34
+	titlepatch = "CWILV33"
+	next = "FUN00"
+	secretnext = "FUN00"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 0
+	music = "$MUS_MAP34"
+}
+
+/* --- ORIGINAL INTERMISSION MAPS ------------------------------------------- */
+
+map INTER01 lookup "INTERHUSTR_1" // Intermission to Hectic
+{
+	levelnum = 0
+	titlepatch = "CWILV31"
+	next = "MAP32"
+	secretnext = "MAP32"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 0
+	music = "$MUS_TEXT"
+	nointermission
+	noautosavehint
+}
+
+map INTER02 lookup "INTERHUSTR_2" // Intermission to Outpost Omega
+{
+	levelnum = 0
+	titlepatch = "CWILV28"
+	next = "MAP29"
+	secretnext = "MAP29"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 0
+	music = "$MUS_TEXT"
+	nointermission
+	noautosavehint
+}
+
+map INTER03 lookup "INTERHUSTR_3" // Intermission to Even Simpler
+{
+	levelnum = 0
+	titlepatch = "CWILV08"
+	next = "MAP09"
+	secretnext = "MAP09"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 0
+	music = "$MUS_TEXT"
+	nointermission
+	noautosavehint
+}
+
+map INTER04 lookup "INTERHUSTR_4" // Intermission to The Lair
+{
+	levelnum = 0
+	titlepatch = "CWILV29"
+	next = "MAP30"
+	secretnext = "MAP30"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 0
+	music = "$MUS_TEXT"
+	nointermission
+	noautosavehint
+}
+
+map INTER05 lookup "INTERHUSTR_5" // Intermission to In the Void
+{
+	levelnum = 0
+	titlepatch = "CWILV30"
+	next = "MAP31"
+	secretnext = "MAP31"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 0
+	music = "$MUS_TEXT"
+	nointermission
+	noautosavehint
+}
+
+map INTER06 lookup "INTERHUSTR_6" // Finale
+{
+	levelnum = 0
+	titlepatch = "CWILVEND"
+	next = endgame
+	{
+		cast
+		music = "$MUS_CAST"
+	}
+	secretnext = endgame
+	{
+		cast
+		music = "$MUS_CAST"
+	}
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 0
+	music = "$MUS_END"
+	nointermission
+	noautosavehint
+}
+
+/* --- RETRIBUTION LEVELS --------------------------------------------------- */
+
+map RTR01 lookup "RTRHUSTR_1" // Aftermath
+{
+	levelnum = 35
+	titlepatch = "LVRTR00"
+	next = "RTR02"
+	secretnext = "RTR02"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 0
+	music = "$MUS_RTR01"
+}
+
+map RTR02 lookup "RTRHUSTR_2" // The Depths
+{
+	levelnum = 36
+	titlepatch = "LVRTR01"
+	next = "RTR03"
+	secretnext = "RTR03"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 0
+	music = "$MUS_RTR02"
+}
+
+map RTR03 lookup "RTRHUSTR_3" // Dead Ruined
+{
+	levelnum = 37
+	titlepatch = "LVRTR02"
+	next = "RTR04"
+	secretnext = "RTR04"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 0
+	music = "$MUS_RTR03"
+	fade = "00 56 56"
+	fogdensity = 64
+}
+
+map RTR04 lookup "RTRHUSTR_4" // Beyond Hell
+{
+	levelnum = 38
+	titlepatch = "LVRTR03"
+	next = "RTR05"
+	secretnext = "INTER07"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 0
+	music = "$MUS_RTR04"
+	fade = "80 1E 00"
+	fogdensity = 200
+}
+
+map RTR05 lookup "RTRHUSTR_5" // The Titan
+{
+	levelnum = 39
+	titlepatch = "LVRTR04"
+	next = "RTR06"
+	secretnext = "RTR06"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 0
+	music = "$MUS_RTR05"
+	lightning
+}
+
+map RTR06 lookup "RTRHUSTR_6" // Sentinel
+{
+	levelnum = 40
+	titlepatch = "LVRTR05"
+	next = "RTR07"
+	secretnext = "RTR07"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 0
+	music = "$MUS_RTR06"
+}
+
+map RTR07 lookup "RTRHUSTR_7" // Death Dance
+{
+	levelnum = 41
+	titlepatch = "LVRTR06"
+	next = "RTR08"
+	secretnext = "RTR08"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 0
+	music = "$MUS_RTR07"
+}
+
+map RTR08 lookup "RTRHUSTR_8" // The Relay
+{
+	levelnum = 42
+	titlepatch = "LVRTR07"
+	next = "RTR09"
+	secretnext = "RTR09"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 0
+	music = "$MUS_RTR08"
+}
+
+map RTR09 lookup "RTRHUSTR_9" // Doomslayer
+{
+	levelnum = 43
+	titlepatch = "LVRTR08"
+	next = "INTER08"
+	secretnext = "INTER08"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 0
+	music = "$MUS_RTR09"
+	noinfighting
+}
+
+map RTR10 lookup "RTRHUSTR_10" // Seraphim
+{
+	levelnum = 44
+	titlepatch = "LVRTR09"
+	next = "RTR05"
+	secretnext = "RTR05"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 0
+	music = "$MUS_RTR09"
+	lightning
+}
+
+/* --- RETRIBUTION INTERMISSION MAPS ---------------------------------------- */
+
+map INTER07 lookup "INTERHUSTR_7" // Intermission to Seraphim
+{
+	levelnum = 0
+	titlepatch = "LVRTR09"
+	next = "RTR10"
+	secretnext = "RTR10"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 0
+	music = "$MUS_TEXT"
+	nointermission
+	noautosavehint
+}
+
+map INTER08 lookup "INTERHUSTR_8" // Conclusion
+{
+	levelnum = 0
+	titlepatch = "LVRTREND"
+	next = endgame
+	{
+		cast
+		music = "$MUS_CAST"
+	}
+	secretnext = endgame
+	{
+		cast
+		music = "$MUS_CAST"
+	}
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 0
+	music = "$MUS_END"
+	nointermission
+	noautosavehint
+}
+
+/* --- ABSOLUTION EXCLUSIVE LEVELS ------------------------------------------ */
+
+map ABS01 lookup "ABSHUSTR_1" // Nukage Facility
+{
+	levelnum = 45
+	titlepatch = "LVABS00"
+	next = "ABS02"
+	secretnext = "ABS02"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 330
+	music = "$MUS_ABS01"
+}
+
+map ABS02 lookup "ABSHUSTR_2" // Crisis
+{
+	levelnum = 46
+	titlepatch = "LVABS01"
+	next = "ABS03"
+	secretnext = "ABS03"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 390
+	music = "$MUS_ABS02"
+}
+
+map ABS03 lookup "ABSHUSTR_3" // Death Labs
+{
+	levelnum = 47
+	titlepatch = "LVABS02"
+	next = "ABS04"
+	secretnext = "ABS06"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 240
+	music = "$MUS_ABS03"
+	compat_soundtarget = 1
+}
+
+map ABS04 lookup "ABSHUSTR_4" // Shadows Watching
+{
+	levelnum = 48
+	titlepatch = "LVABS03"
+	next = "ABS05"
+	secretnext = "ABS05"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 450
+	music = "$MUS_ABS04"
+}
+
+map ABS05 lookup "ABSHUSTR_5" // Forbidden Deeper
+{
+	levelnum = 49
+	titlepatch = "LVABS04"
+	next = endgame
+	{
+		cast
+		music = "$MUS_CAST"
+	}
+	secretnext = endgame
+	{
+		cast
+		music = "$MUS_CAST"
+	}
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 390
+	music = "$MUS_ABS05"
+	fade = "64 00 00"
+	fogdensity = 180
+}
+
+map ABS06 lookup "ABSHUSTR_6" // Doom 64 Museum
+{
+	levelnum = 50
+	titlepatch = "LVABS05"
+	next = "ABS04"
+	secretnext = "ABS04"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 15
+	music = "$MUS_ABS06"
+}
+
+/* --- OUTCAST LEVELS ------------------------------------------------------- */
+
+map OUT01 lookup "OUTHUSTR_1" // Destroy
+{
+	levelnum = 51
+	titlepatch = "LVOUT00"
+	next = "OUT02"
+	secretnext = "OUT02"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 210
+	music = "$MUS_OUT01"
+}
+
+map OUT02 lookup "OUTHUSTR_2" // Stepwalk
+{
+	levelnum = 52
+	titlepatch = "LVOUT01"
+	next = "OUT03"
+	secretnext = "INTER09"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 210
+	music = "$MUS_OUT02"
+}
+
+map OUT03 lookup "OUTHUSTR_3" // Control (Unfinished Map 2)
+{
+	levelnum = 53
+	titlepatch = "LVOUT02"
+	next = "OUT04"
+	secretnext = "OUT04"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 300
+	music = "$MUS_OUT03"
+}
+
+map OUT04 lookup "OUTHUSTR_4" // Forge (Unfinished Map 3)
+{
+	levelnum = 54
+	titlepatch = "LVOUT03"
+	next = "OUT05"
+	secretnext = "OUT05"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 390
+	music = "$MUS_OUT04"
+}
+
+map OUT05 lookup "OUTHUSTR_5" // Portal
+{
+	levelnum = 55
+	titlepatch = "LVOUT04"
+	next = "OUT06"
+	secretnext = "OUT06"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 300
+	music = "$MUS_OUT05"
+}
+
+map OUT06 lookup "OUTHUSTR_6" // Darkened
+{
+	levelnum = 56
+	titlepatch = "LVOUT05"
+	next = "OUT07"
+	secretnext = "OUT07"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 360
+	music = "$MUS_OUT06"
+}
+
+map OUT07 lookup "OUTHUSTR_7" // Traps
+{
+	levelnum = 57
+	titlepatch = "LVOUT06"
+	next = "OUT08"
+	secretnext = "OUT08"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 270
+	music = "$MUS_OUT07"
+}
+
+map OUT08 lookup "OUTHUSTR_8" // Derelict (Unfinished Map 1)
+{
+	levelnum = 58
+	titlepatch = "LVOUT07"
+	next = "OUT09"
+	secretnext = "OUT09"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 360
+	music = "$MUS_OUT08"
+	lightning
+}
+
+map OUT09 lookup "OUTHUSTR_9" // Nebula
+{
+	levelnum = 59
+	titlepatch = "LVOUT08"
+	next = "INTER10"
+	secretnext = "INTER10"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 330
+	music = "$MUS_OUT09"
+}
+
+map OUT10 lookup "OUTHUSTR_10" // Radiant
+{
+	levelnum = 60
+	titlepatch = "LVOUT09"
+	next = "OUT03"
+	secretnext = "OUT03"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 150
+	music = "$MUS_OUT10"
+	fade = "64 00 00"
+	fogdensity = 180
+	compat_soundtarget = 1
+}
+
+/* --- OUTCAST INTERMISSION SCREENS ----------------------------------------- */
+
+map INTER09 lookup "INTERHUSTR_9" // Intermission to Radiant
+{
+	levelnum = 0
+	titlepatch = "LVOUT09"
+	next = "OUT10"
+	secretnext = "OUT10"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 0
+	music = "$MUS_TEXT"
+	nointermission
+	noautosavehint
+}
+
+map INTER10 lookup "INTERHUSTR_10" // The Outcast
+{
+	levelnum = 0
+	titlepatch = "LVOUTEND"
+	next = endgame
+	{
+		cast
+		music = "$MUS_CAST"
+	}
+	secretnext = endgame
+	{
+		cast
+		music = "$MUS_CAST"
+	}
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 0
+	music = "$MUS_END"
+	nointermission
+	noautosavehint
+}
+
+/* --- REDEMPTION DENIED ---------------------------------------------------- */
+
+map RDM01 lookup "RDMHUSTR_1" // The Metacenter
+{
+	levelnum = 61
+	titlepatch = "LVRDM00"
+	next = "RDM02"
+	secretnext = "RDM02"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 450
+	music = "$MUS_RDM01"
+}
+
+map RDM02 lookup "RDMHUSTR_2" // Secondary Complex
+{
+	levelnum = 62
+	titlepatch = "LVRDM01"
+	next = "RDM03"
+	secretnext = "RDM03"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 210
+	music = "$MUS_RDM02"
+}
+
+map RDM03 lookup "RDMHUSTR_3" // Deep Sector
+{
+	levelnum = 63
+	titlepatch = "LVRDM02"
+	next = "RDM04"
+	secretnext = "RDM04"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 390
+	music = "$MUS_RDM03"
+}
+
+map RDM04 lookup "RDMHUSTR_4" // Command Center
+{
+	levelnum = 64
+	titlepatch = "LVRDM03"
+	next = "RDM05"
+	secretnext = "RDM05"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 300
+	music = "$MUS_RDM04"
+}
+
+map RDM05 lookup "RDMHUSTR_5" // Operations Base
+{
+	levelnum = 65
+	titlepatch = "LVRDM04"
+	next = "RDM06"
+	secretnext = "RDM06"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 330
+	music = "$MUS_RDM05"
+}
+
+map RDM06 lookup "RDMHUSTR_6" // Processing Area
+{
+	levelnum = 66
+	titlepatch = "LVRDM05"
+	next = "RDM07"
+	secretnext = "RDM07"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 540
+	music = "$MUS_RDM06"
+}
+
+map RDM07 lookup "RDMHUSTR_7" // Networking Station
+{
+	levelnum = 67
+	titlepatch = "LVRDM06"
+	next = "INTER11"
+	secretnext = "INTER11"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 540
+	music = "$MUS_RDM07"
+}
+
+map RDM08 lookup "RDMHUSTR_8" // The Sanctum
+{
+	levelnum = 68
+	titlepatch = "LVRDM07"
+	next = "INTER12"
+	secretnext = "INTER12"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 450
+	music = "$MUS_RDM08"
+	compat_limitpain = 0 // This is needed due to pre-spawned Lost Souls!
+}
+
+/* --- REDEMPTION DENIED INTERMISSION SCREENS ------------------------------- */
+
+map INTER11 lookup "INTERHUSTR_11" // Intermission to The Sanctum
+{
+	levelnum = 0
+	titlepatch = "LVRDM07"
+	next = "RDM08"
+	secretnext = "RDM08"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 0
+	music = "$MUS_TEXT"
+	nointermission
+	noautosavehint
+}
+
+map INTER12 lookup "INTERHUSTR_12" // Redemption Denied
+{
+	levelnum = 0
+	titlepatch = "LVRDMEND"
+	next = endgame
+	{
+		cast
+		music = "$MUS_CAST"
+	}
+	secretnext = endgame
+	{
+		cast
+		music = "$MUS_CAST"
+	}
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 0
+	music = "$MUS_END"
+	nointermission
+	noautosavehint
+}
+
+/* --- THE RECKONING -------------------------------------------------------- */
+
+map REC01 lookup "RECHUSTR_1" // Tunnels
+{
+	levelnum = 69
+	titlepatch = "LVREC00"
+	next = "REC02"
+	secretnext = "REC02"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 0
+	music = "$MUS_REC01"
+}
+
+map REC02 lookup "RECHUSTR_2" // The Hazard Pits
+{
+	levelnum = 70
+	titlepatch = "LVREC01"
+	next = "REC03"
+	secretnext = "REC03"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 0
+	music = "$MUS_REC02"
+}
+
+map REC03 lookup "RECHUSTR_3" // Delta Quadrant
+{
+	levelnum = 71
+	titlepatch = "LVREC02"
+	next = "REC04"
+	secretnext = "REC04"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 0
+	music = "$MUS_REC03"
+}
+
+map REC04 lookup "RECHUSTR_4" // Data Labs
+{
+	levelnum = 72
+	titlepatch = "LVREC03"
+	next = "REC05"
+	secretnext = "REC05"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 0
+	music = "$MUS_REC04"
+}
+
+map REC05 lookup "RECHUSTR_5" // Portal Core
+{
+	levelnum = 73
+	titlepatch = "LVREC04"
+	next = "INTER13"
+	secretnext = "INTER13"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 0
+	music = "$MUS_REC05"
+}
+
+map REC06 lookup "RECHUSTR_6" // Incinerated Offerings
+{
+	levelnum = 74
+	titlepatch = "LVREC05"
+	next = "REC07"
+	secretnext = "REC07"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 0
+	music = "$MUS_REC06"
+}
+
+map REC07 lookup "RECHUSTR_7" // Shadow Crypt
+{
+	levelnum = 75
+	titlepatch = "LVREC06"
+	next = "REC08"
+	secretnext = "REC08"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 0
+	music = "$MUS_REC07"
+}
+
+map REC08 lookup "RECHUSTR_8" // The Circle of Chaos
+{
+	levelnum = 76
+	titlepatch = "LVREC07"
+	next = "REC09"
+	secretnext = "REC09"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 0
+	music = "$MUS_REC08"
+}
+
+map REC09 lookup "RECHUSTR_9" // Source of Evil
+{
+	levelnum = 77
+	titlepatch = "LVREC08"
+	next = "INTER14"
+	secretnext = "INTER14"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 0
+	music = "$MUS_REC09"
+}
+
+/* --- THE RECKONING INTERMISSION SCREENS ----------------------------------- */
+
+map INTER13 lookup "INTERHUSTR_13" // Intermission to Incinerated Offerings
+{
+	levelnum = 0
+	titlepatch = "LVREC05"
+	next = "REC06"
+	secretnext = "REC06"
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 0
+	music = "$MUS_TEXT"
+	nointermission
+	noautosavehint
+}
+
+map INTER14 lookup "INTERHUSTR_14" // The Reckoning
+{
+	levelnum = 0
+	titlepatch = "LVRECEND"
+	next = endgame
+	{
+		cast
+		music = "$MUS_CAST"
+	}
+	secretnext = endgame
+	{
+		cast
+		music = "$MUS_CAST"
+	}
+	sky1 = "ISUCK"
+	cluster = 1
+	par = 0
+	music = "$MUS_END"
+	nointermission
+	noautosavehint
+}
+
+/* --- CLUSTER DEFINITION --------------------------------------------------- */
+
+cluster 1 {} // Dummy cluster so that entering screens appear
+
+/* --- MODIFIED CAST CALL --------------------------------------------------- */
+
+Intermission Doom2Cast
+{
+	Cast
+	{
+		CastClass = "Zombieman"
+		CastName = "$CC_ZOMBIE"
+		AttackSound = "Missile", 1, "grunt/attack"
+	}
+	Cast
+	{
+		CastClass = "ShotgunGuy"
+		CastName = "$CC_SHOTGUN"
+		AttackSound = "Missile", 1, "shotguy/attack"
+	}
+	Cast
+	{
+		CastClass = "64DoomImp"
+		CastName = "$CC_IMP"
+		AttackSound = "Missile", 2, "imp/attack"
+	}
+	Cast
+	{
+		CastClass = "64NightmareImp"
+		CastName = "$CC_NIGHTIMP"
+		AttackSound = "Missile", 2, "imp/attack"
+	}
+	Cast
+	{
+		CastClass = "Demon"
+		CastName = "$CC_DEMON"
+		AttackSound = "Melee", 1, "demon/melee"
+	}
+	Cast
+	{
+		CastClass = "64Spectre"
+		CastName = "$CC_SPECTRE"
+		AttackSound = "Melee", 1, "demon/melee"
+	}
+	Cast
+	{
+		CastClass = "64LostSoul"
+		CastName = "$CC_LOST"
+		AttackSound = "Missile", 1, "skull/melee"
+	}
+	Cast
+	{
+		CastClass = "64Cacodemon"
+		CastName = "$CC_CACO"
+		AttackSound = "Missile", 1, "caco/attack"
+	}
+	Cast
+	{
+		CastClass = "64HellKnight"
+		CastName = "$CC_HELL"
+		AttackSound = "Missile", 1, "baron/attack"
+	}
+	Cast
+	{
+		CastClass = "64BaronOfHell"
+		CastName = "$CC_BARON"
+		AttackSound = "Missile", 1, "baron/attack"
+	}
+	Cast
+	{
+		CastClass = "64Arachnotron"
+		CastName = "$CC_ARACH"
+		AttackSound = "Missile", 3, "baby/attack"
+		AttackSound = "Missile", 6, "baby/attack"
+		AttackSound = "Missile", 9, "baby/attack"
+		AttackSound = "Missile", 12, "baby/attack"
+		AttackSound = "Missile", 15, "baby/attack"
+		AttackSound = "Missile", 18, "baby/attack"
+	}
+	Cast
+	{
+		CastClass = "64PainElemental"
+		CastName = "$CC_PAIN"
+		AttackSound = "Missile", 2, "skull/melee"
+	}
+	Cast
+	{
+		CastClass = "64Fatso"
+		CastName = "$CC_MANCU"
+		AttackSound = "Missile", 1, "fatso/attack"
+		AttackSound = "Missile", 4, "fatso/attack"
+		AttackSound = "Missile", 7, "fatso/attack"
+	}
+	Cast
+	{
+		CastClass = "64Cyberdemon"
+		CastName = "$CC_CYBER"
+		AttackSound = "Missile", 1, "weapons/rocklf"
+		AttackSound = "Missile", 3, "weapons/rocklf"
+		AttackSound = "Missile", 5, "weapons/rocklf"
+	}
+	Cast
+	{
+		CastClass = "64MotherDemon"
+		CastName = "$CC_MOTH"
+		AttackSound = "Missile", 1, "mother/attack"
+		AttackSound = "Missile", 3, "mother/attack"
+		AttackSound = "Missile", 5, "mother/attack"
+	}
+	Cast
+	{
+		CastClass = "64DoomPlayer"
+		CastName = "$CC_HERO"
+		AttackSound = "Missile", 0, "weapons/sshotf"
+	}
+	Link = Doom2Cast // restart cast call
+}

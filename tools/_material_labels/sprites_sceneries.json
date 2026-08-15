@@ -1,0 +1,8791 @@
+{
+ "version": 1,
+ "codes": {
+  "A001": {
+   "clusters": [
+    {
+     "rgb": [
+      0,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      8,
+      8,
+      8
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      128,
+      128,
+      128
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      88,
+      80,
+      80
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      24,
+      16,
+      16
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      48,
+      8,
+      8
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      88,
+      8,
+      8
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      144,
+      8,
+      8
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      104,
+      24,
+      16
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      136,
+      40,
+      24
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      176,
+      40,
+      24
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      88,
+      64,
+      56
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      56,
+      40,
+      32
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      120,
+      96,
+      80
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      40,
+      32,
+      24
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    }
+   ],
+   "frames": [
+    "A001A0"
+   ]
+  },
+  "A003": {
+   "clusters": [
+    {
+     "rgb": [
+      16,
+      8,
+      8
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      48,
+      16,
+      16
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      56,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      104,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      80,
+      32,
+      16
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      96,
+      40,
+      24
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      120,
+      48,
+      24
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      96,
+      56,
+      32
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      120,
+      72,
+      40
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      168,
+      96,
+      48
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      168,
+      80,
+      32
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      184,
+      128,
+      56
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      200,
+      144,
+      64
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    }
+   ],
+   "frames": [
+    "A003A0"
+   ]
+  },
+  "A004": {
+   "clusters": [
+    {
+     "rgb": [
+      144,
+      112,
+      112
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      24,
+      8,
+      8
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      56,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      64,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      120,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      184,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      128,
+      72,
+      64
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      136,
+      96,
+      88
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      80,
+      64,
+      56
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      80,
+      48,
+      32
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      120,
+      64,
+      40
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      56,
+      24,
+      8
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      96,
+      32,
+      8
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      96,
+      56,
+      32
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      64,
+      64,
+      56
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.6
+    }
+   ],
+   "frames": [
+    "A004A0"
+   ]
+  },
+  "A005": {
+   "clusters": [
+    {
+     "rgb": [
+      8,
+      0,
+      0
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      40,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      208,
+      184,
+      176
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      136,
+      96,
+      88
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      72,
+      16,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      160,
+      128,
+      112
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      64,
+      24,
+      8
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      192,
+      168,
+      152
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      104,
+      80,
+      64
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      72,
+      40,
+      16
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      120,
+      64,
+      24
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      88,
+      56,
+      24
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      120,
+      104,
+      80
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      64,
+      64,
+      56
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    }
+   ],
+   "frames": [
+    "A005A0"
+   ]
+  },
+  "A006": {
+   "clusters": [
+    {
+     "rgb": [
+      120,
+      8,
+      8
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      8,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      32,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      104,
+      48,
+      40
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      64,
+      16,
+      8
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      80,
+      8,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      200,
+      128,
+      104
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      120,
+      64,
+      48
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      144,
+      72,
+      48
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      104,
+      32,
+      16
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      128,
+      48,
+      32
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      152,
+      48,
+      16
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      152,
+      104,
+      80
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      168,
+      72,
+      32
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      216,
+      96,
+      48
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    }
+   ],
+   "frames": [
+    "A006A0"
+   ]
+  },
+  "A007": {
+   "clusters": [
+    {
+     "rgb": [
+      0,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      88,
+      8,
+      8
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      16,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      32,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      48,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      64,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      104,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      128,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      104,
+      40,
+      32
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      72,
+      16,
+      8
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      128,
+      16,
+      8
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      80,
+      8,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      160,
+      80,
+      64
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      168,
+      72,
+      40
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      104,
+      24,
+      8
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    }
+   ],
+   "frames": [
+    "A007A0"
+   ]
+  },
+  "A008": {
+   "clusters": [
+    {
+     "rgb": [
+      136,
+      40,
+      40
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      8,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      32,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      48,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      128,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      104,
+      56,
+      48
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      80,
+      8,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      176,
+      104,
+      88
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      160,
+      80,
+      64
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      144,
+      72,
+      48
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      128,
+      48,
+      32
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      152,
+      56,
+      32
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      104,
+      24,
+      8
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      128,
+      40,
+      16
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      224,
+      160,
+      136
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    }
+   ],
+   "frames": [
+    "A008A0"
+   ]
+  },
+  "A010": {
+   "clusters": [
+    {
+     "rgb": [
+      16,
+      16,
+      16
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      72,
+      64,
+      64
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      128,
+      80,
+      80
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      16,
+      8,
+      8
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      56,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      72,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      112,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      120,
+      64,
+      56
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      104,
+      48,
+      40
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      88,
+      8,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      56,
+      24,
+      16
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      96,
+      32,
+      16
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      32,
+      8,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      80,
+      48,
+      32
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      88,
+      48,
+      24
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    }
+   ],
+   "frames": [
+    "A010A0"
+   ]
+  },
+  "A012": {
+   "clusters": [
+    {
+     "rgb": [
+      0,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      16,
+      16,
+      16
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      56,
+      56,
+      56
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      120,
+      112,
+      112
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      72,
+      56,
+      56
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      24,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      72,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      168,
+      72,
+      56
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      80,
+      16,
+      8
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      96,
+      16,
+      8
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      168,
+      32,
+      16
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      136,
+      48,
+      32
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      112,
+      24,
+      8
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      56,
+      40,
+      32
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      40,
+      32,
+      24
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.6
+    }
+   ],
+   "frames": [
+    "A012A0"
+   ]
+  },
+  "A013": {
+   "clusters": [
+    {
+     "rgb": [
+      0,
+      0,
+      0
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      8,
+      8,
+      8
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      16,
+      16,
+      16
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      33,
+      33,
+      33
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      32,
+      24,
+      24
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      33,
+      16,
+      16
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      84,
+      44,
+      44
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      40,
+      16,
+      16
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      107,
+      8,
+      8
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      8,
+      0,
+      0
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      60,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      74,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      97,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      136,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      158,
+      2,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      33,
+      24,
+      22
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      91,
+      81,
+      70
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      59,
+      50,
+      41
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      43,
+      35,
+      27
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      69,
+      57,
+      43
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      79,
+      66,
+      51
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      49,
+      41,
+      26
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      16,
+      16,
+      8
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      39,
+      41,
+      40
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      24,
+      33,
+      31
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      23,
+      24,
+      24
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      7,
+      16,
+      16
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      37,
+      1,
+      2
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    }
+   ],
+   "frames": [
+    "A013A0",
+    "A013B0"
+   ]
+  },
+  "A014": {
+   "clusters": [
+    {
+     "rgb": [
+      0,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      32,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      48,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      64,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      104,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      128,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      72,
+      16,
+      8
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      80,
+      16,
+      8
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      80,
+      8,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      160,
+      80,
+      64
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      144,
+      72,
+      48
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      128,
+      48,
+      32
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      168,
+      72,
+      40
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      128,
+      40,
+      16
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    }
+   ],
+   "frames": [
+    "A014A0",
+    "A014B0"
+   ]
+  },
+  "A015": {
+   "clusters": [
+    {
+     "rgb": [
+      120,
+      112,
+      112
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      80,
+      64,
+      64
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      80,
+      48,
+      48
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      24,
+      0,
+      0
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      72,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      168,
+      72,
+      56
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      96,
+      16,
+      8
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      128,
+      32,
+      16
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      168,
+      32,
+      16
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      56,
+      8,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      80,
+      32,
+      16
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      136,
+      48,
+      32
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      56,
+      40,
+      32
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      64,
+      48,
+      40
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      40,
+      32,
+      24
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    }
+   ],
+   "frames": [
+    "A015A0"
+   ]
+  },
+  "A016": {
+   "clusters": [
+    {
+     "rgb": [
+      24,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      32,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      40,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      48,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      56,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      64,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      72,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      80,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      88,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      96,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    }
+   ],
+   "frames": [
+    "A016A0"
+   ]
+  },
+  "A017": {
+   "clusters": [
+    {
+     "rgb": [
+      16,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      32,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      48,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      104,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      128,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      80,
+      16,
+      8
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      144,
+      72,
+      48
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      128,
+      48,
+      32
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      64,
+      24,
+      8
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      104,
+      80,
+      64
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      88,
+      56,
+      24
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      168,
+      136,
+      80
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      128,
+      88,
+      32
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      176,
+      152,
+      104
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      144,
+      112,
+      48
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    }
+   ],
+   "frames": [
+    "A017A0"
+   ]
+  },
+  "A018": {
+   "clusters": [
+    {
+     "rgb": [
+      8,
+      8,
+      8
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      16,
+      16,
+      16
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      72,
+      64,
+      64
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      88,
+      80,
+      80
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      96,
+      88,
+      88
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      120,
+      112,
+      112
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      48,
+      40,
+      40
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      72,
+      56,
+      56
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      32,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      56,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      96,
+      24,
+      16
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      72,
+      16,
+      8
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      104,
+      40,
+      24
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      32,
+      24,
+      16
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      32,
+      32,
+      24
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.6
+    }
+   ],
+   "frames": [
+    "A018A0"
+   ]
+  },
+  "A019": {
+   "clusters": [
+    {
+     "rgb": [
+      8,
+      8,
+      8
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      16,
+      16,
+      16
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      24,
+      24,
+      24
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      40,
+      40,
+      40
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      48,
+      48,
+      48
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      56,
+      56,
+      56
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      64,
+      64,
+      64
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      88,
+      80,
+      80
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      96,
+      88,
+      88
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      120,
+      112,
+      112
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      72,
+      56,
+      56
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      56,
+      40,
+      32
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      40,
+      32,
+      24
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    }
+   ],
+   "frames": [
+    "A019A0"
+   ]
+  },
+  "A020": {
+   "clusters": [
+    {
+     "rgb": [
+      88,
+      8,
+      8
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      8,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      32,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      48,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      64,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      104,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      128,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      104,
+      40,
+      32
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      72,
+      16,
+      8
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      80,
+      16,
+      8
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      160,
+      80,
+      64
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      128,
+      48,
+      32
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      104,
+      24,
+      8
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      40,
+      8,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    }
+   ],
+   "frames": [
+    "A020A0"
+   ]
+  },
+  "A021": {
+   "clusters": [
+    {
+     "rgb": [
+      72,
+      8,
+      8
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      112,
+      8,
+      8
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      16,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      72,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      168,
+      72,
+      56
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      104,
+      64,
+      56
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      128,
+      80,
+      64
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      152,
+      96,
+      80
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      176,
+      104,
+      80
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      200,
+      128,
+      104
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      80,
+      40,
+      32
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      112,
+      56,
+      40
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      144,
+      72,
+      56
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      72,
+      32,
+      24
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      32,
+      8,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    }
+   ],
+   "frames": [
+    "A021A0"
+   ]
+  },
+  "A022": {
+   "clusters": [
+    {
+     "rgb": [
+      40,
+      16,
+      16
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      64,
+      24,
+      24
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      160,
+      40,
+      40
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      64,
+      8,
+      8
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      16,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      40,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      104,
+      56,
+      48
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      88,
+      24,
+      16
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      104,
+      24,
+      16
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      136,
+      32,
+      24
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      144,
+      88,
+      72
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      72,
+      40,
+      32
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      104,
+      48,
+      32
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      48,
+      32,
+      24
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      120,
+      80,
+      64
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    }
+   ],
+   "frames": [
+    "A022A0"
+   ]
+  },
+  "A023": {
+   "clusters": [
+    {
+     "rgb": [
+      120,
+      112,
+      112
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      80,
+      64,
+      64
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      24,
+      0,
+      0
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      72,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      104,
+      40,
+      32
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      96,
+      32,
+      24
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      80,
+      16,
+      8
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      104,
+      8,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      136,
+      64,
+      48
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      160,
+      80,
+      64
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      136,
+      48,
+      32
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      168,
+      72,
+      40
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      120,
+      32,
+      8
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      48,
+      8,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      40,
+      32,
+      24
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    }
+   ],
+   "frames": [
+    "A023A0"
+   ]
+  },
+  "A026": {
+   "clusters": [
+    {
+     "rgb": [
+      16,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      40,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      64,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      80,
+      16,
+      8
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      120,
+      8,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      136,
+      64,
+      40
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      104,
+      40,
+      24
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      128,
+      48,
+      32
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      64,
+      24,
+      8
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      48,
+      16,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      80,
+      48,
+      24
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      120,
+      96,
+      72
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      88,
+      64,
+      40
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      152,
+      128,
+      96
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      112,
+      88,
+      48
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    }
+   ],
+   "frames": [
+    "A026A0"
+   ]
+  },
+  "A027": {
+   "clusters": [
+    {
+     "rgb": [
+      16,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      32,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      64,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      128,
+      0,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      88,
+      32,
+      24
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      104,
+      40,
+      32
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      128,
+      40,
+      32
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      72,
+      16,
+      8
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      80,
+      16,
+      8
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      96,
+      16,
+      8
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      80,
+      8,
+      0
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      160,
+      80,
+      64
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      144,
+      72,
+      48
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      104,
+      24,
+      8
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      120,
+      40,
+      16
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    }
+   ],
+   "frames": [
+    "A027A0"
+   ]
+  },
+  "A028": {
+   "clusters": [
+    {
+     "rgb": [
+      0,
+      0,
+      0
+     ],
+     "surface": "rubber",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      16,
+      16,
+      16
+     ],
+     "surface": "rubber",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      32,
+      32,
+      32
+     ],
+     "surface": "rubber",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      16,
+      8,
+      8
+     ],
+     "surface": "rubber",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      128,
+      32,
+      0
+     ],
+     "surface": "lens",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      56,
+      56,
+      48
+     ],
+     "surface": "rubber",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      80,
+      80,
+      72
+     ],
+     "surface": "rubber",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      88,
+      88,
+      80
+     ],
+     "surface": "rubber",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      120,
+      120,
+      104
+     ],
+     "surface": "rubber",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      136,
+      136,
+      128
+     ],
+     "surface": "rubber",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      152,
+      152,
+      144
+     ],
+     "surface": "rubber",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      40,
+      40,
+      32
+     ],
+     "surface": "rubber",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      48,
+      48,
+      40
+     ],
+     "surface": "rubber",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      72,
+      72,
+      56
+     ],
+     "surface": "rubber",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    }
+   ],
+   "frames": [
+    "A028A0"
+   ]
+  },
+  "A029": {
+   "clusters": [
+    {
+     "rgb": [
+      24,
+      24,
+      24
+     ],
+     "surface": "rubber",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      32,
+      32,
+      32
+     ],
+     "surface": "rubber",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      104,
+      0,
+      0
+     ],
+     "surface": "lens",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      176,
+      176,
+      168
+     ],
+     "surface": "rubber",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      56,
+      56,
+      48
+     ],
+     "surface": "rubber",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      64,
+      64,
+      56
+     ],
+     "surface": "rubber",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      104,
+      104,
+      96
+     ],
+     "surface": "rubber",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      120,
+      120,
+      112
+     ],
+     "surface": "rubber",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      144,
+      144,
+      128
+     ],
+     "surface": "rubber",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      152,
+      152,
+      144
+     ],
+     "surface": "rubber",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      32,
+      32,
+      24
+     ],
+     "surface": "rubber",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      40,
+      40,
+      32
+     ],
+     "surface": "rubber",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      80,
+      80,
+      64
+     ],
+     "surface": "rubber",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      16,
+      16,
+      8
+     ],
+     "surface": "rubber",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      0,
+      0,
+      8
+     ],
+     "surface": "rubber",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    }
+   ],
+   "frames": [
+    "A029A0"
+   ]
+  },
+  "A030": {
+   "clusters": [
+    {
+     "rgb": [
+      16,
+      8,
+      8
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      32,
+      16,
+      8
+     ],
+     "surface": "other",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      56,
+      32,
+      16
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      104,
+      88,
+      72
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      88,
+      72,
+      56
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      80,
+      56,
+      24
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      40,
+      32,
+      16
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      112,
+      88,
+      32
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      152,
+      120,
+      48
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      24,
+      16,
+      0
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      168,
+      160,
+      120
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      216,
+      184,
+      72
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      56,
+      56,
+      40
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      48,
+      48,
+      24
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    }
+   ],
+   "frames": [
+    "A030A0",
+    "A030B0",
+    "A030C0",
+    "A030D0",
+    "A030E0"
+   ]
+  },
+  "A031": {
+   "clusters": [
+    {
+     "rgb": [
+      56,
+      32,
+      16
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      104,
+      88,
+      72
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      88,
+      72,
+      56
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      40,
+      32,
+      16
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      168,
+      160,
+      120
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      56,
+      56,
+      40
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      48,
+      48,
+      24
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      0,
+      8,
+      8
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      8,
+      32,
+      56
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      0,
+      8,
+      16
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      0,
+      16,
+      32
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      24,
+      48,
+      80
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      32,
+      56,
+      112
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      48,
+      80,
+      152
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      72,
+      120,
+      216
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    }
+   ],
+   "frames": [
+    "A031A0",
+    "A031B0",
+    "A031C0",
+    "A031D0",
+    "A031E0"
+   ]
+  },
+  "A032": {
+   "clusters": [
+    {
+     "rgb": [
+      80,
+      24,
+      24
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      112,
+      32,
+      32
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      152,
+      48,
+      48
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      216,
+      72,
+      72
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      56,
+      8,
+      8
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      8,
+      0,
+      0
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      16,
+      0,
+      0
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      32,
+      0,
+      0
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      56,
+      32,
+      16
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      104,
+      88,
+      72
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      88,
+      72,
+      56
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      40,
+      32,
+      16
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      168,
+      160,
+      120
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      56,
+      56,
+      40
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      48,
+      48,
+      24
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    }
+   ],
+   "frames": [
+    "A032A0",
+    "A032B0",
+    "A032C0",
+    "A032D0",
+    "A032E0"
+   ]
+  },
+  "A033": {
+   "clusters": [
+    {
+     "rgb": [
+      0,
+      0,
+      0
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      176,
+      168,
+      168
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      24,
+      16,
+      16
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      112,
+      104,
+      96
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      120,
+      112,
+      104
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      128,
+      120,
+      112
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      64,
+      56,
+      48
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      80,
+      72,
+      64
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      96,
+      88,
+      80
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      16,
+      8,
+      0
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      152,
+      144,
+      128
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      40,
+      40,
+      32
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      48,
+      48,
+      40
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      32,
+      32,
+      16
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      8,
+      16,
+      8
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    }
+   ],
+   "frames": [
+    "A033A0"
+   ]
+  },
+  "A034": {
+   "clusters": [
+    {
+     "rgb": [
+      8,
+      8,
+      8
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      16,
+      16,
+      16
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      24,
+      24,
+      24
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      200,
+      192,
+      192
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      112,
+      104,
+      96
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      128,
+      120,
+      112
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      64,
+      56,
+      48
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      80,
+      72,
+      64
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      104,
+      96,
+      88
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      152,
+      144,
+      128
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      32,
+      32,
+      24
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      40,
+      40,
+      32
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      48,
+      48,
+      40
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      32,
+      32,
+      16
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      8,
+      8,
+      0
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    }
+   ],
+   "frames": [
+    "A034A0"
+   ]
+  },
+  "A035": {
+   "clusters": [
+    {
+     "rgb": [
+      0,
+      0,
+      0
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      8,
+      8,
+      8
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      16,
+      16,
+      16
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      32,
+      32,
+      32
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      248,
+      216,
+      192
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      64,
+      24,
+      0
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      112,
+      48,
+      0
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      240,
+      144,
+      48
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      240,
+      120,
+      0
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      40,
+      48,
+      48
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      48,
+      48,
+      56
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      56,
+      56,
+      64
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    }
+   ],
+   "frames": [
+    "A035A0"
+   ]
+  },
+  "A036": {
+   "clusters": [
+    {
+     "rgb": [
+      0,
+      0,
+      0
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      8,
+      8,
+      8
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      16,
+      16,
+      16
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      32,
+      32,
+      32
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      248,
+      216,
+      192
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      64,
+      24,
+      0
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      112,
+      48,
+      0
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      240,
+      144,
+      48
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      240,
+      120,
+      0
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      40,
+      48,
+      48
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      48,
+      48,
+      56
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      56,
+      56,
+      64
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    }
+   ],
+   "frames": [
+    "A036A0"
+   ]
+  },
+  "A054": {
+   "clusters": [
+    {
+     "rgb": [
+      1,
+      4,
+      2
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      2,
+      9,
+      4
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      4,
+      19,
+      8
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      6,
+      28,
+      12
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      7,
+      31,
+      14
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      8,
+      34,
+      15
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      9,
+      38,
+      17
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      9,
+      39,
+      17
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      11,
+      46,
+      20
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      11,
+      47,
+      21
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      14,
+      58,
+      26
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      14,
+      61,
+      27
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      15,
+      65,
+      29
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      22,
+      90,
+      40
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      24,
+      102,
+      46
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.2
+    }
+   ],
+   "frames": [
+    "A054A0"
+   ]
+  },
+  "A055": {
+   "clusters": [
+    {
+     "rgb": [
+      2,
+      2,
+      4
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      9,
+      9,
+      19
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      14,
+      14,
+      28
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      15,
+      15,
+      31
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      17,
+      17,
+      34
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      19,
+      19,
+      38
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      19,
+      19,
+      39
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      23,
+      23,
+      46
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      24,
+      24,
+      47
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      29,
+      29,
+      58
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      30,
+      30,
+      61
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      32,
+      32,
+      65
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      45,
+      45,
+      90
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      51,
+      51,
+      102
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      4,
+      4,
+      9
+     ],
+     "surface": "flesh",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.2
+    }
+   ],
+   "frames": [
+    "A055A0"
+   ]
+  },
+  "BAR1": {
+   "clusters": [
+    {
+     "rgb": [
+      16,
+      16,
+      16
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      33,
+      33,
+      33
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      57,
+      57,
+      57
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      74,
+      74,
+      74
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      90,
+      90,
+      90
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      156,
+      173,
+      198
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      99,
+      99,
+      107
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      115,
+      115,
+      123
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      140,
+      140,
+      148
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      33,
+      33,
+      41
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      41,
+      41,
+      49
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      16,
+      16,
+      24
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      24,
+      24,
+      33
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      8,
+      8,
+      16
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    }
+   ],
+   "frames": [
+    "BAR1A0",
+    "BAR1B0"
+   ]
+  },
+  "BEXP": {
+   "clusters": [
+    {
+     "rgb": [
+      16,
+      16,
+      16
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      18,
+      18,
+      18
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      33,
+      33,
+      33
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      74,
+      74,
+      74
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      90,
+      90,
+      90
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      156,
+      112,
+      95
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      99,
+      49,
+      24
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      57,
+      53,
+      50
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      151,
+      126,
+      111
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      44,
+      29,
+      18
+     ],
+     "surface": "other",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      64,
+      40,
+      24
+     ],
+     "surface": "other",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      107,
+      67,
+      40
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      152,
+      95,
+      56
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      177,
+      110,
+      65
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      144,
+      79,
+      43
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      249,
+      120,
+      37
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      255,
+      107,
+      24
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      255,
+      147,
+      45
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      217,
+      175,
+      106
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      232,
+      202,
+      111
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      162,
+      148,
+      69
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      33,
+      33,
+      41
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      41,
+      41,
+      49
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      16,
+      16,
+      24
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      24,
+      24,
+      33
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      8,
+      8,
+      16
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.6
+    },
+    {
+     "rgb": [
+      100,
+      99,
+      106
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      36,
+      35,
+      39
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    }
+   ],
+   "frames": [
+    "BEXPA0",
+    "BEXPB0",
+    "BEXPC0",
+    "BEXPD0",
+    "BEXPE0",
+    "BEXPF0",
+    "BEXPG0",
+    "BEXPH0",
+    "BEXPI0"
+   ]
+  },
+  "GTCH": {
+   "clusters": [
+    {
+     "rgb": [
+      57,
+      33,
+      16
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      107,
+      90,
+      74
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      90,
+      74,
+      57
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      41,
+      33,
+      16
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      173,
+      165,
+      123
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      57,
+      57,
+      41
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      49,
+      49,
+      24
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      17,
+      57,
+      8
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      3,
+      16,
+      0
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      5,
+      33,
+      0
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      30,
+      82,
+      24
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      33,
+      115,
+      36
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      49,
+      156,
+      52
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      74,
+      222,
+      75
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      0,
+      8,
+      8
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    }
+   ],
+   "frames": [
+    "GTCHA0",
+    "GTCHB0",
+    "GTCHC0",
+    "GTCHD0",
+    "GTCHE0"
+   ]
+  },
+  "LMP1": {
+   "clusters": [
+    {
+     "rgb": [
+      16,
+      8,
+      8
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      160,
+      104,
+      16
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      248,
+      168,
+      0
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      248,
+      224,
+      104
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      248,
+      248,
+      192
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      80,
+      80,
+      56
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      40,
+      56,
+      48
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      24,
+      40,
+      32
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      48,
+      80,
+      64
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      96,
+      128,
+      128
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      136,
+      168,
+      168
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      64,
+      88,
+      88
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      80,
+      120,
+      120
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      152,
+      208,
+      208
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    }
+   ],
+   "frames": [
+    "LMP1A0"
+   ]
+  },
+  "LMP2": {
+   "clusters": [
+    {
+     "rgb": [
+      0,
+      0,
+      0
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      192,
+      48,
+      0
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      248,
+      104,
+      0
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      248,
+      144,
+      16
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      248,
+      184,
+      48
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      248,
+      248,
+      128
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      0,
+      16,
+      8
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      40,
+      64,
+      56
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      24,
+      48,
+      40
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      64,
+      80,
+      80
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      80,
+      112,
+      112
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      16,
+      32,
+      32
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    }
+   ],
+   "frames": [
+    "LMP2A0"
+   ]
+  },
+  "TLBL": {
+   "clusters": [
+    {
+     "rgb": [
+      0,
+      0,
+      0
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      176,
+      168,
+      168
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      24,
+      16,
+      16
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      112,
+      104,
+      96
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      120,
+      112,
+      104
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      128,
+      120,
+      112
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      64,
+      56,
+      48
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      80,
+      72,
+      64
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      96,
+      88,
+      80
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      16,
+      8,
+      0
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      152,
+      144,
+      128
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      40,
+      40,
+      32
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      48,
+      48,
+      40
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      32,
+      32,
+      16
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      8,
+      16,
+      8
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      0,
+      8,
+      16
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      0,
+      16,
+      32
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      16,
+      32,
+      56
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      24,
+      48,
+      88
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      40,
+      80,
+      136
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      48,
+      88,
+      152
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      56,
+      104,
+      176
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      72,
+      120,
+      208
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      8,
+      24,
+      48
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      16,
+      40,
+      72
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      32,
+      56,
+      104
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      40,
+      64,
+      120
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      16,
+      16,
+      32
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    }
+   ],
+   "frames": [
+    "TLBLA0",
+    "TLBLB0",
+    "TLBLC0",
+    "TLBLD0",
+    "TLBLE0"
+   ]
+  },
+  "TLGR": {
+   "clusters": [
+    {
+     "rgb": [
+      0,
+      0,
+      0
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      176,
+      168,
+      168
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      24,
+      16,
+      16
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      112,
+      104,
+      96
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      120,
+      112,
+      104
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      128,
+      120,
+      112
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      64,
+      56,
+      48
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      80,
+      72,
+      64
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      96,
+      88,
+      80
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      16,
+      8,
+      0
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      152,
+      144,
+      128
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      40,
+      40,
+      32
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      48,
+      48,
+      40
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      32,
+      32,
+      16
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      3,
+      16,
+      0
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      5,
+      33,
+      0
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      19,
+      57,
+      16
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      49,
+      140,
+      41
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      66,
+      181,
+      57
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      22,
+      74,
+      16
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      8,
+      16,
+      8
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      27,
+      90,
+      24
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      33,
+      107,
+      34
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      41,
+      123,
+      43
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      54,
+      156,
+      49
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      76,
+      214,
+      74
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      10,
+      49,
+      8
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      16,
+      33,
+      22
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    }
+   ],
+   "frames": [
+    "TLGRA0",
+    "TLGRB0",
+    "TLGRC0",
+    "TLGRD0",
+    "TLGRE0"
+   ]
+  },
+  "TLRD": {
+   "clusters": [
+    {
+     "rgb": [
+      0,
+      0,
+      0
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      176,
+      168,
+      168
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      24,
+      16,
+      16
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      32,
+      16,
+      16
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      56,
+      16,
+      16
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      88,
+      24,
+      24
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      104,
+      32,
+      32
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      120,
+      40,
+      40
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      136,
+      40,
+      40
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      152,
+      48,
+      48
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      176,
+      56,
+      56
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      208,
+      72,
+      72
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      48,
+      8,
+      8
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      72,
+      16,
+      16
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      16,
+      0,
+      0
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      32,
+      0,
+      0
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      112,
+      104,
+      96
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      120,
+      112,
+      104
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      128,
+      120,
+      112
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      64,
+      56,
+      48
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      80,
+      72,
+      64
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      96,
+      88,
+      80
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      16,
+      8,
+      0
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      152,
+      144,
+      128
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      40,
+      40,
+      32
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      48,
+      48,
+      40
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      32,
+      32,
+      16
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      8,
+      16,
+      8
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    }
+   ],
+   "frames": [
+    "TLRDA0",
+    "TLRDB0",
+    "TLRDC0",
+    "TLRDD0",
+    "TLRDE0"
+   ]
+  },
+  "TLYL": {
+   "clusters": [
+    {
+     "rgb": [
+      0,
+      0,
+      0
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      176,
+      168,
+      168
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      24,
+      16,
+      16
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      48,
+      24,
+      16
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      32,
+      16,
+      8
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      112,
+      104,
+      96
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      120,
+      112,
+      104
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      128,
+      120,
+      112
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      64,
+      56,
+      48
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      80,
+      72,
+      64
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      96,
+      88,
+      80
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      32,
+      24,
+      16
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      88,
+      56,
+      24
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      16,
+      8,
+      0
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      56,
+      40,
+      16
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      104,
+      72,
+      32
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      120,
+      88,
+      40
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      72,
+      48,
+      16
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      152,
+      144,
+      128
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      136,
+      104,
+      40
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      152,
+      120,
+      48
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      176,
+      144,
+      56
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      208,
+      168,
+      72
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      32,
+      24,
+      8
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      40,
+      40,
+      32
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      48,
+      48,
+      40
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      32,
+      32,
+      16
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      8,
+      16,
+      8
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    }
+   ],
+   "frames": [
+    "TLYLA0",
+    "TLYLB0",
+    "TLYLC0",
+    "TLYLD0",
+    "TLYLE0"
+   ]
+  },
+  "TRE1": {
+   "clusters": [
+    {
+     "rgb": [
+      0,
+      0,
+      0
+     ],
+     "surface": "wood",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      24,
+      16,
+      16
+     ],
+     "surface": "wood",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      16,
+      8,
+      8
+     ],
+     "surface": "wood",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      24,
+      0,
+      0
+     ],
+     "surface": "wood",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      40,
+      0,
+      0
+     ],
+     "surface": "wood",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      48,
+      0,
+      0
+     ],
+     "surface": "wood",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      48,
+      40,
+      32
+     ],
+     "surface": "wood",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      40,
+      32,
+      24
+     ],
+     "surface": "wood",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      64,
+      56,
+      40
+     ],
+     "surface": "wood",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      32,
+      32,
+      16
+     ],
+     "surface": "wood",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      8,
+      8,
+      0
+     ],
+     "surface": "wood",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      16,
+      32,
+      8
+     ],
+     "surface": "wood",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      8,
+      24,
+      0
+     ],
+     "surface": "wood",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      8,
+      24,
+      8
+     ],
+     "surface": "wood",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      0,
+      16,
+      0
+     ],
+     "surface": "wood",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    }
+   ],
+   "frames": [
+    "TRE1A0"
+   ]
+  },
+  "TRE2": {
+   "clusters": [
+    {
+     "rgb": [
+      0,
+      0,
+      0
+     ],
+     "surface": "wood",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      24,
+      16,
+      16
+     ],
+     "surface": "wood",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      16,
+      8,
+      8
+     ],
+     "surface": "wood",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      8,
+      0,
+      0
+     ],
+     "surface": "wood",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      40,
+      0,
+      0
+     ],
+     "surface": "wood",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      48,
+      0,
+      0
+     ],
+     "surface": "wood",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      64,
+      56,
+      48
+     ],
+     "surface": "wood",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      48,
+      40,
+      32
+     ],
+     "surface": "wood",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      56,
+      48,
+      40
+     ],
+     "surface": "wood",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      40,
+      32,
+      24
+     ],
+     "surface": "wood",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      32,
+      24,
+      16
+     ],
+     "surface": "wood",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      24,
+      16,
+      8
+     ],
+     "surface": "wood",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      16,
+      8,
+      0
+     ],
+     "surface": "wood",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      8,
+      8,
+      0
+     ],
+     "surface": "wood",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    }
+   ],
+   "frames": [
+    "TRE2A0"
+   ]
+  },
+  "TRE3": {
+   "clusters": [
+    {
+     "rgb": [
+      0,
+      0,
+      0
+     ],
+     "surface": "wood",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      24,
+      16,
+      16
+     ],
+     "surface": "wood",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      16,
+      8,
+      8
+     ],
+     "surface": "wood",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      8,
+      0,
+      0
+     ],
+     "surface": "wood",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      40,
+      0,
+      0
+     ],
+     "surface": "wood",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      48,
+      0,
+      0
+     ],
+     "surface": "wood",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      64,
+      56,
+      48
+     ],
+     "surface": "wood",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      48,
+      40,
+      32
+     ],
+     "surface": "wood",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      56,
+      48,
+      40
+     ],
+     "surface": "wood",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      40,
+      32,
+      24
+     ],
+     "surface": "wood",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      32,
+      24,
+      16
+     ],
+     "surface": "wood",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      24,
+      16,
+      8
+     ],
+     "surface": "wood",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      16,
+      8,
+      0
+     ],
+     "surface": "wood",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      8,
+      8,
+      0
+     ],
+     "surface": "wood",
+     "metallicDefault": 0,
+     "roughnessDefault": 0.4
+    }
+   ],
+   "frames": [
+    "TRE3A0"
+   ]
+  },
+  "TSBL": {
+   "clusters": [
+    {
+     "rgb": [
+      8,
+      8,
+      8
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      16,
+      16,
+      16
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      24,
+      24,
+      24
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      200,
+      192,
+      192
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      112,
+      104,
+      96
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      128,
+      120,
+      112
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      64,
+      56,
+      48
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      80,
+      72,
+      64
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      104,
+      96,
+      88
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      152,
+      144,
+      128
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      32,
+      32,
+      24
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      40,
+      40,
+      32
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      48,
+      48,
+      40
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      32,
+      32,
+      16
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      8,
+      8,
+      0
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      0,
+      8,
+      16
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      0,
+      16,
+      32
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      16,
+      32,
+      56
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      24,
+      48,
+      88
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      40,
+      80,
+      136
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      48,
+      88,
+      152
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      56,
+      104,
+      176
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      72,
+      120,
+      208
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      8,
+      24,
+      48
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      16,
+      40,
+      72
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      32,
+      56,
+      104
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      40,
+      64,
+      120
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      16,
+      16,
+      32
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    }
+   ],
+   "frames": [
+    "TSBLA0",
+    "TSBLB0",
+    "TSBLC0",
+    "TSBLD0",
+    "TSBLE0"
+   ]
+  },
+  "TSGR": {
+   "clusters": [
+    {
+     "rgb": [
+      8,
+      8,
+      8
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      16,
+      16,
+      16
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      24,
+      24,
+      24
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      200,
+      192,
+      192
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      112,
+      104,
+      96
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      128,
+      120,
+      112
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      64,
+      56,
+      48
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      80,
+      72,
+      64
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      104,
+      96,
+      88
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      152,
+      144,
+      128
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      32,
+      32,
+      24
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      40,
+      40,
+      32
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      48,
+      48,
+      40
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      32,
+      32,
+      16
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      8,
+      8,
+      0
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      3,
+      16,
+      0
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      5,
+      33,
+      0
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      19,
+      57,
+      16
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      49,
+      140,
+      41
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      66,
+      181,
+      57
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      22,
+      74,
+      16
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      27,
+      90,
+      24
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      33,
+      107,
+      34
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      41,
+      123,
+      43
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      54,
+      156,
+      49
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      76,
+      214,
+      74
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      10,
+      49,
+      8
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      16,
+      33,
+      22
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    }
+   ],
+   "frames": [
+    "TSGRA0",
+    "TSGRB0",
+    "TSGRC0",
+    "TSGRD0",
+    "TSGRE0"
+   ]
+  },
+  "TSRD": {
+   "clusters": [
+    {
+     "rgb": [
+      8,
+      8,
+      8
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      16,
+      16,
+      16
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      24,
+      24,
+      24
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      200,
+      192,
+      192
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      32,
+      16,
+      16
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      56,
+      16,
+      16
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      88,
+      24,
+      24
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      104,
+      32,
+      32
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      120,
+      40,
+      40
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      136,
+      40,
+      40
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      152,
+      48,
+      48
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      176,
+      56,
+      56
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      208,
+      72,
+      72
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      48,
+      8,
+      8
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      72,
+      16,
+      16
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      16,
+      0,
+      0
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      32,
+      0,
+      0
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      112,
+      104,
+      96
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      128,
+      120,
+      112
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      64,
+      56,
+      48
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      80,
+      72,
+      64
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      104,
+      96,
+      88
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      152,
+      144,
+      128
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      32,
+      32,
+      24
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      40,
+      40,
+      32
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      48,
+      48,
+      40
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      32,
+      32,
+      16
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      8,
+      8,
+      0
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    }
+   ],
+   "frames": [
+    "TSRDA0",
+    "TSRDB0",
+    "TSRDC0",
+    "TSRDD0",
+    "TSRDE0"
+   ]
+  },
+  "TSYL": {
+   "clusters": [
+    {
+     "rgb": [
+      8,
+      8,
+      8
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      16,
+      16,
+      16
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      24,
+      24,
+      24
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      200,
+      192,
+      192
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      48,
+      24,
+      16
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      32,
+      16,
+      8
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      112,
+      104,
+      96
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      128,
+      120,
+      112
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      64,
+      56,
+      48
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      80,
+      72,
+      64
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      104,
+      96,
+      88
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      88,
+      56,
+      24
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      16,
+      8,
+      0
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      56,
+      40,
+      16
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      104,
+      72,
+      32
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      120,
+      88,
+      40
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      72,
+      48,
+      16
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      152,
+      144,
+      128
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.2
+    },
+    {
+     "rgb": [
+      32,
+      24,
+      9
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      136,
+      104,
+      40
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      152,
+      120,
+      48
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      176,
+      144,
+      56
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      208,
+      168,
+      72
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      32,
+      32,
+      24
+     ],
+     "surface": null,
+     "metallicDefault": null,
+     "roughnessDefault": null
+    },
+    {
+     "rgb": [
+      40,
+      40,
+      32
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      48,
+      48,
+      40
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      32,
+      32,
+      16
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    },
+    {
+     "rgb": [
+      8,
+      8,
+      0
+     ],
+     "surface": "metal",
+     "metallicDefault": 1,
+     "roughnessDefault": 0.4
+    }
+   ],
+   "frames": [
+    "TSYLA0",
+    "TSYLB0",
+    "TSYLC0",
+    "TSYLD0",
+    "TSYLE0"
+   ]
+  }
+ },
+ "__meta": {
+  "scope": "STATIC",
+  "clusters_labelled": 664
+ }
+}

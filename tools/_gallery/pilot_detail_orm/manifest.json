@@ -1,0 +1,67 @@
+[
+  {
+    "index": 0,
+    "texture": "SPACEBE",
+    "shot_before": "0000_before.png",
+    "exists_before": true,
+    "size_before": 2443299,
+    "shot_after": "0000_after.png",
+    "exists_after": true,
+    "size_after": 2436770,
+    "shot": "0000_after.png",
+    "exists": true,
+    "size": 2436770
+  },
+  {
+    "index": 2,
+    "texture": "SPACEBD",
+    "shot_before": "0002_before.png",
+    "exists_before": true,
+    "size_before": 2206427,
+    "shot_after": "0002_after.png",
+    "exists_after": true,
+    "size_after": 2157587,
+    "shot": "0002_after.png",
+    "exists": true,
+    "size": 2157587
+  },
+  {
+    "index": 5,
+    "texture": "SPACEBO1",
+    "shot_before": "0005_before.png",
+    "exists_before": true,
+    "size_before": 2148546,
+    "shot_after": "0005_after.png",
+    "exists_after": true,
+    "size_after": 2104396,
+    "shot": "0005_after.png",
+    "exists": true,
+    "size": 2104396
+  },
+  {
+    "index": 6,
+    "texture": "SPACEAA",
+    "shot_before": "0006_before.png",
+    "exists_before": true,
+    "size_before": 2190878,
+    "shot_after": "0006_after.png",
+    "exists_after": true,
+    "size_after": 2172872,
+    "shot": "0006_after.png",
+    "exists": true,
+    "size": 2172872
+  },
+  {
+    "index": 8,
+    "texture": "SPACEART",
+    "shot_before": "0008_before.png",
+    "exists_before": true,
+    "size_before": 2246598,
+    "shot_after": "0008_after.png",
+    "exists_after": true,
+    "size_after": 2206139,
+    "shot": "0008_after.png",
+    "exists": true,
+    "size": 2206139
+  }
+]

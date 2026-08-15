@@ -1,0 +1,736 @@
+// Doom64-RT: the static cvar pins for launch-retribution-rt.cmd.
+// Moved out of the launcher because 325 "+name value" pairs made its command
+// line 8016 characters and cmd.exe truncates at 8191 -- which silently ate the
+// "-- +cvar" A/B passthrough at the end of the line, and some of these pins.
+// Edit values here; the launcher execs this file before +map.
+vid_fullscreen 0
+win_x -1
+queryiwad false
+sv_cheats 1
+god
+notarget
+rt_mod_compat 1
+r_drawvoxels 0
+d64_enterfade 0
+d64_exitfade 0
+rt_fluid false
+rt_autoexport false
+rt_upscale_dlss 2
+rt_upscale_fsr2 0
+rt_rayreconstr 0
+rt_framegen 0
+gl_noskyboxes false
+rt_sky 25
+rt_sky_always true
+rt_sky_nowalls 0
+rt_sun 1
+rt_sun_intensity 90
+rt_sun_a 25
+rt_sun_b 135
+rt_sun_color B4C8FF
+rt_sun_angdiam 0.5
+rt_moon_geo 1
+rt_moon_geo_size 12
+rt_moon_presets 1
+rt_clouds 0
+rt_clouds_presets 1
+rt_clouds_shells 6
+rt_clouds_horizon 9
+rt_clouds_curve 0.55
+rt_clouds_thick 0.7
+rt_clouds_tiles 6
+rt_clouds_alpha 0.9
+rt_clouds_dark 0.45
+rt_clouds_wind 0.014
+rt_clouds_wind_dir 30
+rt_clouds_shear 0.09
+rt_clouds_occlude 1
+rt_clouds_transmit 0.22
+rt_clouds_tint B4C0DC
+rt_clouds_flash 2.2
+rt_lightning 1
+rt_lightning_intensity 2200
+rt_lightning_color C8D8FF
+rt_lightning_decay 0.18
+rt_lightning_strokes 3
+rt_lightning_angdiam 6
+rt_lightning_alt_min 15
+rt_lightning_alt_max 40
+rt_lightning_bolt 1
+rt_lightning_bolt_size 55
+rt_lightning_sectorflash 1
+rt_lightning_debug 0
+rt_fog 1
+rt_fog_presets 1
+rt_fog_color 000000
+rt_fog_density 0.01
+rt_fog_density_mult 0.3
+rt_fog_density_far 10
+rt_fog_color_far 000000
+rt_fog_curve 1
+rt_fog_far 45
+rt_fog_ambient 1
+rt_fog_lightmult 1
+rt_fog_light_near 2
+rt_fog_illum 1
+rt_mzlflsh 1
+rt_volume_type 1
+rt_volume_blur 1
+rt_volume_occlude_emis 1
+// SCREEN AXES ONLY. This used to drive the depth axis too, and depth is
+// one-sided (-sampleHemisphere), so 5 froxels against rt_volume_far 60's 0.94 m
+// slices was a mean 1.56 m of column that never got integrated -- MAP13's moon
+// shafts dying in mid-air short of the floor they were lighting. The screen
+// jitter is symmetric and stays where the smoke work put it; the depth one is
+// below and belongs under a froxel. docs/moon-and-sky-leaks.md S5.5.
+rt_volume_dither 5
+rt_volume_dither_z 1
+rt_volume_far 60
+// PER METRE since the moon-shaft fix -- rt_main.cpp scales this by
+// rt_volume_far/30 before upload, because the shader applies it per CELL and the
+// grid is 64 slices at any reach. Before that, raising the reach above silently
+// halved the medium and took the moon's shafts with it
+// (docs/moon-and-sky-leaks.md S5.4). 1 is the density this level set was tuned
+// with; the arms that move it are tools/arms/moon-*.cfg.
+rt_volume_scatter 1
+rt_volume_ambient 0.2
+// Pinned at their compiled defaults so an arm cannot leave them in the ini and
+// follow you into play -- moon-lint sets lintensity 2, and these are
+// CVAR_ARCHIVE like everything else here.
+rt_volume_lintensity 1
+rt_volume_lassymetry 0.5
+rt_volume_history 8
+// LIGHT SHAFTS FROM ORDINARY LAMPS (docs/plan-light-shafts.md). The froxel pass
+// shadow-tests exactly ONE light -- the moon -- which is why beams only ever
+// happened outdoors; these hand it a short list of interior fixtures as well.
+// Pinned at their compiled defaults for the same reason the three above are: a
+// tools/arms/lampshaft-*.cfg arm sets them, they are CVAR_ARCHIVE, and without
+// a pin the last arm run would follow you into play.
+rt_volume_shafts 1
+rt_volume_shaft_src 7
+// BANDS ARE WHAT MADE SHAFTS REACH (2026-08-14, second report). Taking the
+// nearest N with a 3 m dedupe fills a disc of ~7 m around the camera, and a
+// lamp room offers hundreds of candidates -- so a lamp ten metres down the
+// corridor was never SENT, not merely dim. Each band gets its own share of
+// the slots. Watch the 'reach a..b m' field in rt_volume_shaft_verbose.
+rt_volume_shaft_bands 4
+rt_volume_shaft_max 32
+rt_volume_shaft_trace 4
+rt_volume_shaft_mult 10
+rt_volume_shaft_nearfade 1.5
+// THE TWO KNOBS THE "SHAFTS DO NOT REACH" REPORT NEEDED (2026-08-14). A sphere
+// light's weight is a solid angle, so a lamp's scattering is inverse square and
+// dies 36x between 1 m and 6 m -- the moon's shafts read across a level because
+// a DIRECTIONAL light does not fall off at all. _falloff hands that back;
+// _relcull decides who spends the per-froxel ray budget, which without it went
+// in list order, i.e. to the lamps nearest the CAMERA rather than the ones
+// reaching the cell. Both values below are JUDGED IN PLAY: falloff 0 read as a
+// puddle around the bulb and 1 as fog with no shape, so 0.5 sits between them;
+// mult 10 is large because a lamp's solid angle and the moon's directional light
+// are not in the same units, which is why the knob is separate at all.
+rt_volume_shaft_falloff 0.5
+rt_volume_shaft_relcull 0.05
+rt_volume_shaft_mincontrib 0
+rt_volume_shaft_asym -2
+// 1920 = 60 m = rt_volume_far, the reach of the froxel volume itself. Past it
+// there is no medium to scatter in, so there is no reason to be tighter.
+rt_volume_shaft_maxdist 1920
+rt_volume_shaft_mingap 96
+rt_volume_shaft_minint 0
+rt_volume_shaft_debug 0
+rt_volume_shaft_verbose 0
+// DUST MOTES (docs/plan-light-shafts.md). The sparkle half of a light shaft:
+// tiny quads on a hashed world lattice, drawn as REAL TRACED GEOMETRY so each
+// is lit by whatever reaches it and invisible where nothing does. Every value
+// here restates its compiled default, so check_pins.py rt_dust stays clean.
+rt_dust 1
+rt_dust_density 0.10
+rt_dust_max 900
+rt_dust_far 12
+rt_dust_near 0.5
+rt_dust_size 0.008
+rt_dust_size_ang 0.0022
+rt_dust_color C8C8C8
+rt_dust_albedo 0.9
+rt_dust_drift 0.35
+rt_dust_speed 0.25
+rt_dust_cone -0.25
+// THE SHAFT GATE. Traced lighting alone does not make dust a shaft effect:
+// ambient and bounced GI reach everywhere, so every mote picks up something and
+// the field reads as an even haze of specks. This is the albedo a mote keeps
+// where there is no beam -- 1 is ungated, 0 is beams only, 0.08 is 'barely'.
+// The weight is proximity x phase against the shaft light list, never a
+// radiance: how much light arrives is the tracer's answer, and visibility stays
+// the tracer's job, so a mote near a lamp but behind a wall is still black.
+rt_dust_shaft_floor 0.08
+rt_dust_shaft_radius 2.5
+rt_dust_moon 1
+rt_dust_moon_weight 1.0
+rt_dust_clip 1
+// QUIET. Both of these are diagnostics and the release setting is off; turn one
+// on for a run with `-- +rt_volume_shaft_verbose 1` / `-- +rt_dust_debug 1`.
+rt_dust_debug 0
+rt_smoke 1
+rt_smoke_density 14
+rt_smoke_color AEAEAE
+rt_smoke_count 4
+rt_smoke_budget 120
+rt_smoke_life 2.2
+rt_smoke_radius 0.35
+rt_smoke_growth 0.5
+rt_smoke_speed 1.8
+rt_smoke_spread 0.55
+rt_smoke_rise 0.65
+rt_smoke_drag 1.9
+rt_smoke_inherit 0.85
+rt_smoke_offset 0.8
+rt_smoke_muzzle_u 0
+rt_smoke_repeat 5
+rt_smoke_far 14
+rt_smoke_ambient 0.1
+rt_smoke_illum 1
+rt_smoke_spp 8
+rt_smoke_maxlight 6
+rt_smoke_light_near 0.5
+rt_smoke_illum_blend 0.45
+rt_smoke_perweapon 1
+rt_smoke_trail 1
+rt_smoke_monster 1
+rt_smoke_monster_scale 1
+rt_smoke_monster_far 18
+rt_smoke_projectile 1
+rt_smoke_barrel 1
+rt_smoke_barrel_scale 1
+rt_smoke_ambient_fx 1
+rt_smoke_ambient_scale 1
+rt_smoke_ambient_budget 96
+rt_smoke_ambient_far 60
+// NOARCH, so it cannot persist in the ini -- pinned anyway so the play
+// launcher states it, and no arm or leftover can leave the console
+// printing puff positions over the game.
+rt_smoke_debug 0
+rt_smoke_stylize 0
+rt_smoke_stylize_steps 3
+rt_smoke_stylize_grid 0
+rt_smoke_tint 0.8
+rt_smoke_absorb 1
+rt_smoke_history 20
+rt_smoke_curl 1.6
+rt_smoke_rocket 1
+rt_smoke_rocket_every 2
+rt_smoke_rocket_radius 0.22
+rt_smoke_boom 4
+rt_smoke_boom_radius 0.34
+rt_smoke_light_far 12
+// Impact sparks. THE MASTER SHIPS OFF until judged in play, and the pin has to
+// say 0 too -- a pin overrides the compiled default, so the two disagreeing is
+// how the rocket-smoke numbers were "lowered" for a week without taking effect.
+// Every value here restates its compiled default, so check_pins.py rt_spark_
+// stays clean and moving a default is caught if the pin is forgotten.
+rt_spark 0
+rt_spark_count 8
+rt_spark_life 5.0
+rt_spark_speed 6.0
+rt_spark_spread 38
+rt_spark_gravity 11
+rt_spark_drag 1.6
+rt_spark_size 0.02
+rt_spark_grid 0.03125
+rt_spark_bright 2.0
+rt_spark_max 2000
+rt_spark_far 40
+rt_spark_style 1
+rt_spark_streak 2.5
+rt_spark_debris 1
+rt_spark_debris_count 6
+rt_spark_debris_life 20
+rt_spark_debris_speed 3.4
+rt_spark_debris_size 0.05
+rt_spark_debris_gravity 17
+rt_spark_debris_bounce 0.22
+rt_spark_debris_ao 1
+rt_spark_debris_ao_strength 0.5
+rt_spark_debris_ao_radius 1.0
+rt_spark_debris_ao_dist 20
+rt_spark_debris_ao_max 64
+rt_spark_debris_rough 1.0
+rt_spark_debris_metal 0.0
+rt_spark_debris_tint 0.85
+rt_spark_debris_albedo 0.30
+rt_spark_debris_sat 3.0
+rt_spark_collide 1
+rt_spark_bounce 0.38
+rt_spark_friction 0.28
+rt_spark_rest 0.55
+rt_spark_trace_max 24
+rt_spark_light 1
+rt_spark_light_intensity 180
+rt_spark_light_life 0.18
+rt_spark_light_max 12
+rt_spark_glow 1
+rt_spark_glow_max 8
+rt_spark_glow_intensity 26
+// ON while the material labelling is in progress: a plain launcher run prints
+// the texture name and class of every surface a shot lands on, which is the
+// worklist for tools/_material_labels. It runs even with rt_spark off -- the
+// probe is a surface IDENTIFICATION tool in the same family as whatsthat and
+// rt_tex_probe, and gating it on an effect that ships off would have made this
+// pin print nothing, ever. NOARCH, so it cannot persist into the ini.
+// Turn it off for a quiet session; every spark-* arm states its own value.
+rt_spark_surface_debug 1
+// NOARCH, so it cannot persist in the ini -- pinned anyway for the same reason
+// rt_smoke_debug is: no arm or leftover may leave the console printing the
+// spark ladder over the game.
+rt_spark_debug 0
+// PROJECTILE IMPACT ARCS -- SHIPPING ON, unlike the sparks above.
+//
+// They are a separate master on purpose. rt_spark ships 0 pending a play
+// verdict; arcs share its particle pool but not its switch, so pinning them
+// here is what stops one being held hostage by the other. Every value below
+// equals its compiled default -- a pin that disagrees silently wins, and that
+// has cost this project two tuning passes already.
+rt_arc 1
+rt_arc_life 2.5
+rt_arc_bright 3.0
+rt_arc_max 64
+rt_arc_branches 9
+rt_arc_segments 5
+rt_arc_reach 0.35
+rt_arc_width 0.024
+rt_arc_jitter 0.55
+rt_arc_fork 0.55
+rt_arc_flicker 0.6
+rt_arc_flicker_rate 1.0
+// The re-path clock and the root drift -- what makes the branches MOVE
+// rather than merely fade. Both quantized against the mark's age.
+rt_arc_churn 24
+rt_arc_wander 0.45
+// Detached arcs that jump to a new spot on the wall at every re-path --
+// what makes the churn legible on the SURFACE rather than only along the
+// radial branches. Without them the mark reads as 'a ball plus arcs'.
+rt_arc_creep 16
+// THE SCORCH. A real decal that darkens the wall's albedo, on its own
+// much longer clock -- the arcs are the event, this is the evidence.
+rt_arc_burn 1
+rt_arc_burn_life 120
+rt_arc_burn_radius 0.40
+rt_arc_burn_strength 0.90
+rt_arc_burn_dist 25
+rt_arc_burn_max 48
+rt_arc_creep_reach 2.4
+// ARCS CAST LIGHT. One spherical light per visible branch, collected from
+// the geometry the draw actually emitted -- the branch quads are an
+// additive raster overlay and light nothing on their own.
+rt_arc_glow 1
+rt_arc_glow_max 10
+rt_arc_glow_intensity 45
+rt_arc_core 0.07
+rt_arc_far 40
+rt_arc_light 1
+rt_arc_light_intensity 220
+rt_arc_light_life 2.5
+rt_arc_probe 1.6
+rt_arc_probe_max 512
+// NOARCH, pinned for the same reason rt_spark_debug is: no arm or leftover may
+// leave the console printing every projectile impact over the game.
+rt_arc_debug 0
+// ROCKET IMPACT EMBERS -- the third thing the projectile hook feeds. Cooling
+// coals plus the same scorch decal the arcs leave, wider. THE ONLY IMPACT IN
+// THE GAME THAT GETS SMOKE; plasma and the Unmaker deliberately get none.
+rt_ember 1
+rt_ember_count 10
+rt_ember_life 14.0
+rt_ember_scatter 0.4
+rt_ember_size 0.01
+rt_ember_bright 2.0
+// Embers BREATHE rather than fading smoothly -- two sines at incommensurate
+// rates per ember, driving brightness, a little size, and the light they cast.
+rt_ember_flicker 0.55
+rt_ember_flicker_rate 1.6
+rt_ember_far 40
+rt_ember_burn_scale 2.4
+// The wisps. Modelled on the PISTOL's muzzle filament, not on a flame -- one
+// small parcel with a low growth rate, which is what makes a thread instead of
+// a ball. Needs rt_smoke as well as rt_ember_smoke.
+rt_ember_smoke 1
+rt_ember_smoke_every 0.30
+rt_ember_smoke_delay 0.65
+rt_ember_smoke_hot 0.55
+// THE INSIDE-THE-WALL FIX, both halves: born clear of its own radius (and of
+// the +/-0.6r birth jitter RT_SpawnSmokePuffs applies on all three axes), and
+// given outward velocity so it does not just climb the wall half buried.
+rt_ember_smoke_lift 2.0
+rt_ember_smoke_drift 0.35
+rt_ember_smoke_radius 0.06
+rt_ember_smoke_life 3.0
+rt_ember_smoke_density 0.55
+rt_ember_smoke_max 10
+rt_sun_leak_debug 0
+rt_sun_require_sky 1
+// Sprite shadow proxies -- SHIPPING ON. A sprite is a camera-facing quad with
+// no thickness, so a light in its plane casts no shadow at all and the shadow's
+// shape follows the camera; these are invisible crossed quads that occlude
+// shadow rays and nothing else. Pinned as well as compiled on, because a pin
+// overrides the compiled default and the two must agree.
+// Scope 1 = live monsters only: the vertical-cross assumption fits a standing
+// body and nothing else, so corpses, gibs and dropped weapons keep the stock
+// billboard shadow. See docs/moon-and-sky-leaks.md 5.3.
+rt_sprite_shadow 1
+rt_sprite_shadow_scope 1
+rt_sprite_shadow_planes 4
+rt_sprite_shadow_width 1
+rt_sprite_shadow_hidecaster 1
+rt_sprite_shadow_dist 40
+// Contact occlusion under sprites -- the soft blob on the floor that keeps
+// enemies, corpses, barrels and dropped weapons sitting ON the ground. Not a
+// second shadow: it answers "is something touching this floor", which is the one
+// question a cast shadow cannot answer when the light lies in the board's plane
+// and the shadow collapses to a line. Scope 0 = every thing with a floor under
+// it. See docs/moon-and-sky-leaks.md 5.3.1.
+rt_sprite_ao 1
+rt_sprite_ao_strength 0.7
+rt_sprite_ao_radius 1.6
+// A standing body gets a FAINTER blob than a thing lying on the floor: a dropped
+// weapon is in contact across its whole footprint, a soldier only at his feet.
+// This is the knob for "monsters read too heavy", not rt_sprite_ao_strength,
+// which would take the props down with them.
+rt_sprite_ao_upright 0.7
+// The bigger the sprite, the LESS blob it gets. Both sizing paths above are
+// linear in the object, so a soldier got a footprint as much bigger than a
+// shotgun as his body is -- and contact occlusion is not a scale model of the
+// object, it is the gap where it meets the floor, which does not grow with it.
+// 0 = strictly proportional, 1 = every blob the same size. 0.2 since 2026-08-14
+// (was 0.6): with shape 2 the footprint is fitted to the sprite art anyway, so a
+// heavy correction on top of that flattened big and small things together.
+rt_sprite_ao_sizefall 0.2
+// Shape 2 = an ellipse fitted to the SPRITE QUAD for everything, standing or
+// lying down (was 1, circle-when-upright, until 2026-08-14). A shotgun on the
+// floor gets a smudge along the barrel rather than a disc, and that ellipse
+// turns with the billboard because the art it is measured from does.
+rt_sprite_ao_shape 2
+rt_sprite_ao_fit 1
+rt_sprite_ao_aspect 0.4
+rt_sprite_ao_fade 56
+rt_sprite_ao_scope 0
+// No blob under a LIVING see-through monster (64Spectre / 64NightmareImp): the
+// blob claims a solid body is blocking the light, and you can see the room
+// through these two. Their corpses are solid sprites and keep it.
+rt_sprite_ao_ghosts 0
+rt_sprite_ao_segments 32
+rt_sprite_ao_dist 30
+rt_classic 0
+rt_flsh 0
+rt_flsh_intensity 156
+rt_flsh_angle 46
+rt_flsh_pitch 20
+rt_flsh_u -0.58
+rt_flsh_r -0.3
+rt_flsh_f 0
+rt_flsh_radius 0.02
+rt_flsh_battery 1
+rt_flsh_on_secs 30
+rt_flsh_die_secs 4
+rt_flsh_off_secs 5
+rt_flsh_idle_recharge 0.25
+rt_flsh_color ffbe82
+rt_gunglow 1
+rt_gunglow_intensity 90
+rt_gunglow_color 3355FF
+rt_gunglow_radius 0.07
+rt_gunglow_f 0
+rt_gunglow_u 0
+rt_gunglow_pullback 0.5
+rt_gunglow_bob 0.012
+rt_gunglow_flicker 0.22
+rt_gunglow_fire_boost 2.2
+rt_wpn_solid_bright 1
+rt_wpn_debug 0
+rt_mzlflsh_perweapon 1
+rt_mzlflsh_color_plasma 3355FF
+rt_mzlflsh_color_bfg A0FFA0
+rt_mzlflsh_color_unmaker FF1111
+rt_mzlflsh_color_chaingun 9677FF
+rt_mzlflsh_luma_compensate 1
+rt_tnmp_ev100_min 2
+rt_tnmp_ev100_max 7.7
+rt_lightlevel_min 80
+rt_lightlevel_max 230
+rt_lightlevel_exp 2
+rt_illum_sens_direct 1
+rt_illum_sens_indirect 0.75
+rt_illum_sens_spec 1
+// rt_shadowrays 4 -- UNPINNED. It is exposed in the Quality menu and is an
+// archived cvar, so a pin here silently overwrote the player's choice on the
+// next launch. 4 is also the compiled-in default (rt_cvars.inc), so removing
+// the pin changes nothing for a fresh config.
+rt_emis_mapboost 200
+rt_emis_additive_dflt 0.15
+rt_emis_maxscrcolor 3
+rt_sector_tint_lights 0.85
+rt_sector_tint_albedo 1.0
+rt_sector_tint_presets 1
+rt_sector_emis 0.35
+rt_sector_emis_minlight 160
+rt_sector_emis_margin 40
+rt_sector_emis_debug 0
+rt_sector_lights 0
+rt_sector_flicker 0
+rt_dynlight 1
+rt_dynlight_flicker 1
+// The SMON monitors, settled in play over three passes. All 199 of them light at once,
+// so anything that reads as busy on one panel reads as a strobing wall on twenty.
+//
+//   first pass   scale 40  floor 0.15  ->  100..347   swing 3.47x   "flickering like crazy"
+//   second       scale 16  floor 0.55  ->  147..267   swing 1.82x   still too much
+//   SHIPPED      scale 10  floor 0.8   ->  133..167   swing 1.25x
+//
+// The two knobs are COUPLED through rt_dynlight_max. At scale 40 a 24/20 monitor's raw
+// crest is 960, so the 500 cap clips it, and any floor above ~0.52 clips too -- which
+// flattens the swing to 1.00x, i.e. raising the floor at that scale turns the flicker OFF
+// rather than calming it. The scale has to sit under the cap for the floor to be linear.
+// At 10 nothing clips at all, which is why every monitor family now swings a uniform
+// 1.25x instead of each arg3/arg4 pair behaving differently.
+//
+// Collateral: this scale is global to FDynamicLight, so steady 9800/9801 lights up to
+// radius ~50 are dimmed with it (r24 267->167, r32 195->125). Radius >= 50 is cap-limited
+// at both scales and does not move -- MAP04's r=88 hall stays at 26.
+// Arms: tools/ab-smon.cmd (2026-08-12)
+rt_dynlight_blink_floor 0.8
+// The TV-static class, and the ONLY 9804s in the game -- the SMONBA readout
+// panels added by PANEL_LAMPS. Split from blink_floor because that one is global
+// to all 199 SMON panels, so the 0.8 that settled the wall also forbade any one
+// family from swinging harder. 0.3 = 3.3x swing on a 20/16 fixture (60..200)
+// against the 9802 wall's 1.25x. Retribution ships no 9804 of its own, so this
+// cannot move an existing fixture.
+rt_dynlight_rndflicker_floor 0.3
+rt_dynlight_flicker_scale 0.25
+rt_dynlight_intensity 40
+rt_dynlight_max 500
+rt_dynlight_rsoft 20
+rt_dynlight_stack_atten 1
+rt_dynlight_minradius 16
+rt_dynlight_debug 0
+rt_dynlight_debug_marks 0
+rt_wall_tex_debug 0
+rt_dynlight_radius 0.08
+rt_ceiling_lamps 0
+rt_ceiling_lamp_intensity 0
+rt_ceiling_lamp_radius 0.10
+rt_ceiling_lamp_off 0.12
+rt_ceiling_lamp_fade 40
+rt_ceiling_lamp_maxspan 128
+rt_hang_lamps 1
+rt_hang_lamp_intensity 220
+rt_hang_lamp_radius 0.09
+rt_hang_lamp_zofs 4
+rt_pole_lamp_intensity 300
+rt_pole_lamp_zfrac 0.88
+rt_wall_strips 1
+rt_wall_strip_intensity 180
+rt_wall_strip_minlight 120
+rt_wall_strip_seglen 64
+rt_wall_strip_radius 0.35
+rt_wall_strip_max 128
+rt_wall_strip_debug 0
+rt_wall_strip_debug_marks 0
+rt_ceiling_edge_lamps 1
+rt_ceiling_edge_intensity 180
+rt_ceiling_edge_seglen 64
+rt_ceiling_edge_radius 0.35
+rt_ceiling_edge_zofs 10
+rt_ceiling_edge_inset 10
+rt_ceiling_edge_max 1024
+rt_ceiling_edge_maxdist 3072
+rt_ceiling_edge_lattice 1
+rt_ceiling_bulb_spacing 16
+rt_ceiling_bulb_gain 7
+rt_ceiling_bulb_color FFF2E6
+rt_ceiling_bulb_noemis 1
+rt_ceiling_bulb_emis 20
+rt_ceiling_bulb_aq_scale 0.25
+rt_ceiling_edge_debug 0
+rt_ceiling_edge_debug_marks 0
+rt_faux_lamps 1
+rt_faux_lamp_color 3C5078
+rt_faux_lamp_intensity 500
+rt_faux_lamp_max 256
+rt_faux_lamp_stride 2
+rt_spin_panels 1
+rt_spin_panel_color DC0602
+rt_spin_panel_intensity 200
+rt_spin_panel_radius 0.06
+rt_spin_panel_orbit 26.6
+rt_spin_panel_zofs 16
+rt_spin_panel_yaw 0
+rt_spin_panel_cw 1
+rt_spin_panel_max 64
+rt_spin_panel_debug 0
+rt_solo_lamps 1
+rt_solo_lamp_color FFFFFF
+// 100 since 2026-08-14, and this pin must track the compiled default in
+// rt_cvars.inc or the pin silently wins and the default is decoration. A solo
+// bulb is the ONLY light on its pane -- SFLATAS is a broken-bulb pane carried by
+// its one surviving bulb -- so it is not budgeted like a member of a lattice.
+// 200 was tried the same day and read too hot.
+rt_solo_lamp_intensity 100
+rt_solo_lamp_radius 0.06
+// VERY SMALL solo bulbs (SFLATDE) have their own pair since 2026-08-14, so that
+// tuning the ceiling PANE -- SFLATAS, which joined the solo class with the
+// single-bulb art change -- cannot drag the little recessed bulb along with it.
+// Both default to what the shared cvars held, so pinning them here changes
+// nothing until one is deliberately moved.
+rt_solo_small_intensity 45
+rt_solo_small_radius 0.06
+rt_solo_lamp_zofs 8
+rt_solo_lamp_max 384
+rt_solo_lamp_stride 1
+rt_flame_light_on 1
+rt_flame_light_scale 1.0
+rt_flame_light_radius 0.09
+rt_flame_light_flicker 0.15
+rt_flame_light_speed 0.25
+rt_flame_light_wobble 2.0
+rt_flame_light_maxdist 3072
+rt_flame_light_max 64
+rt_flame_light_debug 0
+rt_switch_lights 1
+rt_switch_light_intensity 60
+rt_switch_light_radius 0.06
+rt_switch_light_ofs 2
+rt_switch_light_zofs 0
+rt_switch_light_maxdist 2048
+rt_switch_light_max 48
+rt_light_mark_intensity 25
+rt_light_mark_max 24
+rt_translucent_minalpha 0.72
+// 20% more opaque than the 0.20 / 0.35 that shipped up to 2026-08-14 (x1.2, so
+// the two keep their relative spacing). These must match the compiled defaults
+// in rt_cvars.inc -- a pin wins over a default, so changing one alone does
+// nothing.
+rt_spectre_alpha 0.24
+rt_nightmareimp_alpha 0.42
+rt_spectre_corpse_solid 1
+rt_ghost_solid 0
+// Eye-mask emission on the living see-through monsters. Also decides their
+// BLEND MODE, which is not obvious: RTGL1 turns any translucent primitive with
+// emissive>0 into an ADDITIVE one, and additive cannot occlude the background at
+// any alpha -- which is why rt_nightmareimp_alpha reads as inert. 0 restores real
+// alpha blending and takes the glowing eyes with it. See docs/spectre-issue-log.md.
+rt_ghost_emis 1
+// ...and this is what lets us keep the eyes AND have the alpha work: the body
+// goes out with no emissive (so it alpha-blends), and the eye mask is uploaded
+// again on a second quad whose alpha is zero -- which adds no body, because the
+// emission attachment is ONE,ONE and never reads alpha.
+rt_ghost_emis_split 1
+rt_illum_volume 0
+rt_ghost_lightscale 1
+rt_rr_temporal 0
+rt_rr_disocc 1
+rt_rr_disocc_ratio 3.0
+rt_rr_disocc_mindelta 0.01
+rt_rr_disocc_show 0
+rt_rr_reset_on_lightcut 1
+rt_rr_reset_on_dynlight 1
+rt_rr_reset_delta 0.5
+rt_rr_reset_min_ms 250
+rt_rr_reset_hold 0
+rt_rr_reset_now 0
+rt_rr_reset_debug 0
+// rt_restir_initial -- UNPINNED. Now archived and exposed in the Quality
+// menu, so a pin here would overwrite the player's choice every launch.
+// The tuned value 32 moved into the compiled default (rt_cvars.inc), so
+// a fresh config still gets 32 without the pin.
+rt_lava_gi 20
+rt_lava_debug 0
+rt_lava_tint_r 255
+rt_lava_tint_g 60
+rt_lava_tint_b 76
+rt_lava_emis 1
+rt_lava_flow 0
+rt_lava_flow_speed 0.03
+rt_lava_flow_scale 0.12
+rt_lava_flow_pixel 0.25
+rt_lava_pulse 0.1
+rt_lava_pulse_speed 0.35
+rt_lava_light_on 0
+rt_lava_light_intensity 1800
+rt_lava_light_spacing 96
+rt_lava_light_radius 0.3
+rt_lava_light_z 40
+rt_lava_light_max 256
+rt_lava_light_dist 2048
+rt_lava_light_r 255
+rt_lava_light_g 90
+rt_lava_light_b 20
+rt_lava_light_debug 0
+rt_gore_life 0
+rt_gore_max 1500
+rt_gore_scale_var 0.35
+rt_gore_roll 0
+rt_gore_burst 1
+rt_gore_burst_count 5
+rt_gore_burst_speed 4.0
+rt_gore_burst_lift 3.0
+rt_gore_burst_debug 0
+rt_water_style 1
+rt_water_liquids 1
+rt_water_tint_r 1
+rt_water_tint_g 1
+rt_water_tint_b 15
+rt_water_crest_r 140
+rt_water_crest_g 204
+rt_water_crest_b 255
+rt_nukage_tint_r 2
+rt_nukage_tint_g 15
+rt_nukage_tint_b 4
+rt_nukage_crest_r 153
+rt_nukage_crest_g 255
+rt_nukage_crest_b 115
+rt_sludge_tint_r 15
+rt_sludge_tint_g 9
+rt_sludge_tint_b 2
+rt_sludge_crest_r 255
+rt_sludge_crest_g 204
+rt_sludge_crest_b 115
+rt_blood_tint_r 15
+rt_blood_tint_g 2
+rt_blood_tint_b 2
+rt_blood_crest_r 255
+rt_blood_crest_g 115
+rt_blood_crest_b 102
+rt_water_caustic 1.5
+rt_water_reflmin 0.1
+rt_water_reflmax 0.75
+rt_water_rough 0.1
+rt_water_glow 0.15
+rt_water_veinref 0.1
+rt_water_wavestren 0.4
+rt_water_wavespeed 0.2
+rt_water_areascale 0.35
+rt_water_caustics 1.2
+rt_water_caustic_scale 0.8
+rt_water_caustic_speed 0.35
+rt_water_caustic_dist 512
+rt_water_caustic_rise 64
+rt_water_caustic_slant 0.6
+rt_water_caustic_wall 4.0
+rt_water_debug 0
+rt_normalmap_stren 1
+rt_heightmap_stren 1
+// Per-monster blood colour depends on this. A palette-TRANSLATED texture gets
+// its own RTGL1 material name (BLUDA0 -> BLUDA0_tr7); with it off, every
+// translation of a sprite uploads under one name and RTGL1 keeps only the FIRST
+// (PreferExistingMaterials), so whichever blood was drawn first colours all of
+// it. Launch-time only -- the name is cached per hardware texture.
+rt_tex_translations 1
+rt_tex_translations_debug 0
+
+// Hand-labelled metalness (docs/plan-metal-labelling.md). Pinned explicitly so
+// the launcher states its position rather than inheriting a compiled default:
+//   rt_metallic 0     every surface dielectric -- the no-noise escape hatch
+//   rt_refl_thresh    global roughness floor; 0 = as authored
+rt_metallic 1
+rt_refl_thresh 0.6
+rt_metallic_roughcut 0.7
+rt_metallic_roughband 0.3
+rt_metallic_max 0.9

@@ -1,0 +1,4 @@
+gameinfo
+{
+	AddEventHandlers = "D64RtFlashlightHud"
+}

@@ -1,0 +1,61 @@
+{
+  "version": 0,
+  "array": [
+    {
+      "textureName": "SARGA1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SARGB1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SARGC1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SARGD1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SARGE1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SARGF1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SARGG1",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SARGA2A8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SARGB2B8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SARGC2C8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SARGD2D8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SARGE2E8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SARGF2F8",
+      "emissiveMult": 2.0
+    },
+    {
+      "textureName": "SARGG2G8",
+      "emissiveMult": 2.0
+    }
+  ]
+}

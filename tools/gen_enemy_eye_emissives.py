@@ -1,0 +1,796 @@
+"""
+Red eye emissives for Retribution enemies (RTGL1) — eyes only, no body glow.
+
+Sources (strict):
+  1) D64RTR_BRIGHTMAPS.PK3 brightmaps/bd64/* eye masks (validated compact/head)
+  2) Clone TROO→TRO2 and SARG→SAR2 for matching frames
+  3) Lost Soul (SKUL): fire _e (separate path)
+  Auto red-pixel detect is OFF — it painted armor/blood/backs on soldiers & pinkies.
+
+Output:
+  rt/mat/<SPRITE>_e.png
+  textures.json: emissiveMult only (no cast light)
+"""
+from __future__ import annotations
+
+import io
+import json
+import re
+import struct
+import zipfile
+from collections import defaultdict
+from pathlib import Path
+
+from PIL import Image
+
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[1]
+
+ROOT = PROJ_ROOT
+WAD = ROOT / r"Doom64-Retribution\D64RTR_v15.WAD"
+BM = ROOT / r"Doom64-Retribution\D64RTR_BRIGHTMAPS.PK3"
+MAT = ROOT / r"sourcecode\gzdoom-rt\build\RelWithDebInfo\rt\mat"
+MAT_DEV = ROOT / r"sourcecode\gzdoom-rt\build\RelWithDebInfo\rt\mat_dev"
+OMAT = ROOT / r"Doom64-Retribution\Retribution-RT-Materials\rt\mat"
+GLOBAL = ROOT / r"sourcecode\gzdoom-rt\build\RelWithDebInfo\rt\data\textures.json"
+# The AUTHORED copy of the same file -- tracked in git, and the one every build
+# copies OVER the build tree. patch_global() writes both; see the note there.
+AUTHORED_GLOBAL = ROOT / "Doom64-Retribution/Retribution-RT-Materials/rt/data/textures.json"
+SCENE = ROOT / r"sourcecode\gzdoom-rt\build\RelWithDebInfo\rt\data\scenes\d64rtr_v15_map01\textures.json"
+ENEMY_GALLERY_SCENE = (
+    ROOT
+    / r"sourcecode\gzdoom-rt\build\RelWithDebInfo\rt\data\scenes"
+    / "d64renemyg_map98"
+    / "textures.json"
+)
+OVERLAY = ROOT / r"Doom64-Retribution\Retribution-RT-Materials\rt\data\textures_enemy_eyes.json"
+
+# Retribution's soft-blend monsters (DECORATE RenderStyle Translucent) need an entry for
+# EVERY living rotation, not only the ones with visible eyes.
+#
+# RTGL1 promotes a translucent primitive to the ADDITIVE pipeline when prim.emissive > 0
+# (RasterizedDataCollector::ToPipelineState), and prim.emissive comes from THIS file's
+# emissiveMult (TextureMeta::Modify) — not from whether the _e image has lit pixels. So a
+# rotation with an entry and a rotation without one go down two different pipelines: the
+# ghostly additive wash from the front, a flat solid body from the side. That asymmetry
+# was the 64Spectre bug (docs/spectre-issue-log.md) and the 64NightmareImp has it for the
+# same reason — brightmaps only ever exist for rotations 1 and 2A8.
+#
+# Only the FRONT rotations ever carry visible eyes, and they come from the brightmap /
+# donor-clone passes above. Every other living rotation gets a fully TRANSPARENT _e: its
+# job is not to glow, it is to exist alongside the textures.json entry that puts that
+# rotation on the same pipeline as the front. That is the 64Spectre treatment, and the
+# 64NightmareImp now gets exactly the same one — no eyes on its sides or back.
+#
+# Value: (living frame letters, clone pain-frame eyes from the G frame). Frames past the
+# last living letter are the death/gib sequence and are deliberately left out — see the
+# corpse handling in rt_main.cpp IsSpectre().
+SOFTBLEND_ACTORS: dict[str, tuple[str, bool]] = {
+    "SAR2": ("ABCDEFGH", True),  # 64Spectre      — front eyes cloned from SARG, I..N corpse
+    "TRO2": ("ABCDEFGHIJK", False),  # 64NightmareImp — front eyes cloned from TROO, L..X death
+}
+
+# Eyes: surface glow only. Cast light (lightIntensity) turns zombies into lanterns.
+EMIS = 2.0
+EYE_LIGHT = 0
+EYE_HEX = "ff0a00"
+# Pure hot red — avoid G/B lift that blooms pink under RT emis.
+RED = (255, 10, 0)
+
+# Per-actor eye colour. The 64NightmareImp is the one monster that isn't red-eyed: its
+# own art paints the eyes a cold blue, and its fireball (BAL3, see gen_fx_emissives.py)
+# is violet, so a blue-violet keeps the creature internally consistent. Masks are still
+# the donor-cloned geometry — only the colour differs.
+EYE_COLOR: dict[str, tuple[int, int, int]] = {
+    "TRO2": (120, 100, 255),
+}
+
+
+def eye_color_for(name: str) -> tuple[int, int, int]:
+    return EYE_COLOR.get(name[:4], RED)
+# Broken on soldiers/pinky backs — do not re-enable without paired-cluster QA.
+AUTO_EYES = False
+
+# Lost Soul: stock actor. Mat albedo retints white fire → yellow/orange; low _e + milder cast light.
+# SUPERSEDED, and kept only so the debug line below still prints. These are NOT
+# the Lost Soul's shipping values and nothing reads them for the global meta any
+# more -- pack_lostsoul_rt.py owns that (SKUL_LIGHT 450.0, SKUL_EMIS 0.35). Do
+# not "fix" the zero below expecting the Lost Souls to light up; change the
+# packer. See the note at the SKUL branch in main().
+SKUL_EMIS = 0.12
+# 0 = no attached light (bloom on sprite was blowing yellow→white). Floor glow is weaker.
+SKUL_LIGHT = 0
+SKUL_HEX = "ff9028"
+SKUL_WRITE_E = True
+SKUL_TONE_ALBEDO = True  # + d64r-lostsoul-rt.pk3 sprite replacements
+
+# Sprite prefixes that are monsters (include Retribution customs when present).
+MONSTER_PREFIXES = (
+    "SARG",  # pinky / spectre
+    "SAR2",  # retribution variant
+    "TROO",  # imp
+    "TRO2",  # retribution variant
+    "POSS",  # zombieman
+    "SPOS",  # shotgun guy
+    "CPOS",  # chaingunner
+    "SSWV",
+    "HEAD",  # cacodemon
+    "BOSS",  # baron
+    "BOS2",  # hell knight
+    "SKEL",  # stock revenant (if present)
+    "RECT",  # retribution revenant body
+    "FATT",  # mancubus
+    "BSPI",  # arachnotron
+    "SPID",  # spiderdemon
+    "CYBR",  # cyberdemon
+    "PAIN",  # pain elemental
+    "SKUL",  # lost soul
+    "VILE",  # archvile
+)
+
+# World/prop brightmaps under bd64 that are NOT eyes — skip.
+SKIP_STEM_SUBSTR = (
+    "OUTTEX",
+    "SMON",
+    "TORCH",
+    "BFALL",
+    "PLSM",
+    "PISB",
+    "BON2",
+    "CEL1",
+    "CEL2",
+    "PLAS",
+    "CFACE",
+    "SEXIT",
+    "C22",
+    "C23",
+)
+
+
+def wad_lumps() -> dict[str, bytes]:
+    d = WAD.read_bytes()
+    n, o = struct.unpack_from("<II", d, 4)
+    out: dict[str, bytes] = {}
+    for i in range(n):
+        off, sz, name = struct.unpack_from("<II8s", d, o + i * 16)
+        nm = name.split(b"\0")[0].decode("ascii", "replace")
+        if sz > 0:
+            out[nm] = d[off : off + sz]
+    return out
+
+
+def bm_to_texname(stem: str) -> str:
+    s = stem.upper()
+    if s.endswith("B") and len(s) > 5:
+        # SARGA1B / FATTA2A8B
+        s = s[:-1]
+    return s
+
+
+def open_img(data: bytes) -> Image.Image | None:
+    try:
+        return Image.open(io.BytesIO(data)).convert("RGBA")
+    except Exception:
+        return None
+
+
+def sprite_frame_info(name: str) -> tuple[str, str]:
+    """Return (frame_letter, rotation_token) from Doom sprite name, e.g. SARGA2A8 → (A, 2A8)."""
+    if len(name) < 5:
+        return "", ""
+    rest = name[4:]
+    if not rest:
+        return "", ""
+    frame = rest[0]
+    rot = rest[1:] if len(rest) > 1 else ""
+    return frame, rot
+
+
+def is_death_or_gib_frame(name: str) -> bool:
+    """Living walk/attack frames are A–G; H+ / *0 corpses must not glow."""
+    frame, rot = sprite_frame_info(name)
+    if not frame:
+        return False
+    if frame >= "H":
+        return True
+    if rot == "0" and frame >= "H":
+        return True
+    return False
+
+
+def is_rear_view(name: str) -> bool:
+    """Pure back (*5) — eyes not visible; skip (fixes pinky backside glow)."""
+    _, rot = sprite_frame_info(name)
+    return rot == "5"
+
+
+def is_valid_eye_mask(eimg: Image.Image, albedo: Image.Image | None = None) -> bool:
+    """Reject body/armor false positives: eyes are tiny and in the head band."""
+    w, h = eimg.size
+    lit_xy: list[tuple[int, int]] = []
+    for i, (_r, _g, _b, a) in enumerate(eimg.getdata()):
+        if a > 20:
+            lit_xy.append((i % w, i // w))
+    if len(lit_xy) < 2:
+        return False
+    # Hard cap — real eyes are a handful of pixels on these sprites.
+    if len(lit_xy) > 70:
+        return False
+    xs = [p[0] for p in lit_xy]
+    ys = [p[1] for p in lit_xy]
+    x0, x1 = min(xs), max(xs)
+    y0, y1 = min(ys), max(ys)
+    if (y1 - y0) > max(10, h // 5):
+        return False
+    if (x1 - x0) > max(28, w // 2):
+        return False
+
+    # Head band relative to opaque albedo bbox (not empty canvas padding).
+    head_lo, head_hi = 0.0, h * 0.55
+    if albedo is not None and albedo.size == eimg.size:
+        ap = list(albedo.convert("RGBA").getdata())
+        ays = [i // w for i, p in enumerate(ap) if p[3] > 40]
+        if ays:
+            top, bot = min(ays), max(ays)
+            body_h = max(1, bot - top)
+            head_lo = top
+            head_hi = top + body_h * 0.42
+    if y0 < head_lo - 2 or y1 > head_hi + 2:
+        return False
+    return True
+
+
+def recolor_mask(mask: Image.Image, color: tuple[int, int, int]) -> Image.Image:
+    """Re-tint an eye mask, preserving each texel's relative intensity.
+
+    Used after the donor clone: SARG and TROO masks are painted in RED by
+    mask_to_red_e, so a cloned TRO2 mask arrives red and has to be repainted in the
+    nightmare imp's own colour. Intensity is recovered as max(r,g,b)/255, which is
+    exact for a RED-painted source (its red channel *is* the intensity ramp).
+    """
+    a = mask.convert("RGBA")
+    out = []
+    for r, g, b, al in a.getdata():
+        if al <= 10:
+            out.append((0, 0, 0, 0))
+            continue
+        t = max(r, g, b) / 255.0
+        out.append((int(color[0] * t), int(color[1] * t), int(color[2] * t), al))
+    img = Image.new("RGBA", a.size)
+    img.putdata(out)
+    return img
+
+
+def mask_to_red_e(mask: Image.Image, albedo: Image.Image | None) -> Image.Image:
+    """Brightmap → red _e. Geometry from mask only (no dilate, no body paint)."""
+    m = mask.convert("RGBA")
+    if albedo is not None and albedo.size != m.size:
+        m = m.resize(albedo.size, Image.Resampling.NEAREST)
+        size = albedo.size
+    else:
+        size = m.size
+    ap = list(albedo.convert("RGBA").getdata()) if albedo is not None else None
+    pixels = []
+    for i, (r, g, b, a) in enumerate(m.getdata()):
+        lum = max(r, g, b)
+        if a < 24 or lum < 40:
+            pixels.append((0, 0, 0, 0))
+            continue
+        # Drop mask bleed over fully transparent canvas
+        if ap is not None and ap[i][3] < 20:
+            pixels.append((0, 0, 0, 0))
+            continue
+        t = min(1.0, lum / 220.0)
+        pixels.append((int(RED[0] * t), int(RED[1] * t), int(RED[2] * t), 255))
+    out = Image.new("RGBA", size)
+    out.putdata(pixels)
+    return out
+
+
+def rescale_mask(mask: Image.Image, size: tuple[int, int]) -> Image.Image:
+    """Resize an eye mask WITHOUT losing it.
+
+    An eye is 4–18 pixels on these sprites, and Image.resize with NEAREST samples the
+    destination grid — shrinking 72x84 to 56x93 simply misses every one of them and
+    hands back an empty mask. That is how the spectre's H2H8 pain mask silently went
+    blank. Stamping each lit source pixel into the destination instead cannot drop any.
+    """
+    sw, sh = mask.size
+    dw, dh = size
+    if (sw, sh) == (dw, dh):
+        return mask.convert("RGBA")
+    out = Image.new("RGBA", size, (0, 0, 0, 0))
+    src = mask.convert("RGBA").load()
+    dst = out.load()
+    for y in range(sh):
+        for x in range(sw):
+            p = src[x, y]
+            if p[3] <= 10:
+                continue
+            dx = min(dw - 1, int(x * dw / sw))
+            dy = min(dh - 1, int(y * dh / sh))
+            dst[dx, dy] = p
+    return out
+
+
+def blank_e(size: tuple[int, int]) -> Image.Image:
+    """Fully transparent _e. Its job is not to glow — it is to exist alongside the
+    textures.json entry that puts this rotation on the same pipeline as the front."""
+    return Image.new("RGBA", size, (0, 0, 0, 0))
+
+
+def softblend_rotations(lumps: dict[str, bytes], prefix: str, frames: str) -> list[str]:
+    """Every living sprite lump of one actor, e.g. TRO2A1 … TRO2K5."""
+    out = []
+    for name in lumps:
+        if not name.startswith(prefix) or len(name) < 5:
+            continue
+        frame, rot = sprite_frame_info(name)
+        if frame not in frames or not rot:
+            continue
+        out.append(name)
+    return sorted(out)
+
+
+def meta_for(name: str) -> dict:
+    # Do NOT set noShadow here — that flag applies to the whole sprite texture
+    # and stops enemies casting shadows under emissive/world lights.
+    if name.startswith("SKUL"):
+        meta = {
+            "textureName": name,
+            "emissiveMult": SKUL_EMIS,
+        }
+        if SKUL_LIGHT > 0:
+            meta["lightIntensity"] = SKUL_LIGHT
+            meta["lightColorHEX"] = SKUL_HEX
+            meta["lightEvenOnDynamic"] = True
+        return meta
+    meta = {
+        "textureName": name,
+        "emissiveMult": EMIS,
+    }
+    if EYE_LIGHT > 0:
+        meta["lightIntensity"] = EYE_LIGHT
+        meta["lightColorHEX"] = EYE_HEX
+        meta["lightEvenOnDynamic"] = True
+    return meta
+
+
+def tone_skul_albedo(albedo: Image.Image) -> Image.Image:
+    """Mat-only: recolor pale/white fire cores to yellow→orange; leave skull bone alone."""
+    a = albedo.convert("RGBA")
+    out_px = []
+    # Dimmer saturated fire — BRIGHT + bloom will still lift it; start well below white
+    YELLOW = (210, 130, 28)
+    ORANGE = (200, 85, 22)
+    RED = (175, 38, 14)
+    for r, g, b, al in a.getdata():
+        if al < 8:
+            out_px.append((0, 0, 0, 0))
+            continue
+        lum = 0.45 * r + 0.4 * g + 0.15 * b
+        # Fire / hot glow (not dark horns / sockets)
+        is_fire = lum > 120 and r > 90 and r + 15 >= g
+        pale = r > 200 and g > 180 and b > 140  # the white-hot cores
+        if is_fire or pale:
+            t = min(1.0, max(0.0, (lum - 100) / 140.0))
+            if t > 0.7:
+                fr, fg, fb = YELLOW
+            elif t > 0.35:
+                u = (t - 0.35) / 0.35
+                fr = int(ORANGE[0] * (1 - u) + YELLOW[0] * u)
+                fg = int(ORANGE[1] * (1 - u) + YELLOW[1] * u)
+                fb = int(ORANGE[2] * (1 - u) + YELLOW[2] * u)
+            else:
+                u = t / 0.35
+                fr = int(RED[0] * (1 - u) + ORANGE[0] * u)
+                fg = int(RED[1] * (1 - u) + ORANGE[1] * u)
+                fb = int(RED[2] * (1 - u) + ORANGE[2] * u)
+            # Cap so BRIGHT can't present a white triple
+            fb = min(fb, 60)
+            fg = min(fg, 195)
+            out_px.append((fr, fg, fb, al))
+        else:
+            out_px.append((r, g, b, al))
+    out = Image.new("RGBA", a.size)
+    out.putdata(out_px)
+    return out
+
+
+def save_albedo(tex: str, img: Image.Image) -> None:
+    for dest in (MAT / f"{tex}.png", MAT_DEV / f"{tex}.png", OMAT / f"{tex}.png"):
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        img.save(dest)
+
+
+def fire_body_e(albedo: Image.Image) -> Image.Image | None:
+    """Dedicated Lost Soul fire _e: yellow→orange, hard-capped (never white cores)."""
+    a = albedo.convert("RGBA")
+    w, h = a.size
+    out_px = []
+    lit = 0
+    # Explicit fire palette (RGB). Peak kept modest — strength comes from emisMult.
+    YELLOW = (255, 200, 48)
+    ORANGE = (255, 120, 28)
+    RED = (220, 48, 16)
+    for r, g, b, al in a.getdata():
+        if al < 24:
+            out_px.append((0, 0, 0, 0))
+            continue
+        warm = r > 80 and r >= g - 8 and r > b + 8
+        hot = (r + g + b) > 340 and max(r, g, b) > 120
+        if not (warm or hot):
+            out_px.append((0, 0, 0, 0))
+            continue
+        lum = (0.45 * r + 0.4 * g + 0.15 * b) / 255.0
+        # Soft mask weight from albedo brightness (skull sockets stay out)
+        wgt = min(1.0, max(0.15, (lum - 0.25) / 0.65))
+        # Map: bright core → yellow, mid → orange, tips → red
+        if lum > 0.75:
+            fr, fg, fb = YELLOW
+            wgt *= 0.85  # core slightly softer so it doesn't clip white on screen
+        elif lum > 0.45:
+            u = (lum - 0.45) / 0.30
+            fr = int(ORANGE[0] * (1 - u) + YELLOW[0] * u)
+            fg = int(ORANGE[1] * (1 - u) + YELLOW[1] * u)
+            fb = int(ORANGE[2] * (1 - u) + YELLOW[2] * u)
+        else:
+            u = lum / 0.45
+            fr = int(RED[0] * (1 - u) + ORANGE[0] * u)
+            fg = int(RED[1] * (1 - u) + ORANGE[1] * u)
+            fb = int(RED[2] * (1 - u) + ORANGE[2] * u)
+        # Hard cap — no channel at 255 together (white)
+        fr = min(230, int(fr * wgt))
+        fg = min(180, int(fg * wgt))
+        fb = min(50, int(fb * wgt))
+        out_px.append((fr, fg, fb, 255))
+        lit += 1
+    if lit < 8:
+        return None
+    out = Image.new("RGBA", (w, h))
+    out.putdata(out_px)
+    return out
+
+
+def auto_eye_e(albedo: Image.Image) -> Image.Image | None:
+    """Disabled legacy detector — kept only if AUTO_EYES is re-enabled with care."""
+    if not AUTO_EYES:
+        return None
+    return None
+
+
+def strip_monster_noshadow(text: str) -> str:
+    """Remove noShadow from monster sprite metas (was blocking enemy shadows)."""
+
+    def repl(m: re.Match[str]) -> str:
+        block = m.group(0)
+        name_m = re.search(r'"textureName"\s*:\s*"([^"]+)"', block)
+        if not name_m:
+            return block
+        name = name_m.group(1)
+        if not any(name.startswith(p) for p in MONSTER_PREFIXES):
+            return block
+        if "noShadow" not in block:
+            return block
+        block = re.sub(r',?\s*"noShadow"\s*:\s*true', "", block, flags=re.I)
+        block = re.sub(r"\{\s*,", "{ ", block)
+        block = re.sub(r",\s*,", ", ", block)
+        block = re.sub(r",\s*\}", " }", block)
+        return block
+
+    return re.sub(r'\{[^{}]*"textureName"[^{}]*\}', repl, text)
+
+
+def patch_global(entries: dict[str, dict]) -> None:
+    """Upsert into the global textures.json, by parsing it — not by line regex.
+
+    The previous version matched entries with a single-line regex, and most of this file
+    is pretty-printed across four lines. So every "update" missed and fell through to the
+    append branch instead: the file had accumulated 231 duplicated textureNames, and the
+    only reason the intended values were live at all is that RTGL1 loads the array with
+    insert_or_assign (TextureMeta.cpp:115), i.e. LAST occurrence wins. An entry someone
+    edited by hand near the top of the file was therefore dead weight, overridden from
+    the bottom, with nothing anywhere saying so.
+
+    Collapsing duplicates last-wins preserves exactly what the engine already resolved.
+    """
+    data = json.loads(strip_monster_noshadow(GLOBAL.read_text(encoding="utf-8")))
+
+    merged: dict[str, dict] = {}
+    for e in data.get("array", []):
+        name = e.get("textureName")
+        if name:
+            merged[name] = e  # last wins, matching TextureMeta.cpp
+    for name, meta in entries.items():
+        # Hard replace, not update: an emissiveMult left over from a previous run has to
+        # be able to disappear (that is how the spectre corpse got its 2x body glow).
+        merged[name] = {"textureName": name} | {
+            k: v for k, v in meta.items() if k != "textureName"
+        }
+
+    data["array"] = list(merged.values())
+    text = json.dumps(data, indent=2) + "\n"
+
+    # BOTH TREES, and this is not tidiness. GLOBAL is the gitignored BUILD copy,
+    # and build-gzdoom-rt.cmd xcopies Retribution-RT-Materials/rt over it on every
+    # build -- so a generator that writes only GLOBAL has its work erased by the
+    # next build, silently, with the file it wrote still looking correct until
+    # then. Every caller of this function was affected: the Lost Soul light and
+    # the enemy eye meta both live here.
+    #
+    # It is the same hard rule AGENTS.md states for rt/data/textures.json -- "part
+    # of that sync, and for a year it was not" -- applied at the one place that
+    # writes it, rather than left to each caller to remember.
+    for target in (GLOBAL, AUTHORED_GLOBAL):
+        if target.parent.exists():
+            target.write_text(text, encoding="utf-8")
+
+
+def upsert_json(path: Path, entries: dict[str, dict], replace: bool = False) -> None:
+    if path.exists() and not replace:
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            data = {"version": 0, "array": []}
+    else:
+        data = {"version": 0, "array": []}
+    by = {e["textureName"]: dict(e) for e in data.get("array", []) if "textureName" in e}
+    for name, meta in entries.items():
+        # Hard replace so lowering/removing lightIntensity actually sticks.
+        by[name] = dict(meta)
+        by[name]["textureName"] = name
+    data["array"] = list(by.values())
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+
+
+def save_e(tex: str, eimg: Image.Image) -> None:
+    for dest in (MAT / f"{tex}_e.png", MAT_DEV / f"{tex}_e.png", OMAT / f"{tex}_e.png"):
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        eimg.save(dest)
+
+
+def main() -> None:
+    lumps = wad_lumps()
+    entries: dict[str, dict] = {}
+    from_bm = 0
+    from_auto = 0
+    from_skul = 0
+    by_pref: dict[str, int] = defaultdict(int)
+
+    # 0) Lost Soul — mat albedo fire retint + yellow _e + cast light (stock actor)
+    for name, data in lumps.items():
+        if not name.startswith("SKUL"):
+            continue
+        img = open_img(data)
+        if img is None:
+            continue
+        if SKUL_TONE_ALBEDO:
+            toned = tone_skul_albedo(img)
+            save_albedo(name, toned)
+            src_for_e = toned
+        else:
+            for d in (MAT, MAT_DEV, OMAT):
+                ap = d / f"{name}.png"
+                if ap.exists():
+                    ap.unlink()
+            src_for_e = img
+        if SKUL_WRITE_E:
+            eimg = fire_body_e(src_for_e)
+            if eimg is not None:
+                save_e(name, eimg)
+        # THE MASK IS OURS; THE META IS NOT. pack_lostsoul_rt.py is the owner of
+        # the Lost Soul's material meta and attaches a REAL light to the fire
+        # frames -- lightIntensity 450, lightColorHEX ff9028, lightEvenOnDynamic,
+        # frames A-F. That is a shadow-caster, and it is what "the Lost Souls lit
+        # the room" means.
+        #
+        # This generator used to write its own entry here, from SKUL_EMIS 0.12 and
+        # SKUL_LIGHT 0 -- and because meta_for() guards the light behind
+        # `if SKUL_LIGHT > 0`, a zero did not dim the light, it omitted the field
+        # entirely. patch_global upserts, so running this after the packer
+        # replaced 0.35 + a 450 light with 0.12 + nothing, and the Lost Souls
+        # stopped casting. Measured 2026-08-15: 56 SKUL entries, 0 with
+        # lightIntensity, 0 with ff9028.
+        #
+        # Not writing the entry leaves the packer's values untouched, because
+        # patch_global only merges what it is given. Same one-owner rule AGENTS.md
+        # states for gen_fx_emissives' PREFIX_RULES: "Do not put SKUL* back".
+        from_skul += 1
+        by_pref["SKUL"] += 1
+
+    # 1) Brightmap eye masks in bd64/ (validated — no rear/death, compact head only)
+    rejected_bm = 0
+    with zipfile.ZipFile(BM) as z:
+        for n in z.namelist():
+            if "bd64" not in n.lower() or not n.lower().endswith(".png"):
+                continue
+            stem = Path(n).stem
+            u = stem.upper()
+            if any(s in u for s in SKIP_STEM_SUBSTR):
+                continue
+            if u.startswith("SKUL"):
+                continue
+            if not any(u.startswith(p) for p in MONSTER_PREFIXES):
+                continue
+            tex = bm_to_texname(stem)
+            if is_death_or_gib_frame(tex) or is_rear_view(tex):
+                rejected_bm += 1
+                continue
+            mask = Image.open(io.BytesIO(z.read(n)))
+            albedo = open_img(lumps[tex]) if tex in lumps else None
+            eimg = mask_to_red_e(mask, albedo)
+            if not is_valid_eye_mask(eimg, albedo):
+                rejected_bm += 1
+                continue
+            save_e(tex, eimg)
+            entries[tex] = meta_for(tex)
+            from_bm += 1
+            by_pref[tex[:4]] += 1
+
+    # 2) Auto-detect (OFF) — previously false-positived soldiers / pinky backs
+    if AUTO_EYES:
+        for name, data in lumps.items():
+            if name.startswith("SKUL"):
+                continue
+            if not any(name.startswith(p) for p in MONSTER_PREFIXES):
+                continue
+            if name in entries:
+                continue
+            if is_death_or_gib_frame(name) or is_rear_view(name):
+                continue
+            # Never auto-paint humanoids / player-like — armor & blood look "red".
+            if name.startswith(("POSS", "SPOS", "CPOS", "SSWV", "PLAY")):
+                continue
+            img = open_img(data)
+            if img is None:
+                continue
+            eimg = auto_eye_e(img)
+            if eimg is None or not is_valid_eye_mask(eimg, img):
+                continue
+            save_e(name, eimg)
+            entries[name] = meta_for(name)
+            from_auto += 1
+            by_pref[name[:4]] += 1
+
+    # 3) Clone eye masks for Retribution variants that share layouts
+    from_clone = 0
+    clone_pairs = (("TRO2", "TROO"), ("SAR2", "SARG"))
+    for dest_pref, src_pref in clone_pairs:
+        for name, data in lumps.items():
+            if not name.startswith(dest_pref) or name in entries:
+                continue
+            if is_death_or_gib_frame(name) or is_rear_view(name):
+                continue
+            donor = src_pref + name[4:]
+            donor_path = MAT / f"{donor}_e.png"
+            if not donor_path.exists():
+                continue
+            eimg = Image.open(donor_path).convert("RGBA")
+            albedo = open_img(data)
+            if albedo is not None and eimg.size != albedo.size:
+                eimg = eimg.resize(albedo.size, Image.Resampling.NEAREST)
+            if not is_valid_eye_mask(eimg, albedo):
+                continue
+            # The donor is painted RED; repaint if this actor's eyes aren't.
+            color = eye_color_for(name)
+            if color != RED:
+                eimg = recolor_mask(eimg, color)
+            save_e(name, eimg)
+            entries[name] = meta_for(name)
+            from_clone += 1
+            by_pref[dest_pref] += 1
+
+    # 4) Soft-blend monsters: cover EVERY living rotation, or the ones that were covered
+    # render through a different RTGL1 pipeline than the ones that were not (see
+    # SOFTBLEND_ACTORS). Steps 1–3 can only ever reach rotations 1 and 2A8, because that
+    # is all the brightmap lump set contains.
+    from_blank = 0
+    from_painclone = 0
+    for prefix, (frames, pain_from_g) in SOFTBLEND_ACTORS.items():
+        for name in softblend_rotations(lumps, prefix, frames):
+            if name in entries:
+                continue  # already authored by the brightmap / clone pass — keep it
+            albedo = open_img(lumps[name])
+            if albedo is None:
+                continue
+
+            eimg = None
+            if pain_from_g:
+                frame, rot = sprite_frame_info(name)
+                # A pain frame is the same head as the last living frame, just recoiling:
+                # borrow that rotation's mask rather than going dark mid-flinch. Only the
+                # rotations that HAVE a mask (front) can donate, which is what we want.
+                if frame == "H":
+                    # A mirrored rotation carries the frame letter inside its token:
+                    # SAR2H2H8's G-frame twin is SAR2G2G8, not SAR2G2H8.
+                    donor_rot = (
+                        rot[0] + "G" + rot[2] if len(rot) == 3 and rot[1] == frame else rot
+                    )
+                    donor_path = MAT / f"{prefix}G{donor_rot}_e.png"
+                    if donor_path.exists():
+                        donor = Image.open(donor_path).convert("RGBA")
+                        if any(p[3] > 10 for p in donor.getdata()):
+                            eimg = rescale_mask(donor, albedo.size)
+                            from_painclone += 1
+
+            if eimg is None:
+                eimg = blank_e(albedo.size)
+                from_blank += 1
+
+            save_e(name, eimg)
+            entries[name] = meta_for(name)
+            by_pref[prefix] += 1
+
+        # 4b) …and explicitly CLEAR emissiveMult on that actor's corpse frames.
+        #
+        # This is what made a dead 64Spectre glow. SAR2I0..N0 carried emissiveMult 2 with
+        # no _e mask, and RsWorld.inl's raster path falls back to the BASE texture when
+        # there is no emissive texture:
+        #
+        #     if( emissiveTextureIndex != MATERIAL_NO_TEXTURE ) ldrEmis = base * emisTex;
+        #     else                                              ldrEmis = ldrColor;
+        #     ldrEmis *= emissiveMult;
+        #
+        # so "eyes glow at 2x" silently became "the whole corpse emits at 2x its albedo"
+        # into outScreenEmission. Writing the entry with no emissiveMult key removes it —
+        # patch_global rewrites the whole line, so the stale value cannot survive.
+        corpse = 0
+        for name in lumps:
+            if not name.startswith(prefix) or len(name) < 5 or name in entries:
+                continue
+            frame, _ = sprite_frame_info(name)
+            if not frame or frame in frames:
+                continue
+            entries[name] = {"textureName": name}
+            corpse += 1
+        if corpse:
+            print(f"  {prefix}: cleared emissiveMult on {corpse} corpse/gib frame(s)")
+
+    # Drop stale _e for monster frames we are no longer authoring (keeps SKUL).
+    authored = set(entries)
+    for d in (MAT, MAT_DEV, OMAT):
+        if not d.exists():
+            continue
+        for p in d.glob("*_e.png"):
+            tex = p.name[: -len("_e.png")]
+            if not any(tex.startswith(pref) for pref in MONSTER_PREFIXES):
+                continue
+            if tex.startswith("SKUL"):
+                continue
+            if tex not in authored:
+                p.unlink(missing_ok=True)
+
+    print(
+        f"eye maps: bm={from_bm} auto={from_auto} clone={from_clone} "
+        f"painclone={from_painclone} blank={from_blank} "
+        f"skul_fire={from_skul} rejected_bm={rejected_bm} total={len(entries)} "
+        f"eyeLight={EYE_LIGHT} skulLight={SKUL_LIGHT} AUTO_EYES={AUTO_EYES}"
+    )
+    for k in sorted(by_pref, key=lambda x: -by_pref[x]):
+        print(f"  {k}: {by_pref[k]}")
+
+    patch_global(entries)
+    if SCENE.exists():
+        upsert_json(SCENE, entries, replace=False)
+    ENEMY_GALLERY_SCENE.parent.mkdir(parents=True, exist_ok=True)
+    upsert_json(ENEMY_GALLERY_SCENE, entries, replace=True)
+    overlay_scene = (
+        ROOT
+        / r"Doom64-Retribution\Retribution-RT-Materials\rt\data\scenes"
+        / "d64renemyg_map98"
+        / "textures.json"
+    )
+    upsert_json(overlay_scene, entries, replace=True)
+    upsert_json(OVERLAY, entries, replace=True)
+
+    pinky = ROOT / r"Doom64-Retribution\Retribution-RT-Materials\rt\data\textures_pinky_eyes.json"
+    if pinky.exists():
+        upsert_json(pinky, {k: v for k, v in entries.items() if k.startswith("SARG")}, replace=True)
+
+    print("done ->", OVERLAY)
+    print("scene ->", ENEMY_GALLERY_SCENE)
+
+
+if __name__ == "__main__":
+    main()
