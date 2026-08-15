@@ -210,12 +210,23 @@ rem The tone overlay is listed LAST so it wins the load order. The pins run
 rem before +map, and %EXTRA% runs last so a one-off cvar still beats a pin --
 rem the same ordering contract as launch-retribution-rt.cmd.
 rem
+rem -nostartup IS LOAD-BEARING, not tidiness. Unseen Evil's GAMEINFO sets
+rem STARTUPTYPE = "Hexen", so GetGameStartScreen() builds a Hexen start screen.
+rem d_main.cpp then takes its OTHER branch -- V_Init2() EARLY, under the start
+rem screen, followed by StartScreen->Render() -- and that Render draws through a
+rem just-created RTGL1 renderer and dies with an access violation. The dialog it
+rem raises is "GZDoom Very Fatal Error", which MASKS whatever the real error was,
+rem so this also hid a ZScript failure underneath it for the whole investigation.
+rem -nostartup makes GetGameStartScreen return nullptr, which is the LATE path --
+rem the one Retribution has always used, because it is GAME_Doom and never
+rem matched the Hexen/Heretic/Strife branches in the first place.
+rem
 rem Keep this command line SHORT. The Retribution launcher once spelled every
 rem pin out here, hit cmd.exe's 8191-character limit, and silently dropped the
 rem trailing passthrough while still printing the values it believed it had set.
 rem That is why the pins live in a cfg and arrive via +exec.
 start "" gzdoom.exe ^
-  -iwad "%IWAD%" -file "%MOD%" %PATCHES% "%TONE%" -rtnolauncher -width 1280 -height 720 ^
+  -iwad "%IWAD%" -file "%MOD%" %PATCHES% "%TONE%" -rtnolauncher -nostartup -width 1280 -height 720 ^
   +logfile "%LOGF%" ^
   +exec "%PINS%" ^
   %MAPARG% %MAPLUMP% %EXTRA%
