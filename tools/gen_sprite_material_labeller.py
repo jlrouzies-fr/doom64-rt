@@ -420,7 +420,7 @@ kbd {{ background:var(--panel); border:1px solid var(--edge2); border-radius:3px
     <div class="swatches" id="sw"></div>
     <h2>Call it</h2>
     <div class="classes" id="cls"></div>
-    <h2>Roughness</h2>
+    <h2 id="rghH">Roughness</h2>
     <div class="roughs" id="rgh"></div>
     <h2>View</h2>
     <div class="tools">
@@ -438,8 +438,11 @@ kbd {{ background:var(--panel); border:1px solid var(--edge2); border-radius:3px
       Click a swatch, then press a class key. The call covers every frame and
       rotation of this code at once — mirrored rotations included, since the
       engine flips the material with the art.<br><br>
+      A roughness stays <b>held</b> once picked and every later call takes it —
+      click the held bucket again to release it and let each class use its own
+      default.<br><br>
       <kbd>←</kbd><kbd>→</kbd> frame · <kbd>Tab</kbd> next unlabelled cluster ·
-      <kbd>1</kbd>–<kbd>6</kbd> roughness · <kbd>X</kbd> park · <kbd>U</kbd> undo
+      <kbd>1</kbd>–<kbd>6</kbd> hold roughness · <kbd>X</kbd> park · <kbd>U</kbd> undo
     </p>
   </aside>
 </main>
@@ -462,6 +465,24 @@ try {{
   const raw = localStorage.getItem(KEY);
   if (raw !== null) labels = JSON.parse(raw) || {{}};
 }} catch (e) {{ labels = {{}}; }}
+
+// A HELD roughness, not a per-cluster keystroke. Doom 64's art comes in runs of
+// one material -- a whole gun is rough metal, a whole imp is matte flesh -- so
+// the roughness you want is the same for cluster after cluster, and re-picking
+// it every time is the slowest part of the job. Pick it once; every class call
+// after it takes it. Clicking the held bucket again releases the hold and
+// classes go back to their own defaults.
+let sticky = null;
+try {{
+  const r = localStorage.getItem(KEY + ":rough");   // NOT +getItem: missing is 0
+  if (r !== null) sticky = JSON.parse(r);
+}} catch (e) {{ sticky = null; }}
+function saveRough() {{
+  try {{
+    if (sticky === null) localStorage.removeItem(KEY + ":rough");
+    else localStorage.setItem(KEY + ":rough", JSON.stringify(sticky));
+  }} catch (e) {{}}
+}}
 
 let ci = 0, fi = 0, sel = 0, zoom = 4, overlay = true;
 const undo = [];
@@ -580,14 +601,21 @@ function paintUI() {{
     $("cls").appendChild(b);
   }});
 
+  $("rghH").textContent = sticky === null
+    ? "Roughness" : "Roughness — held at " + sticky.toFixed(2);
   $("rgh").innerHTML = "";
+  const cur = L.rgh[sel] !== undefined && L.rgh[sel] !== null
+    ? L.rgh[sel] : (L.cls[sel] ? byName[L.cls[sel]].r : null);
   ROUGH.forEach((v, i) => {{
     const b = document.createElement("button");
-    b.textContent = (i + 1) + " · " + v.toFixed(2);
-    const cur = L.rgh[sel] !== undefined && L.rgh[sel] !== null
-      ? L.rgh[sel] : (L.cls[sel] ? byName[L.cls[sel]].r : null);
+    const held = sticky === v;
+    b.textContent = (held ? "▪ " : "") + (i + 1) + " · " + v.toFixed(2);
+    // Pressed shows what the SELECTED cluster is at; the held one is marked
+    // separately, so "what is this cluster" and "what will the next call take"
+    // are never the same signal telling you two different things.
     b.setAttribute("aria-pressed", cur === v ? "true" : "false");
-    b.onclick = () => {{ L.rgh[sel] = v; save(); paintUI(); }};
+    if (held) b.style.borderColor = "var(--accent)";
+    b.onclick = () => setRough(v);
     $("rgh").appendChild(b);
   }});
 
@@ -603,11 +631,29 @@ function labelled(code) {{
   return L.cls.filter(Boolean).length;
 }}
 
+function setRough(v) {{
+  const L = lab();
+  if (sticky === v) {{
+    // RELEASING APPLIES NOTHING. Un-picking is not a way of picking: stamping
+    // the value onto the selected cluster on the way out means the click that
+    // was meant to stop using 0.95 quietly writes one more 0.95.
+    sticky = null;
+  }} else {{
+    sticky = v;
+    L.rgh[sel] = v;
+  }}
+  saveRough(); save(); paintUI();
+}}
+
 function call(name) {{
   const L = lab();
   undo.push({{ code: rec().code, i: sel, was: L.cls[sel], wasR: L.rgh[sel] }});
   L.cls[sel] = name;
-  if (L.rgh[sel] === undefined || L.rgh[sel] === null) L.rgh[sel] = byName[name].r;
+  if (sticky !== null) {{
+    L.rgh[sel] = sticky;
+  }} else if (L.rgh[sel] === undefined || L.rgh[sel] === null) {{
+    L.rgh[sel] = byName[name].r;
+  }}
   save();
   nextUnlabelled();
   drawOverlay();
@@ -627,7 +673,7 @@ document.addEventListener("keydown", e => {{
   const k = e.key.toUpperCase();
   if (byKey[k]) {{ e.preventDefault(); call(byKey[k].name); return; }}
   if (k >= "1" && k <= String(ROUGH.length)) {{
-    lab().rgh[sel] = ROUGH[+k - 1]; save(); paintUI(); return;
+    e.preventDefault(); setRough(ROUGH[+k - 1]); return;
   }}
   if (k === "X") {{ call("other"); return; }}
   if (k === "U") {{
