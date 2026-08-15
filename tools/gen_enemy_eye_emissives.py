@@ -33,6 +33,9 @@ MAT = ROOT / r"sourcecode\gzdoom-rt\build\RelWithDebInfo\rt\mat"
 MAT_DEV = ROOT / r"sourcecode\gzdoom-rt\build\RelWithDebInfo\rt\mat_dev"
 OMAT = ROOT / r"Doom64-Retribution\Retribution-RT-Materials\rt\mat"
 GLOBAL = ROOT / r"sourcecode\gzdoom-rt\build\RelWithDebInfo\rt\data\textures.json"
+# The AUTHORED copy of the same file -- tracked in git, and the one every build
+# copies OVER the build tree. patch_global() writes both; see the note there.
+AUTHORED_GLOBAL = ROOT / "Doom64-Retribution/Retribution-RT-Materials/rt/data/textures.json"
 SCENE = ROOT / r"sourcecode\gzdoom-rt\build\RelWithDebInfo\rt\data\scenes\d64rtr_v15_map01\textures.json"
 ENEMY_GALLERY_SCENE = (
     ROOT
@@ -89,6 +92,11 @@ def eye_color_for(name: str) -> tuple[int, int, int]:
 AUTO_EYES = False
 
 # Lost Soul: stock actor. Mat albedo retints white fire → yellow/orange; low _e + milder cast light.
+# SUPERSEDED, and kept only so the debug line below still prints. These are NOT
+# the Lost Soul's shipping values and nothing reads them for the global meta any
+# more -- pack_lostsoul_rt.py owns that (SKUL_LIGHT 450.0, SKUL_EMIS 0.35). Do
+# not "fix" the zero below expecting the Lost Souls to light up; change the
+# packer. See the note at the SKUL branch in main().
 SKUL_EMIS = 0.12
 # 0 = no attached light (bloom on sprite was blowing yellow→white). Floor glow is weaker.
 SKUL_LIGHT = 0
@@ -501,7 +509,21 @@ def patch_global(entries: dict[str, dict]) -> None:
         }
 
     data["array"] = list(merged.values())
-    GLOBAL.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    text = json.dumps(data, indent=2) + "\n"
+
+    # BOTH TREES, and this is not tidiness. GLOBAL is the gitignored BUILD copy,
+    # and build-gzdoom-rt.cmd xcopies Retribution-RT-Materials/rt over it on every
+    # build -- so a generator that writes only GLOBAL has its work erased by the
+    # next build, silently, with the file it wrote still looking correct until
+    # then. Every caller of this function was affected: the Lost Soul light and
+    # the enemy eye meta both live here.
+    #
+    # It is the same hard rule AGENTS.md states for rt/data/textures.json -- "part
+    # of that sync, and for a year it was not" -- applied at the one place that
+    # writes it, rather than left to each caller to remember.
+    for target in (GLOBAL, AUTHORED_GLOBAL):
+        if target.parent.exists():
+            target.write_text(text, encoding="utf-8")
 
 
 def upsert_json(path: Path, entries: dict[str, dict], replace: bool = False) -> None:
@@ -557,7 +579,23 @@ def main() -> None:
             eimg = fire_body_e(src_for_e)
             if eimg is not None:
                 save_e(name, eimg)
-        entries[name] = meta_for(name)
+        # THE MASK IS OURS; THE META IS NOT. pack_lostsoul_rt.py is the owner of
+        # the Lost Soul's material meta and attaches a REAL light to the fire
+        # frames -- lightIntensity 450, lightColorHEX ff9028, lightEvenOnDynamic,
+        # frames A-F. That is a shadow-caster, and it is what "the Lost Souls lit
+        # the room" means.
+        #
+        # This generator used to write its own entry here, from SKUL_EMIS 0.12 and
+        # SKUL_LIGHT 0 -- and because meta_for() guards the light behind
+        # `if SKUL_LIGHT > 0`, a zero did not dim the light, it omitted the field
+        # entirely. patch_global upserts, so running this after the packer
+        # replaced 0.35 + a 450 light with 0.12 + nothing, and the Lost Souls
+        # stopped casting. Measured 2026-08-15: 56 SKUL entries, 0 with
+        # lightIntensity, 0 with ff9028.
+        #
+        # Not writing the entry leaves the packer's values untouched, because
+        # patch_global only merges what it is given. Same one-owner rule AGENTS.md
+        # states for gen_fx_emissives' PREFIX_RULES: "Do not put SKUL* back".
         from_skul += 1
         by_pref["SKUL"] += 1
 

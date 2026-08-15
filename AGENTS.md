@@ -543,12 +543,31 @@ Important cvars on Retribution launch (do not crank blindly):
 
 Clear all enemy `_e` + strip meta: `python tools/clear_enemy_eye_emissives.py` then regen.
 
+**That script had three defects, all fixed 2026-08-15 — read before trusting it.**
+(1) It **could not run at all**: `ROOT = PROJ_ROOT` executed before `PROJ_ROOT` was
+defined, so it died on `NameError`. `ast.parse` passes on that, which is why nothing
+caught it. (2) It swept **every** `*_e.png` with a `MONSTER_PREFIXES` name, despite being
+named for eyes — that deleted all 79 `BOSS*`/`BOS2*_e.png`, which are the Baron's and
+Hell Knight's **hand fire** (~2 % coverage across the upper body), while leaving their
+`"emissiveMult": 4.0` behind. RTGL falls back to `emission = albedo * emissiveMult` when a
+material has no `_e`, so both monsters rendered at **4× their own albedo**
+(`screen/baronHellBright.png`). There is now a `NON_EYE_PREFIXES` keep-list
+(`BOSS`/`BOS2`/`SKUL`). (3) It stripped meta from the **build tree only**, and it blanked
+the eye overlay instead of filtering it.
+
+**A generator that writes only the build copy of `rt/data/textures.json` is undone by the
+next build**, because `build-gzdoom-rt.cmd` xcopies `Retribution-RT-Materials/rt` over it —
+silently, with the file it wrote still looking correct until then. `patch_global()` now
+writes **both** trees; that is the same hard rule as the `textures.json` sync note above,
+enforced at the one place that writes it.
+
 ### Lost Soul — `tools/pack_lostsoul_rt.py` → `d64r-lostsoul-rt.pk3`
 
 - **Do not replace** the `64LostSoul` actor (stock BRIGHT/SoulTrans stays).
 - Pk3 = yellow/orange **SKUL sprite replacements** only. No ZSCRIPT, no MAPINFO, no extra actor.
 - **Sprite replacements MUST carry the original `grAb` offset** (`png_set_grab()`). PIL drops ancillary PNG chunks, so a plain `Image.save()` loses it; GZDoom then falls back to a zero offset and the sprite hangs *below* the actor origin. This is what buried every Lost Soul in the floor (fixed 2026-08-08) — it was the yellow-tinting pass, not the light work. The packer warns loudly if any lump has no `grAb`. Same trap applies to **any** pk3 `sprites/` replacement.
-- **The light rides on the SKUL fire frames themselves** — `SKUL_LIGHT` (900) + `SKUL_EMIS` (0.35), frames **A–F only** (`G0`+ is death/gib; a corpse must not light the room). **No `noShadow`.**
+- **The light rides on the SKUL fire frames themselves** — `SKUL_LIGHT` (**450**) + `SKUL_EMIS` (0.35) + `lightColorHEX ff9028` + `lightEvenOnDynamic`, frames **A–F only** (`G0`+ is death/gib; a corpse must not light the room), i.e. 30 lit frames of 56. **No `noShadow`.**
+- **`pack_lostsoul_rt.py` is the SOLE owner of the SKUL material meta, and that had to be enforced in code.** `gen_enemy_eye_emissives.py` also wrote SKUL entries, from its own `SKUL_EMIS 0.12` / `SKUL_LIGHT 0` — and since `meta_for()` guards the light behind `if SKUL_LIGHT > 0`, a zero did not *dim* the light, it **omitted the field**. Running the eye generator after the packer therefore replaced `0.35` + a 450 light with `0.12` + nothing, and the Lost Souls stopped casting shadows. Measured 2026-08-15: 56 SKUL entries, **0** with `lightIntensity`. The eye generator now writes the SKUL fire **mask** and no meta; its `SKUL_*` constants are marked superseded. Same one-owner rule as the `gen_fx_emissives` PREFIX_RULES warning below.
 - `lightIntensity` and `emissiveMult` are **coupled**, not independent: RTGL1 derives the attached light from emissive coverage, so dimming the emissive to hide a glow also kills the cast light. Tune `SKUL_LIGHT` first.
 - **`LSGL` carrier blob: removed 2026-08-08, do not reintroduce.** A separate disc actor holding the light cannot be hidden under RT — the play launcher's `rt_translucent_minalpha 0.72` *floors* translucent sprite alpha, so the disc renders near-opaque at any `Alpha` and reads as a solid orange ball on every soul.
 - The old "attached light on the same sprite white-blooms the fire" note came from `gen_fx_emissives` PREFIX_RULES applying `lightIntensity 700` **plus `noShadow`** — `noShadow` is the part that blows out.

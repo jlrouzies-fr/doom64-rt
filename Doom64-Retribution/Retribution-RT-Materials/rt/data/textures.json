@@ -324,11 +324,17 @@
     },
     {
       "textureName": "SKULA1",
-      "emissiveMult": 0.12
+      "emissiveMult": 0.35,
+      "lightIntensity": 450.0,
+      "lightColorHEX": "ff9028",
+      "lightEvenOnDynamic": true
     },
     {
       "textureName": "SKULA5",
-      "emissiveMult": 0.12
+      "emissiveMult": 0.35,
+      "lightIntensity": 450.0,
+      "lightColorHEX": "ff9028",
+      "lightEvenOnDynamic": true
     },
     {
       "textureName": "SKULA6A4"
@@ -341,11 +347,17 @@
     },
     {
       "textureName": "SKULB1",
-      "emissiveMult": 0.12
+      "emissiveMult": 0.35,
+      "lightIntensity": 450.0,
+      "lightColorHEX": "ff9028",
+      "lightEvenOnDynamic": true
     },
     {
       "textureName": "SKULB5",
-      "emissiveMult": 0.12
+      "emissiveMult": 0.35,
+      "lightIntensity": 450.0,
+      "lightColorHEX": "ff9028",
+      "lightEvenOnDynamic": true
     },
     {
       "textureName": "SKULB6B4"
@@ -358,11 +370,17 @@
     },
     {
       "textureName": "SKULE1",
-      "emissiveMult": 0.12
+      "emissiveMult": 0.35,
+      "lightIntensity": 450.0,
+      "lightColorHEX": "ff9028",
+      "lightEvenOnDynamic": true
     },
     {
       "textureName": "SKULE5",
-      "emissiveMult": 0.12
+      "emissiveMult": 0.35,
+      "lightIntensity": 450.0,
+      "lightColorHEX": "ff9028",
+      "lightEvenOnDynamic": true
     },
     {
       "textureName": "SKULE6E4"
@@ -378,11 +396,11 @@
     },
     {
       "textureName": "SKULG0",
-      "emissiveMult": 0.12
+      "emissiveMult": 0.35
     },
     {
       "textureName": "SKULH0",
-      "emissiveMult": 0.12
+      "emissiveMult": 0.35
     },
     {
       "textureName": "CEYEA0"
@@ -1249,11 +1267,17 @@
     },
     {
       "textureName": "SKULC1",
-      "emissiveMult": 0.12
+      "emissiveMult": 0.35,
+      "lightIntensity": 450.0,
+      "lightColorHEX": "ff9028",
+      "lightEvenOnDynamic": true
     },
     {
       "textureName": "SKULC5",
-      "emissiveMult": 0.12
+      "emissiveMult": 0.35,
+      "lightIntensity": 450.0,
+      "lightColorHEX": "ff9028",
+      "lightEvenOnDynamic": true
     },
     {
       "textureName": "SKULC6C4"
@@ -1266,11 +1290,17 @@
     },
     {
       "textureName": "SKULD1",
-      "emissiveMult": 0.12
+      "emissiveMult": 0.35,
+      "lightIntensity": 450.0,
+      "lightColorHEX": "ff9028",
+      "lightEvenOnDynamic": true
     },
     {
       "textureName": "SKULD5",
-      "emissiveMult": 0.12
+      "emissiveMult": 0.35,
+      "lightIntensity": 450.0,
+      "lightColorHEX": "ff9028",
+      "lightEvenOnDynamic": true
     },
     {
       "textureName": "SKULD6D4"
@@ -1283,15 +1313,15 @@
     },
     {
       "textureName": "SKULI0",
-      "emissiveMult": 0.12
+      "emissiveMult": 0.35
     },
     {
       "textureName": "SKULJ0",
-      "emissiveMult": 0.12
+      "emissiveMult": 0.35
     },
     {
       "textureName": "SKULK0",
-      "emissiveMult": 0.12
+      "emissiveMult": 0.35
     },
     {
       "textureName": "SMBTA0"
@@ -3665,103 +3695,163 @@
     },
     {
       "textureName": "SKULA2A8",
-      "emissiveMult": 0.12
+      "emissiveMult": 0.35,
+      "lightIntensity": 450.0,
+      "lightColorHEX": "ff9028",
+      "lightEvenOnDynamic": true
     },
     {
       "textureName": "SKULA3A7",
-      "emissiveMult": 0.12
+      "emissiveMult": 0.35,
+      "lightIntensity": 450.0,
+      "lightColorHEX": "ff9028",
+      "lightEvenOnDynamic": true
     },
     {
       "textureName": "SKULA4A6",
-      "emissiveMult": 0.12
+      "emissiveMult": 0.35,
+      "lightIntensity": 450.0,
+      "lightColorHEX": "ff9028",
+      "lightEvenOnDynamic": true
     },
     {
       "textureName": "SKULB2B8",
-      "emissiveMult": 0.12
+      "emissiveMult": 0.35,
+      "lightIntensity": 450.0,
+      "lightColorHEX": "ff9028",
+      "lightEvenOnDynamic": true
     },
     {
       "textureName": "SKULB3B7",
-      "emissiveMult": 0.12
+      "emissiveMult": 0.35,
+      "lightIntensity": 450.0,
+      "lightColorHEX": "ff9028",
+      "lightEvenOnDynamic": true
     },
     {
       "textureName": "SKULB4B6",
-      "emissiveMult": 0.12
+      "emissiveMult": 0.35,
+      "lightIntensity": 450.0,
+      "lightColorHEX": "ff9028",
+      "lightEvenOnDynamic": true
     },
     {
       "textureName": "SKULC2C8",
-      "emissiveMult": 0.12
+      "emissiveMult": 0.35,
+      "lightIntensity": 450.0,
+      "lightColorHEX": "ff9028",
+      "lightEvenOnDynamic": true
     },
     {
       "textureName": "SKULC3C7",
-      "emissiveMult": 0.12
+      "emissiveMult": 0.35,
+      "lightIntensity": 450.0,
+      "lightColorHEX": "ff9028",
+      "lightEvenOnDynamic": true
     },
     {
       "textureName": "SKULC4C6",
-      "emissiveMult": 0.12
+      "emissiveMult": 0.35,
+      "lightIntensity": 450.0,
+      "lightColorHEX": "ff9028",
+      "lightEvenOnDynamic": true
     },
     {
       "textureName": "SKULD2D8",
-      "emissiveMult": 0.12
+      "emissiveMult": 0.35,
+      "lightIntensity": 450.0,
+      "lightColorHEX": "ff9028",
+      "lightEvenOnDynamic": true
     },
     {
       "textureName": "SKULD3D7",
-      "emissiveMult": 0.12
+      "emissiveMult": 0.35,
+      "lightIntensity": 450.0,
+      "lightColorHEX": "ff9028",
+      "lightEvenOnDynamic": true
     },
     {
       "textureName": "SKULD4D6",
-      "emissiveMult": 0.12
+      "emissiveMult": 0.35,
+      "lightIntensity": 450.0,
+      "lightColorHEX": "ff9028",
+      "lightEvenOnDynamic": true
     },
     {
       "textureName": "SKULE2E8",
-      "emissiveMult": 0.12
+      "emissiveMult": 0.35,
+      "lightIntensity": 450.0,
+      "lightColorHEX": "ff9028",
+      "lightEvenOnDynamic": true
     },
     {
       "textureName": "SKULE3E7",
-      "emissiveMult": 0.12
+      "emissiveMult": 0.35,
+      "lightIntensity": 450.0,
+      "lightColorHEX": "ff9028",
+      "lightEvenOnDynamic": true
     },
     {
       "textureName": "SKULE4E6",
-      "emissiveMult": 0.12
+      "emissiveMult": 0.35,
+      "lightIntensity": 450.0,
+      "lightColorHEX": "ff9028",
+      "lightEvenOnDynamic": true
     },
     {
       "textureName": "SKULF1",
-      "emissiveMult": 0.12
+      "emissiveMult": 0.35,
+      "lightIntensity": 450.0,
+      "lightColorHEX": "ff9028",
+      "lightEvenOnDynamic": true
     },
     {
       "textureName": "SKULF2F8",
-      "emissiveMult": 0.12
+      "emissiveMult": 0.35,
+      "lightIntensity": 450.0,
+      "lightColorHEX": "ff9028",
+      "lightEvenOnDynamic": true
     },
     {
       "textureName": "SKULF3F7",
-      "emissiveMult": 0.12
+      "emissiveMult": 0.35,
+      "lightIntensity": 450.0,
+      "lightColorHEX": "ff9028",
+      "lightEvenOnDynamic": true
     },
     {
       "textureName": "SKULF4F6",
-      "emissiveMult": 0.12
+      "emissiveMult": 0.35,
+      "lightIntensity": 450.0,
+      "lightColorHEX": "ff9028",
+      "lightEvenOnDynamic": true
     },
     {
       "textureName": "SKULF5",
-      "emissiveMult": 0.12
+      "emissiveMult": 0.35,
+      "lightIntensity": 450.0,
+      "lightColorHEX": "ff9028",
+      "lightEvenOnDynamic": true
     },
     {
       "textureName": "SKULL0",
-      "emissiveMult": 0.12
+      "emissiveMult": 0.35
     },
     {
       "textureName": "SKULM0",
-      "emissiveMult": 0.12
+      "emissiveMult": 0.35
     },
     {
       "textureName": "SKULN0",
-      "emissiveMult": 0.12
+      "emissiveMult": 0.35
     },
     {
       "textureName": "SKULO0",
-      "emissiveMult": 0.12
+      "emissiveMult": 0.35
     },
     {
       "textureName": "SKULP0",
-      "emissiveMult": 0.12
+      "emissiveMult": 0.35
     },
     {
       "textureName": "SOULB0",
