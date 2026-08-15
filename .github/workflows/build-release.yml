@@ -35,6 +35,10 @@ jobs:
     steps:
       - name: Checkout Doom64-RT
         uses: actions/checkout@v4
+        with:
+          # Ancestry against main decides the release channel below, and the
+          # default shallow clone cannot answer that question.
+          fetch-depth: 0
 
       # Both forks carry changes this project depends on. Upstream builds, then
       # behaves wrong in ways nothing reports -- see the README.
@@ -231,16 +235,37 @@ jobs:
           path: dist/Doom64-RT.zip
           compression-level: 0        # already a zip
 
+      # MAIN SHIPS RELEASES, EVERY OTHER BRANCH SHIPS PRE-RELEASES.
+      # The tag alone cannot say which: a tag is just a commit, and this project
+      # tags from a working branch as often as from main. So ask whether the
+      # tagged commit is an ancestor of origin/main -- that is the same question
+      # as "has this been merged", and it survives the squash merges this repo
+      # uses, because the squash commit is what main actually contains.
+      - name: Decide the release channel
+        id: channel
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: |
+          git fetch --no-tags origin main:refs/remotes/origin/main
+          if git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "pre=false" >> "$GITHUB_OUTPUT"
+            echo "label=" >> "$GITHUB_OUTPUT"
+            echo "This commit is on main -> RELEASE"
+          else
+            echo "pre=true" >> "$GITHUB_OUTPUT"
+            echo "label= (beta)" >> "$GITHUB_OUTPUT"
+            echo "This commit is not on main -> PRE-RELEASE"
+          fi
+
       - name: Attach to release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
           files: dist/Doom64-RT.zip
-          name: Doom 64 - Ray Traced ${{ github.ref_name }}
-          # Pre-release until someone other than the author has played a build:
-          # the FSR path has never run on AMD hardware, and Ray Reconstruction is
-          # alpha and shipped off.
-          prerelease: true
+          name: Doom 64 - Ray Traced ${{ github.ref_name }}${{ steps.channel.outputs.label }}
+          # Set by "Decide the release channel": a tag on main is a release,
+          # a tag anywhere else is a beta.
+          prerelease: ${{ steps.channel.outputs.pre }}
           body: |
             Built from ${{ github.sha }}.
 
