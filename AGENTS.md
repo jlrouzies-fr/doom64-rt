@@ -293,6 +293,40 @@ Three things that will otherwise cost you a day:
   *volumetric*, and `RtVolumetric.rgen` does **not** call
   `traceDirectIllumination` — it shadow-tests its own light. A fix in the shared
   path leaves them untouched and looks inert.
+- **A LAMP shaft seen through a wall is NOT this bug, and `rt_sun_require_sky`
+  has no analogue for it.** The sky probe exists because a *directional* ray runs
+  to `MAX_RAY_LENGTH` and a miss scores as lit; a lamp's ray **ends at the bulb**
+  and cannot escape the map. The occlusion test is already there and already
+  right — `RtVolumetric.rgen:283` traces one shadow ray per light per froxel and
+  adds nothing without it, back-face culling is off for volume rays
+  (`getAdditionalRayFlags()` returns 0 under `LIGHT_SAMPLE_METHOD_VOLUME`), and
+  solid geometry is `INSTANCE_MASK_WORLD_0`, which *is* `rayCullMaskWorld_Shadow`.
+  What can still carry light forward: `g_volumetric` is a prefix sum read
+  **trilinearly**, so up to one slice (`rt_volume_far / 64` = **0.94 m** at
+  shipping) of the lit air *behind* a wall bleeds onto it — which makes the
+  leak's thickness linear in `rt_volume_far`, and nothing else in the chain
+  scales that way. `docs/plan-light-shafts.md` §4d, arms
+  **FIXED AND CLOSED, 2026-08-15 — `rt_volume_depthgate`, on and global.** A small
+  residual on one wall was knowingly accepted: tightening the footprint max would
+  kill froxels a thin foreground edge can still see past, which is worse.
+  Not a visibility
+  bug: every shadow ray was already correct, and the leak survived
+  `rt_cpu_cullmode 2` (whole map in the acceleration structure), so geometry was
+  ruled out too. `g_volumetric` is a **prefix sum stored at froxel centres and
+  read trilinearly** at the surface's distance, so a wall collects part of the
+  cell *behind* it — where the froxel legitimately sees the next room's lamp —
+  and `volume_toSamplePosition_T` **clamps z to [0,1]** while slice 0's centre
+  sits ~0.47 m out, so any wall you can touch collects slice 0 **wholesale**.
+  Hence "worst with my face against the wall". The fix weights each froxel by how
+  much of it lies in front of the geometry visible in its own screen column —
+  the ask applied at the **froxel**, not the light, which is the only place it
+  can work. Sky columns are never gated, so the moon's shafts are untouched;
+  density is not gated, so fog extinction is unchanged. Arms
+  `.\tools\ab.cmd leak-gatehard|leak-gateoff|leak-gate 01` (`leak-gatehard`
+  first — the absurd arm). Diagnostic ladder that got there:
+  `leak-noshaft|leak-noamb|leak-near|leak-nofilter`, and **`leak-nofilter` was
+  the load-bearing one** — it sets `rt_volume_dither_z 0`, and that one-sided
+  toward-the-camera dither had been *hiding* the leak.
 - **Aperture-size gating does not work here** and has been measured, twice. See
   §4 of the doc before proposing it again.
 - **A leak that MOVES WHEN YOU TURN is not a sky leak at all** — it is geometry
@@ -302,6 +336,23 @@ Three things that will otherwise cost you a day:
   acceleration structure, and the next room's lamps shine through where it should
   be. `rt_cpu_cullmode` / `rt_cpu_nocullradius`, doc §5.1, arms
   `.\tools\ab.cmd cull-stock|cull-dark|cull-wide|cull-all`.
+- **A wall behind you getting culled is fixed with `rt_cpu_nocullradius`, NOT
+  `rt_cpu_cullmode 2`.** Mode 0 already submits every visible sector *and every
+  neighbour of one*; on top of that `hw_bsp.cpp:988` marks any sector whose lines
+  touch a box of `32 × rt_cpu_nocullradius` map units around the camera, visible
+  or not. That shell is the guarantee. **Pinned at 20 m** (10 → 20 measurably
+  helped); if one map needs much more, that belongs in an `RT_FOG_PRESETS`-style
+  per-map table in `rt_presets.cpp`, not a global everyone pays for. Mode 2
+  uploads the whole level every frame to fix the same symptom.
+- **`rt_cpu_cullmode` has ALWAYS defaulted to 0 — check before believing
+  otherwise.** On 2026-08-15 a hand-set `2`, applied once to one map, was still
+  sitting in `gzdoom-rt2.ini` (it is `CVAR_ARCHIVE` and nothing pinned it) and was
+  remembered as the shipping configuration. It cost most of a session: it sent a
+  diagnostic ladder chasing geometry, and its duplicate-primitive spam (~1500
+  console lines, RTGL `Scene.cpp`) was reported as a renderer bug. `git log` on
+  `rt_cvars.inc` settles this in one command — it is `0` at the initial import and
+  `0` at HEAD. **Both `rt_cpu_*` cvars are now pinned** so an arm or a one-off can
+  never silently become the configuration again.
 
 ## Something casts no shadow
 
@@ -458,6 +509,7 @@ declaration cannot drift from its definition. Put nothing in that file except an
 | `tools/smoke-lab.cmd` | **Smoke lab — MAP97 dark / MAP96 bright beige** — unattended capture of muzzle smoke in a controlled room (`python tools/build_smoke_lab.py` first). `tools/smoke-sweep.cmd <cvar> <values...>` walks one cvar at a fixed tic; `python tools/smoke_gallery.py` renders named candidate looks into one labelled PNG. Judge smoke here, never in a real level — and colour/visibility questions belong on MAP96. |
 | `tools/ab.cmd smoke-<arm>` | Volumetric smoke A/B (arms are cfgs in `tools/arms/`, NOT command-line strings). `smoke-full`/`fat`/`thin`/`still`/`drift`/`walk`/`glued`; monsters `smoke-monster`/`nomonster`; sources `smoke-flames`/`noflames`/`proj`/`barrel`/`crowd`; look `smoke-stylize0`; traps `nearfade`/`blendslow`/`blendraw`; resolution `reach30`/`reach8`; isolation `off`/`nolight`/`debug`; and `fogsafe`/`fogsmoke`, the fog regression. See `docs/rt-smoke.md`. |
 | `tools/ab.cmd lampshaft-<arm>` | Light shafts from ordinary lamps. `lampshaft-fat` (**run first** — the absurd arm that separates plumbing from values), `lampshaft-off`/`on`; probes `probe` (uniform arriving), `lit`/`vis` (reach vs occlusion); families `inset`/`lattice`/`solo`; **reach** `noband`/`wide`/`listorder`/`phys`/`flat` — the two "doesn't reach far enough" reports, and neither cause was brightness (§4a/§4b); `nogap`, `nomoon`, `dense`/`bright` (medium vs light — judge separately), `iso`, `near0`. Ships **on**; judge in a dark interior, MAP07's clad corridors. See `docs/plan-light-shafts.md`. |
+| `tools/ab.cmd leak-<arm>` | **A lamp shaft read through a wall** (MAP01, 2026-08-15, open). All arms hold the report's conditions: moon off (`rt_sun 0` + `rt_sun_intensity 0` + **`rt_moon_presets 0`**, which is load-bearing — presets restore the sun on every level load) and `rt_volume_shaft_mult 200`. **FIXED** by `rt_volume_depthgate` (ships on): the volume is a prefix sum read trilinearly, so a wall collected the froxel *behind* it. `leak-gatehard` (**run first**, the absurd arm — feather 0.01 + taps 1 should paint the grid and stair-step every silhouette) / `leak-gateoff` (before) / `leak-gate` (after). Diagnostic ladder kept: `leak-base` (reference), `leak-noshaft`, `leak-noamb`, `leak-near`, `leak-fat`, `leak-fine`, `leak-nofilter`. **Not** a visibility bug and **not** geometry — both measured out. See `docs/plan-light-shafts.md` §4d. |
 | `tools/ab.cmd dust-<arm>` | Dust motes in the air. `dust-fat` (**run first** — a mote is small enough that "I can't see any" has two causes that look identical), `dust-off`/`on`/`heavy`/`still`/`honest`/`noshaft`. Real traced geometry lit by the scene: **never** emissive (fireflies) and **never** rasterized (fullbright). Ships **on**. See `docs/plan-light-shafts.md` §4c. |
 | `tools/ab.cmd spark-<arm>` | Impact spark A/B: `spark-fat` (**run first** — the absurd arm that separates plumbing from values), `spark-on`/`off`, `nolight` (how much is the traced flash), `nogrid` (the before for the pixel look — judge while moving), `nocollide`, `still` (bounce with the fall taken out), `debug`. Ships **off**; judge in the smoke lab (MAP97 dark, MAP96 bright) before a real level. See `docs/plan-impact-fx.md`. |
 | `tools/ab-blood.cmd` | Persistent blood A/B: `off`/`on`/`uncapped`/`tight`/`plain`/`wild`/`roll`; explosion splash `boom`/`noboom`/`bigboom`; per-monster colour `color`/`nocolor` (try MAP03 or MAP14), default MAP01. The lifetime is DECORATE in the WAD, not a renderer setting; explosive kills leave no blood in stock GZDoom because `P_RadiusAttack` never calls `P_SpawnBlood`; and blood colour needs `rt_tex_translations` (pitfall 30). See `docs/blood-persist.md`. |

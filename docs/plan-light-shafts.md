@@ -1,6 +1,10 @@
 # Light shafts from ordinary lamps, not just the moon
 
-**Status:** implemented; reach fixed twice from play reports (§4a, §4b), look not yet settled. Ships **on**
+**Status:** implemented; reach fixed twice from play reports (§4a, §4b), the
+**shaft-through-a-wall report diagnosed, fixed and CLOSED** (§4d — not a visibility bug
+at all: the froxel volume is a prefix sum read trilinearly, so a wall collected the cell
+behind it; `rt_volume_depthgate` ships **on and global**, with a small residual
+knowingly accepted), look not yet settled. Ships **on**
 (`rt_volume_shafts 1`, compiled default *and* pinned). Targets the **ceiling**
 and **solo bulb** fixture families; nothing else offers a shaft yet.
 
@@ -119,6 +123,10 @@ gap would merge a light with the one directly above it, which is the mistake
 | `rt_volume_shaft_minint` | `0` | skip a fixture dimmer than this (blinking lamps) |
 | `rt_volume_shaft_debug` | `0` | shader probe, 1/2/3 |
 | `rt_volume_shaft_verbose` | `0` | per-family offered-vs-sent console line |
+| `rt_volume_depthgate` | `1` | **§4d** — weight a froxel by how much of it is in front of the visible surface |
+| `rt_volume_depthgate_bias` | `0` | metres of slack past the surface |
+| `rt_volume_depthgate_feather` | `1` | ramp width in froxel slices, centred on the surface |
+| `rt_volume_depthgate_taps` | `5` | depth taps across the column's footprint; the max wins |
 
 All sixteen are pinned at their compiled defaults in `tools/d64rt-pins.cfg` —
 they are `CVAR_ARCHIVE`, so without a pin the last arm run would follow you into
@@ -319,6 +327,308 @@ lattice is *visible*, which would be a bug in the hashing, not a value to tune),
 that is console noise during play. Turn one on for a run by appending it:
 `.\tools\ab.cmd dust-on 07 -- +rt_dust_debug 1`.
 
+## 4d. "The shaft leaks through a wall" (2026-08-15, from play) — OPEN
+
+> **STATUS: diagnosis in progress. The arms are built, the mechanism is not yet
+> confirmed. Nothing here claims a cause.**
+
+Reported on MAP01: *facing a wall with a solo lamp behind it, illuminated
+volumetric fog is visible through the wall.* Asked for as "the same fix as the
+moon shaft" — `rt_sun_require_sky`.
+
+**That fix does not apply here, and re-applying it would be a no-op.** Write it
+down before anyone proposes it again, because the two leaks look identical on
+screen and have nothing in common underneath:
+
+`rt_sun_require_sky` exists because a shadow ray that hits **nothing** is scored
+as lit (`RtMissShadowCheck.rmiss` sets `isShadowed = 0`). A *directional* light's
+ray runs to `MAX_RAY_LENGTH`, so in a map that is not watertight it leaves the
+level and comes back "lit"; `traceSunReachesSky()` makes it prove it reached sky
+geometry instead. **A lamp is a point light and its ray terminates at the bulb**,
+so it cannot escape the map and there is nothing for a sky probe to test.
+
+And the occlusion test being asked for **is already there and already correct**:
+
+| fact | where |
+|---|---|
+| every shaft light gets a shadow ray, per froxel | `RtVolumetric.rgen:283` — `if( traceShadowRay( 0, from, light.position, true ) ) continue;` |
+| nothing is ever added without a ray | `sum +=` at `:295` is reachable only past that `continue`; the budget exhaustion at `:253` **breaks**, it does not add-unshadowed |
+| the same helper the moon uses | `traceDirectIllumination_SpecificLight` calls the identical `traceShadowRay( 0, from, light.position, true )` at `:77` |
+| walls block from both sides | `rayCullBackFacingTriangles = 0` (`rt_main.cpp:493`) *and* `getAdditionalRayFlags()` returns `0` under `LIGHT_SAMPLE_METHOD_VOLUME` (`RaygenCommon.h:199`) |
+| walls are in the shadow mask | solid world geometry is `PV_WORLD_0` → `INSTANCE_MASK_WORLD_0`, which is exactly `rayCullMaskWorld_Shadow` (`VulkanDevice.cpp:578`). Only explicit `noShadow` meta lands in `WORLD_1` |
+
+So the froxels **in front of** that wall are correctly dark, and something else
+is carrying light forward.
+
+### The leading hypothesis: a froxel is read TRILINEARLY across a prefix sum
+
+`g_volumetric` is a prefix sum from the camera outward
+(`CmVolumetricProcess.comp`), stored at froxel **centres**, and
+`volume_sampleDithered` reads it with a **trilinear** `textureLod` at the
+surface's distance. So the value landing on a wall pixel is
+
+    sum( up to slice k ) + frac * ( own contribution of slice k+1 )
+
+and slice k+1 is **behind the wall**, in the lamp's room, where the froxel
+legitimately sees the bulb and is legitimately bright. Up to one whole slice of
+the lit air behind a wall can bleed onto it.
+
+| | value |
+|---|---|
+| slice thickness | `rt_volume_far / VOLUMETRIC_SIZE_Z` |
+| at shipping (`far 60`, 64 slices) | **0.94 m** |
+| stock RTGL1 (`far 30`) | 0.47 m |
+
+Which is the same compounding §5.4 and §5.5 of `moon-and-sky-leaks.md` already
+record: `rt_volume_far` went 30 → 60 for smoke's reach and doubled this too.
+
+**It predicts something no other candidate does — the leak's thickness is linear
+in `rt_volume_far`.** Geometry culling, a failing shadow ray and the
+screen-space filters do not scale that way, and that is what the ladder below
+exploits. `rt_volume_scatter` is normalised per metre (`rt_main.cpp`, §5.4), so
+moving the reach does not move the density and the two ends stay comparable —
+without that normalisation this test would not be possible at all.
+
+Three other candidates the ladder separates: the **lateral dither**
+(`rt_volume_dither 5` froxels against a 160-column grid ≈ ±3 % of screen width,
+about ±60 px at 1080p — `CmScatterAccum.comp` records that it "reaches across
+geometry silhouettes"), the **§5.1 geometry-culling** leak (a wall absent from
+the acceleration structure, in which case the shadow ray was right all along),
+and the possibility that what leaks is the **ambient medium** rather than the
+lamp's lit term (`volumeAmbient` seeds `lighting` at `RtVolumetric.rgen:374` and
+is not occlusion-tested, because it is not a light).
+
+### GEOMETRY IS EXCLUDED — measured 2026-08-15, NEGATIVE
+
+Run before anything else, and it retires the most likely-sounding explanation:
+
+| arm | prediction | **measured** |
+|---|---|---|
+| mode 0, 10 m shell → 20 m | more geometry, less leak | leak visibly **shrank** |
+| mode 0, 40 m shell | shrink further / stop | **still leaks** |
+| `rt_cpu_cullmode 2`, whole map | no missing occluder at all | **still leaks** |
+
+The middle column was right about the *direction* and wrong about the *cause*.
+Widening the shell does help, which is why this looked like §5.1 — but **mode 2
+puts every subsector in the acceleration structure and the leak survives it**, so
+there is no missing occluder left to find and no culling cvar can reach what
+remains. The shell helping is a second, smaller effect riding on top.
+
+That is a load-bearing negative: it means the wall **is** there, it **is**
+shadowing the froxels in front of it, and the light is arriving anyway. Every
+mechanism that needs a missing wall is dead, including the one this section
+originally led with.
+
+**Culling is a constant in every arm now, not a variable** — `rt_cpu_cullmode 0`
+with `rt_cpu_nocullradius 20`, the play values.
+
+The detour is worth recording, because it is the reason this section reads as it
+does. A hand-set `rt_cpu_cullmode 2` — applied once, to one map, to stop a wall
+behind the player being culled — was still sitting in `gzdoom-rt2.ini` weeks
+later, because these cvars are `CVAR_ARCHIVE` and nothing pinned them. It was
+remembered as the shipping configuration, and half a session went into a geometry
+ladder because of it. `git log` on `rt_cvars.inc` settles it in one command: the
+default is `0` at the initial import and `0` at HEAD, always. **Check the history
+before believing a remembered default**, and pin anything an A/B arm can write.
+
+The wall-culling complaint that started it is real and has its own answer:
+`rt_cpu_nocullradius`, the guaranteed shell around the camera
+(`hw_bsp.cpp:988`), now pinned at 20 m. Not the mode.
+
+### The ladder — `tools/arms/leak-*.cfg`, on MAP01
+
+Seven arms, each differing from `leak-base` in exactly **one** value. All hold
+the conditions of `screen/shaft200.png`:
+
+| held constant | why |
+|---|---|
+| `rt_cpu_cullmode 0` + `rt_cpu_nocullradius 20` | the play values, and not a variable: the leak survived a 40 m shell *and* mode 2 |
+| `rt_sun 0` + `rt_sun_intensity 0` | moon off, so every lit froxel in frame is a **lamp** |
+| `rt_moon_presets 0` | **load-bearing.** `RT_MoonApplyPresets` (`rt_presets.cpp:412-424`) rewrites `rt_sun_a/b/intensity` from `RT_MOON_PRESETS` on *every level load* while presets are on — an arm that turns the sun off and leaves this at 1 gets the moon back at map load and never says so |
+| `rt_volume_shaft_mult 200` | 20× shipping, reproducing the screenshot |
+
+Take the same view in `leak-base` first, then in each arm.
+
+    .\tools\ab.cmd leak-base     01   the reference picture, nothing changed
+    .\tools\ab.cmd leak-noshaft  01   RUN FIRST -- shafts off. Right feature?
+    .\tools\ab.cmd leak-noamb    01   ambient 0 -- the lamps, or the medium?
+    .\tools\ab.cmd leak-near     01   maxdist 60 m -> 4 m -- near lamps only
+    .\tools\ab.cmd leak-fat      01   far 240 -> 3.75 m slices. The absurd arm
+    .\tools\ab.cmd leak-fine     01   far 15 -> 0.23 m slices. The other end
+    .\tools\ab.cmd leak-nofilter 01   dither/blur/history off
+
+The first three are floors and cost nothing: they answer *"is this even the
+shaft feature"*, *"is it the un-occludable ambient term"* and *"is it three dozen
+distant fixtures being summed"* before any hypothesis about the volume is tested.
+
+**`leak-near` deserves its own warning, because `mult 200` changes what is
+normal.** A lamp's scattering is inverse square softened by
+`rt_volume_shaft_falloff 0.5`, so it falls as ≈`d^-1.5`: a fixture at 20 m
+delivers ~1/89 of one at 1 m. At the shipping `mult 10` that is nothing. At
+**200** it is ≈2.2 — comparable to a lamp in your face at shipping brightness —
+and `rt_volume_shaft_max 32` with `maxdist 1920` (60 m) lets three dozen
+fixtures from all over the level contribute at once. **A general haze at mult 200
+may be arithmetic rather than a leak**, which is why `leak-base` should be
+re-run with `-- +rt_volume_shaft_mult 10` before any of this is treated as a
+defect.
+
+**The leading hypothesis, now that geometry is out.** `g_volumetric` is a prefix
+sum from the camera outward (`CmVolumetricProcess.comp`) stored at froxel
+**centres**, and `volume_sampleDithered` reads it **trilinearly** at the
+surface's distance. So a wall pixel gets
+
+    sum( up to slice k ) + frac * ( own contribution of slice k+1 )
+
+and slice k+1 is **behind the wall**, where the froxel legitimately sees the lamp
+and is legitimately bright. Up to one whole slice of the lit air behind a wall
+bleeds onto it.
+
+| | value |
+|---|---|
+| slice thickness | `rt_volume_far / VOLUMETRIC_SIZE_Z` |
+| at shipping (`far 60`, 64 slices) | **0.94 m** |
+| stock RTGL1 (`far 30`) | 0.47 m |
+
+This is the one mechanism that **does not care whether the wall is in the
+acceleration structure** — the wall is there, it is shadowing the froxels in
+front of it, and the value still arrives from the cell behind it. That is exactly
+what the geometry negative leaves standing. It predicts the leak's *thickness* is
+linear in `rt_volume_far`, which nothing else in the chain is; `leak-fat` and
+`leak-fine` bracket it 4× either way. `rt_volume_scatter` is normalised per metre
+(`rt_main.cpp`, §5.4) so the reach does not move the density and the two ends stay
+comparable — without that normalisation the test would be impossible.
+
+The other live candidate is the **lateral smear**: `rt_volume_dither 5` froxels
+against a 160-column grid is ≈3 % of screen width, about ±60 px at 1080p,
+temporally averaged into an effective blur. `CmScatterAccum.comp`'s own comment
+records that it "reaches across geometry silhouettes into columns that belong to
+a different surface". `leak-nofilter` separates it.
+
+### What the ladder measured, 2026-08-15
+
+| arm | result |
+|---|---|
+| `leak-noshaft` | **no leak.** It is the lamp shafts |
+| `leak-near` (`maxdist` 4 m) | **still leaks** against the wall — the local lamp, not distant fixtures summing |
+| `leak-nofilter` | **worse, and blocky** — `screen/thewallNodither.png` shows the froxel grid painted on the wall |
+| 40 m shell, and `rt_cpu_cullmode 2` (whole map) | **still leaks** — geometry is not the carrier |
+
+`leak-nofilter` is the load-bearing one, and it reads backwards until you see
+why: that arm sets `rt_volume_dither_z 0`, and the depth dither is **one-sided
+toward the camera**. It was *hiding* the leak by sampling shallower than the
+surface. Removing it shows the raw artefact — and `screen/thewallNodither.png` is
+then unambiguous, because what is painted on the wall is **froxel-shaped
+blocks**, not a blur or a smear.
+
+The other half of the signature is *"worst if I stick to the wall"*.
+`volume_toSamplePosition_T` computes `z = (dist − near)/(far − near)` and
+**clamps to [0,1]**, while slice 0's centre sits at
+`near + 0.0078 × reach` ≈ **0.47 m** at `rt_volume_far 60` and
+`volumeCameraNear = max(cameraNear, 0.001)`. So any wall you can touch is inside
+cell 0, and cell 0 was shaded at a point on its far side.
+
+### The fix — `rt_volume_depthgate`, ON by default
+
+**Weight each froxel by how much of it lies in front of the geometry visible in
+its own screen column.** `volume_depthGate()` in `RtVolumetric.rgen`; the cell
+behind your wall contributes nothing, so the trilinear read has nothing to smear
+forward. This is the original request — *"if the light is not visible, no
+volumetric"* — applied at the **froxel** instead of at the **light**, which is
+the only place it can work, because every shadow ray was already correct.
+
+| cvar | default | what it is |
+|---|---|---|
+| `rt_volume_depthgate` | `1` | master |
+| `rt_volume_depthgate_bias` | `0` | metres of slack past the surface before a cell is weighted down |
+| `rt_volume_depthgate_feather` | `1` | ramp width in **froxel slices**, centred on the surface |
+| `rt_volume_depthgate_taps` | `5` | depth taps across the column's screen footprint; the **max** wins |
+
+Five things it gets right, each of which was a way to get it wrong:
+
+- **The ramp is centred on the surface, not pushed past it.** A cell the surface
+  bisects contributes about half — which is what a straddling cell physically
+  deserves. Pushing the ramp entirely past the surface keeps the whole cell and
+  therefore keeps the leak; pulling it entirely in front deletes real
+  in-scattering at every wall contact and draws a dark band, the opposite
+  artefact and the one §5.5 of `moon-and-sky-leaks.md` already paid for once.
+- **The footprint MAX, never the centre tap.** One froxel column spans
+  `renderWidth/160 × renderHeight/88` pixels — about 12×12 at 1080p — and those
+  pixels can see very different depths. Taking the max kills a cell only when it
+  is behind *everything* in the footprint, so air genuinely visible past a thin
+  foreground edge survives. Under-culling is the safe direction; `leak-gatehard`
+  shows what the centre tap alone does to every silhouette.
+- **Sky columns are never gated.** `dSurf >= MAX_RAY_LENGTH` returns 1, so the
+  moon's shafts through a ceiling opening are untouched. That was the one thing
+  this could plausibly have broken.
+- **Density is not gated, only what the medium ADDS.** The alpha channel is
+  extinction and it is what fades distant geometry; zeroing it behind surfaces
+  would un-fog everything seen through a gated cell.
+- **The feather is clamped above zero in RTGL.** A feather of exactly 0 is a
+  hard binary cut that quantises to the cell and paints the froxel grid onto
+  every surface — drawing the grid is the artefact this removes, not one to add.
+
+It is affordable because the volumetric raygen already traces up to
+`rt_volume_shaft_trace` shadow rays per froxel; five texture fetches against that
+is noise. `rt_volume_depthgate_taps 1` is there to measure it, not to ship.
+
+Implementation notes worth keeping: `TraceVolumetric` runs at
+`VulkanDevice.cpp:1134`, **after** `TracePrimaryRays` at `:1113`, so the current
+frame's depth is populated — no reprojection needed. The four uniforms went in as
+**exactly four** scalars because there are no `_pads` left and the scalar run must
+stay a multiple of four or C and std140 disagree from the first `vec4` array
+onward; `tools/check_uniform_layout.py` is the gate and passes at 204 fields /
+8528 bytes.
+
+### CLOSED, 2026-08-15 — shipped globally, residual accepted
+
+**`rt_volume_depthgate 1` fixes the reported wall**, both at the shipping
+`rt_volume_shaft_mult 10` and at the diagnostic 200. The moon's shafts are
+unaffected and no dark band appeared at wall contacts, which were the two ways
+this could have gone wrong.
+
+**A residual remains on one other wall** — "a bit", against a big improvement,
+and it was **accepted rather than chased**. `leak-gatelat` did not remove it, so
+the leading suspect is the second row below: the footprint max under-culling,
+which the gate does deliberately. Judged not worth the trade — tightening it
+means killing froxels that a thin foreground edge can still see past, which is a
+worse and more visible artefact than the residual it would buy back.
+
+The two candidates are kept because the distinction is real and will come up
+again if anyone reopens this:
+
+| | mechanism | fix |
+|---|---|---|
+| residual **gone** with `rt_volume_dither 0` + `rt_volume_blur 0` | **the lateral smear.** The gate blacks out the cells behind the wall, but the per-pixel jitter reads a *neighbouring column* — one that legitimately sees past the wall through a doorway or an edge — and drags its value onto the wall pixel. 5 froxels against a 160-column grid is ≈±60 px at 1080p | reject a jittered tap in `volume_sampleDithered` whose column has a very different surface depth. **Not** winding `rt_volume_dither` down, which hands smoke its grid noise back |
+| residual **stays** | **the footprint max under-culling**, which the gate does *on purpose*: it takes the max depth over the column's ~12×12 px footprint so air visible past a thin foreground edge survives. A column straddling a wall **edge** therefore keeps its cells lit | a smarter footprint reduction, not a depth-aware tap |
+
+The second is diagnosable by eye as well: it shows at **corners and
+silhouettes**, not in the middle of a flat wall.
+
+**It applies to the fogged maps too** (MAP25/26/31), which run the all-lights
+branch for the whole volume — the gate sits after both branches, so it is global
+to anything that reaches `g_volumetric`. Low risk by construction, because only
+what the medium *adds* is gated and the density/extinction channel is untouched,
+so `RT_FOG_PRESETS`' near/far ramp and the tuned look are unchanged. If a fogged
+map ever looks wrong, `+rt_volume_depthgate 0` on the launcher is the first thing
+to flip.
+
+    .\tools\ab.cmd leak-gatelat 01   the decider for the residual
+
+`leak-gatelat` holds `rt_volume_dither_z` and `rt_volume_history` at shipping,
+unlike `leak-nofilter` — the depth axis is what the gate now owns, and dragging
+it in would confound the two.
+
+A/B — run `leak-gatehard` **first**, it is the absurd arm:
+
+    .\tools\ab.cmd leak-gatehard 01   feather 0.01 + taps 1: IS THE GATE LIVE?
+    .\tools\ab.cmd leak-gateoff  01   the before
+    .\tools\ab.cmd leak-gate     01   the after, at shipping values
+
+Check in this order: the wall leak is gone pressed against it; **the moon's
+shafts through ceiling openings are unchanged**; and there is no dark band along
+wall/floor contacts. If a contact reads too dark, `rt_volume_depthgate_bias` is
+the knob.
+
 ## 5. How to judge it
 
     .\tools\ab.cmd lampshaft-fat 07      <- RUN THIS ONE FIRST
@@ -354,6 +664,12 @@ tuning.
 | `dust-beamwide` / `dust-beamtight` | how wide a beam counts as a beam — a look knob with no physical answer |
 | `dust-nomoon` / `dust-noclip` | the moon gate and the solid-geometry clip, isolated |
 | `lampshaft-near0` | the near fade off, i.e. the physical answer |
+| `leak-fat` | the §4d absurd arm — is the leak's thickness linear in `rt_volume_far` |
+| `leak-gatehard` / `leak-gateoff` / `leak-gate` | **the §4d fix** — run `leak-gatehard` first, it is the absurd arm |
+| `leak-gatelat` | the §4d **residual**: lateral smear vs the footprint max, one launch |
+| `leak-base` | the §4d reference picture: moon off, shafts at 200, nothing else changed |
+| `leak-noshaft` / `leak-noamb` / `leak-near` | the three §4d floors — run before any hypothesis about the volume |
+| `leak-fine` / `leak-nofilter` | the rest of the §4d froxel ladder |
 
 Good interior candidates: the MAP07 clad corridors, any room with a ceiling
 grate. Judge it in-game — nothing here is measurable from a scanner. A bright
@@ -371,6 +687,12 @@ outdoor area will show nothing, and that is correct, not a null result.
   call `traceDirectIllumination`; a change in the shared lighting path leaves
   shafts untouched and looks inert. `traceShaftLights()` is in the raygen for
   that reason and shadow-tests its own lights.
+- **The shadow test is already there, so "light through a wall" is never a
+  missing-occlusion bug here.** `RtVolumetric.rgen:283` traces one ray per light
+  per froxel and adds nothing without it, back-face culling is off for volume
+  rays, and solid geometry is in the shadow mask. The moon's
+  `rt_sun_require_sky` has **no analogue** for a point light — its ray ends at
+  the bulb and cannot escape the map. §4d is the write-up and the ladder.
 - **Asymmetry is expected, not a bug.** The phase function has a ~11× forward
   bias at 0.5, so a shaft is strong looking toward the light and weak from the
   side. Lowering it is *dimmer, not flatter* — §5.5 of the moon doc.

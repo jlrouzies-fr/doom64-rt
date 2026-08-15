@@ -39,6 +39,7 @@ theirs — the code is Claude's. <a href="AI-DECLARATION.md">Details</a>.
 ## ⛧ &nbsp;Contents
 
 - [**Features**](#features) — [lighting](#lighting) · [atmosphere](#atmosphere) · [materials](#materials) · [sprites, monsters, gore](#sprites) · [impacts and destruction](#impacts) · [HUD and menus](#hud) · [denoising and upscaling](#denoising)
+- [**Known issues**](#known-issues) — the two artefacts worth knowing about before you play
 - [**Install and play**](#install) — download, extract, point it at your copy of Retribution
 - [**Building it yourself**](#building) — [what you need](#requirements) · [dependencies](#dependencies) · [build](#build) · [first run](#first-run)
 - [**Launchers**](#launchers) — how the game and the A/B arms are started
@@ -208,6 +209,33 @@ your ini silently disables DLSS; set one, not both.
 
 Also keep `rt_normalmap_stren` / `rt_heightmap_stren` near **1** — 10+ destabilises the
 denoiser regardless of which one you use.
+
+<br>
+
+
+<a id="known-issues"></a>
+## ⛧ &nbsp;Known issues
+
+Things that are wrong and known to be wrong. Both are renderer-level and neither has a
+setting that fixes it outright — the workarounds below trade the artefact for less of the
+effect that causes it.
+
+**Black outlines behind volumetrics.** Where a participating medium meets a geometric
+edge, a thin dark line can appear along that edge — most visible in fog, smoke, and inside
+a volumetric beam or lamp shaft. The medium is resolved on the froxel grid, which is far
+coarser than the image, so a cell that straddles a silhouette gets a depth that belongs to
+neither side of it. It shows up most on high-contrast edges with a bright medium behind
+them.
+*If it bothers you:* lower `rt_volume_scatter` (or `rt_fog_density` on a fogged map), or
+`rt_volume_shaft_mult` if it is only around lamps. Reducing the medium reduces the
+mismatch it is drawn from.
+
+**Sky smears during lightning.** On MAP11, a lightning flash while the view is moving can
+leave a streak across the sky. The flash is a one-frame change over the largest, furthest
+surface in the scene, and the denoiser's temporal history has nothing valid to reproject
+it against — so it smears along the motion rather than snapping.
+*If it bothers you:* `rt_lightning 0` disables the storm's flashes; `thunder` in the
+console fires one on demand if you want to reproduce it.
 
 <br>
 

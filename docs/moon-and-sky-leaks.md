@@ -155,6 +155,24 @@ itself in `traceDirectIllumination_SpecificLight`. The shafts you see are
 volumetric scattering of that light, so a fix in the shared path does not touch
 them.
 
+### This fix does not generalise to a LAMP, and it will be proposed again
+
+Since `rt_volume_shaft_*` shipped, ordinary lamps put shafts in the air too
+(`docs/plan-light-shafts.md`), and one of those read **through a wall** on MAP01.
+The obvious move — "apply `require_sky` to the lamp shafts as well" — is a no-op,
+for a reason worth stating here rather than only there.
+
+`require_sky` exists because a **directional** light's shadow ray runs to
+`MAX_RAY_LENGTH`, so a miss means the ray left the map. **A lamp's ray terminates
+at the bulb.** It cannot escape, and there is no sky for a probe to require. And
+`traceShaftLights()` already traces one shadow ray per light per froxel
+(`RtVolumetric.rgen:283`) with the same helper this function uses, with back-face
+culling off for volume rays and with solid geometry in the shadow mask — so
+occlusion is not what is failing. The suspects there are the trilinear read of a
+prefix sum (one slice = `rt_volume_far / 64`, i.e. 0.94 m at shipping) and §5.1's
+geometry culling. **`docs/plan-light-shafts.md` §4d** carries the ladder;
+do not re-open this section for it.
+
 ---
 
 ## 3. Debugging
@@ -338,6 +356,13 @@ in the next room.
 lamp ceiling, "independent of `rt_ceiling_lamps`" by design, because the centre
 sphere is skipped in any sector wider than `rt_ceiling_lamp_maxspan`. Turn off
 one and the halls keep their edge bulbs; the arms zero both.
+
+**2026-08-15: still not shippable, and now pinned against.** A hand-set mode 2
+survived in the ini for weeks because these cvars are `CVAR_ARCHIVE` and nothing
+pinned them, and it was mistaken for the shipping configuration — see `AGENTS.md`.
+`tools/d64rt-pins.cfg` now pins `rt_cpu_cullmode 0` and
+`rt_cpu_nocullradius 20`; the **radius** is the answer to "a wall behind me is
+culled", not the mode.
 
 `cull-all` is decisive rather than shippable: if the leak survives it, geometry
 was never the cause and this line of enquiry is closed in one run. It is not a
