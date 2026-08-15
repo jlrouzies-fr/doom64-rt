@@ -51,11 +51,22 @@ applying one must never un-apply the rest. Each exports to its own
 
 | page | section | codes | frames | size | published |
 |---|---|---|---|---|---|
-| weapons | `WEAPONS` | 43 | 166 | 1.6 MB | https://claude.ai/code/artifact/d964ae8f-4160-4620-9335-9bc6d8b1598f |
+| weapons | `WEAPONS` + `CLSANIMS` | 52 | 207 | 1.9 MB | https://claude.ai/code/artifact/d964ae8f-4160-4620-9335-9bc6d8b1598f |
 | monsters | `MONSTERS` | 16 | 768 | 7.4 MB | https://claude.ai/code/artifact/a0b609af-a3e3-4b2a-a7ce-a556efa79c5c |
 | projectiles | `EFFECTS` | 23 | 188 | 0.4 MB | https://claude.ai/code/artifact/739cc596-5625-4cb1-a720-b0d75032f070 |
 | props | `STATIC` + `BEXP` | 50 | 111 | 0.3 MB | https://claude.ai/code/artifact/43534a82-eb82-4dbc-bb59-3591b0f9c262 |
-| pickups | `ITEMS`+`POWERUPS`+`CASINGS`+`CLSANIMS` | 48 | 146 | 0.5 MB | https://claude.ai/code/artifact/cce4b869-3ab2-4962-9e2a-3ac5c7ffe114 |
+| pickups | `ITEMS`+`POWERUPS`+`CASINGS` | 38 | 105 | 0.2 MB | https://claude.ai/code/artifact/cce4b869-3ab2-4962-9e2a-3ac5c7ffe114 |
+
+**`CLSANIMS` is the classic-mode weapon set, not an animation curiosity.** All ten
+codes — `CPIS`, `CSHT`, `CSSG`, `CLCG`, `CPLS`, `CBFG`, `CCSW`, `CPUN`, `CRCK`,
+`RLFT` — are viewmodels drawn when `rt_classic` is up, so they want the same
+calls as their modern counterparts and belong on the weapons page. They were on
+the pickups page for one revision because the section name did not say so.
+
+**Labels are keyed by CODE and shared across every page** (`localStorage`
+`d64rt-sprite-labels-v1`), so moving a code between pages never costs it its
+calls, and a code's clusters are computed from its own frames alone — nothing
+else on the page shifts them.
 
 **The exploding barrel is in `EFFECTS`, not `STATIC`.** `BAR1` sits with the
 fireballs, which is where the WAD's own section dividers put it — worth knowing
