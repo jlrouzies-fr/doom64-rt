@@ -150,7 +150,12 @@ start "" "%ENGINE%\gzdoom.exe" -iwad "%IWAD%" ^
   "%MODS%\d64r-ctel-fix.wad" "%MODS%\d64r-rt-sky.pk3" ^
   -file "%MODS%\d64r-lava-fx.pk3" "%MODS%\d64r-blood-persist.pk3" ^
   "%MODS%\d64r-widescreen-gfx.pk3" "%MODS%\d64r-mugshot.pk3" "%MODS%\d64r-rt-titlelogo.pk3" ^
-  -rtnolauncher -width 1280 -height 720 ^
+  rem NO -width/-height HERE. They are a COMMAND-LINE OVERRIDE, applied after
+  rem the config is read and before the first frame, so passing them every start
+  rem silently undid whatever resolution the player picked in the menus -- they
+  rem set it, saved it, restarted, and got 1280x720 back. The window size is the
+  rem player's to keep; the config already remembers it.
+  -rtnolauncher ^
   +exec "%PINS%" %UPSCALE% %MAPARG%%REST%
 
 endlocal

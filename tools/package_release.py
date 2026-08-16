@@ -160,7 +160,30 @@ def main():
             sys.exit("missing mod file the launcher requires: " + name)
         shutil.copy2(p, mods / name)
         count += 1
-    shutil.copy2(PROJ_ROOT / "tools" / "d64rt-pins.cfg", mods / "d64rt-pins.cfg")
+    # THE PINS ARE A DEVELOPMENT FILE AND MUST BE FILTERED, NOT COPIED.
+    # d64rt-pins.cfg is written for launch-retribution-rt.cmd -- the tester's
+    # launcher -- and its head carries `sv_cheats 1`, `god` and `notarget`, plus
+    # a windowed/no-prompt video block. The release launcher execs the same file,
+    # so a straight copy shipped every player an invulnerable game that monsters
+    # ignore, and reasserted the window size over whatever they chose in the
+    # menus. Strip the marked block instead.
+    pins_src = (PROJ_ROOT / "tools" / "d64rt-pins.cfg").read_text(encoding="utf-8")
+    kept, dropped, skipping = [], 0, False
+    for line in pins_src.splitlines(keepends=True):
+        if ">>> DEV-ONLY <<<" in line:
+            skipping = True
+        if skipping:
+            dropped += 1
+            if ">>> END-DEV-ONLY <<<" in line:
+                skipping = False
+            continue
+        kept.append(line)
+    if skipping:
+        sys.exit("d64rt-pins.cfg: DEV-ONLY block is never closed - refusing to ship it")
+    if dropped == 0:
+        sys.exit("d64rt-pins.cfg: no DEV-ONLY block found - the cheat pins would ship")
+    (mods / "d64rt-pins.cfg").write_text("".join(kept), encoding="utf-8")
+    print("  pins        stripped %d dev-only line(s)" % dropped)
     print("  mods/       %5d files" % (count + 1))
 
     # --- launcher + docs ---------------------------------------------------
