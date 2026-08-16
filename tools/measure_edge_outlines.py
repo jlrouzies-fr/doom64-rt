@@ -26,10 +26,19 @@ HOW IT WORKS, and why the control frame is not optional:
 
 Usage:
     python tools/measure_edge_outlines.py <smoked.png> <control.png>
-    python tools/measure_edge_outlines.py --all          # every arm in _edgelab
+    python tools/measure_edge_outlines.py --all              # every arm in _edgelab
+    python tools/measure_edge_outlines.py --temporal <dir>...  # burst folders
 
 Prints one line per frame plus a profile, so two arms can be compared without
 opening either.
+
+TWO METRICS, AND THEY ANSWER DIFFERENT QUESTIONS. The still comparison finds a
+SPATIAL artefact -- the dark line at a silhouette -- and is blind to noise,
+because every capture is taken after the temporal history has converged.
+`--temporal` takes a burst under motion and measures what changes between
+frames. Judge any change to the volume on BOTH: S7.1 of
+docs/rt-volumetric-edge-outlines.md passed the first and failed the second, in
+play, after being reported as free.
 """
 from __future__ import annotations
 
@@ -238,8 +247,80 @@ def measure(smoked: Path, control: Path, label: str = "") -> None:
     print()
 
 
+# ---------------------------------------------------------------------------
+# TEMPORAL NOISE, which is the half a still frame cannot see.
+#
+# S7.1 of docs/rt-volumetric-edge-outlines.md was measured entirely on settled
+# stills and reported "no noise cost" for a change whose whole cost is in
+# motion: after four seconds of standing still the temporal history has
+# converged, so throwing it away is nearly free. The user's first sentence in
+# play was "very noisy, like if dither is not applied any more".
+#
+# So: a BURST of frames taken while the camera turns (shot.ps1 -Burst), and the
+# metric is what changes between CONSECUTIVE frames at HIGH spatial frequency.
+# The high-pass is what separates noise from the scene: turning the camera
+# changes every pixel, but it moves LOW frequencies -- a veil, a wall, a lit
+# floor -- while boiling lives in the fine detail. Subtracting each frame's own
+# blur removes the scene and leaves the grain.
+#
+# Restricted to a box around the smoke, because that is where the medium is and
+# the rest of the frame is a control that should not move with a volumetric
+# setting. The box is fixed rather than derived: the curtain spawns at the
+# muzzle and stays in front of the camera through the turn.
+TEMPORAL_BOX = (0.32, 0.30, 0.68, 0.78)   # x0, y0, x1, y1 as fractions
+
+
+def temporal(folder: Path) -> None:
+    frames = sorted(folder.glob("*.png"))
+    if len(frames) < 3:
+        print(f"{folder.name}: need at least 3 frames, found {len(frames)}")
+        return
+
+    h = w = None
+    box = None
+    prev_hp = None
+    diffs: list[float] = []
+    grain: list[float] = []
+
+    for f in frames:
+        a = luminance(f)
+        if h is None:
+            h, w = a.shape
+            x0 = int(TEMPORAL_BOX[0] * w)
+            y0 = int(TEMPORAL_BOX[1] * h)
+            x1 = int(TEMPORAL_BOX[2] * w)
+            y1 = int(TEMPORAL_BOX[3] * h)
+            box = (slice(y0, y1), slice(x0, x1))
+        elif a.shape != (h, w):
+            print(f"  SKIP {f.name}: {a.shape} != {(h, w)}")
+            continue
+
+        hp = (a - gaussian_blur(a, 4.0))[box]
+        grain.append(float(np.sqrt(np.mean(hp ** 2))))
+        if prev_hp is not None:
+            diffs.append(float(np.mean(np.abs(hp - prev_hp))))
+        prev_hp = hp
+
+    if not diffs:
+        print(f"{folder.name}: no comparable pairs")
+        return
+
+    d = np.array(diffs)
+    print(f"{folder.name}")
+    print(f"    frames {len(frames)}   box {TEMPORAL_BOX}")
+    print(f"    TEMPORAL |d(highpass)|  mean {d.mean():6.3f}   "
+          f"min {d.min():6.3f}  max {d.max():6.3f}  sd {d.std():6.3f}")
+    print(f"    spatial grain RMS       mean {np.mean(grain):6.3f}")
+    print("    per-pair: " + " ".join(f"{v:.2f}" for v in d))
+    print()
+
+
 def main() -> None:
     args = sys.argv[1:]
+    if len(args) >= 2 and args[0] == "--temporal":
+        for f in args[1:]:
+            temporal(Path(f))
+        return
     if args and args[0] == "--all":
         control = SHOTS / "repro-control-smokeoff.png"
         for p in sorted(SHOTS.glob("arm-*.png")) + [SHOTS / "repro-smoke.png"]:

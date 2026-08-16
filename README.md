@@ -222,15 +222,20 @@ denoiser regardless of which one you use.
 Things that are wrong and known to be wrong.
 
 **Black outlines behind volumetrics.** Where a participating medium meets a geometric
-edge, a thin dark line can appear along that edge — most visible in fog, smoke, and inside
-a volumetric beam or lamp shaft. The medium is resolved on the froxel grid, which is far
-coarser than the image, so a cell that straddles a silhouette gets a depth that belongs to
-neither side of it.
-*Mitigated, not solved:* `rt_volume_depthgate` (on by default) gates the volume against
-depth and removes most of it; `rt_volume_depthgate_bias`, `_feather` and `_taps` tune how
-hard it gates, and `0` returns to the ungated behaviour. If an edge still shows, less
-medium is the other lever — `rt_volume_scatter`, or `rt_fog_density` on a fogged map, or
-`rt_volume_shaft_mult` if it is only around lamps.
+edge, a thin dark line appears along that edge — most visible in fog, smoke, and inside
+a volumetric beam or lamp shaft. It is exactly one pixel wide, and it is drawn by the
+**temporal upscaler**, not by the froxel grid: it is gone with DLSS and FSR both off, and
+at its worst under DLAA. Six volumetric settings were ruled out by measurement, including
+the two this project used to blame for it.
+*Mostly fixed:* **`rt_volume_edgesoft 2`** softens the medium across a silhouette and
+removes the lines around sprites and geometry, at no cost in noise. What remains is
+fainter tracing on flat-surface texture seams, which is a different artefact. Failing
+that, `rt_upscale_dlss 0` and `rt_upscale_fsr2 0` remove all of it and cost you the
+upscaler; less medium is the other lever — `rt_volume_scatter`, or `rt_fog_density` on a
+fogged map, or `rt_volume_shaft_mult` if it is only around lamps. The full investigation —
+the lab that reproduces it, the numbers, and the four approaches that were built and came
+back negative — is in
+[`docs/rt-volumetric-edge-outlines.md`](docs/rt-volumetric-edge-outlines.md).
 
 **Sky smears during lightning.** On MAP11, a lightning flash while the view is moving can
 leave a streak across the sky. The flash is a one-frame change over the largest, furthest

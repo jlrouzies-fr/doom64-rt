@@ -1049,6 +1049,16 @@ The emissive fix above removes the bright-edge half. What remains is a silhouett
 compositing artifact — adjacent pixels either side of an edge integrate
 genuinely different amounts of medium — and it is **open**.
 
+> **CLOSED as a diagnosis, 2026-08-16 — see
+> [`rt-volumetric-edge-outlines.md`](rt-volumetric-edge-outlines.md).** Both
+> exclusions above are confirmed on a purpose-built lab (MAP93), and so are four
+> more: the depth gate, the depth bias, the scattering history and the froxel
+> slice thickness. The line is drawn by the **temporal upscaler** — absent with
+> DLSS and FSR off, worst under DLAA — and it is one pixel wide. The sentence
+> above is half right: the differing amounts of medium are real and correct, and
+> the *line* comes from what the upscaler does with that step afterwards. Still
+> open as a **fix**.
+
 ---
 
 ### 9.1 Two denoise knobs that could not reach
@@ -1146,7 +1156,9 @@ reasonably conclude the cvar is broken.
 - **A monster's smoke is one or two parcels, never a filament.** The trail
   emitter is bound to the player's viewpoint by construction (§3), so a monster
   cannot have one without its smoke hanging off your camera.
-- **Dark outlines on geometry seen through smoke** (§9), still open.
+- **Dark outlines on geometry seen through smoke** (§9) — **diagnosed**: the
+  temporal upscaler draws them, not the froxel volume.
+  [`rt-volumetric-edge-outlines.md`](rt-volumetric-edge-outlines.md). Open as a fix.
 - **One sample per froxel is the floor.** `rt_smoke_spp` raises it only inside
   puffs, which is what makes it affordable; the surrounding volume is still 1 spp
   with no spatial filter of its own beyond the sample-time taps.

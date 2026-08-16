@@ -56,7 +56,24 @@ param(
   # fixture is the subject of most of this work and it is ABOVE the horizon, so
   # a straight-ahead capture shows the shadow it casts but never the fixture
   # itself -- which is the half that answers "is the light on the painted bulb".
-  [int]$Pitch = 0
+  [int]$Pitch = 0,
+  # BURST: take this many screenshots instead of one, every -BurstEvery tics,
+  # the first at -Tics. For measuring anything TEMPORAL -- noise, boiling,
+  # ghosting, history loss -- which a single settled frame cannot see at all:
+  # after a few seconds standing still the temporal history has converged and
+  # throwing it away costs almost nothing, so a still reads "no cost" for a
+  # change whose entire cost is in motion. That mistake has been made once here
+  # (docs/rt-volumetric-edge-outlines.md S7.1) and this is the instrument that
+  # stops it being made twice.
+  [int]$Burst = 0,
+  [int]$BurstEvery = 4,
+  # Hold +left from this many tics BEFORE the first shot until the run ends, so
+  # the whole burst happens under motion. Not cosmetic: a temporal upscaler
+  # keeps its history when nothing moves, so the artefacts that only appear when
+  # history is rejected -- which is the interesting class -- need the camera
+  # turning to show up at all. The motion is deterministic (same map, same
+  # tics, same key), so two arms are comparable frame for frame.
+  [int]$BurstTurn = 0
 )
 
 $ErrorActionPreference = 'Stop'
@@ -121,7 +138,22 @@ if ($Turn -ne 0 -or $Pitch -ne 0) {
   }
   $Tics = [math]::Max(60, $Tics - $spent)
 }
-$seq = if ($Play) { '' } else { "+`"$turnCmd" + "wait $Tics; screenshot; wait 40; quit`"" }
+# BURST uses the engine's own map-time counters (rt_autoshot / _every /
+# rt_autoquit) rather than a console `wait` chain, because they count MAP time:
+# the shots land at known tics whatever the load took, and two arms line up
+# frame for frame. The turn is still a console command, held to the end of the
+# run rather than released.
+$burstCvars = ''
+if ($Burst -gt 0 -and -not $Play) {
+  $last = $Tics + ($Burst - 1) * $BurstEvery
+  $burstCvars = "+rt_autoshot $Tics +rt_autoshot_every $BurstEvery +rt_autoquit $($last + 20)"
+}
+
+$seq = if ($Play) { '' }
+       elseif ($Burst -gt 0) {
+         if ($BurstTurn -gt 0) { "+`"wait $([math]::Max(1, $Tics - $BurstTurn)); +left`"" } else { '' }
+       }
+       else { "+`"$turnCmd" + "wait $Tics; screenshot; wait 40; quit`"" }
 
 $argLine = (@('-iwad','"D:\Games\GZDoom\doom2.wad"','-file') + $files + @(
   '-rtnolauncher', '-width', "$Width", '-height', "$Height",
@@ -132,10 +164,16 @@ $argLine = (@('-iwad','"D:\Games\GZDoom\doom2.wad"','-file') + $files + @(
   '+exec', ('"' + $Pins + '"'),
   '+map', $Map,
   $Extra,
+  $burstCvars,
   $seq
 ) | Where-Object { $_ -ne '' }) -join ' '
 
 if ($Play) { Write-Host "launching $Map to play (no capture)" }
+elseif ($Burst -gt 0) {
+  Write-Host ("launching $Map, BURST of $Burst every $BurstEvery tics from $Tics" +
+              $(if ($BurstTurn -gt 0) { " (turning from tic $($Tics - $BurstTurn))" } else { '' }) +
+              " -> $OutDir")
+}
 else { Write-Host "launching $Map, settling $Tics tics ($([math]::Round($Tics/35.0,1))s) -> $OutDir" }
 $p = Start-Process -FilePath $Exe -WorkingDirectory $Wd -ArgumentList $argLine -PassThru
 if ($Play) { return }
@@ -144,8 +182,12 @@ if (-not $p.HasExited) { $p | Stop-Process -Force; Write-Host 'TIMEOUT - killed'
 
 $after = Get-ChildItem $OutDir -Filter '*.png' -ErrorAction SilentlyContinue | Where-Object { $before -notcontains $_.Name }
 if ($after) {
-  $after | Sort-Object LastWriteTime | Select-Object -Last 1 | ForEach-Object {
-    Write-Host "SHOT: $($_.FullName)"
+  if ($Burst -gt 0) {
+    Write-Host "BURST: $(@($after).Count) frames in $OutDir"
+  } else {
+    $after | Sort-Object LastWriteTime | Select-Object -Last 1 | ForEach-Object {
+      Write-Host "SHOT: $($_.FullName)"
+    }
   }
 } else {
   Write-Host 'NO SCREENSHOT PRODUCED'
