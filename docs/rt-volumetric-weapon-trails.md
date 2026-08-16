@@ -115,99 +115,47 @@ lightning flash; that is the Cyberpunk-class trade-off of one-sample-per-cell
 volumetrics and it is uniform — a soft afterglow, not a shape. Everything that
 turned it into *shapes* is items 1 and 2.
 
-## The mechanism
+## The screen-space fallback, for `rt_volume_taccum 0`
+
+Everything in this section governs the OLD path and runs only when in-grid
+accumulation is off. It is kept because it is the fallback, because each piece
+was measured, and because two of the three wrong turns are worth not repeating.
 
 `CmScatterAccum.comp` accumulates the scattering buffer over `rt_volume_history`
-frames (pinned at **8**). Each frame it reprojects the previous buffer and
-validates it with two tests:
+frames, reprojecting the previous buffer and validating it. The weapon is real
+geometry at ~0.3 m, so every pixel it covers failed validation, and the sample
+that replaced the discarded history integrated the volume **to the weapon** —
+almost no inscatter. The reload then swept a stripe of emptied fog across the
+frame that healed over `rt_volume_history` frames.
 
-```glsl
-testReprojectedDepth ( depth, depthPrev, motionZ ) &&
-testReprojectedNormal( normal, normalPrev )
-```
+**`rt_volume_fp 1`** (0 off, 2 debug) fixes that in two halves:
 
-**The first-person weapon is real geometry at about 0.3 m.** It is submitted with
-`RG_MESH_FIRST_PERSON` (`rt_draw.cpp:245`) and traced by the primary rays like
-anything else, so it writes `framebufDepthWorld` and the normal buffer. Every
-pixel the sprite covers therefore fails both tests against whatever the world put
-there last frame — the history is discarded and `historyLen` resets to 1.
+1. **Under the weapon, integrate to far, at the same screen pixel.** Not a
+   freeze — a freeze was tried first and made it *worse*, because it reused the
+   reprojected taps and the motion vectors under the weapon are the **weapon's
+   own**, so the fog was dragged around with the gun. Sampling to far keeps a
+   live estimate of the WORLD's fog flowing under the sprite; a sign bit in the
+   `r16f` history buffer marks it so the uncovering frame accepts it.
+2. **Composite no fog on first-person pixels** (`CmPrepareFinal`, and its
+   postcomp twin). The buffer under the gun deliberately holds a wall's worth of
+   veil for continuity; painting that on a quad 30 cm from the eye is the
+   "weapon carries fog on it" regression. There is no medium to speak of in
+   30 cm, so unfogged is also the physically correct image.
 
-That alone would only cost noise. What makes it *dark* is what replaces the
-discarded history:
+The depth gate skips first-person taps for the same reason — otherwise it culls
+the very cells that far integral reads.
 
-> `fializeScattering()` reconstructs the pixel's world position from
-> `framebufDepthNdc` and integrates the prefix-summed froxel volume out to it.
-> At a weapon pixel that depth is **the weapon**, so the integral runs over ~0.3 m
-> of medium and returns almost no inscatter.
+**`rt_volume_reproj 1`** replaces the surface validation rules with media rules:
+relative path length within 25%, no normal test. The medium is an integral along
+the ray; it cares how far the ray goes, not which surface ends it. Rejections
+that survive even that borrow validated neighbour history (radius 2, capped at
+3 frames) before starting from nothing.
 
-So the accumulator throws the fog away and refills with nothing. When the sprite
-moves on, the pixel it vacates carries that emptied value, and re-converges over
-`rt_volume_history` frames — while its neighbours, never covered, still hold the
-muzzle flash in *their* history. The difference is the trail, and its length in
-frames is `rt_volume_history`.
+**Reading the debug view.** `rt_volume_fp 2` paints first-person pixels cyan
+*into the scattering buffer*, which is then accumulated — so the cyan smears
+along the history. That is the accumulator being visualised, not the mask being
+wrong.
 
-This is why it reads as "the sprite resets the temporal information". It does,
-literally, and the reset is legitimate for a surface denoiser — the surface
-behind the weapon genuinely is unknown — but it is wrong for the medium, which
-is a *volume in front of* the geometry and does not change because a sprite
-moved through the picture of it.
-
-## The fix — `rt_volume_fp`
-
-`0` off (the old path), `1` freeze under the weapon, **`2` freeze + history
-dilation (the default, and the one that works)**, `3` debug.
-
-Mode 1 is described below because it is the mechanism the investigation
-started from. It measured -9.7 %, inside the noise. **SS4 is what actually
-happened when it was put in front of the lab**, and mode 2 is the result.
-
-Three parts, all in `CmScatterAccum.comp`:
-
-1. **Detect first-person per pixel.** `RaygenPrimary` packs `h.instCustomIndex`
-   into `framebufSurfacePosition.w`, and that carries
-   `INSTANCE_CUSTOM_INDEX_FLAG_FIRST_PERSON`. No new buffer, no new pass.
-2. **Skip the depth and normal tests at the weapon's edge — in both
-   directions.** On the frame the sprite *covers* a pixel, and on the frame it
-   *uncovers* it. Only doing the first would discard the carried value one frame
-   before it was going to be used, which is the entire point of carrying it.
-   "Was this pixel first-person last frame" is stored in the **sign of
-   `historyLen`**: `framebufScatteringHistory` is `r16f`, one signed channel with
-   no room for a flag, and the length is always ≥ 1 when it means anything, so
-   the sign is free.
-3. **Freeze rather than integrate.** Under the weapon, hold the carried value and
-   do **not** grow `historyLen`. Not growing it matters on its own: `historyLen`
-   is the mix weight, so a frozen pixel that kept counting would emerge
-   over-converged and re-adapt more slowly than its neighbours — a *bright* trail
-   instead of a dark one.
-
-It costs nothing visually while the weapon is over the pixel, because the weapon
-is opaque and covers it.
-
-## How to read the arms
-
-**Run `rt_volume_fp 3` first.** It paints the frozen pixels cyan. A per-pixel
-flag that reaches the shader and one that does not produce the same screenshot
-otherwise, and §7.1 of the edge-outlines doc is the record of what that costs.
-If the weapon is not cyan, nothing else here means anything.
-
-**`fpfreeze-hist1` is the discriminator, not a candidate fix.** It is the *old*
-path with `rt_volume_history 1`. If the trail is the volumetric's temporal
-accumulation, it disappears there — at the price of visibly noisy fog, which is
-why it is not a fix. If the trail *survives* `hist1`, then it is not this pass at
-all and the change above is aimed at the wrong thing. Run it before believing the
-diagnosis.
-
-## What this does not explain
-
-The muzzle flash's own lag. The flash is a transient light and the medium
-integrates it over 8 frames, so the fog keeps glowing for ~8 frames after the
-flash is gone, everywhere — not just behind the weapon. `fpfreeze` makes the
-weapon's path agree with the rest of the frame; it does not make the rest of the
-frame agree with the flash. If the glow's decay reads as wrong after this, that
-is a separate question about `rt_volume_history` and transient lights.
-
-
----
 
 ## The lab, and what it overturned
 
@@ -266,46 +214,46 @@ over the place as I move the camera". That is the same mechanism at scale: a
 transient light in the medium's history, plus camera motion, plus sprites
 rejecting that history all over the frame.
 
-### Why mode 1 was the wrong shape, and mode 2 is right
+### The wrong turns, kept so they are not retaken
 
-Mode 1 freezes the medium under first-person pixels. It treats the weapon as
-special, and the weapon is not special — it is only the largest, nearest and most
-reproducible instance.
+**A freeze that reprojected.** The first attempt froze the medium under
+first-person pixels but reused the bilinear *reprojected* taps, merely skipping
+their validation. Motion vectors at a first-person pixel are the **weapon's**,
+so the carried medium was dragged along with the gun — the smoke stuck to the
+sprite and smeared with it, which is exactly what the feature was meant to stop.
+Measured worse than its own control. Reading the previous frame at the **same
+screen pixel** is what holds the medium still.
 
-Worse, the **first** implementation of it made things measurably worse, and for a
-reason worth keeping: it reused the bilinear *reprojected* taps and merely
-skipped their validation. The motion vectors at a first-person pixel describe the
-**weapon's** motion, so the carried medium was dragged along with the gun — the
-smoke stuck to the sprite and smeared with it, which is precisely what the
-feature was meant to stop. Reading the previous frame at the **same screen
-pixel** holds the medium still instead, which is correct whenever the camera is
-not turning, and when it is, the pixel is under an opaque sprite anyway.
+**A freeze at all.** Holding a value photographs the fog: lights change and the
+flash decays while the frozen pixel does not. Integrating a *far* sample every
+frame keeps the same continuity and stays alive.
 
-Mode 2 stops treating the weapon as a case at all:
+**Treating the weapon as special.** It never was — only the largest, nearest and
+most reproducible instance. The casing does it, monsters do it, geometry edges
+do it. Every fix aimed at the weapon alone left the class untouched, which is
+what finally forced the question of where the medium is accumulated at all.
 
-> When the reprojection tests reject everything, do not start this pixel's medium
-> from nothing. Look one step further out — a 3×3 at radius 2 around the
-> reprojected position, **fully validated** — and use a neighbour's history if
-> one survives.
-
-The medium is resolved on a 160×88 grid, so one render pixel's scattering is an
-excellent estimate of its neighbour's. The old fallback — `historyLen` 1 and a
-single sample of a volume lit at one sample per cell with one shadow ray — is a
-terrible estimate by comparison, and against a *transient* light it is not merely
-noisy but wrong: the neighbours are still holding the flash and the rejected
-pixel is not. A borrowed history is capped at 3 frames so it blends back toward
-the pixel's own samples rather than sticking, which is what keeps this from
-trading a hole for a smear.
-
-Nothing here is a relaxation of the validation. The dilated taps pass the same
-depth and normal tests; the search is only widened. What it repairs is the case
-where the 2×2 footprint happened to land on the sprite that just moved.
+**Two instruments that graded the wrong thing.** A plain high-pass counted
+per-pixel grain as structure, so the noisiest arm scored worst while visibly
+having fewer ghosts; and pairing arms on exact map tics collapsed to one shared
+sample in thirteen, because under capture this runs at ~4 fps and `rt_autoshot`
+fires on the first frame at or after its tic. Band-pass over a shared tic
+*window* is what the tool does now — and even that could not separate the
+no-gun floor from the control at 2×se, which is why the verdicts here rest on
+matched frames read by eye.
 
 ### Still open
 
-The dark blocky hole from a *world* sprite (the shell casing) is softened by mode
-2 but not gone. It is bigger than the casing and blocky at froxel scale, which
-points at the sampling in `volume_sampleDithered` rather than at the accumulator,
-and it has not been chased. MAP12's thunder case has not been captured in the
-lab — the report is the user's, from play, and the lab has no transient
-world-light arm yet.
+- **MAP12's thunder has never been captured in the lab.** The verdict there is
+  from play. The lab has no transient world-light arm; adding one would let the
+  smear case be measured rather than described.
+- **The froxel-scale blockiness** of a small sprite's occlusion — visible in the
+  legacy arms as a hole bigger than the casing — points at `volume_sampleDithered`
+  rather than at the accumulator, and was never chased. In-grid accumulation and
+  the sprite-shadow fix removed the visible instances; the sampling question
+  stands.
+- **In-grid accumulation's own trade-offs** have not been swept: the fog lags
+  `rt_volume_taccum` frames behind a flash *uniformly* (shapeless, unlike the old
+  patchwork), fast strafing translates the reprojection slightly, and the 4
+  spatial dither samples that replace the temporal averaging have not been tuned
+  against dense smoke. Each has a knob; none has been measured.

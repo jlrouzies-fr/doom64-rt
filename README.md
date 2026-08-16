@@ -221,28 +221,34 @@ denoiser regardless of which one you use.
 
 Things that are wrong and known to be wrong.
 
-**Black outlines behind volumetrics.** Where a participating medium meets a geometric
-edge, a thin dark line appears along that edge — most visible in fog, smoke, and inside
-a volumetric beam or lamp shaft. It is exactly one pixel wide, and it is drawn by the
-**temporal upscaler**, not by the froxel grid: it is gone with DLSS and FSR both off, and
-at its worst under DLAA. Six volumetric settings were ruled out by measurement, including
-the two this project used to blame for it.
-*Mostly fixed:* **`rt_volume_edgesoft 2`** softens the medium across a silhouette and
-removes the lines around sprites and geometry, at no cost in noise. What remains is
-fainter tracing on flat-surface texture seams, which is a different artefact. Failing
-that, `rt_upscale_dlss 0` and `rt_upscale_fsr2 0` remove all of it and cost you the
-upscaler; less medium is the other lever — `rt_volume_scatter`, or `rt_fog_density` on a
-fogged map, or `rt_volume_shaft_mult` if it is only around lamps. The full investigation —
-the lab that reproduces it, the numbers, and the four approaches that were built and came
-back negative — is in
-[`docs/rt-volumetric-edge-outlines.md`](docs/rt-volumetric-edge-outlines.md).
 
-**Sky smears during lightning.** On MAP11, a lightning flash while the view is moving can
-leave a streak across the sky. The flash is a one-frame change over the largest, furthest
-surface in the scene, and the denoiser's temporal history has nothing valid to reproject
-it against — so it smears along the motion rather than snapping.
-*If it bothers you:* `rt_lightning 0` disables the storm's flashes; `thunder` in the
-console fires one on demand if you want to reproduce it.
+### Recently fixed
+
+Kept here because they were listed as known issues for a
+long time, and because the reasoning is worth reading if you hit something like them.
+
+**Volumetric trails behind sprites and edges.** *Fixed.* Firing into smoke used to leave a
+weapon-shaped stamp in it; the ejected shell left its own trail; and during MAP12's storm,
+every monster and every geometry edge smeared through the moon shafts as the camera moved.
+All of it was one mechanism: the medium was accumulated in **screen space**, where its
+history has to be validated against surface depth — so every silhouette threw that history
+away and restarted from a single noisy sample, which against a lightning flash differs from
+its neighbours by most of the flash. The medium is now accumulated **in the froxel grid, in
+world space** (`rt_volume_taccum`), where no surface is involved and there is nothing to
+reject. Sprites also no longer cast shadows into the medium (`rt_volume_spriteshadow 0`) —
+a camera-facing cutout's shadow sheet swings with the view, and its stand-in shadow proxies
+are solid rectangles. See
+[`docs/rt-volumetric-weapon-trails.md`](docs/rt-volumetric-weapon-trails.md).
+
+**Black outlines behind volumetrics.** *Fixed*, by the same change. This was the README's
+first known issue for a long time: a one-pixel dark line wherever a medium met a geometric
+edge, drawn by the **temporal upscaler** — gone with DLSS and FSR both off, worst under
+DLAA — after six volumetric settings had been ruled out by measurement. `rt_volume_edgesoft`
+removed the sprite and geometry half of it by softening the medium across a silhouette;
+in-grid accumulation removed the rest, because a medium that is temporally smooth in world
+space no longer presents the upscaler with the step it was ringing on. The full
+investigation, including four approaches that were built and measured negative, is in
+[`docs/rt-volumetric-edge-outlines.md`](docs/rt-volumetric-edge-outlines.md).
 
 <br>
 

@@ -1056,8 +1056,16 @@ genuinely different amounts of medium — and it is **open**.
 > slice thickness. The line is drawn by the **temporal upscaler** — absent with
 > DLSS and FSR off, worst under DLAA — and it is one pixel wide. The sentence
 > above is half right: the differing amounts of medium are real and correct, and
-> the *line* comes from what the upscaler does with that step afterwards. Still
-> open as a **fix**.
+> the *line* comes from what the upscaler does with that step afterwards.
+>
+> **CLOSED as a fix too, same day.** `rt_volume_edgesoft 2` removed the sprite
+> and geometry silhouettes, and the flat-surface texture seams that survived it
+> went when the medium stopped being accumulated in screen space at all:
+> `rt_volume_taccum` accumulates the froxel grid in WORLD space, so the medium
+> arriving at the composite is temporally smooth across silhouettes and the
+> upscaler has nothing to ring on. Confirmed in play. The mechanism, and why it
+> also ended the sprite-trail family, is in
+> [`rt-volumetric-weapon-trails.md`](rt-volumetric-weapon-trails.md).
 
 ---
 

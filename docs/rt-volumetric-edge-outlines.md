@@ -16,7 +16,7 @@ removes it completely, on the same frame, with the same smoke.
 
 | | |
 |---|---|
-| **Status** | **The reported symptom is fixed** by `rt_volume_edgesoft 2` (§7.3) — sprite and geometry silhouettes, at no temporal cost. What remains is faint tracing on flat-surface *texture* seams, which is a different artefact (§7.4). Four other approaches were built and measured negative (§7.1, §7.2, §7.5) |
+| **Status** | **RESOLVED.** `rt_volume_edgesoft 2` (§7.3) removed the sprite and geometry silhouettes; the remaining tracing on flat-surface texture seams (§7.4) went with **in-grid temporal accumulation** (`rt_volume_taccum`, §10) — confirmed in play: "zero edge". The upscaler still rings, but a medium that is temporally smooth in world space no longer hands it the step it was ringing on |
 | **Lab** | `MAP93`, `tools/build_edge_lab.py`, `tools/edge-lab.cmd` |
 | **Open lead** | The DLSS **render preset** was hard-coded to `E` — deprecated on the DLSS 4 runtime this build ships — so every arm below is the same reconstruction. `rt_dlss_preset` + `tools/edge-preset-ladder.ps1` make it an arm (§7.6). Built, not yet measured |
 | **Measurement** | `tools/measure_edge_outlines.py`, and `tools/measure_edge_ringing.py` for the reconstruction's own signature in a frame with no medium in it |
@@ -491,3 +491,52 @@ a different upscaler is a different image. That is why half the captures in
   cells straddling a silhouette, and offers `rt_volume_depthgate` as the
   mitigation. The depth gate does not touch it (`gateoff`: −1.0 against a −0.9
   baseline). The paragraph should keep the symptom and point here for the cause.
+
+
+---
+
+## 10. How it actually ended — the medium stopped being a screen-space quantity
+
+Everything above investigates what happens to the medium's **step at a
+silhouette** on its way through the image pipeline. Four approaches were built
+against that step and three came back negative. The step itself turned out to be
+avoidable.
+
+That came from a different investigation —
+[`rt-volumetric-weapon-trails.md`](rt-volumetric-weapon-trails.md), chasing dark
+trails behind the super shotgun's reload — which found that the froxel medium was
+being **temporally accumulated in screen space** (`CmScatterAccum.comp`), where
+history must be validated against surface depth. Every silhouette therefore
+rejected it and restarted from a single sample of a volume lit at one shadow ray
+per cell. That is the same population of pixels this document measures: the ones
+at edges. A restarted pixel next to a converged one is a step in the medium over
+and above the genuine transmittance step — sharper, noisier, and re-created every
+frame.
+
+RTGL1 shipped the alternative and left it disabled (`const float
+g_temporalWeight = 0.0;` in `CmVolumetricProcess.comp`, with the world-space
+reprojection helper and prev-frame grid bindings all wired and never called).
+`rt_volume_taccum 8` turns it on: each froxel cell blends against its own world
+position in the previous frame's grid, no surfaces involved, and the ray integral
+is recomputed fresh every frame from the smooth field. The medium arriving at
+`CmPrepareFinal` is then continuous across silhouettes in a way it never was
+here, and the upscaler's ringing has almost nothing to bite on.
+
+**What this does and does not overturn:**
+
+- §5's ladder stands. The artefact *was* carried by the upscaler; `native` still
+  removes it, DLAA is still the worst arm. Nothing here says otherwise.
+- §6's "strongly indicated, not proven" mechanism — the medium's own structure is
+  the payload, the upscaler is the carrier — is now better supported: removing
+  most of the medium's high-frequency structure removed the artefact without
+  touching the upscaler at all.
+- §7.1, §7.2 and §7.5 remain measured negatives, and §7.6's DLSS preset question
+  is still open and still worth taking; it is simply no longer urgent.
+- §7.3 (`rt_volume_edgesoft 2`) stays on. It is cheap, it is measured, and it
+  addresses the genuine transmittance step, which in-grid accumulation does not
+  remove — only the restart noise on top of it.
+
+**Not re-measured on the MAP93 ladder.** The verdict here is from play, and the
+lab arms exist to take it properly: capture `arm-*`/`ctrl-*` pairs at
+`+rt_volume_taccum 0` and `+rt_volume_taccum 8` per §8 and run
+`measure_edge_outlines.py`. Recorded as user-confirmed, not as a number.
