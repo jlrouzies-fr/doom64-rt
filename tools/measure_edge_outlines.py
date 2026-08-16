@@ -161,7 +161,57 @@ def measure(smoked: Path, control: Path, label: str = "") -> None:
     # exactly what the first version of this script printed.
     gx = np.zeros_like(c)
     gx[:, 1:-1] = c[:, 2:] - c[:, :-2]
+    # ---------------------------------------------------------------------
+    # THE TEST THAT ACTUALLY DECIDES IT.
+    #
+    # If the medium is behaving, then for every pixel
+    #
+    #     smoked = transmittance * control + inscatter
+    #
+    # and BOTH coefficients are froxel-resolved, i.e. smooth over the ~16 px a
+    # froxel column covers. So fitting a local linear model of the control to
+    # the smoked frame over a window of that size must explain the frame
+    # EXACTLY, edges included -- a locally-constant a and b cannot draw a line
+    # along a silhouette. Whatever the fit cannot explain is the artefact, and
+    # it is measured in luminance levels rather than described.
+    #
+    # This is what the earlier statistics could not do. "Edge energy kept 0.42"
+    # says the medium dimmed the picture; it cannot separate a correctly dimmed
+    # edge from a dimmed edge with a line drawn beside it, because both raise
+    # the same RMS. The residual of this fit is zero for the first and not for
+    # the second.
+    win = 8.0
+    mS, mC = gaussian_blur(s, win), gaussian_blur(c, win)
+    vCC = gaussian_blur(c * c, win) - mC * mC
+    vSC = gaussian_blur(s * c, win) - mS * mC
+    a = vSC / np.maximum(vCC, 1.0)
+    b = mS - a * mC
+    fit = a * c + b
+    r = s - fit
+
+    def rmsr(m: np.ndarray) -> float:
+        return float(np.sqrt(np.mean(r[m] ** 2))) if m.any() else float("nan")
+
+    print(f"    LOCAL-FIT RESIDUAL   on edge {rmsr(edges & smoke):5.2f}"
+          f"   flat {rmsr(flat & smoke):5.2f}"
+          f"   excess {rmsr(edges & smoke) / max(rmsr(flat & smoke), 1e-6):5.2f}"
+          f"   [clear-area edge {rmsr(edges & clear):5.2f}]")
+
     offs = np.arange(-16, 17)
+
+    def fitprofile(mask: np.ndarray, tag: str) -> None:
+        vert = (np.abs(gx) > EDGE_THRESHOLD) & mask
+        ys, xs = np.nonzero(vert)
+        keep = (xs > 40) & (xs < s.shape[1] - 40)
+        ys, xs = ys[keep], xs[keep]
+        if len(xs) < 200:
+            print(f"      {tag}: too few edges ({len(xs)})")
+            return
+        sign = np.sign(gx[ys, xs]).astype(int)
+        prof = np.array([r[ys, xs + d * sign].mean() for d in offs])
+        print(f"      {tag}  n={len(xs)}  (+offset = brighter side of the edge)")
+        print("        offset " + " ".join(f"{d:+4d}" for d in offs[::2]))
+        print("        fitres " + " ".join(f"{prof[i]:+4.1f}" for i in range(0, len(offs), 2)))
 
     def profile(mask: np.ndarray, tag: str) -> None:
         vert = (np.abs(gx) > EDGE_THRESHOLD) & mask
@@ -183,8 +233,8 @@ def measure(smoked: Path, control: Path, label: str = "") -> None:
     # know about the medium -- the upscaler, the denoiser, a sharpen -- and is
     # merely more VISIBLE against a flat veil. One that only exists inside the
     # smoke is the medium's own.
-    profile(smoke, "in smoke ")
-    profile(clear, "in clear ")
+    fitprofile(smoke, "fit residual, in smoke")
+    fitprofile(clear, "fit residual, in clear")
     print()
 
 
