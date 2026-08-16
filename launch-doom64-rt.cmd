@@ -141,6 +141,16 @@ echo   iwad      : %IWAD%
 echo   upscaler  : %D64RT_UPSCALER%   ^(override with D64RT_UPSCALER=dlss^|fsr^|none^)
 echo.
 
+rem NO -width/-height ON THIS LINE, and no `rem` inside it either -- a rem
+rem between two ^-continued lines is not a comment, it becomes ARGUMENTS, and the
+rem first line without a caret silently truncates the command (that is how
+rem -rtnolauncher and +exec pins got dropped once).
+rem
+rem The resolution flags are a COMMAND-LINE OVERRIDE applied after the config is
+rem read, so passing them every start undid whatever the player chose in the
+rem menus: set it, save, restart, back to 1280x720. The window size is theirs to
+rem keep. tools\launch-retribution-rt.cmd still forces it, on purpose -- a test
+rem launcher wants a predictable window.
 cd /d "%ENGINE%"
 start "" "%ENGINE%\gzdoom.exe" -iwad "%IWAD%" ^
   -file "%MOD%" "%GAME%\D64RTR_BRIGHTMAPS.PK3" "%GAME%\D64MUS.PK3" ^
@@ -150,7 +160,7 @@ start "" "%ENGINE%\gzdoom.exe" -iwad "%IWAD%" ^
   "%MODS%\d64r-ctel-fix.wad" "%MODS%\d64r-rt-sky.pk3" ^
   -file "%MODS%\d64r-lava-fx.pk3" "%MODS%\d64r-blood-persist.pk3" ^
   "%MODS%\d64r-widescreen-gfx.pk3" "%MODS%\d64r-mugshot.pk3" "%MODS%\d64r-rt-titlelogo.pk3" ^
-  -rtnolauncher -width 1280 -height 720 ^
+  -rtnolauncher ^
   +exec "%PINS%" %UPSCALE% %MAPARG%%REST%
 
 endlocal

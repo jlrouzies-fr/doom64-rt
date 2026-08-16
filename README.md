@@ -92,7 +92,7 @@ this project is finding those and replacing them with something that actually em
 | **Clouds + lightning** | A layered cloud deck (`rt_clouds_*`): 6–8 baked slices drawn as stacked sky-dome shells, so they parallax and occlude each other. It is sky *geometry*, not a participating medium — but moonlight is tinted and attenuated through the stack, and it flashes with MAP11's storm, whose schedule this puts back. `thunder` CCMD. | [`rt-clouds-and-lightning`](docs/rt-clouds-and-lightning.md) |
 | **Per-map fog** | A froxel volume with a near/far ramp, tuned per level (`rt_fog_*`, `RT_FOG_PRESETS`, `fog` CCMD). Needed two RTGL1 froxel changes. | [`rt-fog`](docs/rt-fog.md) · [implementation](docs/rt-fog-implementation.md) |
 | **Volumetric smoke** | Muzzle smoke as a real participating medium inside the fog's froxel volume, so it takes the colour of whatever lights the room. Six sources: weapons, monster guns, projectiles, barrels, flames. Sim is on the CPU, on purpose. `smoke` CCMD. | [`rt-smoke`](docs/rt-smoke.md) |
-| **Light shafts from lamps** | The froxel pass shadow-tests one light per frame — the sun — which is why beams only ever happened outdoors. An explicit fixture list puts ordinary ceiling lamps, bulb lattices and solo bulbs in the air too (`rt_volume_shafts`, `rt_volume_shaft_src` as a family bitmask). | [`plan-light-shafts`](docs/plan-light-shafts.md) |
+| **Light shafts from lamps** | The froxel pass shadow-tests one light per frame — the sun — which is why beams only ever happened outdoors. An explicit fixture list puts ordinary ceiling lamps, bulb lattices and solo bulbs in the air too (`rt_volume_shafts`, `rt_volume_shaft_src` as a family bitmask). | [`plan-light-shafts`](docs/plan-light-shafts.md) *(shipped; the doc is the design)* |
 | **Dust motes** | Tiny quads on a hashed world grid, drawn where a shaft can actually light them (`rt_dust_*`). Bounded by construction: the cap sets the cell spacing rather than a counter. | — |
 | **Water** | Stylized surface with projected caustics; flats are tagged engine-side, no per-map setup. | [`rt-water`](docs/rt-water.md) |
 | **Lava** | The floor is the emitter — drifting quantized heat field (`rt_lava_flow*`), slow whole-surface breath, optional analytic light grid over the flats. | — |
@@ -170,7 +170,8 @@ works on the WAD's own classes.
 - **Projectile impacts** (`rt_arc_*`) — that hitscan hook is hitscan only, so no projectile
   in the game reacted to what it hit. Plasma, the arachnotron's bolt and the BFG now leave
   a branching electric mark with its own light and its own colour ramp.
-  → [`docs/plan-projectile-impact-fx.md`](docs/plan-projectile-impact-fx.md)
+  → [`docs/plan-projectile-impact-fx.md`](docs/plan-projectile-impact-fx.md) — shipped;
+  the doc is the design, and records what was deliberately left out.
 - **The Unmaker burns the wall** (`rt_laser_*`) — its laser leaves a hot spot, a glow and
   a short-lived arc where it lands, rather than passing through the world unmarked.
 - **Exploding barrels** (`rt_barrel_*`) — the barrel comes apart into curved plate pieces
@@ -245,17 +246,19 @@ console fires one on demand if you want to reproduce it.
 ## ⛧ &nbsp;Install and play
 
 > [!NOTE]
-> **v0.1.0 is a pre-release.** It builds and runs here, but nobody outside this
-> machine has played it: the FSR path has never run on AMD hardware, and DLSS Ray
-> Reconstruction is alpha and ships off. Bug reports welcome.
+> **Tested on one machine only.** The FSR path has never run on AMD hardware, and DLSS Ray
+> Reconstruction is alpha and ships off. Releases cut from `main` are full releases;
+> anything tagged off another branch publishes as a `(beta)` pre-release. Bug reports
+> welcome.
 
 You need a GPU with hardware ray tracing (NVIDIA RTX, AMD RDNA 2+, Intel Arc) and
 a DOOM II you own. Everything else is free.
 
 **1. Download and extract this**
 
-[**Releases**](https://github.com/jlrouzies-fr/doom64-rt/releases) → `Doom64-RT.zip` (~110 MB).
-Extract it anywhere — it needs no installer and writes nothing outside its own folder.
+[**Releases**](https://github.com/jlrouzies-fr/doom64-rt/releases) → `Doom64-RT.zip` (~124 MB).
+Extract it anywhere — it needs no installer, and the only thing it writes outside its own
+folder is GZDoom's config, at `Documents\My Games\GZDoom\gzdoom-rt2.ini`.
 
 **2. Get Doom 64: Retribution and its music, and extract both into `game\`**
 
@@ -345,11 +348,11 @@ the clone can live anywhere.
 > branch** — not their upstreams. Both carry changes this repo depends on (the RT feature
 > file split, the froxel changes fog and smoke need, the emissive and translation fixes).
 > Upstream will build, then behave wrong in ways nothing reports.
-> **The project repo itself is on `fileSplit`** — its `main` branch is an empty initial
-> commit, so a plain `git clone` gets you a README and nothing else.
+> The project repo itself is on **`main`**; `dev` is where work lands before it is merged
+> and tagged.
 
 ```powershell
-git clone -b fileSplit https://github.com/jlrouzies-fr/doom64-rt.git Doom64-RT
+git clone https://github.com/jlrouzies-fr/doom64-rt.git Doom64-RT
 cd Doom64-RT
 git clone --recurse-submodules -b doom64-rt https://github.com/jlrouzies-fr/gzdoom-rt.git sourcecode\gzdoom-rt
 git clone --recurse-submodules -b doom64-rt https://github.com/jlrouzies-fr/RTGL.git      deps\RTGL
@@ -408,7 +411,7 @@ after any clean rebuild because the stock `rt\` tree is restaged wholesale:
 
 | Step | Why it matters |
 |---|---|
-| writes `rt\RTGL1.json` with `developerMode: true` | RTGL1 only ever **reads** this file (`VulkanDevice_Init.cpp:228`, `.value_or(default)`). No file means `developerMode: false`, every authored PNG material ignored, KTX2 only — and nothing warns you. The game just looks stock. |
+| writes `rt\RTGL1.json` with `developerMode: true` | RTGL1 only ever **reads** this file (`VulkanDevice_Init.cpp:228`, `.value_or(default)`). No file means `developerMode: false`, every authored PNG material ignored, KTX2 only — and nothing warns you. The game just looks stock. A **release** additionally gets `debugWindows: false`: the two used to be one flag, so hiding RTGL1's ImGui window meant giving up the authored materials. |
 | stages `Retribution-RT-Materials\rt\` into the engine `rt\` | The materials themselves. |
 | copies `rt-wad-overlay\` into `rt\wad` | `rt\wad` is appended **after** every `-file` PWAD, so without it the stock RT menu art overrides Retribution's. |
 
@@ -444,7 +447,7 @@ build it.
 </table>
 
 > [!NOTE]
-> The launcher pins ~390 cvars via `+exec tools\d64rt-pins.cfg` rather than on the command line.
+> The launcher pins ~600 cvars via `+exec tools\d64rt-pins.cfg` rather than on the command line.
 > That is deliberate: `cmd.exe` truncates at 8191 characters, and the old inline form silently
 > dropped the tail — arms ran on defaults while the tool printed values it never applied.
 
@@ -465,7 +468,7 @@ Three that matter more than the rest:
 
 | | |
 |---|---|
-| [`AGENTS.md`](AGENTS.md) | The working handbook — diagnostic procedure for a wrongly-lit surface, the `rt/` source map, how to add a cvar, and 31 numbered pitfalls not to repeat. |
+| [`AGENTS.md`](AGENTS.md) | The working handbook — diagnostic procedure for a wrongly-lit surface, the `rt/` source map, how to add a cvar, and 36 numbered pitfalls not to repeat. |
 | [`compat-patches.md`](compat-patches.md) | Every engine and RTGL1 change we made, dated, with the reason. |
 | [`docs/open-issues-rt-lighting.md`](docs/open-issues-rt-lighting.md) | What still fails. |
 

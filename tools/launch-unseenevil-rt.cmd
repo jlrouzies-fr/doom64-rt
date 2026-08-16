@@ -47,6 +47,20 @@ set "ENGINE=%PROJ%\sourcecode\gzdoom-rt\build\RelWithDebInfo"
 set "MOD=%PROJ%\Doom64-UnseenEvil\D64UnseenEvil-v1.0.3.pk3"
 set "TONE=%PROJ%\Doom64-UnseenEvil\d64ue-brightmap-tone.pk3"
 
+rem ---- autolights -----------------------------------------------------------
+rem WHY THIS IS NEEDED AT ALL. DOOM 1 and DOOM 2 maps contain no light things --
+rem their rooms are lit purely by sector lightlevel, which is baked shading, not
+rem a light source. Under a path tracer that leaves the world essentially black:
+rem rt_sector_emis only makes a bright surface glow on itself, and the engine's
+rem fixture walk keys off Doom 64 texture names this content does not use.
+rem d64rt-autolights.pk3 spawns one PointLight per lit sector, which GZDoom
+rem forwards into RTGL1 through the same path Retribution's 9800 things use.
+rem
+rem It is STILL BEING TUNED -- it currently reads a little hot in MAP01's opening
+rem corridor -- so "nolights" drops it without dropping the tone overlay, which is
+rem what makes the two separable when judging a room.
+set "AUTO=%PROJ%\Doom64-UnseenEvil\d64rt-autolights.pk3"
+
 rem ---- Retribution patches carried over -------------------------------------
 rem WHICH OF OURS TRANSFER, AND WHY MOST DO NOT. Every d64r-*.pk3 was checked for
 rem what it inherits from and replaces. The great majority are Retribution-shaped
@@ -101,8 +115,9 @@ rem time its own test was reached, so it fell through to the map parser and beca
 rem "+map bare". Consuming them in a loop removes the ordering entirely.
 set "WANT=doom2.wad"
 :flags
-if /i "%~1"=="bare"  ( set "PATCHES=" & shift & goto :flags )
+if /i "%~1"=="bare"  ( set "PATCHES=" & set "AUTO=" & shift & goto :flags )
 if /i "%~1"=="doom1" ( set "WANT=doom.wad" & shift & goto :flags )
+if /i "%~1"=="nolights" ( set "AUTO=" & shift & goto :flags )
 
 rem Steam's modern "Ultimate Doom" depot is a BUNDLE: one app folder holds every
 rem classic IWAD, with DOOM.WAD at base\ and the rest one level down in
@@ -148,6 +163,9 @@ if not exist "%TONE%" (
   echo        Build it with: python tools\tone_unseenevil_brightmaps.py --write
   exit /b 1
 )
+rem Absent is not an error: it is gitignored, and "nolights" clears it on purpose.
+if not exist "%AUTO%" set "AUTO="
+if defined AUTO set "AUTO="%AUTO%""
 
 rem ---- passthrough ----------------------------------------------------------
 rem Collect the post-"--" passthrough without disturbing %1 parsing above.
@@ -199,6 +217,7 @@ echo   iwad    %IWAD%
 echo   mod     %MOD%
 echo   tone    %TONE%   ^(18 brightmaps 255 -^> 192^)
 if defined PATCHES (echo   patches %PATCHES%) else (echo   patches none ^("bare"^))
+if defined AUTO (echo   lights  autolights ON) else (echo   lights  none ^("nolights"^))
 echo   map     %MAPLUMP%
 echo   log     %LOGF%
 echo.
@@ -225,8 +244,12 @@ rem Keep this command line SHORT. The Retribution launcher once spelled every
 rem pin out here, hit cmd.exe's 8191-character limit, and silently dropped the
 rem trailing passthrough while still printing the values it believed it had set.
 rem That is why the pins live in a cfg and arrive via +exec.
+rem WINDOWED 960x540, PINNED TOP-LEFT. -width/-height set the RENDER size and do
+rem not size the window at all; only vid_defwidth/vid_defheight do, which is why
+rem the old line above them still opened a full-desktop window.
 start "" gzdoom.exe ^
-  -iwad "%IWAD%" -file "%MOD%" %PATCHES% "%TONE%" -rtnolauncher -nostartup -width 1280 -height 720 ^
+  -iwad "%IWAD%" -file "%MOD%" %PATCHES% "%TONE%" %AUTO% -rtnolauncher -nostartup ^
+  +vid_fullscreen 0 +vid_defwidth 960 +vid_defheight 540 +win_x 0 +win_y 0 ^
   +logfile "%LOGF%" ^
   +exec "%PINS%" ^
   %MAPARG% %MAPLUMP% %EXTRA%

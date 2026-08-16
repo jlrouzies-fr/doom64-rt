@@ -220,6 +220,14 @@ jobs:
           $rtgl = Get-Content "$p\rt\RTGL1.json" -Raw | ConvertFrom-Json
           if (-not $rtgl.developerMode) { throw 'RTGL1.json: developerMode is off - authored materials would be ignored' }
           if ($rtgl.debugWindows)       { throw 'RTGL1.json: debugWindows is on - the release would open the debug window' }
+          # NO CHEATS AND NO VIDEO OVERRIDES IN THE SHIPPED PINS. The pins file is
+          # written for the tester's launcher and its head carries sv_cheats/god/
+          # notarget plus a windowed block; the release launcher execs the same file.
+          # v0.1.0-v0.1.6 all shipped an invulnerable game that monsters ignored.
+          # package_release.py strips the marked DEV-ONLY block -- this proves it did.
+          foreach ($bad in 'sv_cheats','god','notarget','vid_fullscreen','win_x','queryiwad') {
+            if ($pins -match "(?m)^$bad( |$)") { throw "d64rt-pins.cfg still pins '$bad' - the DEV-ONLY strip did not run" }
+          }
           # Nothing that belongs to somebody else's game, and nothing we cannot ship.
           foreach ($f in @('D64RTR_v15.WAD','D64MUS.PK3','doom2.wad','DOOMSND.SF2','D64RTR_BRIGHTMAPS.PK3')) {
             if (Get-ChildItem $p -Recurse -Filter $f -ErrorAction SilentlyContinue) {
