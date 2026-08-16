@@ -46,6 +46,26 @@ set "ENGINE=%PROJ%\sourcecode\gzdoom-rt\build\RelWithDebInfo"
 
 set "MOD=%PROJ%\Doom64-UnseenEvil\D64UnseenEvil-v1.0.3.pk3"
 set "TONE=%PROJ%\Doom64-UnseenEvil\d64ue-brightmap-tone.pk3"
+rem Liquid animation. The mod maps all four FWATER frames to one flat, so its
+rem pools are frozen; this declares the A/B pairs it ships but never cycles.
+rem Build/inspect: the pk3 holds a single ANIMDEFS lump and nothing else.
+set "LIQANIM=%PROJ%\Doom64-UnseenEvil\d64ue-liquid-anim.pk3"
+rem Baked skies. The mod's skybox_* are 32x32 stubs whose real look comes from
+rem shaders/d64ue/sky_3d.fp; RTGL1 never runs GZDoom fragment shaders, so under RT
+rem the sky renders blank. Rebuild: py -3 tools\make_unseenevil_skies.py --write
+set "SKYRT=%PROJ%\Doom64-UnseenEvil\d64ue-sky-rt.pk3"
+rem Pickup glows. The mod lights its keys and weapon projectiles but nothing else;
+rem armour and the spheres define no light, so they sit unlit under RT.
+set "PICKLT=%PROJ%\Doom64-UnseenEvil\d64ue-pickup-lights.pk3"
+rem FLAT2 retarget. The mod maps FLAT2 -- an ordinary grey DOOM II ceiling flat used
+rem over huge areas -- onto Doom 64's inset-lamp flat SFLATAS, which this engine
+rem treats as a FIXTURE (emissiveMult 20 in rt/data/textures.json, plus real analytic
+rem lights from RT_IsCeilingInsetLampTexture). The result is an entire ceiling acting
+rem as a light with nothing in the room producing it. Sends FLAT2 to SFLATAP instead --
+rem same family, a grille rather than bulbs, deliberately excluded from the lamp list.
+rem TLITE6_5/6 keep their SFLATAS mapping: those are real light flats.
+rem Rebuild: py -3 tools\make_unseenevil_texfix.py --write
+set "TEXFIX=%PROJ%\Doom64-UnseenEvil\d64ue-texfix.pk3"
 
 rem ---- autolights -----------------------------------------------------------
 rem WHY THIS IS NEEDED AT ALL. DOOM 1 and DOOM 2 maps contain no light things --
@@ -56,9 +76,29 @@ rem fixture walk keys off Doom 64 texture names this content does not use.
 rem d64rt-autolights.pk3 spawns one PointLight per lit sector, which GZDoom
 rem forwards into RTGL1 through the same path Retribution's 9800 things use.
 rem
-rem It is STILL BEING TUNED -- it currently reads a little hot in MAP01's opening
-rem corridor -- so "nolights" drops it without dropping the tone overlay, which is
-rem what makes the two separable when judging a room.
+rem LOADED BUT OFF. d64ue-lighting.cfg pins rt_sector_lights 0, and this rig reads
+rem that cvar every tic, so nothing is spawned unless you ask for it.
+rem
+rem WHY IT IS OFF. A PointLight parked at a sector's centre burns a round pool into
+rem the flat above it -- a bright disc with no fixture anywhere near it. Lowering it
+rem in the room only spreads the disc; nothing removes it, because the emitter is a
+rem ball hanging in mid-air. Surface emission (rt_sector_emis) was tried as the
+rem replacement and rejected on the same ground: no disc, but the same invented
+rem light, just told more smoothly. Only real emitters light these maps now.
+rem
+rem THE COST IS REAL: DOOM 1/2 maps carry no light things at all, so they are DARK.
+rem The flashlight (F) is the intended answer.
+rem
+rem rt_sector_lights IS ITS SWITCH -- the pk3 was changed to make that true, rather
+rem than to explain why it was not. These are PointLight ACTORS, so no rt_* cvar gated
+rem them at the engine level; rt_sector_lights controls only RTGL1's own stock
+rem per-sector upload. From inside the game that distinction is invisible: you turn
+rem "sector lights" off, they stay, and the only honest reading is that the cvar is
+rem broken. So `rt_sector_lights 1` in the console brings them back live, and `0`
+rem removes them again, with no map reload either way.
+rem
+rem Retribution never loads this pk3 -- it has real 9800/9801/9802 light things -- so
+rem none of this reaches it.
 set "AUTO=%PROJ%\Doom64-UnseenEvil\d64rt-autolights.pk3"
 
 rem ---- Retribution patches carried over -------------------------------------
@@ -103,6 +143,10 @@ rem expansion would split into two bogus -file arguments.
 set "PATCHES="%FLSH%""
 if not exist "%FLSH%" set "PATCHES="
 set "PINS=%PROJ%\tools\d64rt-pins.cfg"
+rem World lighting for DOOM 1/2 maps. Exec'd AFTER the pins so it wins. Both invented
+rem light schemes -- the per-sector PointLight rig and sector self-emission -- are
+rem turned OFF there; only real emitters light these maps. See the file.
+set "LIGHTCFG=%PROJ%\tools\d64ue-lighting.cfg"
 rem A separate log from rt-console.log on purpose: that one is the Retribution
 rem transcript and gets read after a session, so this must not clobber it.
 set "LOGF=%PROJ%\rt-console-unseenevil.log"
@@ -164,6 +208,14 @@ if not exist "%TONE%" (
   exit /b 1
 )
 rem Absent is not an error: it is gitignored, and "nolights" clears it on purpose.
+if not exist "%TEXFIX%" set "TEXFIX="
+if defined TEXFIX set "TEXFIX="%TEXFIX%""
+if not exist "%PICKLT%" set "PICKLT="
+if defined PICKLT set "PICKLT="%PICKLT%""
+if not exist "%SKYRT%" set "SKYRT="
+if defined SKYRT set "SKYRT="%SKYRT%""
+if not exist "%LIQANIM%" set "LIQANIM="
+if defined LIQANIM set "LIQANIM="%LIQANIM%""
 if not exist "%AUTO%" set "AUTO="
 if defined AUTO set "AUTO="%AUTO%""
 
@@ -185,6 +237,12 @@ rem +map jumps straight into play, so the title and intermission screens are
 rem otherwise unreachable from here -- and Unseen Evil has a custom TITLEMAP.
 set "MAPARG=+map"
 set "MAPNUM=%~1"
+rem THE SEPARATOR IS NOT A MAP NAME. After the keyword loop has consumed e.g.
+rem "doom1", %1 can be the "--" that introduces the passthrough, and it fell
+rem straight through to the lump-name branch as "+map --" -- which boots to a
+rem dead start screen with an almost empty log, looking like a crash rather than
+rem a bad argument. Blank it and the default map logic below takes over.
+if "%MAPNUM%"=="--" set "MAPNUM="
 if /i "%MAPNUM%"=="menu" (
   set "MAPARG="
   set "MAPLUMP="
@@ -240,6 +298,38 @@ rem -nostartup makes GetGameStartScreen return nullptr, which is the LATE path -
 rem the one Retribution has always used, because it is GAME_Doom and never
 rem matched the Hexen/Heretic/Strife branches in the first place.
 rem
+rem rt_mod_compat 0 IS WHAT MAKES THE MOD'S ART APPEAR, and it goes AFTER +exec
+rem so it beats the pins file (which sets 1).
+rem
+rem     src/playsim/p_sectors.cpp:1432
+rem         void FLevelLocals::ReplaceTextures(...) { if( rt_mod_compat ) return; }
+rem
+rem Unseen Evil retextures DOOM 1/2 maps at runtime: its D64UE_Terraformer_Event
+rem reads resources/d64ue_textures.* (285 mappings in the root table alone,
+rem BROWN1 -> textures/pepy/d64_brown1 and so on) and applies them through
+rem level.ReplaceTextures in WorldLoaded. With rt_mod_compat non-zero every one
+rem of those calls returns immediately, in silence -- no warning, no log line --
+rem so the mod appears to load correctly while showing stock DOOM II walls with
+rem Doom 64 sprites in front of them.
+rem
+rem Measured on doom2 MAP01 with a ZScript census of every sidedef:
+rem     rt_mod_compat 1 -> walls mod=3   stock=387, flats mod=0
+rem     rt_mod_compat 0 -> walls mod=334 stock=56,  flats mod=17
+rem
+rem THE MOON GOES OFF, and this is a content decision rather than a taste one.
+rem d64rt-pins.cfg turns it on (rt_sun 1, intensity 90, aimed 25/135) because
+rem Retribution's maps were BUILT around a moonlit sky -- their openings are placed
+rem where that bearing can honestly reach. DOOM 1/2 maps were not: they are full of
+rem F_SKY1 ceilings over rooms with no opening the light could arrive through, so a
+rem directional at a fixed bearing rakes straight into sealed interiors and the
+rem whole level reads as leaking. rt_sun_require_sky trims some of it, not enough.
+rem
+rem The four *_presets 0 go with it for the reason rt_presets.cpp now enforces
+rem engine-side: those tables are keyed on BARE map names measured on Retribution,
+rem so DOOM II's MAP22/23/24/25/26/28/31/32 collide with Retribution rows by name
+rem alone. The engine guard makes these redundant on IWAD maps; they are kept
+rem because Unseen Evil's own 64UE_* maps are PWAD maps and so remain eligible.
+rem
 rem Keep this command line SHORT. The Retribution launcher once spelled every
 rem pin out here, hit cmd.exe's 8191-character limit, and silently dropped the
 rem trailing passthrough while still printing the values it believed it had set.
@@ -248,9 +338,14 @@ rem WINDOWED 960x540, PINNED TOP-LEFT. -width/-height set the RENDER size and do
 rem not size the window at all; only vid_defwidth/vid_defheight do, which is why
 rem the old line above them still opened a full-desktop window.
 start "" gzdoom.exe ^
-  -iwad "%IWAD%" -file "%MOD%" %PATCHES% "%TONE%" %AUTO% -rtnolauncher -nostartup ^
+  -iwad "%IWAD%" -file "%MOD%" %PATCHES% "%TONE%" %TEXFIX% %LIQANIM% %SKYRT% %PICKLT% %AUTO% -rtnolauncher -nostartup ^
   +vid_fullscreen 0 +vid_defwidth 960 +vid_defheight 540 +win_x 0 +win_y 0 ^
   +logfile "%LOGF%" ^
   +exec "%PINS%" ^
+  +exec "%LIGHTCFG%" ^
+  +rt_mod_compat 0 ^
+  +rt_sun 0 +rt_moon_geo 0 +rt_moon_presets 0 +rt_clouds_presets 0 +rt_fog_presets 0 ^
+  +rt_volume_shaft_mult 0.1 ^
+  +rt_keytrim_lights 1 ^
   %MAPARG% %MAPLUMP% %EXTRA%
 exit /b 0

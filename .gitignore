@@ -69,6 +69,9 @@ Doom64-Retribution/d64r-texgallery-batches-mapinfo.pk3
 
 # --- Gallery capture bulk (keep JSON/manifests/scripts; drop PNG screenshots) ---
 tools/_gallery/**/*.png
+# Same rule for the edge lab: keep the logs and the script, drop the captures
+# (5 shots, 26 MB) -- they are re-made by tools/edge-lab.cmd on demand.
+tools/_edgelab/**/*.png
 tools/_gallery/**/Screenshot_*.png
 tools/_gallery/**/stdout*.txt
 # ephemeral AI corner review dumps (PNGs already ignored; skip whole batch dirs)
