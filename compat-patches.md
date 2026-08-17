@@ -1867,3 +1867,34 @@ created, embedded SPIR-V loaded, NRI wrapped the existing VkDevice; pools
 checked (boots, `NRD request: illum.nrdDenoiser=0`, nothing else). Diagnostics
 kept: the edge-triggered `NRD request:` line, the pre-create bracket, and
 `NRD_INTEGRATION_DEBUG_LOGGING` (`NRD-Doom64RT.log`, gitignored).
+
+---
+
+## RR feedback round: glow into the input, plus the bulb/softness A/B set (2026-08-17, night)
+
+**User verdict on the contract redo: "way better than it was before".** Remaining:
+small emissive elements (lamp bulbs on slightly-angled floors) alias/flicker; the
+image is softer than A-SVGF+DLSS-SR; slightly less stable here and there. Question
+answered: under RR there is NO separate DLSS-SR pass to mis-apply — DLSS-RR is one
+network doing denoise+super-resolution; softness vs SR is a known RR trait (SR gets
+presets J/K, RR tops out at E), and sub-pixel bright features are RR's weakest case.
+
+**Landed: `rt_rr_glowpre` (NOARCH, default on).** The post-RR screen-emission add
+resampled the jittered render-res glow buffer at a different sub-texel phase every
+frame — sharp emissive edges (bulbs!) shimmered. The glow now goes back INTO RR's
+input in pre-exposure units (divided by the EV100 factor pre-RR, multiplied back
+post-RR — algebraically exact), sharing the frame's jittered space so RR dejitters
+and temporally stabilizes it, exactly as the pre-reorder pipeline did. Uniform took
+the `volumeReserved3` spare (layout unchanged: 216 fields, 8576 bytes). Verified
+live: staged SPIR-V carries `rrGlowPre`, rr-full runs the full contract.
+
+**New arms for the two remaining candidates + softness:**
+- `rr-no-glowpre` — the bulb A/B (post-RR add, the behaviour that shipped earlier
+  today). Bulbs stable under rr-full + flickery here ⇒ glow resample was the cause.
+- `rr-no-disocc` — the 16×16 tile-luminance discard unbound. A bright bulb dominating
+  its tile can trip the ratio test repeatedly and discard RR history around exactly
+  the fixtures. If bulbs stabilize here, the mask needs a bright-static exemption.
+- `rr-preset-def` — `rt_rr_preset 0` (driver picks the newest RR model, NVIDIA's
+  current recommendation) vs pinned E. The softness A/B.
+
+All arms now state `rt_rr_glowpre` explicitly; pins carry it at 1.
