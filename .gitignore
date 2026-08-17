@@ -45,6 +45,14 @@ Doom64-Retribution/D64MUS.PK3
 Doom64-Retribution/DOOMSND.SF2
 Doom64-Retribution/libfluidsynth*.dll
 Doom64-Retribution/*.SF2
+# Rest of the ModDB extract -- Retribution's own brightmaps, readmes and dev
+# package, none of it ours to redistribute. Got swept in by the initial
+# commit before this line existed; removed once found.
+Doom64-Retribution/D64RTR_BRIGHTMAPS.PK3
+Doom64-Retribution/D64RTR_CHANGELOG.TXT
+Doom64-Retribution/D64RTR_INSTRUCTIONS.TXT
+Doom64-Retribution/D64RTR_README.TXT
+Doom64-Retribution/D64RTRDEV/
 tools/_gallery/*.bmp
 tools/_gallery/*.jpg
 tools/_gallery/*.jpeg
