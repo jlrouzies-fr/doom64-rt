@@ -1965,3 +1965,16 @@ flashlight toggles (must behave exactly like A-SVGF), emissive edges, motion
 stability, specular (ReLAX has real hit-distance reprojection). Follow-ups if
 kept: diffuse hit distance from raygen, ReBLUR mode, SIGMA shadows, settings
 cvars, per-frame perf cost.
+
+### NRD flashlight fix: the RR history flush was reaching ReLAX (2026-08-17)
+
+User: NRD shows the flashlight pixel-switch, A-SVGF does not. Root cause: the
+`rt_rr_reset_*` machinery raises `drawInfo.resetHistory` on every flashlight
+toggle / dynlight cut / level load — built to paper over DLSS-RR's missing
+lighting-change handling — and the NRD lane consumed that flag as a full ReLAX
+`CLEAR_AND_RESTART`. A-SVGF ignores the flag, hence the asymmetry. Fixed by
+scoping the automatic lightcut/hold flush to RR frames in `rt_main.cpp`
+(`rt_rr_reset_now` stays unconditional as an explicit diagnostic). Verified end
+to end with `rt_rr_reset_debug 1`: RR still prints `FLUSH (cause: dynlight)` at
+level load; NRD prints nothing on the identical trigger. ReLAX and A-SVGF both
+handle lighting changes by design (fast-history clamping / gradient antilag).
