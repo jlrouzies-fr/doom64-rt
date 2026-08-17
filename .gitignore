@@ -197,3 +197,8 @@ tools/dxc/
 # live there and are reproduced by tools/build-nrd-deps.cmd. The one tracked
 # NRD-lane source file is tools/nrd/NRDConfig.hlsli, which that script
 # installs into deps/NRD/Shaders/.)
+
+# NRDIntegration's step log, written to the game CWD on every NRD instance
+# creation (NRD_INTEGRATION_DEBUG_LOGGING is kept on -- the NRD bring-up hung
+# invisibly twice and this file is how the step is found next time).
+NRD-Doom64RT.log
