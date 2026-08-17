@@ -1824,3 +1824,46 @@ distance in raygen, `DenoiseVK` with `restoreInitialState=true` (RTGL keeps GENE
 remodulate, and the third branch replacing A-SVGF when active. Duke's
 `nri_nrd.cpp` settings/equality-guard pattern is the reference; wire
 `OUT_VALIDATION` first.
+
+### Stage-1 bring-up debug session (2026-08-17, evening) — five traps, now ALIVE
+
+`.\tools\ab.cmd nrd-probe 2` first crashed at launch, then "hung". Self-run
+iteration (new authorization: launch allowed for log verification, kill fast)
+found five stacked traps, each masking the next:
+
+1. **Static NRI.dll import broke RTGL1.dll loading.** The app loads
+   `rt/bin/RTGL1.dll` with plain `LoadLibraryA`, whose *dependency* search
+   covers the exe dir and PATH — not `rt/bin` — and Windows names the top-level
+   DLL in the error ("rtgl1.dll not found", NRI.dll never mentioned). Fixed:
+   `/DELAYLOAD:NRI.dll` + explicit load from RTGL1.dll's own directory;
+   verified via dumpbin (NRI.dll only in the delay-load table). Bonus: NRI.dll
+   is not even mapped unless `rt_nrd` is on.
+2. **NRI's default error callback is `DebugBreak()`** — surfaced as an
+   invisible "GZDoom Very Fatal Error" dialog *behind* the game window:
+   0% CPU, responsive message pump, looks exactly like a hang. Found by
+   enumerating the process's windows and scraping the dialog (code 80000003
+   Breakpoint in KERNELBASE). Fixed: our own `MessageCallback` → RTGL log +
+   no-op `AbortExecution`, so NRI failures are one legible log line.
+3. **NRI hard-requires `extendedDynamicState` + `dynamicRendering` +
+   `synchronization2`** for a wrapped device and can only see features whose
+   extensions are declared. RTGL's 1.2 device now enables the two missing ones
+   (additive, universal on RT drivers).
+4. **NRI eagerly resolves dispatch tables for every declared extension**,
+   fatally: declaring RTGL's full list made it demand
+   `vkCmdTraceRaysIndirect2KHR` (ray_tracing_maintenance1, never enabled).
+   The wrapped device only runs NRD compute → declare exactly the relevant
+   intersection (sync2, extDynState, dynRendering, timelineSemaphore,
+   memoryBudget), filtered against what the device was actually created with.
+5. **`windows.h` after NRI headers poisons `nri::Message::ERROR`** (wingdi's
+   `ERROR` macro; NRI's header warns) — `NOGDI`.
+
+Also kept off: `autoWaitForIdle` — the integration's `DeviceWaitIdle` would run
+mid-frame on the render thread, and the DXGI-present interop keeps cross-API
+waits pending on the queue.
+
+**Verified on hardware:** `NRD: instance ALIVE at 1470x794 — ReBLUR+ReLAX+SIGMA
+created, embedded SPIR-V loaded, NRI wrapped the existing VkDevice; pools
+174.9 MB (persistent 115.7 + aliasable 59.2)`. Plain A-SVGF launch regression-
+checked (boots, `NRD request: illum.nrdDenoiser=0`, nothing else). Diagnostics
+kept: the edge-triggered `NRD request:` line, the pre-create bracket, and
+`NRD_INTEGRATION_DEBUG_LOGGING` (`NRD-Doom64RT.log`, gitignored).
