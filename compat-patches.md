@@ -2008,3 +2008,14 @@ RR's four open issues, each with its lever, all A/B-able:
 4. **Softness / spp hunger** → `rr-preset-def` (untested) + accept: NRD is the
    kept lane; RR remains an experimental toggle that improves with NVIDIA's
    OTA models.
+
+### RR ladder verdict: local-adapt config wins, baked as defaults (2026-08-17, final)
+
+User verdicts: `rr-glow-aslight` -> jitter fixed. `rr-local-adapt` -> jitter +
+flashlight + squares ALL fixed. `rr-preset-def` -> "everything bad", explained:
+that arm predated the fixes and carried the old glow/reset config -- regenerated
+from the winning base for a clean preset A/B. New RR defaults everywhere
+(compiled, pins, rr-full): `rt_rr_glowpre 2` + `rt_rr_glowscale 35`,
+`rt_rr_reset_on_lightcut 0`, `rt_rr_reset_on_dynlight 0`. Watch item: transient-
+light ghosts (the global flush existed for those). Final lane states: NRD/ReLAX
+shipping (2 spp advised), A-SVGF default, RR experimental-but-clean.
