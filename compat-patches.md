@@ -2027,3 +2027,19 @@ candidate lights (was 8 spp before the GI antilag fix); softness persists at
 DLAA native res => the model's floor, not the pipeline. Preset Default noisier
 than E. Arm `rr-stable` records the found-good config. RR's remaining gaps
 (sample cost, softness) improve only with NVIDIA's OTA models.
+
+### RR albedo demodulation (2026-08-17, night): the pixel-art play
+
+DLAA-still-soft proved the softness is RR's model floor -- and pixel-art texel
+edges are out-of-distribution content its priors smooth as noise. So the
+albedo no longer enters the network: `rt_rr_demod` (default on) divides the
+combined modulation factor out of RR's input (CmNoisyCompose, guides neutral,
+factor stored in RrDemodFactor) and re-multiplies it at OUTPUT resolution
+(CmRrPostExposure; filter: bilinear / Catmull-Rom default / nearest chunky).
+RTX Remix ships the same scheme incl. the combined diffuse+specular factor
+approximation. Glow paths pre-divide so the post-multiply cancels. Measured:
+~7% brightness delta (the 0.02 floor on dark albedo), structure correct.
+A/B: `rr-full` (demod on) vs `rr-no-demod`; `rt_rr_demod_filter` live.
+Answered in passing: we run ReSTIR DI+GI but only partial MIS (NEE-driven,
+no BRDF-light MIS combine) -- RR's training pipelines (CP2077-class) have
+both, which bounds how native our signal can ever look to it.
