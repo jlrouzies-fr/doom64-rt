@@ -1992,3 +1992,19 @@ subsystem in its body before destroying the device -- nrdDenoiser was missing,
 so its implicit member destructor ran after vkDestroyDevice and NRI dispatched
 into a dead device. Fixed (reset right after the body's wait-idle); verified
 with the exact reproducer.
+
+### The RR fix ladder (2026-08-17, end of session)
+
+RR's four open issues, each with its lever, all A/B-able:
+1. **Emissive shimmer/pulse** → `rt_rr_glowpre 2` ("glow as light", NEW): glow
+   in RR's input at the fixed `rt_rr_glowscale` (~35 = old mid-exposure
+   brightness). Stable input — no shimmer, no adaptation pulse; the glow rides
+   exposure like the bulb it halos. Arm `rr-glow-aslight`. Modes 0/1 remain.
+2. **Flashlight full-frame switch** → arm `rr-local-adapt`: global dynlight/
+   lightcut flushes OFF, the 16×16 tile mask alone discards locally. Watch for
+   the trade the flush was added for (transient-light ghosts).
+3. **Light squares** → arm `rr-disocc-strict`: mask ratio 3→5, mindelta
+   0.01→0.05 (both live cvars for laddering).
+4. **Softness / spp hunger** → `rr-preset-def` (untested) + accept: NRD is the
+   kept lane; RR remains an experimental toggle that improves with NVIDIA's
+   OTA models.
