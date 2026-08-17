@@ -38,7 +38,8 @@ theirs — the code is Claude's. <a href="AI-DECLARATION.md">Details</a>.
 
 ## ⛧ &nbsp;Contents
 
-- [**Features**](#features) — [lighting](#lighting) · [atmosphere](#atmosphere) · [materials](#materials) · [sprites, monsters, gore](#sprites) · [impacts and destruction](#impacts) · [HUD and menus](#hud) · [denoising and upscaling](#denoising)
+- [**Features**](#features) — one table: lighting, atmosphere, materials, sprites/gore, impacts, HUD, denoising
+- [**Preview**](#preview) — in-engine captures
 - [**Known issues**](#known-issues) — what is still wrong, before you play
 - [**Install and play**](#install) — download, extract, point it at your copy of Retribution
 - [**Building it yourself**](#building) — [what you need](#requirements) · [dependencies](#dependencies) · [build](#build) · [first run](#first-run)
@@ -55,163 +56,71 @@ theirs — the code is Claude's. <a href="AI-DECLARATION.md">Details</a>.
 
 The renderer is RTGL1's. What this project adds is everything above it: the game's fake
 lighting replaced with real emitters, and a set of engine features Doom 64 never had.
-Every one of them is documented — the doc is the reference, this is the index.
+Every one of them is documented in full elsewhere — this table is the index, not the doc.
 
-<a id="lighting"></a>
-### Lighting — the main body of work
+<a id="lighting"></a><a id="atmosphere"></a><a id="materials"></a><a id="sprites"></a><a id="impacts"></a><a id="hud"></a><a id="denoising"></a>
 
-Doom 64 paints light. Sectors are set bright where a lamp *should* be, walls carry
-baked-in glow, and shafts are drawn into the floor texture. Under path tracing that reads
-as surfaces glowing for no reason, while the fixture beside them stays black. The bulk of
-this project is finding those and replacing them with something that actually emits.
+| Category | Feature | Summary | Doc |
+|---|---|---|---|
+| **Lighting** | Painted light → real fixtures | Nine repair families across the wad — sequence chains, blinks, ACS light calls, painted shafts/tints, sector lamps, panel lamps — replacing baked-in fake glow with real emitters. | [`sequence-light-chains`](docs/sequence-light-chains.md) |
+| | Finding them | `scan_light_specials.py`, `scan_fake_lightshafts.py`, `scan_painted_light.py` (1128 candidates), plus in-game `whatsthat`, `rt_tex_probe`, `rt_lightlevel_watch`. | [`rt-lighting-practices`](docs/rt-lighting-practices.md) |
+| | Wall monitors | 48 flicker lights across 8 maps, placed at the emissive mask's lit centroid. | [`AGENTS.md`](AGENTS.md) |
+| | Inferred fixtures | Ceiling insets, wall strips, hanging tech, solo bulbs, spin panels — derived from the texture, not hand-placed. | [`solo-bulb-lamps`](docs/solo-bulb-lamps.md) · [`faux-lamp-panels`](docs/faux-lamp-panels.md) |
+| | Flame lighting | All 84 torch/fire/candle sprites lit engine-side (offset onto the flame, flicker) rather than by texture meta. | [`flame-lighting`](docs/flame-lighting.md) |
+| | World emissives | Lava, monitors, keys, EXIT signs, teleporters as masked emitters feeding GI. | [`material-authoring-spec`](docs/material-authoring-spec.md) |
+| **Atmosphere** | The moon | Sky disc + real directional light, aimed alike; shadow rays must prove they reached sky (`rt_sun_require_sky`) or it washes sealed rooms. `moon` CCMD. | [`moon-and-sky-leaks`](docs/moon-and-sky-leaks.md) |
+| | Clouds + lightning | 6–8 baked sky-dome slices (`rt_clouds_*`); tints and attenuates moonlight, flashes with MAP11's storm. `thunder` CCMD. | [`rt-clouds-and-lightning`](docs/rt-clouds-and-lightning.md) |
+| | Per-map fog | Froxel volume, near/far ramp tuned per level (`rt_fog_*`, `fog` CCMD). | [`rt-fog`](docs/rt-fog.md) · [implementation](docs/rt-fog-implementation.md) |
+| | Volumetric smoke | Muzzle/impact smoke as a participating medium inside the fog froxel, colour-lit by the room. Six sources; CPU sim. `smoke` CCMD. | [`rt-smoke`](docs/rt-smoke.md) |
+| | Light shafts from lamps | Ordinary ceiling lamps, bulb lattices and solo bulbs cast shafts too, not just the sun (`rt_volume_shafts`). | [`plan-light-shafts`](docs/plan-light-shafts.md) |
+| | Dust motes | Hashed-grid quads lit only where a shaft reaches (`rt_dust_*`). | — |
+| | Water | Stylized surface with projected caustics, tagged engine-side. | [`rt-water`](docs/rt-water.md) |
+| | Lava | Drifting quantized heat field as the emitter, slow whole-surface breath (`rt_lava_flow*`). | — |
+| **Materials** | Limited PBR, on purpose | 898 wall/flat textures + 132 sprite codes (1,087 frames) hand-classified into roughness/metalness — but both mix dials ship at **0.35**, not 1, because full PBR breaks flat-normal sprites, exposes dithered art, and adds noise. `rt_sprite_pbr_mix`, `rt_tex_pbr_mix`. | [`plan-sprite-materials`](docs/plan-sprite-materials.md) |
+| **Sprites & gore** | Enemy eyes | Brightmap-only emissive masks — glow without lighting the room or killing the shadow. | — |
+| | Lost Souls | Light rides the fire frames (A–F) only, so a corpse stays dark. | — |
+| | Persistent blood | Splats stay on the floor, explosive kills bleed, per-monster blood colour renders correctly (`rt_gore_*`). | [`blood-persist`](docs/blood-persist.md) |
+| | Spectres | Rasterized translucent overlay with an alpha floor, not forced water/glass. | [`spectre-issue-log`](docs/spectre-issue-log.md) |
+| **Impacts & destruction** | Sparks and debris | `P_LineAttack` hook with true surface normal + hit texture; metal sparks, concrete chips, flesh neither, chips bounce and settle (`rt_spark_*`). | [`rt-impact-fx`](docs/rt-impact-fx.md) |
+| | Projectile impacts | Plasma, arachnotron bolt and BFG leave a branching electric mark with its own light and colour ramp (`rt_arc_*`). | [`plan-projectile-impact-fx`](docs/plan-projectile-impact-fx.md) |
+| | Unmaker wall burns | Its laser leaves a hot spot, glow and short arc where it lands (`rt_laser_*`). | — |
+| | Exploding barrels | Comes apart into curved plates that fly, tumble, settle and scorch the floor (`rt_barrel_*`). | — |
+| **HUD & presentation** | Mugshot | All 42 frames generated from one painted sheet, restyled to the D64 palette. | [`hud-mugshot`](docs/hud-mugshot.md) |
+| | Flashlight | Warm beam, battery cycle, HUD meter, angled to catch muzzle smoke (`rt_flsh*`, **F**). | — |
+| | Act title cards | Title/logo art per act. | [`act-title-cards`](docs/act-title-cards.md) |
+| | Menu patches | Retribution's own font; `rt/wad` loads last so it doesn't override D64 art. | [`compat-patches`](compat-patches.md) |
+| **Denoising & upscaling** | A-SVGF + DLSS 2 / FSR 2 | A-SVGF is the shipping denoiser; upscale with DLSS 2 (NVIDIA) or FSR 2 (anywhere) — they share one slot, set only one. Keep `rt_normalmap_stren`/`rt_heightmap_stren` near 1. | — |
+| | DLSS Ray Reconstruction | **Alpha, ships OFF, not recommended** — wired up for experiments but not stable enough to play with. A-SVGF is the intended path. | [`RAYRECONSTRUCTION.md`](RAYRECONSTRUCTION.md) |
 
-- **Painted light → real fixtures.** Nine repair families in one wad — sequence chains,
-  blinks, ACS light calls (literal *and* computed args), painted shafts, painted tints,
-  sector lamps, per-panel wall lamps. → [`docs/sequence-light-chains.md`](docs/sequence-light-chains.md)
-- **Finding them.** `scan_light_specials.py`, `scan_fake_lightshafts.py`,
-  `scan_painted_light.py` (1128 game-wide candidates, with a fixture-distance column), plus
-  in-game `whatsthat`, `rt_tex_probe` and `rt_lightlevel_watch`.
-  → [`docs/rt-lighting-practices.md`](docs/rt-lighting-practices.md)
-- **Wall monitors.** 48 flicker lights across 8 maps, one per 64×64 tile, placed at the
-  emissive mask's lit centroid rather than mid-tile. → [`AGENTS.md`](AGENTS.md)
-- **Inferred fixtures** — ceiling insets, wall strips, hanging tech, solo bulbs, spin
-  panels — derived from the texture rather than hand-placed.
-  → [`docs/solo-bulb-lamps.md`](docs/solo-bulb-lamps.md), [`docs/faux-lamp-panels.md`](docs/faux-lamp-panels.md)
-- **Flames.** All 84 torch/fire/candle sprites are lit engine-side, not by texture meta,
-  because meta can express neither the offset up onto the flame nor a flicker.
-  → [`docs/flame-lighting.md`](docs/flame-lighting.md)
-- **World emissives** — lava, monitors, keys, EXIT signs, teleporters as masked emitters
-  feeding GI. → [`docs/material-authoring-spec.md`](docs/material-authoring-spec.md)
+<br>
 
-<a id="atmosphere"></a>
-### Atmosphere
+<a id="preview"></a>
+## ⛧ &nbsp;Preview
 
-| Feature | Notes | Doc |
-|---|---|---|
-| **The moon** | A disc in the sky plus a real directional light, aimed alike; the disc alone casts nothing, because the sky cubemap is not importance-sampled. Aim with the `moon` CCMD, per-map table in `RT_MOON_PRESETS`. Shadow rays must prove they reached sky (`rt_sun_require_sky`) or the moon washes sealed rooms. | [`moon-and-sky-leaks`](docs/moon-and-sky-leaks.md) |
-| **Clouds + lightning** | A layered cloud deck (`rt_clouds_*`): 6–8 baked slices drawn as stacked sky-dome shells, so they parallax and occlude each other. It is sky *geometry*, not a participating medium — but moonlight is tinted and attenuated through the stack, and it flashes with MAP11's storm, whose schedule this puts back. `thunder` CCMD. | [`rt-clouds-and-lightning`](docs/rt-clouds-and-lightning.md) |
-| **Per-map fog** | A froxel volume with a near/far ramp, tuned per level (`rt_fog_*`, `RT_FOG_PRESETS`, `fog` CCMD). Needed two RTGL1 froxel changes. | [`rt-fog`](docs/rt-fog.md) · [implementation](docs/rt-fog-implementation.md) |
-| **Volumetric smoke** | Muzzle smoke as a real participating medium inside the fog's froxel volume, so it takes the colour of whatever lights the room. Six sources: weapons, monster guns, projectiles, barrels, flames. Sim is on the CPU, on purpose. `smoke` CCMD. | [`rt-smoke`](docs/rt-smoke.md) |
-| **Light shafts from lamps** | The froxel pass shadow-tests one light per frame — the sun — which is why beams only ever happened outdoors. An explicit fixture list puts ordinary ceiling lamps, bulb lattices and solo bulbs in the air too (`rt_volume_shafts`, `rt_volume_shaft_src` as a family bitmask). | [`plan-light-shafts`](docs/plan-light-shafts.md) *(shipped; the doc is the design)* |
-| **Dust motes** | Tiny quads on a hashed world grid, drawn where a shaft can actually light them (`rt_dust_*`). Bounded by construction: the cap sets the cell spacing rather than a counter. | — |
-| **Water** | Stylized surface with projected caustics; flats are tagged engine-side, no per-map setup. | [`rt-water`](docs/rt-water.md) |
-| **Lava** | The floor is the emitter — drifting quantized heat field (`rt_lava_flow*`), slow whole-surface breath, optional analytic light grid over the flats. | — |
+In-engine captures, uncropped, no post-processing beyond what the game itself does.
 
-<a id="materials"></a>
-### Materials — *limited* PBR, on purpose
-
-Doom 64's walls, floors and sprites were painted, not modelled. Nothing in them was ever
-authored for a physically based renderer, so every surface starts out as a flat dielectric:
-no metal anywhere, one roughness for the whole game. Since then **898 wall and flat
-textures have been hand-classified**, plus **132 sprite codes covering 1,087 frames** —
-metal, concrete, flesh, cloth, leather, wood, bone, rubber, lens — and baked into per-texel
-roughness and metalness maps.
-
-Then it is deliberately held back. Two dials decide how much of that authored material the
-renderer is allowed to use, and **both ship at 0.35 rather than 1**:
-
-| cvar | default | what it does |
-|---|---|---|
-| `rt_sprite_pbr_mix` | `0.35` | how much of a sprite's material is applied, 0..1 |
-| `rt_tex_pbr_mix` | `0.35` | the same for walls and flats |
-| `rt_sprite_pbr` | `1` | hard off switch for the whole sprite material pass |
-
-At 0 the surface is the plain dielectric it was before any of this existed — not an
-approximation of the old look, but exactly it.
-
-**Why hold it back at all.** Three reasons, in the order they were found:
-
-1. **Sprites are flat, and full PBR makes that obvious.** A sprite is one quad carrying one
-   normal, so its indirect specular reflection vector is *identical for every texel* — the
-   whole body samples the room in a single direction and takes one colour from it. A warm
-   wall off to the side turns a soldier beige. Walls never do this; their normal maps vary
-   the reflection per texel. This is a property of billboards, not a bug to fix, so the
-   answer is to use less of the effect rather than more of it.
-2. **The art is dithered.** Doom 64 fakes gradients by alternating two colours pixel by
-   pixel. Classified independently, those two colours can end up with different materials,
-   and the sprite renders as a checkerboard mosaic. The baker now averages the material
-   channels to kill that, but a lower mix makes what remains matter less.
-3. **Noise.** Every glossy surface is another specular lobe the path tracer has to resolve
-   and the denoiser has to clean up. This project would rather have slightly less precise
-   lighting than visible boiling — so the mix is also a noise dial.
-
-The result is a game that reacts to light like Doom 64 with *materials*, rather than one
-pretending to be a modern shooter. If you want the full authored set, raise both mixes to
-1; if you want none of it, `rt_sprite_pbr 0` and `rt_tex_pbr_mix 0`.
-
-→ [`docs/plan-sprite-materials.md`](docs/plan-sprite-materials.md) for the labelling
-tools, the export format and the bakers.
-
-<a id="sprites"></a>
-### Sprites, monsters, gore
-
-- **Enemy eyes** — brightmap-only emissive masks. They glow; they never lantern the room
-  (no `lightIntensity`, and never `noShadow`, which kills the monster's shadow).
-- **Lost Souls** — the light rides on the fire frames themselves, A–F only, so a corpse
-  does not light the room.
-- **Persistent blood** — splats stay on the floor (`rt_gore_*`), explosive kills leave
-  blood at all, and per-monster blood colour finally renders: RTGL1 keys materials by
-  name, so every palette translation of a sprite uploaded as the same material and the
-  first one drawn won. → [`docs/blood-persist.md`](docs/blood-persist.md)
-- **Spectres** — rasterized translucent overlay with an alpha floor, rather than forced
-  water/glass. → [`docs/spectre-issue-log.md`](docs/spectre-issue-log.md)
-
-<a id="impacts"></a>
-### Impacts and destruction
-
-Everything a shot leaves behind. All of it is renderer-side — no DECORATE edits, so it
-works on the WAD's own classes.
-
-- **Sparks and debris** (`rt_spark_*`) — a real hook in `P_LineAttack` with the true
-  surface normal and the hit texture in hand. What a surface throws is decided by the
-  **material classification**: metal sparks, concrete chips, flesh does neither. Chips
-  bounce, settle, and get a contact-occlusion blob under them.
-  → [`docs/rt-impact-fx.md`](docs/rt-impact-fx.md)
-- **Projectile impacts** (`rt_arc_*`) — that hitscan hook is hitscan only, so no projectile
-  in the game reacted to what it hit. Plasma, the arachnotron's bolt and the BFG now leave
-  a branching electric mark with its own light and its own colour ramp.
-  → [`docs/plan-projectile-impact-fx.md`](docs/plan-projectile-impact-fx.md) — shipped;
-  the doc is the design, and records what was deliberately left out.
-- **The Unmaker burns the wall** (`rt_laser_*`) — its laser leaves a hot spot, a glow and
-  a short-lived arc where it lands, rather than passing through the world unmarked.
-- **Exploding barrels** (`rt_barrel_*`) — the barrel comes apart into curved plate pieces
-  that fly, tumble, settle and scorch the floor under them, instead of vanishing into a
-  sprite animation.
-
-<a id="hud"></a>
-### HUD, menus, presentation
-
-- **The Doom guy mugshot** — Doom 64 dropped the status bar, so Retribution has no face.
-  All 42 frames are *generated* from one painted sheet and restyled to the D64 palette;
-  nothing in `d64r-mugshot.pk3` is hand-authored. → [`docs/hud-mugshot.md`](docs/hud-mugshot.md)
-- **Flashlight** — dim warm beam tipped toward the ground with a battery cycle and a HUD
-  meter (`rt_flsh*`, **F** by default). The beam angle and pitch are tuned to catch muzzle
-  smoke, not free parameters.
-- **Act title cards** and title/logo art. → [`docs/act-title-cards.md`](docs/act-title-cards.md)
-- **Menu patches** in Retribution's own font — `rt/wad` loads *last*, after every `-file`
-  PWAD, so RT's plain-Doom menu art was overriding the D64 art.
-  → [`compat-patches.md`](compat-patches.md)
-
-<a id="denoising"></a>
-### Denoising and upscaling
-
-**The A-SVGF denoiser is the shipping path, with DLSS 2 or FSR 2 for upscaling.**
-
-The development launcher pins DLSS (`rt_upscale_dlss 2`) because that is what this
-machine has. **The release launcher will not force it** — DLSS is NVIDIA-only, and on
-anything else the upscaler has to be FSR 2 (`rt_upscale_fsr2`) or none at all. Note the
-two share one upscaler slot and FSR is applied second, so a stale `rt_upscale_fsr2` in
-your ini silently disables DLSS; set one, not both.
-
-> [!WARNING]
-> **DLSS Ray Reconstruction is alpha here and does not render well — it ships OFF and is
-> not recommended.** It is wired up and can be switched on for experiments, but the image
-> is not stable enough to play with. A-SVGF is the intended path; treat anything in
-> [`RAYRECONSTRUCTION.md`](RAYRECONSTRUCTION.md) and `docs/rayreconstruction/` as an
-> experiment log rather than a recommendation.
-
-Also keep `rt_normalmap_stren` / `rt_heightmap_stren` near **1** — 10+ destabilises the
-denoiser regardless of which one you use.
+<table>
+<tr>
+  <td align="center"><img src="docs/img/preview/preview-01-fog-water.jpg" width="290" alt="Volumetric fog over water, torchlit gate"><br><sub>Volumetric fog over water</sub></td>
+  <td align="center"><img src="docs/img/preview/preview-02-cage.jpg" width="290" alt="Caged captive lit by a colored point light"><br><sub>Caged captive, colour bleed</sub></td>
+  <td align="center"><img src="docs/img/preview/preview-03-imp-burn.jpg" width="290" alt="Imp fireball at point-blank range"><br><sub>Point-blank fireball</sub></td>
+</tr>
+<tr>
+  <td align="center"><img src="docs/img/preview/preview-04-colored-lights.jpg" width="290" alt="Green and blue corridor lighting"><br><sub>Coloured corridor lighting</sub></td>
+  <td align="center"><img src="docs/img/preview/preview-05-moonlit-hall.jpg" width="290" alt="Moonlit hallway with a silhouette ahead"><br><sub>Moonlit hallway</sub></td>
+  <td align="center"><img src="docs/img/preview/preview-06-tile-glow.jpg" width="290" alt="PBR floor tile lit by a bright fixture"><br><sub>PBR tile under a bright fixture</sub></td>
+</tr>
+<tr>
+  <td align="center"><img src="docs/img/preview/preview-07-gore.jpg" width="290" alt="Persistent blood pooling on the floor"><br><sub>Persistent blood</sub></td>
+  <td align="center"><img src="docs/img/preview/preview-08-plasma-impact.jpg" width="290" alt="Plasma bolt impact with an electric arc mark"><br><sub>Plasma impact mark</sub></td>
+  <td align="center"><img src="docs/img/preview/preview-09-sparks-glass.jpg" width="290" alt="Impact sparks beside a stained-glass window"><br><sub>Impact sparks</sub></td>
+</tr>
+<tr>
+  <td align="center"><img src="docs/img/preview/preview-10-night-sky.jpg" width="290" alt="Storm clouds, moonlight and a flashlight beam"><br><sub>Storm clouds and flashlight</sub></td>
+  <td align="center"><img src="docs/img/preview/preview-11-outdoor-fog.jpg" width="290" alt="Outdoor daylight fog with a cacodemon ahead"><br><sub>Outdoor daylight fog</sub></td>
+  <td></td>
+</tr>
+</table>
 
 <br>
 

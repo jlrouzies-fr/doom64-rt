@@ -201,3 +201,8 @@ tools/dxc/
 # creation (NRD_INTEGRATION_DEBUG_LOGGING is kept on -- the NRD bring-up hung
 # invisibly twice and this file is how the step is found next time).
 NRD-Doom64RT.log
+
+# Raw preview screenshots (multi-MB PNGs, source material for the README
+# gallery). The compressed docs/img/preview/preview-*.jpg files are what's
+# tracked and linked from the README; these originals stay local.
+docs/img/preview/*.png
