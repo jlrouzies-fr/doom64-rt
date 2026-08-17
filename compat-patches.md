@@ -1776,3 +1776,51 @@ reorder alone (contract features pinned off in both). Pins: the four new cvars a
 defaults in `d64rt-pins.cfg` (inert while `rt_rayreconstr` is pinned 0). Protocol:
 probe → `rr-full` vs `rr-asvgf` → isolation only if needed; if rr-full still loses,
 next is NRD (`docs/plan-nrd-denoiser.md`), not more RR tuning.
+
+---
+
+## NRD lane, stage 1: full stack vendored, built, and live-probeable (2026-08-17)
+
+**The RR verdict triggered `docs/plan-nrd-denoiser.md`'s decision gate** (full input
+contract A/B'd null with every binding read back from the log). Stage 1 lands the
+entire build/runtime foundation so the risky, invisibly-failing half is verifiable
+before any pixels change.
+
+**RTGL (deps/RTGL):** `NrdDenoiser` (new) wraps NRDIntegration v21's `RecreateVK` —
+the integration creates an NRI device *around* RTGL1's existing VkDevice; resources
+will be handed over as raw `VkImage+VkFormat`, command buffers as raw
+`VkCommandBuffer` (this SDK rev is newer than the plan studied and erases most of its
+"NRI wrapping, highest risk" line item). With `rt_nrd` set (and RR inactive),
+`EnsureReady` brings up ReBLUR+ReLAX+SIGMA and prints one edge-triggered WARNING:
+`NRD: instance ALIVE at WxH ... pools N MB` or `RecreateVK FAILED (code)`. Failure
+latches; A-SVGF keeps running either way. `VulkanDevice_Init` retains the
+instance/device extension lists for the NRI wrap. CMake `RG_WITH_NRD` compiles NRD
+4.17.1's seven sources + ShaderMake's blob reader into RTGL1.dll with pre-generated
+`_Shaders` SPIR-V headers (159 permutations), Duke-RT's exact pattern and defines
+(one divergence: `NRD_SUPPORTS_ANTIFIREFLY=1`). Gotcha recorded in code:
+`NRIWrapperVK.h` needs `Extensions/NRIRayTracing.h` first.
+
+**Why NRI is a DLL:** NRI's VK backend embeds a VulkanMemoryAllocator implementation
+TU and RTGL1.dll embeds its own — two static VMAs are LNK2005 across every `Vma*`
+class. `NRI.dll` (VK-only, 0.4 MB) is staged next to RTGL1.dll by `build-rtgl.cmd`
+(the `nvngx_dlssd.dll` pattern; Duke-RT ships NRI DLLs for the same reason).
+**Release packaging must carry `rt/bin/NRI.dll` from now on.**
+
+**Tooling:** `tools/build-nrd-deps.cmd` reproduces everything (deps/ is gitignored
+by policy): vendors from the local Duke-RT checkout, installs the tracked
+`tools/nrd/NRDConfig.hlsli`, generates shaders (needs the GITHUB dxc in `tools/dxc`
+— the Windows SDK dxc has **no SPIR-V codegen**), builds NRI shared with git-cloned
+FetchContent pins (GitHub's zip endpoint 429s). `tools/arms/nrd-probe.cfg` is the
+stage-1 arm: image must not change, the log line is the verdict.
+
+**gzdoom-rt:** `rt_nrd` (NOARCH, default false) → `illum.nrdDenoiser`.
+Precedence: RR > NRD > A-SVGF.
+
+**Stage 2 (next):** the data path — resolve checkerboard + demodulate into
+`IN_DIFF/SPEC_RADIANCE_HITDIST` (RGBA16F, radiance.rgb + hitDist.w), `IN_MV` from
+`framebufMotion` (2.5D, pixels, `motionVectorScale={1/w,1/h,1}`), `IN_VIEWZ` from
+DepthWorld, `IN_NORMAL_ROUGHNESS` repack (encoding 2), unconditional diffuse hit
+distance in raygen, `DenoiseVK` with `restoreInitialState=true` (RTGL keeps GENERAL),
+remodulate, and the third branch replacing A-SVGF when active. Duke's
+`nri_nrd.cpp` settings/equality-guard pattern is the reference; wire
+`OUT_VALIDATION` first.
