@@ -1706,3 +1706,73 @@ reference for the corrected order.
 pass is live), pin `rt_rr_preset 5` in `d64rt-pins.cfg`. A/B protocol and the specific
 prediction (instability correlates with auto-exposure *adaptation*, not camera motion)
 in `RAYRECONSTRUCTION.md`.
+
+---
+
+## DLSS-RR input-contract redo: exposure texture, transparency layer, ReSTIR decorrelation (2026-08-17)
+
+**The reorder-alone A/B came back NULL, with a regression** (user verdict, in play): RR
+still noisier than A-SVGF, the stable dark-dot pattern on textures/sprites unchanged,
+the pattern still switching with the flashlight — and new constant image jitter. A
+structural audit against NVIDIA's RR contract + Duke-RT followed (the volumetrics
+lesson: fix the layer, don't blend the symptom), and the remaining contract violations
+landed in one pass. Fog stays untouched — fixed under A-SVGF by a previous session, and
+`rt_volume_postcomp` was measured a dead end (`docs/rt-volumetric-edge-outlines.md`
+§7.2).
+
+**RTGL (deps/RTGL):**
+- **Jitter regression fixed** (`CmRrPostExposure.comp`): the screen emission was re-added
+  post-RR by sampling the *jittered* render-res buffer at unjittered output UVs — before
+  the reorder, RR dejittered that content as part of its input; after it, nothing did.
+  Now applies the exact `CmVolumeCompose.comp` correction
+  (`uv -= jitter/renderSize`), unconditionally.
+- **`pInExposureTexture` reinstated** (the plan's step 3, dropped in the first pass):
+  new 1×1 R32F framebuffer `RrExposure` (`FRAMEBUF_FLAGS_SINGLE_PIXEL_SIZE`), written by
+  `CmPrepareFinal` thread (0,0) — that pass already binds the tonemapping set, runs
+  after `CalculateExposure` and before RR, and writes the very factor `CmRrPostExposure`
+  multiplies by (floored at 1e-6: frame 0 has avgLuminance 0, and NGX must not see
+  exposure 0.0). Bound in `DLSSRR.cpp` only when `rrPreExposure` is active — against an
+  already-exposed input it would declare the scale twice. The first pass's "null texture
+  is the SDK's correct parameterization" was API-correct and *model*-wrong: the network
+  is not scale-invariant, and pre-exposure radiance swings ~52× with adaptation.
+- **`pInTransparencyLayer`** (the plan's step 4, option a): new RGBA16F attachment
+  framebuffer `RrTransparency`; `RasterPass` gains a world-render-pass variant
+  (attachment 0 = the layer, `loadOp=CLEAR` to zero; ScreenEmission/Reactivity stay the
+  same images and stay LOAD, so rasterized emissive keeps its glow) plus a dedicated
+  `RasterizerPipelines` instance whose attachment-0 **alpha** blend is NGX coverage:
+  'over' = ONE / ONE_MINUS_SRC_ALPHA (true coverage; the stock reuse of the colour
+  factors decays it quadratically), additive = ZERO / ONE (a fireball adds light, it
+  must not darken the background — the stock factors would have punched a dark halo
+  around every additive sprite). `Rasterizer::DrawToFinalImage` takes
+  `toRrTransparencyLayer`; `VulkanDevice` computes it from the RR-branch condition +
+  illum param + `!disableRasterization` (a bound layer that raster never filled would
+  composite stale garbage). Barriered in `DLSSRR.cpp` with `BarrierType::All` —
+  `Storage` names `SHADER_WRITE` as srcAccess and would leave the attachment writes
+  un-made-available.
+- `DLSSRR::Apply` grew `exposureTexEnabled` / `transparencyLayerEnabled` (13 params;
+  stub updated in the same edit — the 9-vs-11 stub break from last time).
+- `RR guides:` log line now also prints `pInExposureTexture=BOUND (1x1, CmPrepareFinal)`
+  / `pInTransparencyLayer=BOUND (raster redirected)` (or `nullptr`), edge-triggered.
+- API: `RgDrawFrameIlluminationParams` gained `rrExposureTexture`,
+  `rrTransparencyLayer`.
+
+**gzdoom-rt:**
+- `rt_rr_exptex` (NOARCH, default **true**), `rt_rr_translayer` (NOARCH, default
+  **true**) → illumination params.
+- `rt_rr_restir_mcap` (NOARCH, default **4**, −1 = off): overrides `rt_restir_mcap` on
+  RR frames only (`g_rr_dbg_rrRequested`, this frame's `RT_UpscaleCvarsToRtgl`
+  decision). Rationale: ReSTIR temporal reuse holds a reservoir winner up to mcap
+  frames, so a bad shadowed sample persists as a *stable dark dot* — structure a
+  temporal denoiser preserves as detail; A-SVGF's spatial atrous erases these, which is
+  why it never showed them, and toggling the flashlight reseeds the reservoirs, which
+  is exactly the observed pattern switch (RR guide §3.5; Duke-RT feeds RR plain path
+  tracing with no reuse at all). A-SVGF frames always use `rt_restir_mcap` (20).
+
+**Tools:** arm set rebuilt around the contract — `rr-full` (the redo), `rr-asvgf` (the
+baseline it is judged against), `rr-legacy` (pre-redo RR, for triage),
+`rr-no-{translayer,decorr,exptex}` (rr-full minus exactly one feature),
+`rr-preexp-probe` rebased on rr-full (+magenta); `rr-preexp-on/off` keep isolating the
+reorder alone (contract features pinned off in both). Pins: the four new cvars at
+defaults in `d64rt-pins.cfg` (inert while `rt_rayreconstr` is pinned 0). Protocol:
+probe → `rr-full` vs `rr-asvgf` → isolation only if needed; if rr-full still loses,
+next is NRD (`docs/plan-nrd-denoiser.md`), not more RR tuning.
