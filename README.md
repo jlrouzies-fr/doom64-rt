@@ -2,7 +2,7 @@
 
 <img src="docs/img/doom64rt-banner.png" alt="Doom 64 — Ray Traced" width="620">
 
-<h3>Path-traced <em>Doom 64: Retribution</em></h3>
+<h3>Path-traced <em>Doom 64: Retribution (WIP)</em></h3>
 
 <p>
 Real ray tracing on the N64 original — no rasterized fallback, no RTX Remix.<br>
