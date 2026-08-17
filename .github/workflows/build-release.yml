@@ -274,6 +274,10 @@ jobs:
           # Set by "Decide the release channel": a tag on main is a release,
           # a tag anywhere else is a beta.
           prerelease: ${{ steps.channel.outputs.pre }}
+          # Auto-changelog: commits since the previous tag, grouped by PR/author
+          # by GitHub's own release-notes generator. No separate step, no wait --
+          # it runs in this same call and is appended after `body` below.
+          generate_release_notes: true
           body: |
             Built from ${{ github.sha }}.
 
