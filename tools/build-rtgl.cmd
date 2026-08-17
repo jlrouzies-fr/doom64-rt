@@ -140,6 +140,18 @@ if errorlevel 1 (
 )
 if exist "%RTGL%\Build\bin\RTGL1.pdb" copy /Y "%RTGL%\Build\bin\RTGL1.pdb" "%OUT%\rt\bin\" >nul
 
+rem NRD lane: NRI is a shared library (see tools\build-nrd-deps.cmd for why)
+rem and RTGL1.dll links its import lib, so NRI.dll must sit beside it or the
+rem game fails to load RTGL1.dll at all ("module not found", not a clean
+rem in-game fallback). Same staging pattern as nvngx_dlssd.dll.
+if exist "%RTGL%\..\NRI\_Bin\Release\NRI.dll" (
+  copy /Y "%RTGL%\..\NRI\_Bin\Release\NRI.dll" "%OUT%\rt\bin\" >nul
+  if errorlevel 1 (
+    echo ERROR: could not stage NRI.dll -- is gzdoom.exe still running?
+    exit /b 1
+  )
+)
+
 rem Prefer release NGX snippets from SDK (includes Ray Reconstruction)
 copy /Y "%DLSS_SDK_PATH%\lib\Windows_x86_64\rel\nvngx_dlss.dll" "%OUT%\rt\bin\" >nul
 copy /Y "%DLSS_SDK_PATH%\lib\Windows_x86_64\rel\nvngx_dlssd.dll" "%OUT%\rt\bin\" >nul

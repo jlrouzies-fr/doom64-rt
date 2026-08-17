@@ -185,3 +185,15 @@ doom64-rt-settings.txt
 # "--revert" reads them, and they are regenerable by reverting and re-applying.
 *.pre_material_labels
 *.pre_sprite_materials
+
+# DXC (GitHub release build with SPIR-V codegen) -- 130+ MB of binaries needed
+# only to REgenerate deps/NRD/_Shaders, which IS committed. A fresh checkout
+# only needs tools/dxc if it changes NRD's shaders; tools/build-nrd-deps.cmd
+# says where to get it.
+tools/dxc/
+
+# (deps/ is already ignored wholesale by policy -- the NRD/NRI/MathLib/
+# ShaderMake trees, their build outputs and the generated _Shaders headers all
+# live there and are reproduced by tools/build-nrd-deps.cmd. The one tracked
+# NRD-lane source file is tools/nrd/NRDConfig.hlsli, which that script
+# installs into deps/NRD/Shaders/.)

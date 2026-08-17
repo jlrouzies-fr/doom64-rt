@@ -615,6 +615,11 @@ enforced at the one place that writes it.
 - GPU: NVIDIA GeForce RTX 5090
 - Build engine: `tools/build-gzdoom-rt.cmd` → `sourcecode/gzdoom-rt/build/RelWithDebInfo/`
 - Build RTGL runtime: `tools/build-rtgl.cmd` (needs `rt/bin/RTGL1.dll` + `nvngx_dlssd.dll`)
+- NRD lane deps (only after changing NRD shaders or on a fresh checkout without
+  the committed artifacts): `tools/build-nrd-deps.cmd` — ShaderMake, NRD
+  `_Shaders` SPIR-V headers (needs the GITHUB dxc in `tools/dxc`, the Windows
+  SDK dxc has no SPIR-V codegen), NRI static libs. `build-rtgl.cmd` then links
+  it all (`RG_WITH_NRD=ON`).
 - **SDKs / deps policy:** install only under `G:\AI\Doom64-RT\deps\` (or other `G:\AI\…`), never system Program Files.
   - Headers: `deps/RTGL` (`vs-shirokii/RTGL`)
   - Runtime: `deps/RTGL-1.6.3`
