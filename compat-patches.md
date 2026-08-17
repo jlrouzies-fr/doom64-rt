@@ -2047,3 +2047,10 @@ both, which bounds how native our signal can ever look to it.
 **Demod verdict (user): pixelation confirmed better under `rr-full`.** RR's final
 form: artifact-free, pixel-crisp albedo (demod), soft lighting only (benign --
 lighting is low-frequency), ~3 spp + 46 candidates for noise stability.
+
+**Glow mode 2, second cut (user: MAP02 floor emissives ~7x hot in dark rooms):**
+the fixed mid-exposure constant made the overlay ride live exposure while the
+cast light was already exposed. Now divides by the 1x1 RrExposure, which became
+an EMA (0.08/frame; also NVIDIA's recommendation for the DLSS exposure
+texture): steady-state exact at the old calibration everywhere, input still
+pulse-free through adaptation. rt_rr_glowscale = plain multiplier, default 1.
