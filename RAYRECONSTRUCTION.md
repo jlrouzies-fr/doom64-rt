@@ -2,28 +2,20 @@
 
 History is in `docs/rayreconstruction/`. **Don't open it unless this file sends you.**
 
-**State (2026-08-17, final): RR's three visual artifacts are RESOLVED in play;
-the lane's remaining gap is sample hunger, which is not ours to fix.** The user's
-ladder verdict: `rr-glow-aslight` fixed the emissive jitter; `rr-local-adapt`
-(glow-as-light + global history flushes OFF, tile mask only) fixed the jitter AND
-the flashlight switch AND the light squares. That configuration is now the
-default (`rt_rr_glowpre 2`, `rt_rr_glowscale 35`, `rt_rr_reset_on_lightcut 0`,
-`rt_rr_reset_on_dynlight 0` -- compiled defaults, pins, and `rr-full`). Watch
-item: transient lights (explosions, muzzle flashes) lingering as ghosts -- the
-global flush existed for those; report if seen. The preset A/B (`rr-preset-def`)
-was regenerated on the winning base after its first version was found to carry
-the pre-fix config. **The shipping denoiser is NRD/ReLAX (`rt_nrd 1`, 2 spp
-advised); A-SVGF is the no-flag default; RR is the experimental lane that
-improves with NVIDIA's OTA models.**
-
-**A/B verdict on the first pass (reorder alone): NULL, plus a regression.** With only
-`rt_rr_preexposure` (exposure moved after RR, nothing else), the user reported: RR still
-noisier than A-SVGF, the stable dark-dot pattern on textures/sprites unchanged, the
-pattern still switches when the flashlight toggles — **and a new constant image jitter.**
-The jitter was a bug in the reorder itself: `CmRrPostExposure` re-added the screen
-emission from a *jittered* render-res buffer with no jitter correction. Pre-reorder, RR
-dejittered that content as part of its input; post-RR nothing does. Fixed
-unconditionally (same correction as `CmVolumeCompose.comp`).
+**State (2026-08-17, CLOSED): RR is artifact-free and fully characterized.**
+The ladder fixed all three visual artifacts (glow-as-light `rt_rr_glowpre 2`,
+local adaptation `rt_rr_reset_on_* 0`, both baked as defaults+pins), the GI
+antilag dead-buffer bug is fixed (it was pinning indirect at raw 1 spp under
+RR and NRD), and the remaining costs are measured and NOT ours to fix:
+- **Noise stability costs ~3 spp direct+indirect and ~46 candidate lights**
+  (arm `rr-stable`; was 8 spp before the antilag fix).
+- **Inherently soft -- still soft at DLAA native res** (`+rt_upscale_dlss 6`),
+  so it is the model's reconstruction floor. Preset Default measured noisier
+  than E; E stays pinned.
+Final lanes: **NRD/ReLAX ships (`rt_nrd 1`, ~2 spp)**, A-SVGF is the no-flag
+default, RR is the clean experimental lane that improves only with NVIDIA's
+OTA models. Re-judge RR whenever a new driver/DLL lands -- everything here is
+one arm away.
 
 **Why the reorder alone was never going to be enough — the structural audit.** Comparing
 our integration against NVIDIA's RR contract and Duke-RT found four deviations; the

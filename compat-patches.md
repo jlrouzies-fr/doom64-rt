@@ -2019,3 +2019,11 @@ from the winning base for a clean preset A/B. New RR defaults everywhere
 `rt_rr_reset_on_lightcut 0`, `rt_rr_reset_on_dynlight 0`. Watch item: transient-
 light ghosts (the global flush existed for those). Final lane states: NRD/ReLAX
 shipping (2 spp advised), A-SVGF default, RR experimental-but-clean.
+
+### RR closed (2026-08-17): characterized, artifact-free, model-limited
+
+Final user measurements after all fixes: noise stability at ~3 spp + 46
+candidate lights (was 8 spp before the GI antilag fix); softness persists at
+DLAA native res => the model's floor, not the pipeline. Preset Default noisier
+than E. Arm `rr-stable` records the found-good config. RR's remaining gaps
+(sample cost, softness) improve only with NVIDIA's OTA models.
