@@ -1978,3 +1978,17 @@ scoping the automatic lightcut/hold flush to RR frames in `rt_main.cpp`
 to end with `rt_rr_reset_debug 1`: RR still prints `FLUSH (cause: dynlight)` at
 level load; NRD prints nothing on the identical trigger. ReLAX and A-SVGF both
 handle lighting changes by design (fast-history clamping / gradient antilag).
+
+### NRD verdict + quit-crash fix (2026-08-17, late night)
+
+**Verdict (user): NRD/ReLAX ~= A-SVGF; keeping NRD, advising 2 spp with it.**
+The lane ships with live tuning cvars (rt_nrd_* -- 0 = ReLAX defaults, pushed
+per frame, read back via the 'NRD/ReLAX settings:' log line) and the
+`nrd-tuned` arm as a starting point.
+
+**Quit crash fixed**: every quit with rt_nrd active wrote CrashReport.zip (AV
+in nvoglv64.dll, stack RTGL1 -> NRI -> driver). ~VulkanDevice resets every
+subsystem in its body before destroying the device -- nrdDenoiser was missing,
+so its implicit member destructor ran after vkDestroyDevice and NRI dispatched
+into a dead device. Fixed (reset right after the body's wait-idle); verified
+with the exact reproducer.
