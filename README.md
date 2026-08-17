@@ -41,7 +41,7 @@ theirs — the code is Claude's. <a href="AI-DECLARATION.md">Details</a>.
 - [**Features**](#features) — one table: lighting, atmosphere, materials, sprites/gore, impacts, HUD, denoising
 - [**Preview**](#preview) — in-engine captures
 - [**Known issues**](#known-issues) — what is still wrong, before you play
-- [**Install and play**](#install) — download, extract, point it at your copy of Retribution
+- [**Install and play**](#install) — download, extract, point it at your copy of Doom 2
 - [**Building it yourself**](#building) — [what you need](#requirements) · [dependencies](#dependencies) · [build](#build) · [first run](#first-run)
 - [**Launchers**](#launchers) — how the game and the A/B arms are started
 - [**For developers**](#developers) — the doc index, in [DEVELOPERS.md](DEVELOPERS.md)
@@ -90,6 +90,7 @@ Every one of them is documented in full elsewhere — this table is the index, n
 | | Act title cards | Title/logo art per act. | [`act-title-cards`](docs/act-title-cards.md) |
 | | Menu patches | Retribution's own font; `rt/wad` loads last so it doesn't override D64 art. | [`compat-patches`](compat-patches.md) |
 | **Denoising & upscaling** | A-SVGF + DLSS 2 / FSR 2 | A-SVGF is the shipping denoiser; upscale with DLSS 2 (NVIDIA) or FSR 2 (anywhere) — they share one slot, set only one. Keep `rt_normalmap_stren`/`rt_heightmap_stren` near 1. | — |
+| | NRD (ReLAX) | **Experimental, off by default** — an alternative denoiser lane behind `rt_nrd 1` (console only, does not persist). Same downstream frame shape as A-SVGF, but a bit noisier at the default 1 sample/pixel; raise **Options → Quality → Direct/Indirect samples per pixel to 2** and it closes the gap. | [`plan-nrd-denoiser`](docs/plan-nrd-denoiser.md) |
 | | DLSS Ray Reconstruction | **Alpha, ships OFF, not recommended** — wired up for experiments but not stable enough to play with. A-SVGF is the intended path. | [`RAYRECONSTRUCTION.md`](RAYRECONSTRUCTION.md) |
 
 <br>
