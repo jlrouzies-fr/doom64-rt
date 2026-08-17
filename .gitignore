@@ -67,8 +67,20 @@ Doom64-Retribution/d64r-gallery-spawn-*.pk3
 Doom64-Retribution/d64r-gallery-wall-ab.pk3
 Doom64-Retribution/d64r-texgallery-batches-mapinfo.pk3
 
-# --- Gallery capture bulk (keep JSON/manifests/scripts; drop PNG screenshots) ---
-tools/_gallery/**/*.png
+# --- Capture bulk under tools/ (keep JSON/manifests/scripts; drop PNGs) ---
+# Every lab and gallery writes its screenshots under tools/, and each new one
+# used to need its own line here (_gallery, _edgelab, _traillab, ...). Blanket
+# rule instead: no PNG under tools/ is source, EXCEPT the authored art below,
+# which is packed into pk3s and has no generator to re-make it.
+tools/**/*.png
+!tools/d64r-lostsoul-rt/**/*.png
+!tools/d64r-rt-sky/**/*.png
+!tools/_sflatas_authored/**/*.png
+!tools/mugshot-art/**/*.png
+!tools/_assets/**/*.png
+!tools/_titlelogo/**/*.png
+!tools/_widescreen_gfx/**/*.png
+# (the brightened debug moon preview stays ignored -- re-listed further down)
 tools/_gallery/**/Screenshot_*.png
 tools/_gallery/**/stdout*.txt
 # ephemeral AI corner review dumps (PNGs already ignored; skip whole batch dirs)
@@ -173,3 +185,8 @@ doom64-rt-settings.txt
 # "--revert" reads them, and they are regenerable by reverting and re-applying.
 *.pre_material_labels
 *.pre_sprite_materials
+
+# Raw preview screenshots (multi-MB PNGs, source material for the README
+# gallery). The compressed docs/img/preview/preview-*.jpg files are what's
+# tracked and linked from the README; these originals stay local.
+docs/img/preview/*.png

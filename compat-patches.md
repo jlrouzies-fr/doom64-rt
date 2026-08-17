@@ -1532,3 +1532,121 @@ the shipping value" and "the absurd arm". Rescaled to 40 and 2000 in the same
 commit. Same failure mode as the `rt_ceiling_edge_seglen` knob that went inert
 under seven ladders (AGENTS.md, §34b): the tool still runs and still prints
 numbers, about a baseline that moved underneath it.
+
+### The upscaler bias mask, for the outlines behind volumetrics (2026-08-16)
+
+**RTGL1 + engine.** The thin dark line around everything seen through smoke or
+fog turned out to be drawn by the temporal upscaler, not by the froxel grid —
+measured on a purpose-built lab, ladder and numbers in
+[`docs/rt-volumetric-edge-outlines.md`](docs/rt-volumetric-edge-outlines.md).
+The composite (`hdr*a + rgb`, `CmPrepareFinal.comp`) runs at render resolution
+and DLSS/FSR run after it, so a silhouette reaches the upscaler with two
+different media states already added into either side of it.
+
+Both upscalers have an input for exactly that case and RTGL1 passed neither:
+DLSS's `pInBiasCurrentColorMask` and FSR2's `transparencyAndComposition`. Now
+both get a mask that `CmPrepareFinal` writes into `FB_IMAGE_INDEX_REACTIVITY` —
+an image that already existed, was already bound as FSR2's `reactive`, and is
+otherwise unwritten here (only `RsRasterizerLensFlare.frag` writes it and the
+engine never calls `rgUploadLensFlare`).
+
+Files: `Shaders/CmPrepareFinal.comp`, `DLSS2.cpp/.h`, `FSR2.cpp`,
+`VulkanDevice.cpp`, `Include/RTGL1/RTGL1.h`, `Generated/GenerateShaderCommon.py`
+(four new uniform scalars — the scalar run must stay a multiple of four, so it
+is exactly four), plus `rt_cvars.inc` and `rt_main.cpp` engine-side.
+
+**Built, measured, and REJECTED -- it ships at 0.** A broad mask removes ~40 % of
+the outline and makes the smoke visibly noisy in motion ("as if the dither is not
+applied any more", from play) while the edges remain; a tight mask is quiet and
+removes ~12 %. The benefit scales with how much of the veil is biased, and
+biasing the veil is exactly what costs the smoke its temporal history. There is
+no setting that removes the outline and leaves the smoke alone.
+
+**A settled still frame cannot measure this.** Every lab capture holds still for
+four seconds, by which point the history has converged and discarding it is
+nearly free -- so the noise column read "no cost" for a feature whose entire cost
+is in motion. That claim was made and was wrong. The real fix needs the composite
+to move after the upscaler, which is a much larger change (exposure and
+`rt_volume_occlude_emis` sit inside the same guard, and the rasterized pass runs
+between).
+
+Three things that cost a capture each, all recorded in the doc:
+
+- **The transmittance gradient is the wrong signal for the mask.** A puff's
+  falloff is smooth over most of its area, so it marks the whole cloud.
+- **A first-difference depth test is also wrong**, and looks right: it fires on
+  any receding surface, so it marks every floor. The second difference
+  `|d₊ + d₋ − 2d|` is what works.
+- **The debug view is a rendered frame, not a buffer dump.** It is written in
+  `CmPrepareFinal`, upstream of the upscaler, sharpening and bloom, so bright
+  contours arrive with a bloom halo painted around them. Two rounds went into
+  chasing that halo as a veil-wide mask leak -- including switching the test to
+  `1/depth`, which is genuinely the correct quantity for a plane in screen space
+  and changed the mask by 0.01 %.
+- **`rt_volume_ubias_debug` shipped ARCHIVED for one session** and saved itself
+  into the ini, so every later launch — the control included — rendered the mask
+  instead of the game. NOARCH now, *and* pinned off in `d64rt-pins.cfg`, because
+  NOARCH stops it being saved and does not remove a line an earlier build wrote.
+
+### Post-upscale volume composite, and the edge feather that actually worked (2026-08-16)
+
+Two more attempts at the outline behind volumetrics, one negative and one
+positive. Both are cvars, both ship off, and the doc
+[`docs/rt-volumetric-edge-outlines.md`](docs/rt-volumetric-edge-outlines.md)
+carries the numbers.
+
+**`rt_volume_postcomp` — built, correct, and it does not work.** The medium is
+applied after the upscaler (`CmVolumeCompose.comp`, dispatched from
+`VulkanDevice.cpp` between the upscaler and `DrawClassic`) instead of in
+`CmPrepareFinal`. The algebra is preserved term for term and the implementation
+is verified: holding the medium constant, on vs off differs by 0.54 mean levels
+against a 2.85 run-to-run floor. The outline is unchanged (−0.9 against −1.0),
+and under **DLAA it is worse** (−1.8 against −1.3) — where render resolution
+equals output resolution, so the medium is never even resampled. That kills the
+"the upscaler mis-reconstructs surface and medium added together" theory this
+project had been working from. Gated off under DLSS Ray Reconstruction and under
+frame generation, either of which it would break.
+
+New RTGL1 surface: `ImageComposition::ComposeVolume`, a push-constant pipeline
+layout variant, `FB_IMAGE_INDEX_SCATTERING` gains
+`FRAMEBUF_FLAGS_BILINEAR_SAMPLER` (safe — every other consumer uses
+`texelFetch`, which ignores the sampler filter), and four more uniform scalars
+(the run must stay a multiple of four).
+
+**`rt_volume_edgesoft` — 60 % of the artefact, at no temporal cost.** Average
+the scattering over a small cross where, and only where, there is a silhouette,
+before compositing. The detector is the **second difference of 1/depth**: a
+second difference because a first one fires on any receding surface and marks
+every floor, and of the reciprocal because screen space interpolates `1/depth`,
+so a plane at any angle gives exactly zero. −1.0 → −0.4 at 2 px; 5 px is no
+better, which is the signature of a step being removed rather than a blur being
+applied. Temporal noise sits inside the repeatability floor, and unlike
+`rt_volume_ubias` it *cannot* cost noise: it never touches temporal history.
+
+**The instrument this needed.** `shot.ps1 -Burst/-BurstEvery/-BurstTurn` plus
+`measure_edge_outlines.py --temporal` measure what changes BETWEEN frames, at
+high spatial frequency, because a settled still cannot see noise at all. Two
+things learned calibrating it: a turning camera swamps the signal with scene
+motion, and the smoke's own per-run frame drops make it unrepeatable (±27 %) —
+so the temporal instrument runs on **fog**, which is deterministic and gives a
+±1.2 % floor.
+
+**Two further theories, both measured negative (same day).** The *jitter
+correction* inside `CmVolumeCompose` — the upscaled image is unjittered while
+the scattering buffer is indexed by jittered render pixels, so the medium's step
+could sit half a pixel off the surface's — was implemented and tried in both
+signs on the DLAA arm, where it is the pass's only misalignment: subtracting
+(what the derivation gives) −0.6 balanced / −2.1 DLAA, adding −0.9 / −1.5, both
+worse than not running the pass. And the *sharpen pass*: `rt_sharpen 0` is auto,
+and auto means AMD CAS whenever DLSS or FSR2 is on — so the "native is clean"
+arm was missing the sharpen as well as the upscaler, and a contrast-adaptive
+sharpen drawing a rim on the dark side of every edge fits the symptom exactly.
+`+rt_sharpen 3` makes it **worse** (−1.3 balanced, −1.7 DLAA): sharpening was
+slightly masking it.
+
+`rt_volume_edgesoft` gained `rt_volume_edgesoft_edge` (the silhouette threshold)
+and a full 3x3 kernel. Neither reaches past the plateau, and the reason is
+visible in the frame: what the feather removes is every SILHOUETTE line — the
+sprites and geometry edges of the original report — and what is left traces
+flat-floor TEXTURE seams, where there is no depth break for a depth detector to
+find and no step in the medium at all. The residual is a different artefact.
