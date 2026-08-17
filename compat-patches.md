@@ -1898,3 +1898,39 @@ live: staged SPIR-V carries `rrGlowPre`, rr-full runs the full contract.
   current recommendation) vs pinned E. The softness A/B.
 
 All arms now state `rt_rr_glowpre` explicitly; pins carry it at 1.
+
+### Glow round 2: adaptation pulse, Catmull-Rom, candidates to 64 (2026-08-17, late)
+
+Play verdict on glow-in-input (`rt_rr_glowpre 1`): bulbs perfectly calm — but
+noise and flashlight-toggle instability WORSE. Mechanism: the 1/exposure term
+makes the glow in RR's input swell/shrink while auto-exposure adapts (exactly
+flashlight toggles and room transitions), and RR reads that as the scene
+changing. Exact output algebra and a temporally stable input are mutually
+exclusive in that mode, so:
+
+- **Default flipped to `rt_rr_glowpre 0`** with the real fix for the post-add's
+  shimmer: the single bilinear tap becomes a **9-tap optimized Catmull-Rom**
+  (the shimmer WAS the tap's phase-varying reconstruction error on sharp
+  emissive edges), clamped at zero (negative lobes would darken bright edges).
+  Arm `rr-glowpre-on` keeps the trade testable; `rr-no-glowpre` deleted
+  (now equals rr-full).
+- **Candidate lights capped at 64** (was 32): engine+RTGL clamps, cvar doc, and
+  the Quality-menu slider (`rt-wad-overlay/menudef.txt`). Pure loop bound, no
+  rays traced.
+- **New arm `rr-quality`**: spp 2/2 + shadow 2 + candidates 64 — the "more
+  rays" levers, which help RR more than A-SVGF (RR eats the raw signal). These
+  four are archived menu settings and persist after the arm (noted in the arm).
+- **The "light squares" hypothesis**: the light grid is compiled OUT
+  (`LIGHT_GRID_ENABLED 0`), so they are NOT grid cells. Prime suspect is the RR
+  disocclusion mask's 16×16 tile-luminance discard: many small bulbs + sparse
+  candidates = noisy tile means = spurious ratio trips = square patches of
+  re-converging history, worse the fewer the candidates — matching the report
+  exactly. A/B: `rr-no-disocc` (exists); live tuning: `rt_rr_disocc_ratio` up
+  from 3 (try 5), `rt_rr_disocc_mindelta` up from 0.01 (try 0.05).
+
+**Branch note:** the outer repo was found checked out on `main` (squash-merge
+`8b7f5db`) mid-session, which removed the arms/pins/NRD tooling from the
+working tree — the whole RR/NRD session lives on `rayreconstruction-v2` only.
+Restored the checkout to `rayreconstruction-v2` (a superset of main's content;
+the preview-gallery work is present here too). Reconcile with main when
+releasing.
