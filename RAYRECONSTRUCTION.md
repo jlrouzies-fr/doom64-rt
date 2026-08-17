@@ -79,6 +79,21 @@ answered on the RR path (`rt_rr_preexposure`+`rt_rr_exptex`, and `rt_rr_restir_m
 If the full-contract A/B still fails, the documented next step is NRD
 (`docs/plan-nrd-denoiser.md`), **not** a new RR guess.
 
+**A known bound the audit missed, on record (2026-08-17):** the structural
+audit covered the INTEGRATION contract (exposure, guides, content routing,
+correlation) but not the RENDERER BASELINE against RR's training distribution.
+RR was trained on CP2077-class pipelines: ReSTIR + NEE + full BRDF/light MIS,
+with their noise statistics. This renderer has ReSTIR DI+GI but only partial
+MIS -- and full MIS is blocked upstream: `TRIANGLE_LIGHTS = 0` (emissive
+geometry is not a light source; analytic proxies + the glow overlay stand in)
+and lights are not in the acceleration structure, so BRDF-sampled direct rays
+cannot hit them by construction. Adding area-light transport + MIS is a
+renderer overhaul that would benefit ALL denoiser lanes (glossy direct
+response, lower variance) and likely shave RR's 3-spp bill -- but A-SVGF's
+1-spp performance on the same baseline shows the baseline is serviceable, so
+it is an improvement project, not a defect. Weigh it as its own initiative,
+never as an RR patch.
+
 **Every fault that cost this project days was an invisible setting, never a renderer bug:**
 RR compiled out of the DLL (CMake `ENV{}` vs `-D`); a Dev-UI sticky override in
 `rt/devmode_settings.json` beating the cvar; a stale `rt_upscale_fsr2 2` clobbering the DLSS
