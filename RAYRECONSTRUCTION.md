@@ -9,9 +9,12 @@ antilag dead-buffer bug is fixed (it was pinning indirect at raw 1 spp under
 RR and NRD), and the remaining costs are measured and NOT ours to fix:
 - **Noise stability costs ~3 spp direct+indirect and ~46 candidate lights**
   (arm `rr-stable`; was 8 spp before the antilag fix).
-- **Inherently soft -- still soft at DLAA native res** (`+rt_upscale_dlss 6`),
-  so it is the model's reconstruction floor. Preset Default measured noisier
-  than E; E stays pinned.
+- **The softness was beaten where it matters**: `rt_rr_demod` (albedo
+  demodulation, the Remix approach) keeps the pixel-art albedo out of the
+  network and re-applies it crisp at output res -- user-confirmed better
+  pixelation. Only the LIGHTING remains network-soft (benign; it is
+  low-frequency; still soft at DLAA = model floor). Preset Default measured
+  noisier than E; E stays pinned.
 Final lanes: **NRD/ReLAX ships (`rt_nrd 1`, ~2 spp)**, A-SVGF is the no-flag
 default, RR is the clean experimental lane that improves only with NVIDIA's
 OTA models. Re-judge RR whenever a new driver/DLL lands -- everything here is

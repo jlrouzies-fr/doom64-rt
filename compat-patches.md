@@ -2043,3 +2043,7 @@ A/B: `rr-full` (demod on) vs `rr-no-demod`; `rt_rr_demod_filter` live.
 Answered in passing: we run ReSTIR DI+GI but only partial MIS (NEE-driven,
 no BRDF-light MIS combine) -- RR's training pipelines (CP2077-class) have
 both, which bounds how native our signal can ever look to it.
+
+**Demod verdict (user): pixelation confirmed better under `rr-full`.** RR's final
+form: artifact-free, pixel-crisp albedo (demod), soft lighting only (benign --
+lighting is low-frequency), ~3 spp + 46 candidates for noise stability.
