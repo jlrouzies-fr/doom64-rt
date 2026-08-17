@@ -2,9 +2,22 @@
 
 History is in `docs/rayreconstruction/`. **Don't open it unless this file sends you.**
 
-**State (2026-08-17, second pass): the FULL INPUT CONTRACT is implemented, awaiting the
-in-game A/B.** The launcher still defaults to A-SVGF (`rt_rayreconstr 0`) until the
-verdict is in.
+**State (2026-08-17, evening): the FULL INPUT CONTRACT was A/B'd in play and came back
+NULL. The RR lane is parked; the active lane is NRD (`docs/plan-nrd-denoiser.md`).**
+The launcher keeps A-SVGF (`rt_rayreconstr 0`).
+
+**The verdict, with the arm read back from `rt-console.log` (all bindings live):**
+`preExposure=on (post-RR pass)`, `pInExposureTexture=BOUND (1x1, CmPrepareFinal)`,
+`pInTransparencyLayer=BOUND (raster redirected)`, `temporalMCap=4 (stock 20)`, preset E,
+feature created once. Screenshots `screen/lab/Screenshot_Doom_20260817_1507{50,59}.png`:
+RR shows the fine dark-dot speckle on essentially every surface; A-SVGF is clean.
+Exposure contract complete, transparency layer live, decorrelation active — **every
+documented RR lever is now implemented and measured, and RR still loses to A-SVGF.**
+Per the rule below, the next step is NRD, not another RR hypothesis. The residual
+emissive-edge jitter under RR (bulbs, emissive textures) is the irreducible part of
+compositing a jittered render-res glow buffer after reconstruction — a single bilinear
+tap resamples hard edges at a different sub-texel phase each frame; the A-SVGF/NRD
+ordering (emission before the upscaler) does not have it.
 
 **A/B verdict on the first pass (reorder alone): NULL, plus a regression.** With only
 `rt_rr_preexposure` (exposure moved after RR, nothing else), the user reported: RR still
