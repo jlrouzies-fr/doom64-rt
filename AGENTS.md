@@ -82,11 +82,14 @@ belongs) — read before adding any print to the RT path:
 
 Anything DLSS Ray Reconstruction:
 
-→ **`RAYRECONSTRUCTION.md`** (root, ~35 lines — start here, always)
+→ **`RAYRECONSTRUCTION.md`** (root — start here, always)
 
 It carries the working rules and the five faults that cost days. The full history is
 `docs/rayreconstruction/`; those files are large, so only open one when
-`RAYRECONSTRUCTION.md` points you at it.
+`RAYRECONSTRUCTION.md` points you at it. The 2026-08-17 pre-exposure reorder (why RR
+was fed the wrong signal, what changed, the A/B) is planned in
+`docs/plan-rayreconstruction-secondpass.md` and recorded in `compat-patches.md`; the
+NRD-in-RTGL1 fallback, gated on that A/B's verdict, is `docs/plan-nrd-denoiser.md`.
 
 Update those when phases complete or facts change. Do not invent parallel trackers.
 

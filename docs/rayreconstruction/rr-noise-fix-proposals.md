@@ -196,7 +196,7 @@ These are additive — do them after §3, they need new plumbing from gzdoom-rt 
 | 2 | §2.2 dev-overlay sweep | ⏸ Skipped (no dev DLL; guide validation via visual A/B) |
 | 3 | §3.3 step 1: null `pInSpecularHitDistance` | ✅ **Landed** (`DLSSRR.cpp:400`) |
 | 4 | §3.1 + §3.2 guide rewrite | ✅ **Landed** (`CmNoisyCompose.comp` + `BRDF.h`); pushed to public RTGL branch 2026-08-06 |
-| 5 | §3.4 reorder exposure/emission/raster after RR | ⏸ Deferred (needs post-RR exposure pass) |
+| 5 | §3.4 reorder exposure/emission/raster after RR | ✅ **Landed 2026-08-17** — exposure + screen emission move to `CmRrPostExposure.comp` post-RR under `rt_rr_preexposure` (default on, NOARCH); raster stays pre-RR (transparency layer remains §5/item 8). NVIDIA's RR guide §3.7 confirmed exposure unsupported for RR, so no exposure texture is bound — pre-exposure color + `InPreExposure=1.0` is the SDK's own correct parameterization. A/B: `.\tools\ab.cmd rr-preexp-probe\|on\|off`. Awaiting in-game verdict |
 | 6 | §3.3 step 2: real specular hitT | ⬜ Pending |
 | 7 | §4 ReSTIR permutation sampling + boiling | ⬜ Pending |
 | 8 | §5 content routing (transparency layer) | ⬜ Pending |

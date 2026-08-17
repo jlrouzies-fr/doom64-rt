@@ -1650,3 +1650,59 @@ visible in the frame: what the feather removes is every SILHOUETTE line — the
 sprites and geometry edges of the original report — and what is left traces
 flat-floor TEXTURE seams, where there is no depth break for a depth detector to
 find and no step in the medium at all. The residual is a different artefact.
+
+---
+
+## DLSS-RR pre-exposure reorder + preset cvar + NGX output barrier (2026-08-17)
+
+**The RR investigation reopened with new evidence, and the deferred fix landed.**
+NVIDIA's RR Integration Guide §3.7 (local copy, `deps/DLSS/doc/`) declares exposure,
+auto-exposure and sharpening **not supported** by DLSS-RR — the model wants linear
+pre-exposure radiance. We were feeding it `FB_FINAL` *after* `CmPrepareFinal` multiplied
+EV100 in (and added the screen emissive), while `DLSSRR.cpp` declared
+`InPreExposure = 1.0f` — a false statement to NGX on every frame in which auto-exposure
+had adapted. A-SVGF never had the problem: it accumulates in linear radiance before
+exposure. This was `rr-noise-fix-proposals.md` §3.4, Deferred since 2026-08-06, and the
+Duke-RT checkout (NRI backend, same SDK, RR is its *recommended* path) is the working
+reference for the corrected order.
+
+**RTGL (deps/RTGL):**
+- `rt_rr_preexposure` (illum params → uniform `rrPreExposure`, from `_pad7`): with RR
+  active, `CmPrepareFinal.comp` skips the EV100 multiply, the screen-emissive add and the
+  disocc-mask tint; the new `CmRrPostExposure.comp` (registered as `CRrPostExposure`,
+  dispatched by `ImageComposition::RrPostExposure`) reapplies all three on
+  `UPSCALED_PONG` at output res, before DrawClassic/BlitForEffects/sharpen/bloom. The
+  algebra is exact, same proof shape as `CmVolumeCompose.comp:44-49` (the medium was
+  already composited render-res under RR since `volumePostComp` is forced 0).
+- **HOST-GATED**: `gu->rrPreExposure` requires the exact RR-branch condition
+  (`IsNvDlssRayReconstructionEnabled() && nvDlssRr`) or a silent DLSS2/FSR fallback frame
+  would get exposure applied *nowhere*. The C++ call site keys on the uniform itself, so
+  skip-side and apply-side cannot disagree (the `volumePostComp` pattern).
+- `ScreenEmission` framebuffer now carries `FRAMEBUF_FLAGS_BILINEAR_SAMPLER` (safe: all
+  existing consumers are texelFetch/attachment; verified exhaustively).
+- `rrPreExpDebug` (from `_pad8`): magenta tint in the post pass — the absurd arm.
+- `Denoiser path:` log line now prints `preExposure=on (post-RR pass)` / `off (...)`.
+- No NGX exposure texture and no `InPreExposure` value change: with genuinely
+  pre-exposure color, `InPreExposure=1.0` + null exposure texture **is** the SDK's
+  correct parameterization (guide §3.7; helpers coerce 0→1.0).
+- `rt_rr_preset` → `dlssRrPreset` on the resolution params → `DLSSRR.cpp` (was
+  hard-coded Preset E). Mirrors the DLSS2 SR mechanism: `m_prevPreset` sentinel, feature
+  re-created on change, takes effect live. RR valid values: 0=Default, 4=D, 5=E only
+  (A–C removed in SDK 310.4.0; 6–15 revert; **no J/K for RR**, unlike SR). Pinned 5.
+- **Both NGX evaluates now barrier their OUTPUT image** (`UPSCALED_PONG`) before
+  dispatch, in `DLSSRR.cpp` *and* `DLSS2.cpp`: the previous frame's post-effect chain
+  ping-pongs through it with input-only barriers (`EffectBase` barriers only what it
+  reads), a genuine cross-frame WAR/WAW that was frequently masked by the blit chain's
+  restore barrier, never guaranteed.
+- The no-DLSS `#else` stub of `DLSSRR::Apply` had 9 params against an 11-param
+  declaration (`specHitDistEnabled`/`disoccMaskEnabled` never added) — any build without
+  `RG_USE_NATIVE_DLSS2` failed to compile. Fixed.
+
+**gzdoom-rt:** `rt_rr_preexposure` (NOARCH, default **true**), `rt_rr_preexp_debug`
+(NOARCH), `rt_rr_preset` (NOARCH, default 5 = E, preserving prior behaviour) in
+`rt_cvars.inc`; passed via illumination params / `RT_UpscaleCvarsToRtgl` in `rt_main.cpp`.
+
+**Tools:** arms `tools/arms/rr-preexp-{probe,on,off}.cfg` (probe first — magenta = the
+pass is live), pin `rt_rr_preset 5` in `d64rt-pins.cfg`. A/B protocol and the specific
+prediction (instability correlates with auto-exposure *adaptation*, not camera motion)
+in `RAYRECONSTRUCTION.md`.

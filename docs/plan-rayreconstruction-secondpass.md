@@ -3,6 +3,17 @@
 > Read `RAYRECONSTRUCTION.md` first. This plan **reopens** what that file closed, and
 > says why. History is in `docs/rayreconstruction/`.
 
+> **STATUS 2026-08-17: IMPLEMENTED, awaiting the in-game A/B.** Every claim below was
+> re-verified against the code by an 8-agent evidence pass before implementation; all
+> confirmed (some line numbers had drifted — current ones are in `compat-patches.md`,
+> which is the authoritative record of what landed). **One design change against this
+> plan:** step 3 (the 1×1 exposure texture) was **dropped** — NVIDIA's RR guide §3.7
+> (local copy, `deps/DLSS/doc/`) declares exposure inputs unsupported for RR, so with
+> genuinely pre-exposure color, `InPreExposure=1.0` + no exposure texture is the SDK's
+> own correct parameterization. Duke-RT's exposure-texture binding is generic NRI
+> plumbing, not an RR requirement. The A/B: `.\tools\ab.cmd rr-preexp-probe 2` first
+> (magenta = pass live), then `rr-preexp-on` vs `rr-preexp-off`.
+
 ## Context
 
 `RAYRECONSTRUCTION.md` declares the RR investigation **closed** ("no remaining
