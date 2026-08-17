@@ -1934,3 +1934,34 @@ working tree — the whole RR/NRD session lives on `rayreconstruction-v2` only.
 Restored the checkout to `rayreconstruction-v2` (a superset of main's content;
 the preview-gallery work is present here too). Reconcile with main when
 releasing.
+
+---
+
+## NRD stage 2: ReLAX is live (2026-08-17, night)
+
+The RR whack-a-mole verdict (Catmull-Rom did not beat the post-RR glow shimmer;
+glow-in-input pulses on adaptation — both ends measured, no third placement
+exists; 8× indirect spp needed for stability; flashlight switch is RR's own
+history machinery) triggered the pivot the docs pre-committed to. **The full
+NRD/ReLAX data path is implemented and verified rendering**: `rt_nrd 1` runs
+`CmNrdPack` → `NrdDenoiser::Denoise` (NRDIntegration `DenoiseVK`) →
+`CmNrdCompose`, replacing A-SVGF for the frame. Everything downstream is the
+untouched A-SVGF frame shape — exposure baked, glow pre-upscaler, DLSS-SR —
+so the RR lane's exposure/glow/reset artifact classes cannot exist here.
+
+Contract notes (all verified against NRD.hlsli / NRDSettings.h at source):
+matrices column-major non-jittered (ours verbatim); motion = our 2.5D contract
+with scale {1,1,1}; TRUE viewZ from SurfacePosition (not DepthWorld's radial);
+`_NRD_EncodeNormalRoughness101010` ported to GLSL (encoding 2, FLOAT16
+storage); no demodulation pass — our unfiltered buffers are material-free by
+construction, remodulation is `CmNoisyCompose`'s arithmetic on denoised
+lighting. **Measured round trip: 1% mean-luminance delta vs A-SVGF; frame
+structurally clean.** ReLAX defaults + antiFirefly; OUT_VALIDATION wired
+(`rt_nrd_validation`, arm `nrd-validation`).
+
+**The A/B that matters now:** `.\tools\ab.cmd nrd-probe 2` (ReLAX) vs
+`.\tools\ab.cmd rr-asvgf 2` (A-SVGF), in play: 1-spp noise, dark dots,
+flashlight toggles (must behave exactly like A-SVGF), emissive edges, motion
+stability, specular (ReLAX has real hit-distance reprojection). Follow-ups if
+kept: diffuse hit distance from raygen, ReBLUR mode, SIGMA shadows, settings
+cvars, per-frame perf cost.
