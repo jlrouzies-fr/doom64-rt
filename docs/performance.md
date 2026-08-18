@@ -280,6 +280,37 @@ candidates are real combat (the fx accumulation above), a different map, or
 something in the live config. `stat rt` is in the build to answer it from a real
 session rather than a synthetic one.
 
+## Per-map, and what this means for weaker hardware
+
+"CPU floor" below = DLSS ultra-performance, which takes the GPU almost out of the
+frame and leaves the CPU as the limiter. That is the closest proxy available on
+this machine to hardware where the GPU is not the thing in the way.
+
+| map | sectors / lines | bsp off -> on | fps off -> on (CPU floor) |
+|---|---|---|---|
+| MAP01 | 164 / 1145 | 0.140 -> 0.066 | 454 -> 455 |
+| MAP03 | 175 / 1010 | 0.099 -> 0.036 | 425 -> 436 |
+| MAP13 | 247 / 2261 | 0.185 -> 0.063 | 477 -> 478 |
+| MAP20 | 294 / 2755 | 0.412 -> 0.180 | 326 -> 357 |
+| MAP34 | 706 / 5666 | **3.716 -> 0.240** | **162 -> 399** |
+
+The old loop was O(sectors-near-camera x segs), so its cost grows much faster
+than map size: MAP34 has 4x MAP13's sectors and 2.5x its lines, and paid **20x**
+the BSP cost. On the four smaller maps the fix is worth nothing measurable, and
+saying so matters as much as the MAP34 number does.
+
+**Why this is worth more on weaker hardware, not less.** The CPU cost is
+resolution-independent - `bsp` measured 0.24 ms (or 3.7 ms unfixed) whether the
+frame carried 1.17 or 7.97 Mpixel. So when a player lowers resolution or picks a
+more aggressive DLSS mode to gain frames, the GPU half of the frame shrinks and
+this half does not: it becomes a larger share, and eventually the ceiling. The
+CPU-floor column is exactly that scenario, and it is where MAP34 goes 162 -> 399.
+
+The loop is also a linear scan over the whole seg array, i.e. cache-hostile, on a
+CPU with an unusually large L3 (9800X3D). A mid-range CPU should pay *more*
+absolute milliseconds for it, not fewer. That last point is reasoning, not
+measurement - there is no second machine here to check it on.
+
 ## Still open
 
 - The reported symptom is still unreproduced: 289 fps measured where ~120 was
