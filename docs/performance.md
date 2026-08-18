@@ -112,12 +112,62 @@ which geometry reaches the acceleration structure and is load-bearing for light
 leaks (`moon-and-sky-leaks.md` S5.1). The shell is unchanged; only the cost of
 computing it moved.
 
+## Fix 2 - the instrument had to be split before it could attribute
+
+The first bracket lumped our light walks and our effect systems together as
+`lightgen`, and across a 40-second firefight that number went 0.40 -> 1.63 ms.
+The obvious reading -- "the light walks get expensive in combat" -- was wrong.
+Splitting the bracket into `lightgen` (the ten level light walks) and `fx`
+(smoke, projectile impacts, sparks, arcs, dust) put the growth where it belongs.
+
+## The play-time cost, measured at last
+
+`docs/plan-projectile-impact-fx.md:553` asked for exactly this and never got it:
+*"the casings' Death states are -1 - they lie there for the rest of the level. A
+sustained fight puts a great many sprites on the floor, each a candidate for a
+shadow proxy and an AO blob. Measure it with a frame time on screen and a held
+trigger before deciding the default."*
+
+Method: MAP13, a crowd summoned in six waves, then `rt_autofire` holds the
+chaingun trigger for 1400 tics (40 s). `rt_stat_every 105`, `rt_vsync 0`.
+
+| elapsed | prims | lightgen | fx | primupload | drawframe |
+|---|---|---|---|---|---|
+| 6 s | 490 | 0.256 | 0.159 | 0.233 | 0.515 |
+| 12 s | 688 | 0.261 | 0.242 | 0.271 | 0.555 |
+| 24 s | 1010 | 0.259 | 0.350 | 0.351 | 0.602 |
+| 36 s | 1580 | 0.268 | 0.924 | 0.414 | 0.633 |
+| 48 s | 2009 | 0.271 | **1.226** | 0.430 | 0.614 |
+
+- **`lightgen` is flat.** The level light walks cost 0.26 ms and do not care what
+  is on the floor. Baking the fixture-candidate lists would save that 0.26 ms and
+  no more - a much smaller prize than it looked before this split existed.
+- **`fx` grows 8x** and `prims` 4x, linearly, **with no plateau** in 40 seconds.
+  Nothing here is bounded by a cap the way every light system is.
+- `drawframe` barely moves, confirming again that per-primitive BLAS work is not
+  where this frame goes.
+
+Isolation, same fight, `d64_dropcasings 0 +rt_spark_debris 0 +rt_arc_burn 0`:
+
+| | prims @48s | fx-inclusive walk @48s |
+|---|---|---|
+| all persistence on | **2009** | **1.505** |
+| persistence off | **773** | **0.419** |
+
+and with persistence off the number is **flat for the whole fight**. So the
+degradation is caused by the persistent populations, not by combat as such:
+casings (`d64_dropcasings 1`, Death states `-1`), spark debris, and the scorch
+decals (`rt_arc_burn_life 0` = forever). Roughly 26 primitives per second of
+held trigger, each also an AO blob candidate and a TLAS instance.
+
+This is what "it gets heavy the longer you play" is. It is a content-budget
+problem, not an engine one - which is why it belongs behind the Quality menu's
+Persistence group rather than being silently capped.
+
 ## Still open
 
-- What the in-play symptom actually is. These are spawn-point measurements with
-  nothing happening; a firefight with persistent gore, casings and debris is the
-  case `plan-projectile-impact-fx.md:553` flags as never measured.
-- `lightgen` at 0.4-0.7 ms is now the largest item in our own per-frame code.
+- Whether the measured accumulation is the whole of the in-play symptom. 40 s of
+  held trigger costs ~1 ms; a full level of firefights is unbounded but unmeasured.
 - `rgStartFrame` spikes to 1.2 ms (MAP13) and 3.1 ms (native-res DLAA) - that is
   the N-2 fence, i.e. genuine GPU-bound time, and the honest place to look for
   GPU cost.
