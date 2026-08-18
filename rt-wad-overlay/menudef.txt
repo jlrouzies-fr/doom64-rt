@@ -472,10 +472,61 @@ LISTMENU "RT_OptionsMenuRemix"
 // NOTE: rt_shadow_samples / rt_spp_direct / rt_spp_indirect / rt_restir_* are
 // declared RT_CVAR_NOARCH in rt_cvars.inc, i.e. NOT archived - they take effect
 // immediately but reset to their compiled default on the next launch.
+// rt_quality_preset IS archived, so choosing a preset is what makes a choice
+// survive a restart; it re-applies the whole group on load.
 //
+// Everything this menu touches is deliberately UNPINNED in tools/d64rt-pins.cfg
+// -- a pin runs at launch and would overwrite the player's choice every start.
+//
+OptionValue "RTQualityPresets"
+{
+	0, "Custom"
+	1, "Ultra"
+	2, "High (as shipped)"
+	3, "Balanced"
+	4, "Performance"
+}
+
 OptionMenu "RT_QualityMenu" protected
 {
 	Title "QUALITY"
+
+	StaticText "Preset", 1
+	Option "Quality preset",			"rt_quality_preset",	"RTQualityPresets"
+	StaticText "High is exactly what the game shipped with.", 1
+	StaticText "Moving any slider below leaves the preset name behind.", 1
+	StaticText " "
+
+	StaticText "Persistence  -  the cost that grows as you play", 1
+	Option "Drop shell casings",		"d64_dropcasings",		"OnOff"
+	Option "Impact debris",				"rt_spark_debris",		"OnOff"
+	Slider "Particle pool",				"rt_spark_max",			200, 2000, 100, 0
+	Slider "Scorch marks kept",			"rt_arc_burn_max",		0, 128, 8, 0
+	StaticText "Casings and scorch marks never expire. 40s of held", 1
+	StaticText "trigger measured 490 -> 2009 primitives, still rising.", 1
+	StaticText " "
+
+	StaticText "Effects", 1
+	Slider "Dust motes",				"rt_dust_max",			0, 1400, 100, 0
+	Slider "Smoke puffs",				"rt_smoke_budget",		0, 128, 8, 0
+	Slider "Smoke samples / froxel",	"rt_smoke_spp",			1, 8, 1, 0
+	Slider "Impact arcs",				"rt_arc_max",			0, 200, 10, 0
+	Slider "Arc lights",				"rt_arc_glow_max",		0, 128, 8, 0
+	StaticText " "
+
+	StaticText "Per-sprite geometry", 1
+	Slider "Contact shadow detail",		"rt_sprite_ao_segments", 6, 32, 2, 0
+	Slider "Contact shadow distance",	"rt_sprite_ao_dist",	0, 40, 2, 0
+	Slider "Sprite shadow planes",		"rt_sprite_shadow_planes", 0, 4, 1, 0
+	Slider "Sprite shadow distance",	"rt_sprite_shadow_dist", 0, 60, 4, 0
+	StaticText " "
+
+	StaticText "Lamp lights", 1
+	Slider "Ceiling bulb lights",		"rt_ceiling_edge_max",	0, 1024, 64, 0
+	Slider "Single bulb lights",		"rt_solo_lamp_max",		0, 384, 32, 0
+	Slider "Panel lights",				"rt_faux_lamp_max",		0, 256, 32, 0
+	Slider "Wall strip lights",			"rt_wall_strip_max",	0, 128, 8, 0
+	StaticText " "
 
 	StaticText "Direct lighting", 1
 	Slider "Shadow rays / pixel",		"rt_shadow_samples",	1, 8, 1, 0
@@ -491,7 +542,7 @@ OptionMenu "RT_QualityMenu" protected
 	Slider "Shadow ray depth",			"rt_shadowrays",		1, 8, 1, 0
 	Slider "Reflect / refract depth",	"rt_reflrefr_depth",	1, 16, 1, 0
 	StaticText " "
-	StaticText "Higher values cost GPU time. Settings are saved.", 1
+	StaticText "Persistence and effects cost CPU; the rest cost GPU.", 1
 }
 
 //

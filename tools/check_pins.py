@@ -17,6 +17,11 @@ It also flags two quieter mistakes:
                    "Unknown command" during startup, buried in hundreds of lines
                    nobody reads, and the pin silently does nothing forever.
 
+  PINNED PRESET -- a pin naming a cvar that Options -> Quality owns through
+                   rt_quality_preset (rt_quality.cpp). Pins run at launch and
+                   override anything a preset set, so such a pin silently undoes
+                   the player's choice on every start. ALWAYS an error.
+
   PINNED NOARCH -- RT_CVAR_NOARCH cvars are deliberately not archived: they are
                    diagnostics (rt_smoke_debug, rt_autoshot, rt_autofire) that
                    should be passed on the command line for one run, never
@@ -167,7 +172,24 @@ def main() -> int:
         elif not agrees:
             disagree.append((name, value, pinned))
 
-    if not (disagree or orphan or noarch):
+    # Owned by Options -> Quality via rt_quality_preset. Parsed straight out of
+    # the preset table so the two can never drift: a cvar added to the preset is
+    # guarded here the moment it is added, with nothing to remember.
+    owned = set()
+    try:
+        q = (ROOT / "sourcecode" / "gzdoom-rt" / "src" / "common" / "rendering"
+             / "rt" / "rt_quality.cpp").read_text(encoding="utf-8", errors="replace")
+        table = q[q.index("g_quality[] = {"):]
+        table = table[:table.index("};")]
+        owned = set(re.findall(r'\{\s*"([A-Za-z_][A-Za-z0-9_]*)"', table))
+    except Exception:
+        # No engine tree (sourcecode/ is gitignored, so a docs-only checkout has
+        # none). Silence beats a false pass here: say the guard did not run.
+        print("check_pins: NOTE -- rt_quality.cpp not found, preset guard skipped")
+
+    preset_pinned = sorted(n for n in pins if n in owned)
+
+    if not (disagree or orphan or noarch or preset_pinned):
         n = sum(1 for k in pins if not prefix or k.startswith(prefix))
         print(f"check_pins: OK -- {n} pins agree with their compiled defaults")
         return 0
@@ -183,6 +205,9 @@ def main() -> int:
         print(f"   {name:32} default={value:<12} pinned={pinned}")
     for name in orphan:
         print(f"   {name:32} PINNED BUT NO SUCH CVAR (silently does nothing)")
+    for name in preset_pinned:
+        print(f"   {name:32} PINNED BUT OWNED BY rt_quality_preset"
+              f" -- the pin wins at launch and the Quality menu does nothing")
     for name, value, pinned in noarch:
         print(f"   {name:32} NOARCH pinned ON: default={value} pinned={pinned}"
               f" -- a diagnostic left on for every session")
@@ -192,7 +217,10 @@ def main() -> int:
         print("tools/d64rt-pins.cfg. Changing only one is the failure this exists for.")
     # Orphans are always broken. Bare-run value differences are the launcher
     # doing its job, so they do not fail the build.
-    return 1 if (orphan or (prefix and disagree)) else 0
+    if preset_pinned:
+        print("Remove those lines from tools/d64rt-pins.cfg. The preset's High level")
+        print("restates every shipped value, so nothing is lost by unpinning them.")
+    return 1 if (orphan or preset_pinned or (prefix and disagree)) else 0
 
 
 if __name__ == "__main__":

@@ -164,6 +164,42 @@ This is what "it gets heavy the longer you play" is. It is a content-budget
 problem, not an engine one - which is why it belongs behind the Quality menu's
 Persistence group rather than being silently capped.
 
+## Fix 3 - Options -> Quality, with presets
+
+The knobs that cost frame time are now in one menu, and `rt_quality_preset`
+(`rt_quality.cpp`) drives 26 of them as a group. **High is exactly the shipped
+values**, verified: preset 2 reproduces the pre-change baseline to the primitive
+(2009 prims / 1.227 ms fx at 48 s, against 2009 / 1.226 before the menu existed).
+
+Measured on the same scripted 40 s firefight (MAP13, summoned crowd, held
+chaingun trigger, `rt_vsync 0`):
+
+| preset | prims @48 s | fx ms | RT total ms | shape |
+|---|---|---|---|---|
+| Ultra | - | - | - | raises rt_restir_initial/spp; costs GPU, not CPU |
+| **High** (ships) | 2009 | 1.227 | 2.749 | **still climbing at 48 s** |
+| Balanced | 1620 | 0.703 | 2.239 | plateaus ~40 s |
+| **Performance** | **895** | **0.242** | **1.497** | plateaus ~36 s |
+
+The important column is the last one. Performance and Balanced do not merely
+start lower, they **stop growing** - because they bound the persistent
+populations rather than the per-frame work. High is unbounded within a level by
+design, which is the authored behaviour and stays the default.
+
+Cvars are resolved by name, not through the `rt_cvars.inc` externs, because
+`d64_dropcasings`, `rt_gore_max` and `rt_gore_life` are CVARINFO cvars from the
+mod pk3s with no C++ symbol. All 26 resolve in the shipped load order
+("26 cvar(s) set, 0 not present").
+
+### The pins had to give the cvars up
+
+A pin in `tools/d64rt-pins.cfg` runs at launch and overrides both the compiled
+default and anything a preset set - so all 19 preset-owned pins are commented
+out in place, next to the notes that explain their values. `tools/check_pins.py`
+now parses the preset table out of `rt_quality.cpp` and **fails** if any of them
+comes back; that guard was negative-tested by re-adding `rt_dust_max 900` and
+confirming a non-zero exit, not just by observing a clean pass.
+
 ## Still open
 
 - Whether the measured accumulation is the whole of the in-play symptom. 40 s of
