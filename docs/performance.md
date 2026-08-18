@@ -216,10 +216,74 @@ now parses the preset table out of `rt_quality.cpp` and **fails** if any of them
 comes back; that guard was negative-tested by re-adding `rt_dust_max 900` and
 confirming a non-zero exit, not just by observing a clean pass.
 
+## What the fix is actually worth, in ms and FPS
+
+The phase counters measure CPU wall-clock inside four brackets. A frame also
+contains the playsim, the 2D pass, audio and whatever the driver does between
+our last submit and the next BeginFrame, so a phase total is **not** a frame
+time. `stat rt` now reports the real one - frames over elapsed nanoseconds,
+averaged across the half second between reports - and `rt_cull_hoist` switches
+the BSP expansion between the hoisted and the original path, so the A/B is one
+build with one set of drivers, shaders and textures.
+
+MAP34, the map where the BSP cost was worth anything, window pinned at 2560x1440:
+
+| setting | render res | hoist | frame ms | fps |
+|---|---|---|---|---|
+| DLSS Balanced | 1470x794 | **off** | 6.254 | **159.9** |
+| DLSS Balanced | 1470x794 | **on** | **3.458** | **289.2** |
+| DLAA | 2534x1369 | off | 7.591 | 131.7 |
+| DLAA | 2534x1369 | on | 7.544 | 132.6 |
+
+**-2.80 ms, +129 fps (+81%) at DLSS Balanced. +0.9 fps at DLAA - nothing.**
+
+The same fix on the other two maps, DLSS Balanced:
+
+| map | bsp off -> on | fps off -> on |
+|---|---|---|
+| MAP13 | 0.177 -> 0.062 | 300.8 -> 301.4 |
+| MAP20 | 0.418 -> 0.183 | 264.4 -> 263.5 |
+| MAP34 | 3.784 -> 0.234 | **159.9 -> 289.2** |
+
+So the honest summary is: **the saving is real and it only converts to frame rate
+where the CPU was the limiter.** MAP13 and MAP20 never had a BSP problem, and at
+DLAA even MAP34 does not - the freed CPU time is absorbed by the N-2 fence wait
+instead, which is why `rt_total` goes *up* (3.002 -> 6.915) while the frame time
+does not move. That is the correct signature of a frame that has stopped being
+CPU-bound.
+
+## GPU scaling: DLAA and 4K
+
+Same map, hoist on. 4K here means a 3840x2160 window (3814x2089 client area);
+`vid_defwidth`/`vid_defheight` do **not** resize an existing window - `win_w` /
+`win_h` plus `vid_setmode` do, and they are archived, so a run that sets them
+leaks into the next one unless it is put back.
+
+| setting | render res | Mpixel | frame ms | fps |
+|---|---|---|---|---|
+| 1440p DLSS Balanced | 1470x794 | 1.17 | 3.458 | **289.2** |
+| 4K DLSS Performance | 1908x1045 | 1.99 | 5.255 | 190.3 |
+| 4K DLSS Balanced | 2212x1212 | 2.68 | 6.507 | 153.7 |
+| 1440p DLAA | 2534x1369 | 3.47 | 7.544 | 132.6 |
+| 4K DLAA | 3814x2089 | 7.97 | 15.704 | 63.6 |
+
+Frame time tracks pixel count and nothing else: 6.8x the pixels costs 4.5x the
+time, `bsp` stays at 0.24 ms throughout, and the primitive count never moves.
+Above 1440p DLSS Balanced this game is **GPU-bound on a 5090**, and no CPU work
+removed from the frame will show up as frames.
+
+Worth stating plainly: none of these runs reproduces the reported symptom.
+MAP34 at 1440p DLSS Balanced sits at 289 fps here, standing at the spawn. The
+gap between that and "struggling to hold 120 with DLSS Performance and frame
+generation" is not explained by anything measured so far - the remaining
+candidates are real combat (the fx accumulation above), a different map, or
+something in the live config. `stat rt` is in the build to answer it from a real
+session rather than a synthetic one.
+
 ## Still open
 
-- Whether the measured accumulation is the whole of the in-play symptom. 40 s of
-  held trigger costs ~1 ms; a full level of firefights is unbounded but unmeasured.
+- The reported symptom is still unreproduced: 289 fps measured where ~120 was
+  reported. Needs a `stat rt` line from a real session, not another synthetic run.
 - `rgStartFrame` spikes to 1.2 ms (MAP13) and 3.1 ms (native-res DLAA) - that is
   the N-2 fence, i.e. genuine GPU-bound time, and the honest place to look for
   GPU cost.
