@@ -64,6 +64,121 @@ class D64RtFlashlightHud : EventHandler
 		audioPrimed = false;
 	}
 
+	// --- the SBARINFO's own scale, reproduced ---------------------------
+	// Retribution's StatusBar blocks are `ForceScaled|FullScreenOffsets`
+	// (build_mugshot_pk3.py relayout()). With FullScreenOffsets every element
+	// is scaled by DBaseStatusBar::GetHUDScale() (sbarinfo.cpp:1362), and the
+	// block's draw sets ForcedScale first (sbarinfo.cpp:1064). So with
+	// hud_oldscale -- true by default (shared_sbar.cpp:95) -- GetHUDScale
+	// returns `defaultScale` (shared_sbar.cpp:587), which SetDrawSize filled
+	// from ST_CalcCleanFacs(320, 240, w, h) (base_sbar.cpp:295/351).
+	//
+	// That is an INTEGER, and neither hud_scalefactor nor rt_hudscale reaches
+	// it. Any continuous formula therefore has to be wrong at most
+	// resolutions; it can only be made to agree at the one it was tuned on.
+	private ui double HudScaleFor(int sw, int sh)
+	{
+		CVar oldC = CVar.FindCVar("hud_oldscale");
+		if (oldC != null && !oldC.GetBool())
+		{
+			// The other branch: DStatusBarCore::SetScale (base_sbar.cpp:363).
+			// 320x240 is not the 320x200 special case, so aspectscale is 1,
+			// and at the default vid_scalemode so is ViewportPixelAspect.
+			// refaspect is 320/240, which makes SBarScale.X and .Y identical
+			// in both of its branches -- one scalar covers it.
+			double hsf = 1.0;
+			CVar hsfC = CVar.FindCVar("hud_scalefactor");
+			if (hsfC != null && hsfC.GetFloat() > 0.05)
+				hsf = hsfC.GetFloat();
+			if (sw / double(sh) < 320.0 / 240.0)
+				return sw * hsf / 320.0;
+			return sh * hsf / 240.0;
+		}
+		return CleanFacFor(sw, sh);
+	}
+
+	// base_sbar.cpp ST_CalcCleanFacs(), designwidth 320 / designheight 240.
+	private ui int CleanFacFor(int sw, int sh)
+	{
+		double ratio = ActiveRatioFor(sw, sh);
+		int am = AspectMultiplierFor(ratio);
+		int cwidth, cheight;
+		if (ratio < 1.333)   // AspectTallerThanWide
+		{
+			cwidth = sw;
+			cheight = sh * am / 48;
+		}
+		else
+		{
+			cwidth = sw * am / 48;
+			cheight = sh;
+		}
+		int cx1 = Max(cwidth / 320, 1);
+		int cy1 = Max(cheight / 240, 1);
+		int cx2 = Max(sw / 320, 1);
+		int cy2 = Max(sh / 240, 1);
+		int cx, cy;
+		if (Abs(cx1 - cy1) <= Abs(cx2 - cy2) || Max(cx1, cx2) >= 4)
+		{
+			cx = cx1; cy = cy1;
+		}
+		else
+		{
+			cx = cx2; cy = cy2;
+		}
+		// ST_CalcCleanFacs squares the pair off on the smaller of the two.
+		return Max(1, Min(cx, cy));
+	}
+
+	// v_draw.cpp ActiveRatio(), including the vid_aspect override. The
+	// ViewportPixelAspect divisor is 1 for every non-custom vid_scalemode.
+	private ui double ActiveRatioFor(int sw, int sh)
+	{
+		CVar aspC = CVar.FindCVar("vid_aspect");
+		int fake = -1;
+		if (aspC != null)
+		{
+			int v = aspC.GetInt();
+			if (v >= 1 && v <= 6)
+			{
+				fake = v;
+				if (fake == 3)      fake = 0;
+				else if (fake == 5) fake = 3;
+			}
+		}
+		switch (fake)
+		{
+			case 0: return 4  / 3.0;
+			case 1: return 16 / 9.0;
+			case 2: return 16 / 10.0;
+			case 3: return 17 / 10.0;
+			case 4: return 5  / 4.0;
+			case 6: return 64 / 27.0;   // 21:9 really is 64:27
+		}
+		return sw / double(sh);
+	}
+
+	// v_draw.cpp AspectMultiplier()/AspectBaseWidth()/AspectBaseHeight(),
+	// with their round()s folded in (every term here is positive).
+	private ui int AspectMultiplierFor(double a)
+	{
+		if (a < 1.333)
+			return int(28800.0 / AspectBaseHeightFor(a) + 0.5);
+		return int(46080.0 / AspectBaseWidthFor(a) + 0.5);
+	}
+
+	private ui int AspectBaseWidthFor(double a)
+	{
+		return int(720.0 * a + 0.5);
+	}
+
+	private ui int AspectBaseHeightFor(double a)
+	{
+		if (a < 1.333)
+			return int(800.0 / a + 0.5);
+		return int(576000.0 / AspectBaseWidthFor(a) + 0.5);
+	}
+
 	private double SoundVolume()
 	{
 		CVar onC = CVar.GetCVar("d64rt_flsh_sound", players[consoleplayer]);
@@ -141,23 +256,29 @@ class D64RtFlashlightHud : EventHandler
 		else if (state == 3)
 			opacity = hudA * 0.73;
 
-		int VW = 320;
-		int VH = 240;
-
 		Font fnt = Font.GetFont("D64HUDFONT");
 		if (fnt == null)
 			fnt = SmallFont;
 
 		// Same baselines as HEALTH (208) / health value (217)
 		// Bottom-relative, exactly like the SBARINFO coordinates now are:
-		// -32 is the HEALTH/ARMOR label row, -23 the value row.
-		// Measured against HEALTH in a real frame: at -32 the label landed 6px
-		// high, and one virtual unit is ~4.9px here, so -31 lands within ~1px.
-		// Measured in a real frame against HEALTH: label top matches at -31,
-		// and the meter's centre lines up with the centre of the HEALTH value
-		// at -16 (it was 30px high at -22; ~4.9px per virtual unit here).
-		int vLabelY = -31;
-		int vBarY = -17;
+		// -32 is the HEALTH/ARMOR label row, -23 the value row
+		// (build_mugshot_pk3.py LABEL_Y / VALUE_Y).
+		//
+		// vLabelY IS LABEL_Y, not a number tuned against it. Both rows are the
+		// same font drawn from the top of the glyph cell (sbarinfo.cpp
+		// DrawString sets ry = ay, v_drawtext.cpp DrawTextCommon sets cy = y),
+		// so at a matching scale the same y gives the same pixel row. The old
+		// -31/-17 were absorbing the scale error, which is why they only held
+		// at one resolution: the drift is 32 * (hudScale - batteryScale), so it
+		// grew with the screen.
+		//
+		// vBarY puts the meter's centre on the centre of the BIGFONT value:
+		// the value's ink sits ~5.1 units below its -23 cell top and is 7 units
+		// tall, so its centre is 14.4 units up; a 7-tall meter at -18 centres
+		// on 14.5.
+		int vLabelY = -32;
+		int vBarY = -18;
 		int vBodyW = 36;
 		int vBodyH = 7;
 		int vTipW = 2;
@@ -166,12 +287,11 @@ class D64RtFlashlightHud : EventHandler
 		int vGap = 1;
 		int vRim = 1;
 
-		// HEALTH is center-aligned on x=24 — find its left edge, place BATTERY
-		// in a column just to the left (Copy mockup: side-by-side, not stacked).
+		// The battery is its own column to the left of HEALTH (Copy mockup:
+		// side-by-side, not stacked). healthW is only needed by the classic
+		// branch below, which still derives its x from HEALTH's own.
 		int healthW = fnt.StringWidth("HEALTH");
 		int battW = fnt.StringWidth("BATTERY");
-		int healthLeft = 24 - healthW / 2;
-		int gap = 8;
 		// Column immediately left of HEALTH (Copy mockup). Negative is OK —
 		// KeepRatio maps it into the ultrawide left margin beside the HUD.
 		// Anchored INSIDE the 320-wide HUD, not derived from HEALTH. The old
@@ -184,38 +304,30 @@ class D64RtFlashlightHud : EventHandler
 		// ForceScaled / KeepRatio mapping (must match DrawText DTA_KeepRatio)
 		int sw = Screen.GetWidth();
 		int sh = Screen.GetHeight();
-		// Aspect-matched virtual width. The rest of the HUD now uses SBARINFO
-		// FullScreenOffsets, where x is measured from the real screen edge. A
-		// plain 320-wide KeepRatio box is letterboxed on an ultrawide, so the
-		// battery would sit inside that box while HEALTH sat at the true edge.
-		// Widening the virtual space to the screen's own aspect makes KeepRatio
-		// produce no letterbox at all: ox becomes 0 and x=4 means 4 units from
-		// the left of the monitor, the same as the SBARINFO coordinates.
-		int VWfs = Max(VW, int(VH * sw / double(sh) + 0.5));   // provisional
-		// Match the status bar's scale ANALYTICALLY rather than by asking it.
-		// base_sbar.cpp:385-405 computes, for a 320x240 bar on a wide screen:
-		//     SBarScale = h * hud_scalefactor * (1 / ViewportPixelAspect) / 240
-		// Two traps here, both hit already:
-		//   * a plain sh/240 omits the pixel-aspect divisor, which drew the
-		//     battery slightly LARGER than HEALTH;
-		//   * StatusBar.GetHUDScale() read from RenderOverlay returns SBarScale
-		//     as left by whatever draw ran last, not the SBARINFO's own pass,
-		//     which came out about half size.
-		// HUD_ASPECT is that divisor. 1.2 is GZDoom's classic pixel aspect; if
-		// the battery still does not match HEALTH it is the ONE number to move.
-		double HUD_ASPECT = 1.098;
-		double hudScaleFactor = 1.0;
-		CVar hsfC = CVar.FindCVar("hud_scalefactor");
-		if (hsfC != null && hsfC.GetFloat() > 0.05)
-			hudScaleFactor = hsfC.GetFloat();
-		double scale  = (sh / double(VH)) * hudScaleFactor / HUD_ASPECT;
+		// The scale the Retribution SBARINFO actually draws at. Do not
+		// approximate this -- reproduce it. See HudScaleFor() below: for a
+		// ForceScaled|FullScreenOffsets HUD the engine scales by an INTEGER
+		// clean factor, not by anything continuous in the screen height.
+		//
+		// The bug this replaces: the old code used a continuous
+		//     sh / 240 * hud_scalefactor / 1.098
+		// fudge. That lands within 2% of the clean factor at 540p (2.05 vs 2),
+		// so windowed looked aligned, but 9% under it at 2160p (8.20 vs 9) --
+		// the "BATTERY does not scale up in fullscreen" symptom exactly. The
+		// 1.098 was never a pixel aspect, just the residual of one resolution.
+		//
+		// Asking StatusBar.GetHUDScale() from RenderOverlay is not a fix
+		// either: it branches on ForcedScale, which is whatever the last draw
+		// left behind (sbarinfo.cpp:1064 sets it, only DrawAux restores it),
+		// so it reads back the non-forced scale and came out about half size.
+		double scale  = HudScaleFor(sw, sh);
 		double scaleX = scale;
 		// Virtual space sized so DTA_Virtual* reproduces exactly that scale,
-		// with y measured up from the bottom edge of the real screen.
-		VWfs = Max(1, int(sw / scaleX));
-		// Virtual space sized to reproduce exactly that scale, so DTA_Virtual*
-		// units are the same units the SBARINFO coordinates use.
-		int VHfs = Max(1, int(sh / scale));
+		// with y measured up from the bottom edge of the real screen. The F
+		// variants take doubles: rounding these to int put up to 0.2% of skew
+		// back into a scale we just computed exactly.
+		double VWfs = sw / scaleX;
+		double VHfs = sh / scale;
 		double ox = 0;
 		double oy = sh;
 
@@ -236,7 +348,7 @@ class D64RtFlashlightHud : EventHandler
 		}
 		else
 		{
-			int centreX = VWfs / 2;
+			int centreX = int(VWfs / 2);
 			battLeft = centreX - 160 + 24 - healthW / 2 - 8 - battW;
 			if (battLeft < 2)
 				battLeft = 2;
@@ -278,11 +390,11 @@ class D64RtFlashlightHud : EventHandler
 
 		// --- Label: same font/alpha/baseline as HEALTH, no background box ---
 		Screen.DrawText(fnt, Font.CR_BLACK, battLeft + 1, VHfs + vLabelY + 1, "BATTERY",
-			DTA_VirtualWidth, VWfs, DTA_VirtualHeight, VHfs,
+			DTA_VirtualWidthF, VWfs, DTA_VirtualHeightF, VHfs,
 			DTA_KeepRatio, true,
 			DTA_Alpha, hudA * 0.45);
 		Screen.DrawText(fnt, Font.CR_UNTRANSLATED, battLeft, VHfs + vLabelY, "BATTERY",
-			DTA_VirtualWidth, VWfs, DTA_VirtualHeight, VHfs,
+			DTA_VirtualWidthF, VWfs, DTA_VirtualHeightF, VHfs,
 			DTA_KeepRatio, true,
 			DTA_Alpha, hudA);
 
