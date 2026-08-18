@@ -62,6 +62,12 @@ sourcecode/**/rt/mat_dev/
 # DoomCE Substance→RT convert output (regenerate via tools/convert_ce_pbr_to_rt.py)
 Doom64-Retribution/Retribution-RT-Materials-CE/
 
+# Optional third-party add-ons the user downloads themselves (currently
+# D64ClassicRecolored from ModDB, offered as a checkbox in the launcher). The
+# launcher reads this folder and loads what it finds there untouched; none of it
+# is ours to commit or redistribute.
+Addons/
+
 # --- Regenerable gallery / emis QA maps & diagnostic packs ---
 Doom64-Retribution/d64rtexg0[1-8].wad
 Doom64-Retribution/d64remis.wad
@@ -183,10 +189,15 @@ tools/_smokelab/
 # single files over GitHub's 100 MB hard limit (a bundled PowerShell zip),
 # so committing it produces a push that cannot succeed.
 ReleaseTest/
+# Same artifact from tools/package_release.py, which defaults to --out dist:
+# ~4.3k files of build output plus a 131 MB zip (the zip is already covered
+# by *.zip). Rebuild with: python tools/package_release.py --out dist --zip
+dist/
 
 # Written by the launcher: the IWAD path the user picked. Machine-local state,
 # and it carries a personal filesystem path.
 doom64-rt-settings.txt
+configdone.txt
 
 # Backups taken by tools/apply_material_labels.py and
 # tools/bake_material_labels_orm.py before the first write. Local undo state:

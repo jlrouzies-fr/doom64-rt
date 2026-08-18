@@ -187,7 +187,11 @@ def main():
     print("  mods/       %5d files" % (count + 1))
 
     # --- launcher + docs ---------------------------------------------------
-    for f in ["launch-doom64-rt.cmd", "launch-doom64-rt-ui.ps1"]:
+    # launch-doom64-rt-checks.ps1 is dot-sourced by the window: without it the
+    # launcher throws before it can explain anything. The -classic window is the
+    # fallback the .cmd runs if WPF will not start.
+    for f in ["launch-doom64-rt.cmd", "launch-doom64-rt-ui.ps1",
+              "launch-doom64-rt-ui-classic.ps1", "launch-doom64-rt-checks.ps1"]:
         shutil.copy2(PROJ_ROOT / f, out / f)
     banner = PROJ_ROOT / "docs" / "img" / "doom64rt-banner.png"
     if banner.exists():

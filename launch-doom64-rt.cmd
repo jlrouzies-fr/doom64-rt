@@ -29,8 +29,26 @@ if not exist "%GAME%" set "GAME=%PROJ%\Doom64-Retribution"
 set "PINS=%MODS%\d64rt-pins.cfg"
 if not exist "%PINS%" set "PINS=%PROJ%\tools\d64rt-pins.cfg"
 
+rem Optional add-ons the user downloads themselves. We ship nothing from here
+rem and modify nothing in it -- the files are loaded exactly as downloaded.
+set "ADDONS=%PROJ%\Addons"
+
+rem  The startup window is WPF; the older WinForms one stays as the fallback for
+rem  a machine where WPF will not start (it answers 2, see below). D64RT_UI=classic
+rem  picks the WinForms one on purpose.
 set "UI=%PROJ%\launch-doom64-rt-ui.ps1"
+set "UIFALLBACK=%PROJ%\launch-doom64-rt-ui-classic.ps1"
+if /i "%D64RT_UI%"=="classic" set "UI=%UIFALLBACK%"
+if not exist "%UI%" set "UI=%UIFALLBACK%"
 set "SETTINGS=%PROJ%\doom64-rt-settings.txt"
+rem  Written by the startup window when the user ticks "setup is done".
+set "CONFIGDONE=%PROJ%\configdone.txt"
+
+rem  ...and the way back in: `launch-doom64-rt.cmd setup` shows the window once
+rem  without deleting the marker. D64RT_FORCEUI=1 does the same.
+set "FORCEUI="
+if /i "%~1"=="setup" set "FORCEUI=1"
+if defined D64RT_FORCEUI set "FORCEUI=1"
 if not exist "%PROJ%\docs\img\doom64rt-banner.png" if not exist "%PROJ%\launcher-banner.png" (
   rem no logo shipped: the window falls back to a text title, nothing breaks
 )
@@ -63,27 +81,66 @@ if exist "%SETTINGS%" (
   for /f "usebackq tokens=1,* delims==" %%A in ("%SETTINGS%") do (
     if /i "%%A"=="iwad" set "IWAD=%%B"
     if /i "%%A"=="mod"  set "MOD=%%B"
+    if /i "%%A"=="recolor" set "RECOLOR=%%B"
   )
 )
 
-if exist "%UI%" (
+rem  What the game cannot start without. Cheap, so it runs on EVERY launch --
+rem  it is both the console fallback when no PowerShell UI is present and the
+rem  reason "setup is done" can never strand anyone: a ticked box skips the
+rem  window, a file that has since gone missing brings it straight back.
+set "MISSING="
+if not exist "!IWAD!"                       set "MISSING=!MISSING!doom2.wad "
+if not defined MOD                          set "MISSING=!MISSING!D64RTR[v1.5].WAD "
+if not exist "%GAME%\D64RTR_BRIGHTMAPS.PK3" set "MISSING=!MISSING!D64RTR_BRIGHTMAPS.PK3 "
+if not exist "%GAME%\D64MUS.PK3"            set "MISSING=!MISSING!D64MUS.PK3 "
+if not exist "%ENGINE%\gzdoom.exe"          set "MISSING=!MISSING!gzdoom.exe "
+if not exist "%ENGINE%\rt\bin\RTGL1.dll"    set "MISSING=!MISSING!RTGL1.dll "
+
+set "SHOWUI=1"
+if exist "%CONFIGDONE%" if not defined MISSING if not defined FORCEUI set "SHOWUI="
+if not defined SHOWUI echo   startup check : skipped, configdone.txt is set  ^(launch-doom64-rt.cmd setup^)
+
+rem  0 = go, 1 = the user closed it, 2 = the window could not open at all and the
+rem  WinForms one gets a turn. Two runs of the same script cannot both write
+rem  %UIRC%, so the code is captured and acted on after the block.
+set "UIRC=0"
+if defined SHOWUI if exist "%UI%" (
   powershell -NoProfile -ExecutionPolicy Bypass -STA -File "%UI%" ^
     -Proj "%PROJ%" -EngineDir "%ENGINE%" -ModsDir "%MODS%" -GameDir "%GAME%" ^
     -IwadHint "!IWAD!" -Settings "%SETTINGS%"
-  if errorlevel 1 exit /b 1
-  if exist "%SETTINGS%" (
-    for /f "usebackq tokens=1,* delims==" %%A in ("%SETTINGS%") do if /i "%%A"=="iwad" set "IWAD=%%B"
+  set "UIRC=!errorlevel!"
+)
+
+if "%UIRC%"=="2" if exist "%UIFALLBACK%" (
+  echo   startup check : falling back to the WinForms window
+  powershell -NoProfile -ExecutionPolicy Bypass -STA -File "%UIFALLBACK%" ^
+    -Proj "%PROJ%" -EngineDir "%ENGINE%" -ModsDir "%MODS%" -GameDir "%GAME%" ^
+    -IwadHint "!IWAD!" -Settings "%SETTINGS%"
+  set "UIRC=!errorlevel!"
+)
+rem still 2: neither window opened. Nothing was confirmed, so do not start.
+if "%UIRC%"=="2" (
+  echo.
+  echo  Doom 64 - Ray Traced could not open its startup window.
+  echo  Run it again with:  launch-doom64-rt.cmd setup
+  pause
+  exit /b 1
+)
+if not "%UIRC%"=="0" exit /b 1
+
+if defined SHOWUI if exist "%SETTINGS%" (
+  for /f "usebackq tokens=1,* delims==" %%A in ("%SETTINGS%") do (
+    if /i "%%A"=="iwad" set "IWAD=%%B"
+    if /i "%%A"=="mod"  set "MOD=%%B"
+    rem Written on every launch, so an unticked box CLEARS a previous 1.
+    if /i "%%A"=="recolor" set "RECOLOR=%%B"
   )
-) else (
+)
+
+if defined SHOWUI if not exist "%UI%" (
   rem No PowerShell UI present: still refuse to start half-configured, rather
   rem than failing somewhere inside gzdoom where nobody can read it.
-  set "MISSING="
-  if not exist "!IWAD!"                       set "MISSING=!MISSING!doom2.wad "
-  if not defined MOD                          set "MISSING=!MISSING!D64RTR[v1.5].WAD "
-  if not exist "%GAME%\D64RTR_BRIGHTMAPS.PK3" set "MISSING=!MISSING!D64RTR_BRIGHTMAPS.PK3 "
-  if not exist "%GAME%\D64MUS.PK3"            set "MISSING=!MISSING!D64MUS.PK3 "
-  if not exist "%ENGINE%\gzdoom.exe"          set "MISSING=!MISSING!gzdoom.exe "
-  if not exist "%ENGINE%\rt\bin\RTGL1.dll"    set "MISSING=!MISSING!RTGL1.dll "
   if defined MISSING (
     echo.
     echo  Doom 64 - Ray Traced cannot start. Missing: !MISSING!
@@ -120,6 +177,8 @@ rem  remaining arguments are collected by hand.
 set "MAPARG="
 set "WHAT=%~1"
 if "%WHAT%"=="" set "WHAT=menu"
+rem "setup" is the show-the-window-again keyword, not a map number
+if /i "%WHAT%"=="setup" set "WHAT=menu"
 if /i not "%WHAT%"=="menu" (
   set "N=0%WHAT%"
   set "MAPARG=+map map!N:~-2!"
@@ -141,6 +200,20 @@ echo   iwad      : %IWAD%
 echo   upscaler  : %D64RT_UPSCALER%   ^(override with D64RT_UPSCALER=dlss^|fsr^|none^)
 echo.
 
+rem --- optional: classic recoloured Cacodemon / Pain Elemental ---------------
+rem  D64ClassicRecolored from ModDB, dropped in Addons\ by the user and ticked in
+rem  the startup window. Loaded as downloaded -- see README "Art changes" for
+rem  which of the two variants to take and what each gets wrong, and note that
+rem  the offsets CANNOT be corrected from a companion pk3: gzdoom's SPROFS lump
+rem  only adjusts sprites from its own file, and a TEXTURES redeclaration
+rem  resolves its self-referencing patch to the OLDEST texture of that name --
+rem  Retribution's original -- so the recolour would silently not appear.
+set "RECOLORARGS="
+if not "%RECOLOR%"=="1" goto :norecolor
+if exist "%ADDONS%\D64ClassicRecolored.wad" set RECOLORARGS="%ADDONS%\D64ClassicRecolored.wad"
+if not defined RECOLORARGS if exist "%ADDONS%\D64ClassicRecolored_OffsetFix.wad" set RECOLORARGS="%ADDONS%\D64ClassicRecolored_OffsetFix.wad"
+:norecolor
+
 rem NO -width/-height ON THIS LINE, and no `rem` inside it either -- a rem
 rem between two ^-continued lines is not a comment, it becomes ARGUMENTS, and the
 rem first line without a caret silently truncates the command (that is how
@@ -160,6 +233,7 @@ start "" "%ENGINE%\gzdoom.exe" -iwad "%IWAD%" ^
   "%MODS%\d64r-ctel-fix.wad" "%MODS%\d64r-rt-sky.pk3" ^
   -file "%MODS%\d64r-lava-fx.pk3" "%MODS%\d64r-blood-persist.pk3" ^
   "%MODS%\d64r-widescreen-gfx.pk3" "%MODS%\d64r-mugshot.pk3" "%MODS%\d64r-rt-titlelogo.pk3" ^
+  %RECOLORARGS% ^
   -rtnolauncher ^
   +exec "%PINS%" %UPSCALE% %MAPARG%%REST%
 

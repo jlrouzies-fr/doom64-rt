@@ -164,6 +164,7 @@ jobs:
           $p = 'dist\Doom64-RT'
           $need = @(
             'gzdoom.exe', 'launch-doom64-rt.cmd', 'launch-doom64-rt-ui.ps1',
+            'launch-doom64-rt-checks.ps1', 'launch-doom64-rt-ui-classic.ps1',
             'rt\bin\RTGL1.dll', 'rt\RTGL1.json', 'rt\data\textures.json',
             'mods\d64r-mugshot.pk3', 'mods\d64rt-pins.cfg',
             'CREDITS.md', 'AI-DECLARATION.md', 'game\PUT-YOUR-GAME-FILES-HERE.txt'
