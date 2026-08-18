@@ -402,9 +402,16 @@ if not exist "%BULBTEX%" (
   exit /b 1
 )
 
-echo Native RT path tracing, A-SVGF denoiser (no Remix^)
+echo Native RT path tracing, no Remix
 if defined MAPLUMP (echo   map=%MAPLUMP%) else (echo   map=none ^(title screen^))
-echo   +rt_upscale_dlss 2 +rt_rayreconstr 0 +rt_framegen 0
+rem THIS BANNER STATES THE PINS, NOT THE FRAME. It used to assert "A-SVGF
+rem denoiser" and "+rt_rayreconstr 0" unconditionally -- including under
+rem `ab.cmd rr-preexp-on`, whose entire purpose is to turn RR ON. An arm's
+rem +exec runs AFTER the pins (see the gzdoom invocation at the end of this
+rem file), so the banner was announcing the opposite of what the run actually
+rem did, which is exactly how a live arm gets read as a dead one.
+echo   pins: +rt_upscale_dlss 2 +rt_rayreconstr 0 +rt_framegen 0 ^(an A/B arm may override these^)
+echo   actual denoiser: see "Denoiser path:" in rt-console.log -- that line, not this one
 
 rem Place window ~300px above vertical center (Y grows down). Falls back to 0 (top).
 set "WINY=0"

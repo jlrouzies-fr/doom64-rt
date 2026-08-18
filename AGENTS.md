@@ -82,11 +82,14 @@ belongs) — read before adding any print to the RT path:
 
 Anything DLSS Ray Reconstruction:
 
-→ **`RAYRECONSTRUCTION.md`** (root, ~35 lines — start here, always)
+→ **`RAYRECONSTRUCTION.md`** (root — start here, always)
 
 It carries the working rules and the five faults that cost days. The full history is
 `docs/rayreconstruction/`; those files are large, so only open one when
-`RAYRECONSTRUCTION.md` points you at it.
+`RAYRECONSTRUCTION.md` points you at it. The 2026-08-17 pre-exposure reorder (why RR
+was fed the wrong signal, what changed, the A/B) is planned in
+`docs/plan-rayreconstruction-secondpass.md` and recorded in `compat-patches.md`; the
+NRD-in-RTGL1 fallback, gated on that A/B's verdict, is `docs/plan-nrd-denoiser.md`.
 
 Update those when phases complete or facts change. Do not invent parallel trackers.
 
@@ -612,6 +615,13 @@ enforced at the one place that writes it.
 - GPU: NVIDIA GeForce RTX 5090
 - Build engine: `tools/build-gzdoom-rt.cmd` → `sourcecode/gzdoom-rt/build/RelWithDebInfo/`
 - Build RTGL runtime: `tools/build-rtgl.cmd` (needs `rt/bin/RTGL1.dll` + `nvngx_dlssd.dll`)
+- NRD lane deps (only after changing NRD shaders or on a fresh checkout without
+  the committed artifacts): `tools/build-nrd-deps.cmd` — ShaderMake, NRD
+  `_Shaders` SPIR-V headers (needs the GITHUB dxc in `tools/dxc`, the Windows
+  SDK dxc has no SPIR-V codegen), NRI static libs. `build-rtgl.cmd` then links
+  it all - but ONLY with `D64RT_WITH_NRD=1` set. `RG_WITH_NRD` defaults
+  **OFF**: A-SVGF is the shipping baseline and these deps are not in the
+  repo, so defaulting ON broke every clean checkout and the CI release.
 - **SDKs / deps policy:** install only under `G:\AI\Doom64-RT\deps\` (or other `G:\AI\…`), never system Program Files.
   - Headers: `deps/RTGL` (`vs-shirokii/RTGL`)
   - Runtime: `deps/RTGL-1.6.3`

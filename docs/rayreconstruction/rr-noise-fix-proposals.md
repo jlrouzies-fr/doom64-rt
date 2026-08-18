@@ -196,10 +196,10 @@ These are additive — do them after §3, they need new plumbing from gzdoom-rt 
 | 2 | §2.2 dev-overlay sweep | ⏸ Skipped (no dev DLL; guide validation via visual A/B) |
 | 3 | §3.3 step 1: null `pInSpecularHitDistance` | ✅ **Landed** (`DLSSRR.cpp:400`) |
 | 4 | §3.1 + §3.2 guide rewrite | ✅ **Landed** (`CmNoisyCompose.comp` + `BRDF.h`); pushed to public RTGL branch 2026-08-06 |
-| 5 | §3.4 reorder exposure/emission/raster after RR | ⏸ Deferred (needs post-RR exposure pass) |
+| 5 | §3.4 reorder exposure/emission/raster after RR | ✅ **Landed 2026-08-17**, in two passes. Pass 1 (reorder alone): **A/B verdict NULL** — noise/dark dots unchanged, plus a jitter regression (screen emission re-added post-RR from the jittered render-res buffer with no correction; fixed, `CmRrPostExposure.comp`). Pass 1 also dropped the 1×1 exposure texture as "the SDK's own correct parameterization" — valid for the API, wrong for a non-scale-invariant network fed raw radiance across a ~52× exposure swing. Pass 2 reinstated it: `rt_rr_exptex` (default on), 1×1 R32F written by `CmPrepareFinal` (0,0), bound as `pInExposureTexture` |
 | 6 | §3.3 step 2: real specular hitT | ⬜ Pending |
-| 7 | §4 ReSTIR permutation sampling + boiling | ⬜ Pending |
-| 8 | §5 content routing (transparency layer) | ⬜ Pending |
+| 7 | §4 ReSTIR decorrelation | ✅ **Landed 2026-08-17** as `rt_rr_restir_mcap` (default 4, −1=off): caps ReSTIR temporal M on RR frames only — a reservoir winner held for 20 frames is a *stable dark dot* the denoiser preserves as detail, and reseeding on flashlight toggle is exactly the observed pattern-switch. Permutation sampling / boiling filter remain unimplemented follow-ups if the cap alone is insufficient |
+| 8 | §5 content routing (transparency layer) | ✅ **Landed 2026-08-17** as `rt_rr_translayer` (default on): the world raster pass (every translucent sprite, particles, lens flares) redirects into an RGBA16F layer bound as `pInTransparencyLayer`, NGX-composited after denoise+upscale. Additive sprites blend alpha ZERO/ONE (occlude nothing); 'over' accumulates true coverage. A/B: `rr-full` vs `rr-asvgf`, isolation via `rr-no-translayer`/`rr-no-decorr`/`rr-no-exptex`, `rr-legacy` = pre-redo RR |
 | 9 | §5 disocclusion mask (`pInDisocclusionMask`) for transient-light linger | ✅ **Landed 2026-08-06** (tile-luminance change → sentinel 10000.0; see investigation §1.2) |
 
 Log every A/B in `rr-noise-investigation.md` as usual.

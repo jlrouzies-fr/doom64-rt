@@ -1650,3 +1650,407 @@ visible in the frame: what the feather removes is every SILHOUETTE line — the
 sprites and geometry edges of the original report — and what is left traces
 flat-floor TEXTURE seams, where there is no depth break for a depth detector to
 find and no step in the medium at all. The residual is a different artefact.
+
+---
+
+## DLSS-RR pre-exposure reorder + preset cvar + NGX output barrier (2026-08-17)
+
+**The RR investigation reopened with new evidence, and the deferred fix landed.**
+NVIDIA's RR Integration Guide §3.7 (local copy, `deps/DLSS/doc/`) declares exposure,
+auto-exposure and sharpening **not supported** by DLSS-RR — the model wants linear
+pre-exposure radiance. We were feeding it `FB_FINAL` *after* `CmPrepareFinal` multiplied
+EV100 in (and added the screen emissive), while `DLSSRR.cpp` declared
+`InPreExposure = 1.0f` — a false statement to NGX on every frame in which auto-exposure
+had adapted. A-SVGF never had the problem: it accumulates in linear radiance before
+exposure. This was `rr-noise-fix-proposals.md` §3.4, Deferred since 2026-08-06, and the
+Duke-RT checkout (NRI backend, same SDK, RR is its *recommended* path) is the working
+reference for the corrected order.
+
+**RTGL (deps/RTGL):**
+- `rt_rr_preexposure` (illum params → uniform `rrPreExposure`, from `_pad7`): with RR
+  active, `CmPrepareFinal.comp` skips the EV100 multiply, the screen-emissive add and the
+  disocc-mask tint; the new `CmRrPostExposure.comp` (registered as `CRrPostExposure`,
+  dispatched by `ImageComposition::RrPostExposure`) reapplies all three on
+  `UPSCALED_PONG` at output res, before DrawClassic/BlitForEffects/sharpen/bloom. The
+  algebra is exact, same proof shape as `CmVolumeCompose.comp:44-49` (the medium was
+  already composited render-res under RR since `volumePostComp` is forced 0).
+- **HOST-GATED**: `gu->rrPreExposure` requires the exact RR-branch condition
+  (`IsNvDlssRayReconstructionEnabled() && nvDlssRr`) or a silent DLSS2/FSR fallback frame
+  would get exposure applied *nowhere*. The C++ call site keys on the uniform itself, so
+  skip-side and apply-side cannot disagree (the `volumePostComp` pattern).
+- `ScreenEmission` framebuffer now carries `FRAMEBUF_FLAGS_BILINEAR_SAMPLER` (safe: all
+  existing consumers are texelFetch/attachment; verified exhaustively).
+- `rrPreExpDebug` (from `_pad8`): magenta tint in the post pass — the absurd arm.
+- `Denoiser path:` log line now prints `preExposure=on (post-RR pass)` / `off (...)`.
+- No NGX exposure texture and no `InPreExposure` value change: with genuinely
+  pre-exposure color, `InPreExposure=1.0` + null exposure texture **is** the SDK's
+  correct parameterization (guide §3.7; helpers coerce 0→1.0).
+- `rt_rr_preset` → `dlssRrPreset` on the resolution params → `DLSSRR.cpp` (was
+  hard-coded Preset E). Mirrors the DLSS2 SR mechanism: `m_prevPreset` sentinel, feature
+  re-created on change, takes effect live. RR valid values: 0=Default, 4=D, 5=E only
+  (A–C removed in SDK 310.4.0; 6–15 revert; **no J/K for RR**, unlike SR). Pinned 5.
+- **Both NGX evaluates now barrier their OUTPUT image** (`UPSCALED_PONG`) before
+  dispatch, in `DLSSRR.cpp` *and* `DLSS2.cpp`: the previous frame's post-effect chain
+  ping-pongs through it with input-only barriers (`EffectBase` barriers only what it
+  reads), a genuine cross-frame WAR/WAW that was frequently masked by the blit chain's
+  restore barrier, never guaranteed.
+- The no-DLSS `#else` stub of `DLSSRR::Apply` had 9 params against an 11-param
+  declaration (`specHitDistEnabled`/`disoccMaskEnabled` never added) — any build without
+  `RG_USE_NATIVE_DLSS2` failed to compile. Fixed.
+
+**gzdoom-rt:** `rt_rr_preexposure` (NOARCH, default **true**), `rt_rr_preexp_debug`
+(NOARCH), `rt_rr_preset` (NOARCH, default 5 = E, preserving prior behaviour) in
+`rt_cvars.inc`; passed via illumination params / `RT_UpscaleCvarsToRtgl` in `rt_main.cpp`.
+
+**Tools:** arms `tools/arms/rr-preexp-{probe,on,off}.cfg` (probe first — magenta = the
+pass is live), pin `rt_rr_preset 5` in `d64rt-pins.cfg`. A/B protocol and the specific
+prediction (instability correlates with auto-exposure *adaptation*, not camera motion)
+in `RAYRECONSTRUCTION.md`.
+
+---
+
+## DLSS-RR input-contract redo: exposure texture, transparency layer, ReSTIR decorrelation (2026-08-17)
+
+**The reorder-alone A/B came back NULL, with a regression** (user verdict, in play): RR
+still noisier than A-SVGF, the stable dark-dot pattern on textures/sprites unchanged,
+the pattern still switching with the flashlight — and new constant image jitter. A
+structural audit against NVIDIA's RR contract + Duke-RT followed (the volumetrics
+lesson: fix the layer, don't blend the symptom), and the remaining contract violations
+landed in one pass. Fog stays untouched — fixed under A-SVGF by a previous session, and
+`rt_volume_postcomp` was measured a dead end (`docs/rt-volumetric-edge-outlines.md`
+§7.2).
+
+**RTGL (deps/RTGL):**
+- **Jitter regression fixed** (`CmRrPostExposure.comp`): the screen emission was re-added
+  post-RR by sampling the *jittered* render-res buffer at unjittered output UVs — before
+  the reorder, RR dejittered that content as part of its input; after it, nothing did.
+  Now applies the exact `CmVolumeCompose.comp` correction
+  (`uv -= jitter/renderSize`), unconditionally.
+- **`pInExposureTexture` reinstated** (the plan's step 3, dropped in the first pass):
+  new 1×1 R32F framebuffer `RrExposure` (`FRAMEBUF_FLAGS_SINGLE_PIXEL_SIZE`), written by
+  `CmPrepareFinal` thread (0,0) — that pass already binds the tonemapping set, runs
+  after `CalculateExposure` and before RR, and writes the very factor `CmRrPostExposure`
+  multiplies by (floored at 1e-6: frame 0 has avgLuminance 0, and NGX must not see
+  exposure 0.0). Bound in `DLSSRR.cpp` only when `rrPreExposure` is active — against an
+  already-exposed input it would declare the scale twice. The first pass's "null texture
+  is the SDK's correct parameterization" was API-correct and *model*-wrong: the network
+  is not scale-invariant, and pre-exposure radiance swings ~52× with adaptation.
+- **`pInTransparencyLayer`** (the plan's step 4, option a): new RGBA16F attachment
+  framebuffer `RrTransparency`; `RasterPass` gains a world-render-pass variant
+  (attachment 0 = the layer, `loadOp=CLEAR` to zero; ScreenEmission/Reactivity stay the
+  same images and stay LOAD, so rasterized emissive keeps its glow) plus a dedicated
+  `RasterizerPipelines` instance whose attachment-0 **alpha** blend is NGX coverage:
+  'over' = ONE / ONE_MINUS_SRC_ALPHA (true coverage; the stock reuse of the colour
+  factors decays it quadratically), additive = ZERO / ONE (a fireball adds light, it
+  must not darken the background — the stock factors would have punched a dark halo
+  around every additive sprite). `Rasterizer::DrawToFinalImage` takes
+  `toRrTransparencyLayer`; `VulkanDevice` computes it from the RR-branch condition +
+  illum param + `!disableRasterization` (a bound layer that raster never filled would
+  composite stale garbage). Barriered in `DLSSRR.cpp` with `BarrierType::All` —
+  `Storage` names `SHADER_WRITE` as srcAccess and would leave the attachment writes
+  un-made-available.
+- `DLSSRR::Apply` grew `exposureTexEnabled` / `transparencyLayerEnabled` (13 params;
+  stub updated in the same edit — the 9-vs-11 stub break from last time).
+- `RR guides:` log line now also prints `pInExposureTexture=BOUND (1x1, CmPrepareFinal)`
+  / `pInTransparencyLayer=BOUND (raster redirected)` (or `nullptr`), edge-triggered.
+- API: `RgDrawFrameIlluminationParams` gained `rrExposureTexture`,
+  `rrTransparencyLayer`.
+
+**gzdoom-rt:**
+- `rt_rr_exptex` (NOARCH, default **true**), `rt_rr_translayer` (NOARCH, default
+  **true**) → illumination params.
+- `rt_rr_restir_mcap` (NOARCH, default **4**, −1 = off): overrides `rt_restir_mcap` on
+  RR frames only (`g_rr_dbg_rrRequested`, this frame's `RT_UpscaleCvarsToRtgl`
+  decision). Rationale: ReSTIR temporal reuse holds a reservoir winner up to mcap
+  frames, so a bad shadowed sample persists as a *stable dark dot* — structure a
+  temporal denoiser preserves as detail; A-SVGF's spatial atrous erases these, which is
+  why it never showed them, and toggling the flashlight reseeds the reservoirs, which
+  is exactly the observed pattern switch (RR guide §3.5; Duke-RT feeds RR plain path
+  tracing with no reuse at all). A-SVGF frames always use `rt_restir_mcap` (20).
+
+**Tools:** arm set rebuilt around the contract — `rr-full` (the redo), `rr-asvgf` (the
+baseline it is judged against), `rr-legacy` (pre-redo RR, for triage),
+`rr-no-{translayer,decorr,exptex}` (rr-full minus exactly one feature),
+`rr-preexp-probe` rebased on rr-full (+magenta); `rr-preexp-on/off` keep isolating the
+reorder alone (contract features pinned off in both). Pins: the four new cvars at
+defaults in `d64rt-pins.cfg` (inert while `rt_rayreconstr` is pinned 0). Protocol:
+probe → `rr-full` vs `rr-asvgf` → isolation only if needed; if rr-full still loses,
+next is NRD (`docs/plan-nrd-denoiser.md`), not more RR tuning.
+
+---
+
+## NRD lane, stage 1: full stack vendored, built, and live-probeable (2026-08-17)
+
+**The RR verdict triggered `docs/plan-nrd-denoiser.md`'s decision gate** (full input
+contract A/B'd null with every binding read back from the log). Stage 1 lands the
+entire build/runtime foundation so the risky, invisibly-failing half is verifiable
+before any pixels change.
+
+**RTGL (deps/RTGL):** `NrdDenoiser` (new) wraps NRDIntegration v21's `RecreateVK` —
+the integration creates an NRI device *around* RTGL1's existing VkDevice; resources
+will be handed over as raw `VkImage+VkFormat`, command buffers as raw
+`VkCommandBuffer` (this SDK rev is newer than the plan studied and erases most of its
+"NRI wrapping, highest risk" line item). With `rt_nrd` set (and RR inactive),
+`EnsureReady` brings up ReBLUR+ReLAX+SIGMA and prints one edge-triggered WARNING:
+`NRD: instance ALIVE at WxH ... pools N MB` or `RecreateVK FAILED (code)`. Failure
+latches; A-SVGF keeps running either way. `VulkanDevice_Init` retains the
+instance/device extension lists for the NRI wrap. CMake `RG_WITH_NRD` compiles NRD
+4.17.1's seven sources + ShaderMake's blob reader into RTGL1.dll with pre-generated
+`_Shaders` SPIR-V headers (159 permutations), Duke-RT's exact pattern and defines
+(one divergence: `NRD_SUPPORTS_ANTIFIREFLY=1`). Gotcha recorded in code:
+`NRIWrapperVK.h` needs `Extensions/NRIRayTracing.h` first.
+
+**Why NRI is a DLL:** NRI's VK backend embeds a VulkanMemoryAllocator implementation
+TU and RTGL1.dll embeds its own — two static VMAs are LNK2005 across every `Vma*`
+class. `NRI.dll` (VK-only, 0.4 MB) is staged next to RTGL1.dll by `build-rtgl.cmd`
+(the `nvngx_dlssd.dll` pattern; Duke-RT ships NRI DLLs for the same reason).
+**Release packaging must carry `rt/bin/NRI.dll` from now on.**
+
+**Tooling:** `tools/build-nrd-deps.cmd` reproduces everything (deps/ is gitignored
+by policy): vendors from the local Duke-RT checkout, installs the tracked
+`tools/nrd/NRDConfig.hlsli`, generates shaders (needs the GITHUB dxc in `tools/dxc`
+— the Windows SDK dxc has **no SPIR-V codegen**), builds NRI shared with git-cloned
+FetchContent pins (GitHub's zip endpoint 429s). `tools/arms/nrd-probe.cfg` is the
+stage-1 arm: image must not change, the log line is the verdict.
+
+**gzdoom-rt:** `rt_nrd` (NOARCH, default false) → `illum.nrdDenoiser`.
+Precedence: RR > NRD > A-SVGF.
+
+**Stage 2 (next):** the data path — resolve checkerboard + demodulate into
+`IN_DIFF/SPEC_RADIANCE_HITDIST` (RGBA16F, radiance.rgb + hitDist.w), `IN_MV` from
+`framebufMotion` (2.5D, pixels, `motionVectorScale={1/w,1/h,1}`), `IN_VIEWZ` from
+DepthWorld, `IN_NORMAL_ROUGHNESS` repack (encoding 2), unconditional diffuse hit
+distance in raygen, `DenoiseVK` with `restoreInitialState=true` (RTGL keeps GENERAL),
+remodulate, and the third branch replacing A-SVGF when active. Duke's
+`nri_nrd.cpp` settings/equality-guard pattern is the reference; wire
+`OUT_VALIDATION` first.
+
+### Stage-1 bring-up debug session (2026-08-17, evening) — five traps, now ALIVE
+
+`.\tools\ab.cmd nrd-probe 2` first crashed at launch, then "hung". Self-run
+iteration (new authorization: launch allowed for log verification, kill fast)
+found five stacked traps, each masking the next:
+
+1. **Static NRI.dll import broke RTGL1.dll loading.** The app loads
+   `rt/bin/RTGL1.dll` with plain `LoadLibraryA`, whose *dependency* search
+   covers the exe dir and PATH — not `rt/bin` — and Windows names the top-level
+   DLL in the error ("rtgl1.dll not found", NRI.dll never mentioned). Fixed:
+   `/DELAYLOAD:NRI.dll` + explicit load from RTGL1.dll's own directory;
+   verified via dumpbin (NRI.dll only in the delay-load table). Bonus: NRI.dll
+   is not even mapped unless `rt_nrd` is on.
+2. **NRI's default error callback is `DebugBreak()`** — surfaced as an
+   invisible "GZDoom Very Fatal Error" dialog *behind* the game window:
+   0% CPU, responsive message pump, looks exactly like a hang. Found by
+   enumerating the process's windows and scraping the dialog (code 80000003
+   Breakpoint in KERNELBASE). Fixed: our own `MessageCallback` → RTGL log +
+   no-op `AbortExecution`, so NRI failures are one legible log line.
+3. **NRI hard-requires `extendedDynamicState` + `dynamicRendering` +
+   `synchronization2`** for a wrapped device and can only see features whose
+   extensions are declared. RTGL's 1.2 device now enables the two missing ones
+   (additive, universal on RT drivers).
+4. **NRI eagerly resolves dispatch tables for every declared extension**,
+   fatally: declaring RTGL's full list made it demand
+   `vkCmdTraceRaysIndirect2KHR` (ray_tracing_maintenance1, never enabled).
+   The wrapped device only runs NRD compute → declare exactly the relevant
+   intersection (sync2, extDynState, dynRendering, timelineSemaphore,
+   memoryBudget), filtered against what the device was actually created with.
+5. **`windows.h` after NRI headers poisons `nri::Message::ERROR`** (wingdi's
+   `ERROR` macro; NRI's header warns) — `NOGDI`.
+
+Also kept off: `autoWaitForIdle` — the integration's `DeviceWaitIdle` would run
+mid-frame on the render thread, and the DXGI-present interop keeps cross-API
+waits pending on the queue.
+
+**Verified on hardware:** `NRD: instance ALIVE at 1470x794 — ReBLUR+ReLAX+SIGMA
+created, embedded SPIR-V loaded, NRI wrapped the existing VkDevice; pools
+174.9 MB (persistent 115.7 + aliasable 59.2)`. Plain A-SVGF launch regression-
+checked (boots, `NRD request: illum.nrdDenoiser=0`, nothing else). Diagnostics
+kept: the edge-triggered `NRD request:` line, the pre-create bracket, and
+`NRD_INTEGRATION_DEBUG_LOGGING` (`NRD-Doom64RT.log`, gitignored).
+
+---
+
+## RR feedback round: glow into the input, plus the bulb/softness A/B set (2026-08-17, night)
+
+**User verdict on the contract redo: "way better than it was before".** Remaining:
+small emissive elements (lamp bulbs on slightly-angled floors) alias/flicker; the
+image is softer than A-SVGF+DLSS-SR; slightly less stable here and there. Question
+answered: under RR there is NO separate DLSS-SR pass to mis-apply — DLSS-RR is one
+network doing denoise+super-resolution; softness vs SR is a known RR trait (SR gets
+presets J/K, RR tops out at E), and sub-pixel bright features are RR's weakest case.
+
+**Landed: `rt_rr_glowpre` (NOARCH, default on).** The post-RR screen-emission add
+resampled the jittered render-res glow buffer at a different sub-texel phase every
+frame — sharp emissive edges (bulbs!) shimmered. The glow now goes back INTO RR's
+input in pre-exposure units (divided by the EV100 factor pre-RR, multiplied back
+post-RR — algebraically exact), sharing the frame's jittered space so RR dejitters
+and temporally stabilizes it, exactly as the pre-reorder pipeline did. Uniform took
+the `volumeReserved3` spare (layout unchanged: 216 fields, 8576 bytes). Verified
+live: staged SPIR-V carries `rrGlowPre`, rr-full runs the full contract.
+
+**New arms for the two remaining candidates + softness:**
+- `rr-no-glowpre` — the bulb A/B (post-RR add, the behaviour that shipped earlier
+  today). Bulbs stable under rr-full + flickery here ⇒ glow resample was the cause.
+- `rr-no-disocc` — the 16×16 tile-luminance discard unbound. A bright bulb dominating
+  its tile can trip the ratio test repeatedly and discard RR history around exactly
+  the fixtures. If bulbs stabilize here, the mask needs a bright-static exemption.
+- `rr-preset-def` — `rt_rr_preset 0` (driver picks the newest RR model, NVIDIA's
+  current recommendation) vs pinned E. The softness A/B.
+
+All arms now state `rt_rr_glowpre` explicitly; pins carry it at 1.
+
+### Glow round 2: adaptation pulse, Catmull-Rom, candidates to 64 (2026-08-17, late)
+
+Play verdict on glow-in-input (`rt_rr_glowpre 1`): bulbs perfectly calm — but
+noise and flashlight-toggle instability WORSE. Mechanism: the 1/exposure term
+makes the glow in RR's input swell/shrink while auto-exposure adapts (exactly
+flashlight toggles and room transitions), and RR reads that as the scene
+changing. Exact output algebra and a temporally stable input are mutually
+exclusive in that mode, so:
+
+- **Default flipped to `rt_rr_glowpre 0`** with the real fix for the post-add's
+  shimmer: the single bilinear tap becomes a **9-tap optimized Catmull-Rom**
+  (the shimmer WAS the tap's phase-varying reconstruction error on sharp
+  emissive edges), clamped at zero (negative lobes would darken bright edges).
+  Arm `rr-glowpre-on` keeps the trade testable; `rr-no-glowpre` deleted
+  (now equals rr-full).
+- **Candidate lights capped at 64** (was 32): engine+RTGL clamps, cvar doc, and
+  the Quality-menu slider (`rt-wad-overlay/menudef.txt`). Pure loop bound, no
+  rays traced.
+- **New arm `rr-quality`**: spp 2/2 + shadow 2 + candidates 64 — the "more
+  rays" levers, which help RR more than A-SVGF (RR eats the raw signal). These
+  four are archived menu settings and persist after the arm (noted in the arm).
+- **The "light squares" hypothesis**: the light grid is compiled OUT
+  (`LIGHT_GRID_ENABLED 0`), so they are NOT grid cells. Prime suspect is the RR
+  disocclusion mask's 16×16 tile-luminance discard: many small bulbs + sparse
+  candidates = noisy tile means = spurious ratio trips = square patches of
+  re-converging history, worse the fewer the candidates — matching the report
+  exactly. A/B: `rr-no-disocc` (exists); live tuning: `rt_rr_disocc_ratio` up
+  from 3 (try 5), `rt_rr_disocc_mindelta` up from 0.01 (try 0.05).
+
+**Branch note:** the outer repo was found checked out on `main` (squash-merge
+`8b7f5db`) mid-session, which removed the arms/pins/NRD tooling from the
+working tree — the whole RR/NRD session lives on `rayreconstruction-v2` only.
+Restored the checkout to `rayreconstruction-v2` (a superset of main's content;
+the preview-gallery work is present here too). Reconcile with main when
+releasing.
+
+---
+
+## NRD stage 2: ReLAX is live (2026-08-17, night)
+
+The RR whack-a-mole verdict (Catmull-Rom did not beat the post-RR glow shimmer;
+glow-in-input pulses on adaptation — both ends measured, no third placement
+exists; 8× indirect spp needed for stability; flashlight switch is RR's own
+history machinery) triggered the pivot the docs pre-committed to. **The full
+NRD/ReLAX data path is implemented and verified rendering**: `rt_nrd 1` runs
+`CmNrdPack` → `NrdDenoiser::Denoise` (NRDIntegration `DenoiseVK`) →
+`CmNrdCompose`, replacing A-SVGF for the frame. Everything downstream is the
+untouched A-SVGF frame shape — exposure baked, glow pre-upscaler, DLSS-SR —
+so the RR lane's exposure/glow/reset artifact classes cannot exist here.
+
+Contract notes (all verified against NRD.hlsli / NRDSettings.h at source):
+matrices column-major non-jittered (ours verbatim); motion = our 2.5D contract
+with scale {1,1,1}; TRUE viewZ from SurfacePosition (not DepthWorld's radial);
+`_NRD_EncodeNormalRoughness101010` ported to GLSL (encoding 2, FLOAT16
+storage); no demodulation pass — our unfiltered buffers are material-free by
+construction, remodulation is `CmNoisyCompose`'s arithmetic on denoised
+lighting. **Measured round trip: 1% mean-luminance delta vs A-SVGF; frame
+structurally clean.** ReLAX defaults + antiFirefly; OUT_VALIDATION wired
+(`rt_nrd_validation`, arm `nrd-validation`).
+
+**The A/B that matters now:** `.\tools\ab.cmd nrd-probe 2` (ReLAX) vs
+`.\tools\ab.cmd rr-asvgf 2` (A-SVGF), in play: 1-spp noise, dark dots,
+flashlight toggles (must behave exactly like A-SVGF), emissive edges, motion
+stability, specular (ReLAX has real hit-distance reprojection). Follow-ups if
+kept: diffuse hit distance from raygen, ReBLUR mode, SIGMA shadows, settings
+cvars, per-frame perf cost.
+
+### NRD flashlight fix: the RR history flush was reaching ReLAX (2026-08-17)
+
+User: NRD shows the flashlight pixel-switch, A-SVGF does not. Root cause: the
+`rt_rr_reset_*` machinery raises `drawInfo.resetHistory` on every flashlight
+toggle / dynlight cut / level load — built to paper over DLSS-RR's missing
+lighting-change handling — and the NRD lane consumed that flag as a full ReLAX
+`CLEAR_AND_RESTART`. A-SVGF ignores the flag, hence the asymmetry. Fixed by
+scoping the automatic lightcut/hold flush to RR frames in `rt_main.cpp`
+(`rt_rr_reset_now` stays unconditional as an explicit diagnostic). Verified end
+to end with `rt_rr_reset_debug 1`: RR still prints `FLUSH (cause: dynlight)` at
+level load; NRD prints nothing on the identical trigger. ReLAX and A-SVGF both
+handle lighting changes by design (fast-history clamping / gradient antilag).
+
+### NRD verdict + quit-crash fix (2026-08-17, late night)
+
+**Verdict (user): NRD/ReLAX ~= A-SVGF; keeping NRD, advising 2 spp with it.**
+The lane ships with live tuning cvars (rt_nrd_* -- 0 = ReLAX defaults, pushed
+per frame, read back via the 'NRD/ReLAX settings:' log line) and the
+`nrd-tuned` arm as a starting point.
+
+**Quit crash fixed**: every quit with rt_nrd active wrote CrashReport.zip (AV
+in nvoglv64.dll, stack RTGL1 -> NRI -> driver). ~VulkanDevice resets every
+subsystem in its body before destroying the device -- nrdDenoiser was missing,
+so its implicit member destructor ran after vkDestroyDevice and NRI dispatched
+into a dead device. Fixed (reset right after the body's wait-idle); verified
+with the exact reproducer.
+
+### The RR fix ladder (2026-08-17, end of session)
+
+RR's four open issues, each with its lever, all A/B-able:
+1. **Emissive shimmer/pulse** → `rt_rr_glowpre 2` ("glow as light", NEW): glow
+   in RR's input at the fixed `rt_rr_glowscale` (~35 = old mid-exposure
+   brightness). Stable input — no shimmer, no adaptation pulse; the glow rides
+   exposure like the bulb it halos. Arm `rr-glow-aslight`. Modes 0/1 remain.
+2. **Flashlight full-frame switch** → arm `rr-local-adapt`: global dynlight/
+   lightcut flushes OFF, the 16×16 tile mask alone discards locally. Watch for
+   the trade the flush was added for (transient-light ghosts).
+3. **Light squares** → arm `rr-disocc-strict`: mask ratio 3→5, mindelta
+   0.01→0.05 (both live cvars for laddering).
+4. **Softness / spp hunger** → `rr-preset-def` (untested) + accept: NRD is the
+   kept lane; RR remains an experimental toggle that improves with NVIDIA's
+   OTA models.
+
+### RR ladder verdict: local-adapt config wins, baked as defaults (2026-08-17, final)
+
+User verdicts: `rr-glow-aslight` -> jitter fixed. `rr-local-adapt` -> jitter +
+flashlight + squares ALL fixed. `rr-preset-def` -> "everything bad", explained:
+that arm predated the fixes and carried the old glow/reset config -- regenerated
+from the winning base for a clean preset A/B. New RR defaults everywhere
+(compiled, pins, rr-full): `rt_rr_glowpre 2` + `rt_rr_glowscale 35`,
+`rt_rr_reset_on_lightcut 0`, `rt_rr_reset_on_dynlight 0`. Watch item: transient-
+light ghosts (the global flush existed for those). Final lane states: NRD/ReLAX
+shipping (2 spp advised), A-SVGF default, RR experimental-but-clean.
+
+### RR closed (2026-08-17): characterized, artifact-free, model-limited
+
+Final user measurements after all fixes: noise stability at ~3 spp + 46
+candidate lights (was 8 spp before the GI antilag fix); softness persists at
+DLAA native res => the model's floor, not the pipeline. Preset Default noisier
+than E. Arm `rr-stable` records the found-good config. RR's remaining gaps
+(sample cost, softness) improve only with NVIDIA's OTA models.
+
+### RR albedo demodulation (2026-08-17, night): the pixel-art play
+
+DLAA-still-soft proved the softness is RR's model floor -- and pixel-art texel
+edges are out-of-distribution content its priors smooth as noise. So the
+albedo no longer enters the network: `rt_rr_demod` (default on) divides the
+combined modulation factor out of RR's input (CmNoisyCompose, guides neutral,
+factor stored in RrDemodFactor) and re-multiplies it at OUTPUT resolution
+(CmRrPostExposure; filter: bilinear / Catmull-Rom default / nearest chunky).
+RTX Remix ships the same scheme incl. the combined diffuse+specular factor
+approximation. Glow paths pre-divide so the post-multiply cancels. Measured:
+~7% brightness delta (the 0.02 floor on dark albedo), structure correct.
+A/B: `rr-full` (demod on) vs `rr-no-demod`; `rt_rr_demod_filter` live.
+Answered in passing: we run ReSTIR DI+GI but only partial MIS (NEE-driven,
+no BRDF-light MIS combine) -- RR's training pipelines (CP2077-class) have
+both, which bounds how native our signal can ever look to it.
+
+**Demod verdict (user): pixelation confirmed better under `rr-full`.** RR's final
+form: artifact-free, pixel-crisp albedo (demod), soft lighting only (benign --
+lighting is low-frequency), ~3 spp + 46 candidates for noise stability.
+
+**Glow mode 2, second cut (user: MAP02 floor emissives ~7x hot in dark rooms):**
+the fixed mid-exposure constant made the overlay ride live exposure while the
+cast light was already exposed. Now divides by the 1x1 RrExposure, which became
+an EMA (0.08/frame; also NVIDIA's recommendation for the DLSS exposure
+texture): steady-state exact at the old calibration everywhere, input still
+pulse-free through adaptation. rt_rr_glowscale = plain multiplier, default 1.

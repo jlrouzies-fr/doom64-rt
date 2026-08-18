@@ -44,7 +44,7 @@ were written *after* losing a day to the thing they describe.
 | Flames | [`docs/flame-lighting.md`](docs/flame-lighting.md) | All 84 flame sprites are lit engine-side. Read before touching any torch, fire or candle. |
 | Act title cards | [`docs/act-title-cards.md`](docs/act-title-cards.md) | The ACT I/II/III cards on MAP01, MAP09, MAP20. |
 | HUD mugshot | [`docs/hud-mugshot.md`](docs/hud-mugshot.md) | The Doom guy face Doom 64 never had — generated, plus the HUD rearranged around it. |
-| Ray Reconstruction | [`RAYRECONSTRUCTION.md`](RAYRECONSTRUCTION.md) | **Alpha, ships off, not recommended.** Start here always; it points into `docs/rayreconstruction/` when needed. |
+| Ray Reconstruction | [`RAYRECONSTRUCTION.md`](RAYRECONSTRUCTION.md) | **Alpha, ships off, not recommended.** Start here always; it points into `docs/rayreconstruction/` when needed. The standing bound is a **renderer** one, not an RR bug: RR is trained on full MIS + area-light transport and this renderer has neither, so it needs brute force (high spp, high light-candidate counts) to look decent — see [`docs/plan-area-lights-mis.md`](docs/plan-area-lights-mis.md). |
 
 ## Not built yet — plans
 
@@ -56,6 +56,8 @@ were written *after* losing a day to the thing they describe.
 | [`docs/plan-storm-rain.md`](docs/plan-storm-rain.md) | Rain and wet ground on MAP11, the game's only storm map. The particles are `rt_dust` with gravity; the wetness **cannot** be done in `textures.json`, because the ORM texture wins over `roughnessDefault`. |
 | [`docs/plan-sprite-materials.md`](docs/plan-sprite-materials.md) | Sprite emissives and materials, weapons first. Every first-person weapon between them has **nine** material files, all plasma rifle. Sprites are also the only surface where a texture can cast real light. |
 | [`docs/plan-projectile-impact-fx.md`](docs/plan-projectile-impact-fx.md) | Plasma arcs, Unmaker melt, rocket embers. Establishes that the impact hook is **hitscan only**, so no projectile in the game reacts to what it hits — that missing hook is the keystone for all three. |
+| [`docs/plan-area-lights-mis.md`](docs/plan-area-lights-mis.md) | Triangle/area lights and full BRDF–light MIS. **Read the ground-truth section before costing it**: sphere lights are already solid-angle area lights, emissive geometry already emits on the indirect lane, and `TRIANGLE_LIGHTS` is a half-removed upstream feature that breaks the C++ compile. Its value is gated on `rt_refl_thresh` — the roughness floor exists because A-SVGF cannot denoise sharp speculars, and MIS only matters once that floor comes down. |
+| [`docs/plan-shadow-contact-hardening.md`](docs/plan-shadow-contact-hardening.md) | Sharp shadows at the contact point, softening with blocker distance — the behaviour RR has and A-SVGF does not. Phase 0 is free (`rt_shadow_samples`, unpinned, never A/B'd) and may show the honest answer is to stop there. Beyond it: recover the blocker distance from the shadow ray, carry a penumbra buffer, then either adapt A-SVGF's à-trous weights or feed NRD **SIGMA**, which is already instantiated and unfed. |
 
 ## Lighting — the repair pipeline
 

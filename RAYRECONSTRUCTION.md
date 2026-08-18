@@ -2,30 +2,97 @@
 
 History is in `docs/rayreconstruction/`. **Don't open it unless this file sends you.**
 
-**State (2026-08-07): the launcher defaults to A-SVGF (`rt_rayreconstr 0`), not RR.**
-RR works and is *correctly configured* — identical jitter, MV scale and NGX feature flags
-to DLSS-SR, which is stable on the same buffers. It is simply less stable in **motion** on
-this content. Set `+rt_rayreconstr 1` to compare.
+**State (2026-08-17, CLOSED): RR is artifact-free and fully characterized.**
+The ladder fixed all three visual artifacts (glow-as-light `rt_rr_glowpre 2`,
+local adaptation `rt_rr_reset_on_* 0`, both baked as defaults+pins), the GI
+antilag dead-buffer bug is fixed (it was pinning indirect at raw 1 spp under
+RR and NRD), and the remaining costs are measured and NOT ours to fix:
+- **Noise stability costs ~3 spp direct+indirect and ~46 candidate lights**
+  (arm `rr-stable`; was 8 spp before the antilag fix).
+- **The softness was beaten where it matters**: `rt_rr_demod` (albedo
+  demodulation, the Remix approach) keeps the pixel-art albedo out of the
+  network and re-applies it crisp at output res -- user-confirmed better
+  pixelation. Only the LIGHTING remains network-soft (benign; it is
+  low-frequency; still soft at DLAA = model floor). Preset Default measured
+  noisier than E; E stays pinned.
+Final lanes: **NRD/ReLAX ships (`rt_nrd 1`, ~2 spp)**, A-SVGF is the no-flag
+default, RR is the clean experimental lane that improves only with NVIDIA's
+OTA models. Re-judge RR whenever a new driver/DLL lands -- everything here is
+one arm away.
 
-**Don't reopen that without new evidence.** Eliminated by measurement, not argument: 8
-shadow rays (no change); 8 spp (only ~20%, so the residual is *not* Monte Carlo variance);
-direct reservoir `M` stable in motion; `InReset` flush on/off identical; disocclusion mask
-sparse in motion; the indirect antilag gate (a dead no-op under RR — it reads
-`framebufDISGradientHistory`, written only by `Denoise()`, which RR skips); auto-exposure
-locked; every guide, guide floor, spec hit distance, blue noise, mip bias and RR preset.
-Motion vectors and depth are validated by A-SVGF+DLSS-SR using the same buffers.
+**Why the reorder alone was never going to be enough — the structural audit.** Comparing
+our integration against NVIDIA's RR contract and Duke-RT found four deviations; the
+first pass fixed half of one:
 
-A-SVGF's advantage looks structural: it accumulates in **linear radiance before exposure**
-and applies a variance-guided **spatial** filter, which suits sparse 1-spp interiors with
-many small dynamic lights. RR accumulates after exposure is baked in and leans on temporal
-reconstruction, which motion weakens.
+1. **Exposure** — reorder landed, but the 1×1 exposure texture was dropped ("null +
+   `InPreExposure=1.0` is valid parameterization"). Valid, but wrong for a *neural*
+   denoiser: with pre-exposure input the network sees raw radiance whose absolute scale
+   swings ~52× with adaptation, and it is not scale-invariant. The old post-exposure
+   input was incidentally scale-normalized, so dropping the texture traded one
+   contract violation for another. **Now landed: `rt_rr_exptex`** — a 1×1 R32F
+   framebuffer written GPU-side by `CmPrepareFinal` thread (0,0), bound as
+   `pInExposureTexture`.
+2. **Rasterized translucency baked into RR's input.** Every translucent sprite in the
+   game (fireballs, flames, plasma, smoke, lens flares) is rasterized into `FINAL`
+   *before* RR, while every guide — albedo, normal, depth, MV — describes the opaque
+   wall *behind* it: content the network is told is not there, i.e. noise to remove.
+   **Now landed: `rt_rr_translayer`** — the world raster pass redirects into an RGBA16F
+   layer bound as `pInTransparencyLayer` (NGX composites it after denoise+upscale, the
+   SDK's sanctioned route). Additive sprites blend alpha ZERO/ONE so they occlude
+   nothing (no dark halos); 'over' sprites accumulate true coverage.
+3. **Correlated ReSTIR input** (guide §3.5, `rr-noise-fix-proposals.md` §4). Temporal
+   reuse keeps a reservoir winner up to `mcap`=20 frames, so a bad shadowed sample
+   persists as a **stable dark dot** — structure a temporal denoiser preserves as
+   detail. A-SVGF's spatial atrous blurs these away, which is why it never showed them;
+   toggling the flashlight reseeds the reservoirs, which is **exactly the observed
+   pattern-switch**. Duke-RT feeds RR plain path tracing with no reuse at all.
+   **Now landed: `rt_rr_restir_mcap`** (default 4, −1=off) — caps temporal M on RR
+   frames only; A-SVGF frames always use `rt_restir_mcap`.
+4. **Fog composited into the input.** Known deviation, deliberately NOT touched: the
+   volumetrics were fixed under A-SVGF by a previous session and stay where they are.
 
-Render resolution is eliminated too: retested on a clean build (`ab-rr-res.cmd dlaa`),
-DLAA is still unstable in motion. So it is not spatial reconstruction from a low render
-resolution either — RR is unstable at **native** res on this content.
+**The A/B (rebuilt around the contract):** `.\tools\ab.cmd rr-preexp-probe 2` **first**
+(magenta = post-RR pass live; log must show `pInExposureTexture=BOUND`,
+`pInTransparencyLayer=BOUND`), then **`rr-full` vs `rr-asvgf`** for the verdict. If
+rr-full still loses, `rr-no-translayer` / `rr-no-decorr` / `rr-no-exptex` isolate which
+feature carried what, and `rr-legacy` reproduces the pre-redo RR. Judge in play, in
+motion: dark dots, flashlight toggle, jitter (must be gone in every arm), fireball/flame
+crispness. If the full contract still loses to A-SVGF, the next lever is NRD
+(`docs/plan-nrd-denoiser.md`) — not another RR guess.
 
-**The investigation is closed. There is no remaining hypothesis.** Reopen only with new
-evidence, not a new guess.
+Also from this session: `rt_rr_preset` (0=Default/4=D/5=E — RR has no J/K), and the
+DLSS-RR/DLSS-SR NGX output image is barriered before evaluate (latent cross-frame
+hazard).
+
+**Eliminated by measurement (all still valid):** 8 shadow rays (no change); 8 spp (only
+~20%, so the residual is *not* Monte Carlo variance); direct reservoir `M` stable in
+motion; `InReset` flush on/off identical; disocclusion mask sparse in motion; the
+indirect antilag gate (a dead no-op under RR — it reads `framebufDISGradientHistory`,
+written only by `Denoise()`, which RR skips); every guide, guide floor, spec hit
+distance, blue noise, mip bias and RR preset. Motion vectors and depth are validated by
+A-SVGF+DLSS-SR using the same buffers. Render resolution too: DLAA is still unstable in
+motion, so it is not spatial reconstruction from a low render res.
+
+A-SVGF's two structural advantages — it accumulates in **linear radiance before
+exposure**, and its **spatial atrous erases correlated reservoir noise** — are now both
+answered on the RR path (`rt_rr_preexposure`+`rt_rr_exptex`, and `rt_rr_restir_mcap`).
+If the full-contract A/B still fails, the documented next step is NRD
+(`docs/plan-nrd-denoiser.md`), **not** a new RR guess.
+
+**A known bound the audit missed, on record (2026-08-17):** the structural
+audit covered the INTEGRATION contract (exposure, guides, content routing,
+correlation) but not the RENDERER BASELINE against RR's training distribution.
+RR was trained on CP2077-class pipelines: ReSTIR + NEE + full BRDF/light MIS,
+with their noise statistics. This renderer has ReSTIR DI+GI but only partial
+MIS -- and full MIS is blocked upstream: `TRIANGLE_LIGHTS = 0` (emissive
+geometry is not a light source; analytic proxies + the glow overlay stand in)
+and lights are not in the acceleration structure, so BRDF-sampled direct rays
+cannot hit them by construction. Adding area-light transport + MIS is a
+renderer overhaul that would benefit ALL denoiser lanes (glossy direct
+response, lower variance) and likely shave RR's 3-spp bill -- but A-SVGF's
+1-spp performance on the same baseline shows the baseline is serviceable, so
+it is an improvement project, not a defect. Weigh it as its own initiative,
+never as an RR patch.
 
 **Every fault that cost this project days was an invisible setting, never a renderer bug:**
 RR compiled out of the DLL (CMake `ENV{}` vs `-D`); a Dev-UI sticky override in
@@ -57,6 +124,11 @@ looked exactly like an RR defect for a full day. It wasn't.
   RTGL runtime (DLL **and** its SPIR-V together; uniform layout changes, never mix).
 - `ab-rr-quality.cmd <stock|free|shadow|max>` — input-quality cost/benefit ladder.
 - `ab-rr-res.cmd <dlaa|quality|balanced>` — render resolution (eliminated: DLAA still bad).
+- `.\tools\ab.cmd rr-<full|asvgf|legacy|no-translayer|no-decorr|no-exptex> [map]` — the
+  input-contract A/B set (cfg arms in `tools/arms/`). **`rr-preexp-probe` first** (magenta
+  = post pass live), then `rr-full` vs `rr-asvgf` for the verdict, isolation arms only if
+  needed. `rr-preexp-on/off` survive as the reorder-only pair (contract features pinned
+  off in both). The ab-rr-*.cmd runners above predate ab.cmd and survive as records.
 - Levers: `rt_restir_initial` (launcher now sets **32**) traces no rays and helps both
   denoisers, but is **not yet A/B'd under A-SVGF** — verify before trusting it.
   `rt_spp_direct`/`rt_spp_indirect` [1..8] stay at 1; ~20% at 8 is a poor trade.

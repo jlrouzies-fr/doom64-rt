@@ -1,8 +1,36 @@
 # NRD as a third denoiser path in RTGL1 — feasibility and cost
 
-> Side option, not a commitment. The active plan is
-> `docs/plan-rayreconstruction-secondpass.md` (feed DLSS-RR pre-exposure radiance).
-> This document exists so that if that plan fails, the fallback is already scoped.
+> **STATUS 2026-08-17: ACTIVE — the decision gate below is satisfied.** The RR
+> second pass was measured: full input contract (pre-exposure + exposure texture +
+> transparency layer + ReSTIR decorrelation) verified live in `rt-console.log` and
+> still null vs A-SVGF (`rr-noise-investigation.md`, 2026-08-17 entry). That is this
+> plan's own trigger: correlation/signal shape is inherent to our sampling, which is
+> the argument for ReLAX.
+>
+> **Build findings (verified on this machine, all offline):**
+> - Duke-RT does NOT use NRD's CMake: it compiles NRD 4.17.1's seven Source/*.cpp
+>   directly into its target with `NRD_NORMAL_ENCODING=2 NRD_ROUGHNESS_ENCODING=1
+>   NRD_SUPPORTS_{VIEWPORT_OFFSET,CHECKERBOARD,HISTORY_CONFIDENCE,
+>   DISOCCLUSION_THRESHOLD_MIX}=0 NRD_SUPPORTS_BASECOLOR_METALNESS=1
+>   NRD_SUPPORTS_ANTIFIREFLY=0 NRD_EMBEDS_SPIRV_SHADERS=1 SPIRV_{S,B,U,T}REG_OFFSET=
+>   0/2/3/20` plus ShaderMake's `ShaderBlob.cpp` (the blob READER), and includes a
+>   pre-generated `libraries/NRD/_Shaders` header dir. That dir is NOT committed in
+>   Duke's tree — it must be generated once (ShaderMake + DXC) and committed on our
+>   side.
+> - Duke does NOT build NRI either — it stages prebuilt DLLs from a sibling
+>   `NRD-Sample/_Bin` we don't have. We build NRI from its standalone CMake
+>   (`NRI_STATIC_LIBRARY=ON`, `NRI_ENABLE_D3D11/D3D12=OFF`, VK only).
+> - No Vulkan SDK on this machine, but **Windows Kits dxc 1.8.2502 has the `-spirv`
+>   backend** (`C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\dxc.exe`)
+>   — the one-time `_Shaders` generation runs on it. RTGL's own GLSL uses its
+>   vendored `Source/VulkanSDK/1.3.280.0/Bin/glslc.exe` (no dxc there).
+> - Also vendor `NRIFramework/External/MathLib` (0.5 MB, headers) — NRD's sources
+>   include it; Duke adds it to the include path.
+> - Duke's `nri_nrd.cpp` motion contract confirmed at source: `IN_MV` xy in PIXELS,
+>   z = `viewZPrev - viewZ`, `motionVectorScale = {1/w, 1/h, 1}`,
+>   `isMotionVectorInWorldSpace = false` — matching our `framebufMotion` 2.5D layout.
+>   Duke runs `restoreInitialState = false` and writes states back; we run `true`
+>   (RTGL keeps everything in GENERAL).
 >
 > Reference implementation: `sourcecode/Duke-RT` vendors **NRD 4.17.1** and its whole
 > integration is **411 lines** (`source/common/rendering/nri/renderer/nri_nrd.cpp`).

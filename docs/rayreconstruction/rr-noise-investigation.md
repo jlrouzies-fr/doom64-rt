@@ -555,3 +555,44 @@ The diagnostics that made this findable — `Denoiser path:`, `RR guides:`,
 `ReSTIR uniforms:`, all edge-triggered in `VulkanDevice.cpp` — should stay.
 Four faults in this investigation were invisible settings, and the one that took
 longest was found by printing a number rather than by reasoning about it.
+
+---
+
+## 2026-08-17 — the input-contract A/B: full contract live, verdict NULL. RR parked.
+
+Two implementation passes this day (`compat-patches.md` has the diffs):
+
+1. **Pre-exposure reorder alone** (`rt_rr_preexposure`): NULL, and it *added* a
+   constant image jitter — `CmRrPostExposure` re-added the screen emission from
+   the jittered render-res buffer with no jitter correction. Fixed (the
+   `CmVolumeCompose` correction, unconditional).
+2. **Full contract** — 1×1 exposure texture (`rt_rr_exptex`), rasterized
+   translucency into `pInTransparencyLayer` (`rt_rr_translayer`), ReSTIR
+   temporal M capped at 4 on RR frames (`rt_rr_restir_mcap`).
+
+**Arm read back from `rt-console.log` before judging** (the rule held):
+
+    Denoiser path: DLSS-RR (...) preExposure=on (post-RR pass)
+    RR guides: pInDisocclusionMask=BOUND, pInSpecularHitDistance=BOUND,
+      albedo guide mode=1, pInExposureTexture=BOUND (1x1, CmPrepareFinal),
+      pInTransparencyLayer=BOUND (raster redirected)
+    ReSTIR uniforms: ... temporalMCap=4 (stock 20) ...
+    DLSSRR: using Ray Reconstruction preset E (raw value 5)     [created once]
+
+**User verdict, in play** (screenshots `screen/lab/Screenshot_Doom_20260817_1507*.png`):
+zero improvement. The fine dark-dot speckle sits on essentially every surface
+under RR and is absent under A-SVGF; the pattern still switches when the
+flashlight toggles; residual jitter remains, now localized to emissive edges
+(bulbs, emissive textures).
+
+**Interpretation.** Every documented lever — guides, spec hit distance,
+disocclusion mask, presets, exposure contract (both halves), content routing,
+sample decorrelation — is now implemented, verified live in the log, and
+measured. What remains is RR's own behaviour on this renderer's signal. The
+residual emissive jitter is the irreducible cost of compositing a jittered
+render-res buffer after reconstruction (one bilinear tap, different sub-texel
+phase each frame); the pre-upscaler ordering used by A-SVGF does not have it.
+
+**Decision (pre-committed in three docs): stop tuning RR, build the NRD lane**
+(`docs/plan-nrd-denoiser.md`) — ReLAX is co-designed for 1-spp ReSTIR input.
+RR stays wired and switchable for future A/Bs; the launcher ships A-SVGF.

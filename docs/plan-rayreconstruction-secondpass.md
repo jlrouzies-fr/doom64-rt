@@ -3,6 +3,42 @@
 > Read `RAYRECONSTRUCTION.md` first. This plan **reopens** what that file closed, and
 > says why. History is in `docs/rayreconstruction/`.
 
+> **STATUS 2026-08-17: IMPLEMENTED, awaiting the in-game A/B.** Every claim below was
+> re-verified against the code by an 8-agent evidence pass before implementation; all
+> confirmed (some line numbers had drifted — current ones are in `compat-patches.md`,
+> which is the authoritative record of what landed). **One design change against this
+> plan:** step 3 (the 1×1 exposure texture) was **dropped** — NVIDIA's RR guide §3.7
+> (local copy, `deps/DLSS/doc/`) declares exposure inputs unsupported for RR, so with
+> genuinely pre-exposure color, `InPreExposure=1.0` + no exposure texture is the SDK's
+> own correct parameterization. Duke-RT's exposure-texture binding is generic NRI
+> plumbing, not an RR requirement. The A/B: `.\tools\ab.cmd rr-preexp-probe 2` first
+> (magenta = pass live), then `rr-preexp-on` vs `rr-preexp-off`.
+
+> **STATUS 2026-08-17, second update: FULLY IMPLEMENTED — this plan as written,
+> including steps 3 and 4.** The paragraph above records the first pass, whose two
+> deviations did not survive contact:
+> - **The reorder-alone A/B came back NULL** — RR still noisier than A-SVGF, the stable
+>   dark-dot pattern and its flashlight toggle-switch unchanged — plus a regression:
+>   constant image jitter, from `CmRrPostExposure` re-adding the screen emission out of
+>   a *jittered* render-res buffer with no correction (RR used to dejitter it as input;
+>   fixed with the `CmVolumeCompose` correction).
+> - **Dropping step 3 was API-correct and *model*-wrong.** `InPreExposure=1.0` + null
+>   texture is a valid parameterization, but a neural denoiser is not scale-invariant:
+>   pre-exposure input without the texture hands it raw radiance across a ~52×
+>   adaptation swing with nothing to normalise by — the old post-exposure input was
+>   incidentally normalised, so the drop traded one contract violation for another.
+>
+> The second pass restored the plan's full scope: **step 3** landed as `rt_rr_exptex`
+> (1×1 R32F written by `CmPrepareFinal` thread (0,0), bound as `pInExposureTexture`);
+> **step 4** landed via option (a), `pInTransparencyLayer`, as `rt_rr_translayer`
+> (dedicated render pass + pipelines with NGX-coverage alpha: additive occludes
+> nothing); and this plan's designated successor, **ReSTIR decorrelation**, landed as
+> `rt_rr_restir_mcap` (RR frames only, default 4). The A/B is now
+> `.\tools\ab.cmd rr-preexp-probe 2` first, then **`rr-full` vs `rr-asvgf`**, with
+> `rr-no-translayer`/`rr-no-decorr`/`rr-no-exptex` isolation arms and `rr-legacy` as
+> the pre-redo reproduction. If `rr-full` still loses to A-SVGF, the next step is NRD
+> (`docs/plan-nrd-denoiser.md`), not further RR tuning.
+
 ## Context
 
 `RAYRECONSTRUCTION.md` declares the RR investigation **closed** ("no remaining

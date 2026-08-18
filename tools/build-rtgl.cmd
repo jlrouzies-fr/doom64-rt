@@ -108,11 +108,20 @@ struct layout ===
   if exist "%RTGL%\BuildCMake\RayTracedGL1.dir" rd /s /q "%RTGL%\BuildCMake\RayTracedGL1.dir"
 )
 
-echo === Configuring RTGL ===
+rem NRD lane: OFF unless asked for. A-SVGF is the shipping baseline denoiser,
+rem and NRD needs deps\NRD + deps\NRI (tools\build-nrd-deps.cmd) which are NOT
+rem in the repo -- so building it by default breaks any clean checkout, CI
+rem included. Stated explicitly rather than probed for on disk: a build that
+rem silently changes shape depending on what happens to be present is how
+rem this project loses days. Set D64RT_WITH_NRD=1 to work on the lane.
+set "RG_NRD=OFF"
+if /I "%D64RT_WITH_NRD%"=="1" set "RG_NRD=ON"
+echo === Configuring RTGL (NRD lane: %RG_NRD%) ===
 cmake -A x64 -S "%RTGL%" -B "%RTGL%\BuildCMake" ^
   -DCMAKE_BUILD_TYPE=RelWithDebInfo ^
   -DRG_WITH_SURFACE_WIN32=ON ^
   -DRG_WITH_NATIVE_DLSS=ON ^
+  -DRG_WITH_NRD=%RG_NRD% ^
   -DRG_WITH_EXAMPLES=OFF
 if errorlevel 1 exit /b 1
 
@@ -139,6 +148,18 @@ if errorlevel 1 (
   exit /b 1
 )
 if exist "%RTGL%\Build\bin\RTGL1.pdb" copy /Y "%RTGL%\Build\bin\RTGL1.pdb" "%OUT%\rt\bin\" >nul
+
+rem NRD lane: NRI is a shared library (see tools\build-nrd-deps.cmd for why)
+rem and RTGL1.dll links its import lib, so NRI.dll must sit beside it or the
+rem game fails to load RTGL1.dll at all ("module not found", not a clean
+rem in-game fallback). Same staging pattern as nvngx_dlssd.dll.
+if exist "%RTGL%\..\NRI\_Bin\Release\NRI.dll" (
+  copy /Y "%RTGL%\..\NRI\_Bin\Release\NRI.dll" "%OUT%\rt\bin\" >nul
+  if errorlevel 1 (
+    echo ERROR: could not stage NRI.dll -- is gzdoom.exe still running?
+    exit /b 1
+  )
+)
 
 rem Prefer release NGX snippets from SDK (includes Ray Reconstruction)
 copy /Y "%DLSS_SDK_PATH%\lib\Windows_x86_64\rel\nvngx_dlss.dll" "%OUT%\rt\bin\" >nul
