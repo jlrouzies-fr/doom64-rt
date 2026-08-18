@@ -181,6 +181,13 @@ The knobs that cost frame time are now in one menu, and `rt_quality_preset`
 values**, verified: preset 2 reproduces the pre-change baseline to the primitive
 (2009 prims / 1.227 ms fx at 48 s, against 2009 / 1.226 before the menu existed).
 
+The menu opens on a **simplified** view: the preset, plus the ray-budget sliders
+the Quality menu carried before this work. `Full settings`, its last item, opens
+`RT_QualityMenuFull` - the same list with the content budget a preset drives
+(Persistence, Effects, Per-sprite geometry, Lamp lights) above it - and Back
+returns to the simple one. Both views carry the same preset selector, so the
+one-item way out of a bad set of sliders is wherever the player is standing.
+
 Measured on the same scripted 40 s firefight (MAP13, summoned crowd, held
 chaingun trigger, `rt_vsync 0`):
 
