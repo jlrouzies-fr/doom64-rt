@@ -7,7 +7,10 @@ rem    2. NRD _Shaders headers  (SPIR-V embedded via DXC; committed, so this
 rem                              step only reruns when NRD shaders change)
 rem    3. NRI static libs       (VK-only; deps\NRI\_Bin + BuildCMake\Release)
 rem
-rem  After this, tools\build-rtgl.cmd links it all (RG_WITH_NRD=ON).
+rem  After this, tools\build-rtgl.cmd links it all -- but ONLY when
+rem  D64RT_WITH_NRD=1 is set. RG_WITH_NRD now defaults OFF so a clean
+rem  checkout (and CI, where deps\ does not exist) still builds the
+rem  A-SVGF baseline instead of failing configure.
 rem
 rem  DXC: needs the GITHUB release build -- the Windows SDK dxc.exe reports
 rem  "SPIR-V CodeGen not available". tools\dxc is populated from

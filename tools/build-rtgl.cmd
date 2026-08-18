@@ -108,11 +108,20 @@ struct layout ===
   if exist "%RTGL%\BuildCMake\RayTracedGL1.dir" rd /s /q "%RTGL%\BuildCMake\RayTracedGL1.dir"
 )
 
-echo === Configuring RTGL ===
+rem NRD lane: OFF unless asked for. A-SVGF is the shipping baseline denoiser,
+rem and NRD needs deps\NRD + deps\NRI (tools\build-nrd-deps.cmd) which are NOT
+rem in the repo -- so building it by default breaks any clean checkout, CI
+rem included. Stated explicitly rather than probed for on disk: a build that
+rem silently changes shape depending on what happens to be present is how
+rem this project loses days. Set D64RT_WITH_NRD=1 to work on the lane.
+set "RG_NRD=OFF"
+if /I "%D64RT_WITH_NRD%"=="1" set "RG_NRD=ON"
+echo === Configuring RTGL (NRD lane: %RG_NRD%) ===
 cmake -A x64 -S "%RTGL%" -B "%RTGL%\BuildCMake" ^
   -DCMAKE_BUILD_TYPE=RelWithDebInfo ^
   -DRG_WITH_SURFACE_WIN32=ON ^
   -DRG_WITH_NATIVE_DLSS=ON ^
+  -DRG_WITH_NRD=%RG_NRD% ^
   -DRG_WITH_EXAMPLES=OFF
 if errorlevel 1 exit /b 1
 

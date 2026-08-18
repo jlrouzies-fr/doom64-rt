@@ -619,7 +619,9 @@ enforced at the one place that writes it.
   the committed artifacts): `tools/build-nrd-deps.cmd` — ShaderMake, NRD
   `_Shaders` SPIR-V headers (needs the GITHUB dxc in `tools/dxc`, the Windows
   SDK dxc has no SPIR-V codegen), NRI static libs. `build-rtgl.cmd` then links
-  it all (`RG_WITH_NRD=ON`).
+  it all - but ONLY with `D64RT_WITH_NRD=1` set. `RG_WITH_NRD` defaults
+  **OFF**: A-SVGF is the shipping baseline and these deps are not in the
+  repo, so defaulting ON broke every clean checkout and the CI release.
 - **SDKs / deps policy:** install only under `G:\AI\Doom64-RT\deps\` (or other `G:\AI\…`), never system Program Files.
   - Headers: `deps/RTGL` (`vs-shirokii/RTGL`)
   - Runtime: `deps/RTGL-1.6.3`
