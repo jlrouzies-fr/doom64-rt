@@ -128,8 +128,18 @@ sustained fight puts a great many sprites on the floor, each a candidate for a
 shadow proxy and an AO blob. Measure it with a frame time on screen and a held
 trigger before deciding the default."*
 
-Method: MAP13, a crowd summoned in six waves, then `rt_autofire` holds the
-chaingun trigger for 1400 tics (40 s). `rt_stat_every 105`, `rt_vsync 0`.
+Method: MAP13, `rt_autofire` holds the chaingun trigger for 1400 tics (40 s).
+`rt_stat_every 105`, `rt_vsync 0`.
+
+**CORRECTION (found later): the room was empty.** The crowd was a cfg of
+`wait 40; summon ...` lines passed as `+exec` on the launcher command line, and
+`wait` does not fire at all in that path - which surfaced only when a menu
+screenshot script failed the same way. `rt_autofire` gives itself the weapon,
+so the trigger was real: every number below is a player firing into a bare
+room, i.e. casings, spark debris and scorch marks only. Gore and corpse AO
+blobs - the populations a real fight adds on top - are still unmeasured.
+`rt_autospawn` exists now (engine-side, maptime-keyed, cannot fail silently)
+for the re-run.
 
 | elapsed | prims | lightgen | fx | primupload | drawframe |
 |---|---|---|---|---|---|
@@ -310,6 +320,31 @@ The loop is also a linear scan over the whole seg array, i.e. cache-hostile, on 
 CPU with an unusually large L3 (9800X3D). A mid-range CPU should pay *more*
 absolute milliseconds for it, not fewer. That last point is reasoning, not
 measurement - there is no second machine here to check it on.
+
+## Regression from this branch: the preset overwrote saved settings
+
+Reported as "indirect light is VERY noisy since the performance pass; even 8 spp
+indirect does not catch up" - self-inflicted, and worth recording because the
+pins file had already warned about the exact shape of it.
+
+The startup one-shot applied the whole preset table unconditionally, so every
+launch reset the archived quality cvars the player had tuned. This config ran
+`rt_shadowrays 1`, which turns off analytic-light sampling at indirect bounce
+vertices entirely; the preset put the compiled 4 back, and with no light grid
+(`LIGHT_GRID_ENABLED 0`) every bounce vertex then samples uniformly across the
+whole flat light array at 1 spp. That is also why `rt_spp_indirect 8` helped but
+could not win: more samples average the noise by ~1/sqrt(N), while
+`rt_shadowrays 1` had been *removing its source*.
+
+Fixed in `rt_quality.cpp` with two rules: the one-shot keeps any archived cvar
+that is not `CVAR_ISDEFAULT` (loaded-from-ini clears that flag, so "still
+default" means "never touched"), and the `rt_quality_preset` handler is inert
+until the one-shot has run - cvars load alphabetically, so a handler firing at
+config load would clobber every owned cvar that sorts before
+"rt_quality_preset" and spare every one after. Explicit choices (menu,
+`rt_quality_apply`) still set everything.
+
+The startup log line is the check: `N set, M kept from config, K not present`.
 
 ## Still open
 
