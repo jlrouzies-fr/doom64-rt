@@ -1,17 +1,37 @@
-name: Build release package
+name: Build beta package
 
-# Builds the engine, the path tracer and the release zip on a clean Windows
-# runner. It cannot test the result: GitHub runners have no GPU, so nothing here
-# proves the renderer works -- only that a fresh machine can build and package it.
+# build-release.yml's dispatch-only twin, for building from WORKING BRANCHES:
+# the engine and RTGL refs are inputs instead of frozen lines, the result is
+# always a prerelease, and its name carries the engine ref it was cut from.
+# Exists so a branch can be play-tested from a real package without touching
+# the stable recipe -- the alternative, editing build-release.yml's ref for one
+# build, produced three stale releases in one evening (2026-08-18).
 #
-# Everything the package needs is public. What it deliberately does NOT contain:
-# the DOOM II IWAD, Doom 64: Retribution, its brightmaps, soundfont, or the OGG
-# music pack. The launcher asks the user for those on first run.
+# MIRROR RULE: the build body below is a copy of build-release.yml's. A change
+# to either build must be made in both files -- there is no shared include, and
+# a beta that builds differently from the release it is previewing tests
+# nothing.
+#
+# Trigger from the OUTER branch under test (the workflow file, pins and menudef
+# travel with it), and pass the matching engine ref. The remote must actually
+# have both refs -- a branch that exists only on one machine builds nothing,
+# which is the other half of what happened on 2026-08-18.
 
 on:
   workflow_dispatch:
-  push:
-    tags: ['v*']
+    inputs:
+      engine_ref:
+        description: 'jlrouzies-fr/gzdoom-rt ref to build'
+        default: 'performance'
+        type: string
+      rtgl_ref:
+        description: 'jlrouzies-fr/RTGL ref to build (must exist on the remote)'
+        default: 'doom64-rt'
+        type: string
+      tag:
+        description: 'Release tag (empty = beta-<run number>)'
+        default: ''
+        type: string
 
 env:
   STOCK_URL: https://github.com/vs-shirokii/gzdoom-rt/releases/download/rt-1.0.2/gzdoom-rt-1.0.2.zip
@@ -46,11 +66,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: jlrouzies-fr/gzdoom-rt
-          # THE STABLE RECIPE: this ref is deliberately frozen. To build from a
-          # working branch, use build-beta.yml, which takes the refs as inputs
-          # -- editing this line for a test build is how three stale "releases"
-          # were cut in one evening while a fix sat unbuilt (2026-08-18).
-          ref: doom64-rt
+          ref: ${{ inputs.engine_ref }}
           submodules: recursive          # unordered_dense; a flat clone fails late
           path: sourcecode/gzdoom-rt
 
@@ -58,7 +74,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: jlrouzies-fr/RTGL
-          ref: doom64-rt
+          ref: ${{ inputs.rtgl_ref }}
           submodules: recursive          # imgui, glfw, cgltf, glaze, glm, DX12
           path: deps/RTGL
 
@@ -257,52 +273,28 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Doom64-RT-${{ github.sha }}
+          name: Doom64-RT-beta-${{ github.run_number }}
           path: dist/Doom64-RT.zip
           compression-level: 0        # already a zip
 
-      # MAIN SHIPS RELEASES, EVERY OTHER BRANCH SHIPS PRE-RELEASES.
-      # The tag alone cannot say which: a tag is just a commit, and this project
-      # tags from a working branch as often as from main. So ask whether the
-      # tagged commit is an ancestor of origin/main -- that is the same question
-      # as "has this been merged", and it survives the squash merges this repo
-      # uses, because the squash commit is what main actually contains.
-      - name: Decide the release channel
-        id: channel
-        if: startsWith(github.ref, 'refs/tags/v')
-        shell: bash
-        run: |
-          git fetch --no-tags origin main:refs/remotes/origin/main
-          if git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
-            echo "pre=false" >> "$GITHUB_OUTPUT"
-            echo "label=" >> "$GITHUB_OUTPUT"
-            echo "This commit is on main -> RELEASE"
-          else
-            echo "pre=true" >> "$GITHUB_OUTPUT"
-            echo "label= (beta)" >> "$GITHUB_OUTPUT"
-            echo "This commit is not on main -> PRE-RELEASE"
-          fi
-
-      - name: Attach to release
-        if: startsWith(github.ref, 'refs/tags/v')
+      # ALWAYS a prerelease, named after the engine ref, and the body opens with
+      # the identity line -- the check the stale-release evening lacked.
+      - name: Attach as beta prerelease
         uses: softprops/action-gh-release@v2
         with:
           files: dist/Doom64-RT.zip
-          name: Doom 64 - Ray Traced ${{ github.ref_name }}${{ steps.channel.outputs.label }}
-          # Set by "Decide the release channel": a tag on main is a release,
-          # a tag anywhere else is a beta.
-          prerelease: ${{ steps.channel.outputs.pre }}
-          # Auto-changelog: commits since the previous tag, grouped by PR/author
-          # by GitHub's own release-notes generator. No separate step, no wait --
-          # it runs in this same call and is appended after `body` below.
-          generate_release_notes: true
+          tag_name: ${{ inputs.tag != '' && inputs.tag || format('beta-{0}', github.run_number) }}
+          name: BETA ${{ inputs.engine_ref }} @ ${{ steps.refs.outputs.engine_sha }}
+          prerelease: true
           body: |
-            Built from ${{ github.sha }}.
+            BETA -- cut from a working branch for play-testing. Not a release.
 
-            This archive contains the renderer, not the game. On first run the
-            launcher will ask you for a DOOM II IWAD you own, and for Doom 64:
-            Retribution v1.5 plus its OGG music pack (both free, from ModDB).
+            Doom64-RT: ${{ github.ref_name }} @ ${{ github.sha }}
+            Engine: jlrouzies-fr/gzdoom-rt @ ${{ inputs.engine_ref }} = ${{ steps.refs.outputs.engine_sha }} ("${{ steps.refs.outputs.engine_subject }}")
+            RTGL1: jlrouzies-fr/RTGL @ ${{ inputs.rtgl_ref }} = ${{ steps.refs.outputs.rtgl_sha }}
 
-            Engine: jlrouzies-fr/gzdoom-rt @ doom64-rt = ${{ steps.refs.outputs.engine_sha }} ("${{ steps.refs.outputs.engine_subject }}"), GPLv3.
-            RTGL1: jlrouzies-fr/RTGL @ doom64-rt = ${{ steps.refs.outputs.rtgl_sha }}, MIT, Sultim Tsyrendashiev and Vasilii Shirokii.
-            See CREDITS.md and AI-DECLARATION.md inside the archive.
+            If the engine commit above is not the one you meant to test, do not
+            install this build -- the result is already known.
+
+            Contains the renderer, not the game: the launcher asks for a DOOM II
+            IWAD you own, plus Doom 64: Retribution v1.5 and its music pack.
