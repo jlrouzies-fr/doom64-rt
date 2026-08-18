@@ -191,6 +191,22 @@ Cvars are resolved by name, not through the `rt_cvars.inc` externs, because
 mod pk3s with no C++ symbol. All 26 resolve in the shipped load order
 ("26 cvar(s) set, 0 not present").
 
+### The ordering bug unpinning exposed
+
+Three owned cvars - `d64_dropcasings`, `rt_gore_max`, `rt_gore_life` - are
+CVARINFO cvars declared by the mod pk3s, and those are registered when the WAD
+loads, which is **after** the config is read. So when gzdoom applies
+`rt_quality_preset` from the ini, `FindCVar` cannot see them yet and they are
+skipped; on a fresh config the handler never runs at all, because taking a
+default is not a set.
+
+That was not theoretical. `d64_dropcasings` **defaults to 0** in the WAD's
+CVARINFO and the launcher pin was forcing it to 1, so unpinning it in favour of
+the preset turned shell casings off for everybody. `RT_ApplyQualityPresetOnce()`
+re-applies at the first frame with a level, which is the first moment every
+owned cvar is guaranteed to exist. It logs verbosely on purpose -
+`26 cvar(s) set, 0 not present` is the liveness check for exactly this.
+
 ### The pins had to give the cvars up
 
 A pin in `tools/d64rt-pins.cfg` runs at launch and overrides both the compiled
