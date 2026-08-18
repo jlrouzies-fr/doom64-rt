@@ -236,6 +236,15 @@ def main():
         "with a link to each download.\n",
         encoding="ascii")
 
+    # Ships empty but present, because a folder that has to be created by hand
+    # is a folder nobody creates: the startup window's add-on row says "put the
+    # wad in the Addons folder", and it has to be there to be put into. The same
+    # file the source checkout carries, so the two cannot drift apart.
+    addons = out / "Addons"
+    addons.mkdir()
+    shutil.copy2(PROJ_ROOT / "Addons" / "PUT-YOUR-ADDONS-HERE.txt",
+                 addons / "PUT-YOUR-ADDONS-HERE.txt")
+
     # The engine checks for these at startup (rt_main.cpp) and shows a "DLL check
     # failure" dialog naming whatever is absent. The stock package ships none of
     # the NVIDIA ones, so they have to arrive from the RTGL1 release bundle.

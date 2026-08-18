@@ -167,7 +167,8 @@ jobs:
             'launch-doom64-rt-checks.ps1', 'launch-doom64-rt-ui-classic.ps1',
             'rt\bin\RTGL1.dll', 'rt\RTGL1.json', 'rt\data\textures.json',
             'mods\d64r-mugshot.pk3', 'mods\d64rt-pins.cfg',
-            'CREDITS.md', 'AI-DECLARATION.md', 'game\PUT-YOUR-GAME-FILES-HERE.txt'
+            'CREDITS.md', 'AI-DECLARATION.md', 'game\PUT-YOUR-GAME-FILES-HERE.txt',
+            'Addons\PUT-YOUR-ADDONS-HERE.txt'
           )
           $bad = $need | Where-Object { -not (Test-Path (Join-Path $p $_)) }
           if ($bad) { throw "package is missing: $($bad -join ', ')" }

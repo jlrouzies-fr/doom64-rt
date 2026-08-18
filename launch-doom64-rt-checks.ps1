@@ -234,8 +234,9 @@ function Get-Checks {
                          Where-Object { Test-Path $_ } | Select-Object -First 1
     $c += @{ Key='recolor'; Name='Classic recolour (add-on)'; Req=$false; Opt=$true
              Ok=[bool]$script:RecolorWad
-             Good=(&{ if ($script:RecolorWad) { "{0}`r`n{1}" -f (Split-Path -Leaf $script:RecolorWad), 'Tick the box below to play with it.' } })
-             Bad="Optional recolour of the Cacodemon and Pain Elemental in classic Doom hues. Put the wad in Addons\ and Re-check."
+             Good=(&{ if ($script:RecolorWad) { Split-Path -Leaf $script:RecolorWad } })
+             Bad="Optional recolour of the Cacodemon and Pain Elemental in classic Doom hues. Put the wad in the Addons folder beside the launcher, then press Re-check."
+             Toggle='Play with the recoloured Cacodemon / Pain Elemental'
              Link='https://www.moddb.com/games/doom-64/addons/d64classicrecolored'; LinkText='D64ClassicRecolored on ModDB' }
 
     return $c

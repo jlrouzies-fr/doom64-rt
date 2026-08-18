@@ -370,8 +370,6 @@ $xaml = @'
         <ColumnDefinition Width="Auto"/>
       </Grid.ColumnDefinitions>
       <StackPanel Grid.Column="0" VerticalAlignment="Center">
-        <CheckBox x:Name="recolor" Content="Classic recoloured Cacodemon / Pain Elemental"
-                  Visibility="Collapsed" Margin="0,0,0,8"/>
         <CheckBox x:Name="skip" Content="Setup is done - go straight to the game next time"/>
         <TextBlock x:Name="skipNote" Foreground="{StaticResource Dim}" FontSize="11" Margin="24,4,0,0"/>
       </StackPanel>
@@ -394,7 +392,7 @@ catch {
 }
 
 foreach ($n in 'menu','logo','rowHost','iwadBox','btnBrowse','btnRecheck','status',
-                'recolor','skip','skipNote','btnFolder','btnQuit','btnLaunch',
+                'skip','skipNote','btnFolder','btnQuit','btnLaunch',
                 'miRecheck','miBrowse','miFolder','miQuit','miRetro','miMusic','miIwad','miRecol','miAbout') {
     Set-Variable -Name $n -Value $win.FindName($n) -Scope Script
 }
@@ -444,6 +442,13 @@ function New-Row($c) {
     if ($c.Confirm) {
         $confirm = '<Button x:Name="use" Content="Use this copy" HorizontalAlignment="Left" Margin="0,6,0,0" Padding="10,3" Foreground="#CEA03C"/>'
     }
+    # An add-on that is present is switched on in its own row, next to the file
+    # it switches on. It used to live at the bottom of the window, a long way
+    # from the line that says the file was found.
+    $opt = ''
+    if ($c.Toggle -and $c.Ok) {
+        $opt = '<CheckBox x:Name="opt" Content="{0}" HorizontalAlignment="Left" Margin="0,7,0,0" FontSize="12"/>' -f (Esc $c.Toggle)
+    }
 
     $rowXaml = @'
 <Border xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -465,15 +470,17 @@ function New-Row($c) {
       {LINK}
       {CONFIRM}
     </StackPanel>
-    <TextBlock Grid.Column="3" Text="{DETAIL}" Foreground="{DETCOLOR}" TextWrapping="Wrap"
-               Margin="0,12,14,12"/>
+    <StackPanel Grid.Column="3" Margin="0,12,14,12">
+      <TextBlock Text="{DETAIL}" Foreground="{DETCOLOR}" TextWrapping="Wrap"/>
+      {OPT}
+    </StackPanel>
   </Grid>
 </Border>
 '@
     foreach ($sub in @(@('{TONE}', $tone), @('{MARK}', (Esc $mark)),
                        @('{NAMECOLOR}', $name), @('{NAME}', (Esc $c.Name)),
                        @('{DETCOLOR}', $det), @('{DETAIL}', (Esc $text)),
-                       @('{LINK}', $link), @('{CONFIRM}', $confirm))) {
+                       @('{LINK}', $link), @('{CONFIRM}', $confirm), @('{OPT}', $opt))) {
         $rowXaml = $rowXaml.Replace($sub[0], [string]$sub[1])
     }
 
@@ -484,6 +491,16 @@ function New-Row($c) {
         if ($h) {
             $u = $c.Link
             $h.Add_RequestNavigate({ Start-Process $u }.GetNewClosure())
+        }
+    }
+    if ($opt) {
+        $cb = $row.FindName('opt')
+        if ($cb) {
+            # The rows are thrown away and rebuilt on every re-check, so the
+            # answer lives in a script variable, not in the control.
+            $cb.IsChecked = $script:RecolorOn
+            $cb.Add_Checked({   $script:RecolorOn = $true })
+            $cb.Add_Unchecked({ $script:RecolorOn = $false })
         }
     }
     if ($confirm) {
@@ -570,7 +587,7 @@ $btnRecheck.Add_Click({ Draw-Checks })
 $btnFolder.Add_Click({ Open-GameFolder })
 $btnQuit.Add_Click({ $win.Tag = 'quit'; $win.Close() })
 $btnLaunch.Add_Click({
-    Save-Launch -Recolor ([bool]$recolor.IsChecked) -SkipNextTime ([bool]$skip.IsChecked -and $script:AllOk)
+    Save-Launch -Recolor $script:RecolorOn -SkipNextTime ([bool]$skip.IsChecked -and $script:AllOk)
     $win.Tag = 'launch'
     $win.Close()
 })
@@ -600,18 +617,19 @@ $win.Add_KeyDown({
     if ($k.Key -eq 'Escape') { $win.Tag = 'quit'; $win.Close() }
 })
 
-# --- optional add-on --------------------------------------------------------
-#  Only offered when the file is really there -- a checkbox that does nothing
-#  when ticked is worse than no checkbox.
-$recolWad = @('D64ClassicRecolored.wad', 'D64ClassicRecolored_OffsetFix.wad') |
-            ForEach-Object { Join-Path $Proj "Addons\$_" } |
-            Where-Object { Test-Path $_ } | Select-Object -First 1
-if ($recolWad) { $recolor.Visibility = 'Visible' }
-# Whatever was ticked last time. The launcher clears the value when unticked,
-# so an absent line means off, not "never asked".
+# --- optional add-ons -------------------------------------------------------
+#  Whether an add-on is switched on is script state, not control state: its
+#  checkbox lives inside a checklist row, and the rows are rebuilt from scratch
+#  every time Re-check runs. Drop a wad into Addons\ with the window open, press
+#  Re-check, and the row turns green AND grows its checkbox -- which is the whole
+#  point, and did not work while the checkbox was created once at startup.
+#
+#  Whatever was ticked last time. The launcher clears the value when unticked,
+#  so an absent line means off, not "never asked".
+$script:RecolorOn = $false
 if ($Settings -and (Test-Path $Settings)) {
     foreach ($line in Get-Content $Settings) {
-        if ($line -match '^\s*recolor\s*=\s*1\s*$') { $recolor.IsChecked = $true }
+        if ($line -match '^\s*recolor\s*=\s*1\s*$') { $script:RecolorOn = $true }
     }
 }
 
