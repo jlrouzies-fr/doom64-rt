@@ -30,7 +30,7 @@ programmer:<br>the direction, the judgement of every rendered frame and every de
 theirs — the code is Claude's. <a href="AI-DECLARATION.md">Details</a>.
 </sub>
 
-<sub><b><a href="AGENTS.md">AGENTS.md</a></b> &nbsp;·&nbsp; <a href="docs/doom64-retribution-pathtracing-plan.md">Path-tracing plan</a> &nbsp;·&nbsp; <a href="docs/material-authoring-spec.md">Material spec</a> &nbsp;·&nbsp; <a href="compat-patches.md">Compat patches</a> &nbsp;·&nbsp; <b><a href="CREDITS.md">Credits</a></b></sub>
+<sub><b><a href="AGENTS.md">AGENTS.md</a></b> &nbsp;·&nbsp; <a href="docs/doom64-retribution-pathtracing-plan.md">Path-tracing plan</a> &nbsp;·&nbsp; <a href="docs/material-authoring-spec.md">Material spec</a> &nbsp;·&nbsp; <a href="docs/compat-patches.md">Compat patches</a> &nbsp;·&nbsp; <b><a href="CREDITS.md">Credits</a></b></sub>
 
 </div>
 
@@ -45,7 +45,7 @@ theirs — the code is Claude's. <a href="AI-DECLARATION.md">Details</a>.
 - [**Building it yourself**](#building) — [what you need](#requirements) · [dependencies](#dependencies) · [build](#build) · [first run](#first-run)
 - [**Launchers**](#launchers) — how the game and the A/B arms are started
 - [**For developers**](#developers) — the doc index, in [DEVELOPERS.md](DEVELOPERS.md)
-- [**Art changes**](#art) — the one texture this project edits, and why
+- [**Art changes**](#art) — the one texture this project edits, and the one optional add-on
 - [**Credits**](#credits) — RTGL1, gzdoom-rt, Retribution, Doom 64
 - [**AI declaration**](AI-DECLARATION.md) — what was written by AI, and what wasn't
 
@@ -88,7 +88,7 @@ Every one of them is documented in full elsewhere — this table is the index, n
 | **HUD & presentation** | Mugshot | All 42 frames generated from one painted sheet, restyled to the D64 palette. | [`hud-mugshot`](docs/hud-mugshot.md) |
 | | Flashlight | Warm beam, battery cycle, HUD meter, angled to catch muzzle smoke (`rt_flsh*`, **F**). | — |
 | | Act title cards | Title/logo art per act. | [`act-title-cards`](docs/act-title-cards.md) |
-| | Menu patches | Retribution's own font; `rt/wad` loads last so it doesn't override D64 art. | [`compat-patches`](compat-patches.md) |
+| | Menu patches | Retribution's own font; `rt/wad` loads last so it doesn't override D64 art. | [`compat-patches`](docs/compat-patches.md) |
 | **Denoising & upscaling** | A-SVGF + DLSS 2 / FSR 2 | A-SVGF is the shipping denoiser; upscale with DLSS 2 (NVIDIA) or FSR 2 (anywhere) — they share one slot, set only one. Keep `rt_normalmap_stren`/`rt_heightmap_stren` near 1. | — |
 | | NRD (ReLAX) | **Experimental, off by default** — an alternative denoiser lane behind `rt_nrd 1` (console only, does not persist). Same downstream frame shape as A-SVGF, but a bit noisier at the default 1 sample/pixel; raise **Options → Quality → Direct/Indirect samples per pixel to 2** and it closes the gap. | [`plan-nrd-denoiser`](docs/plan-nrd-denoiser.md) |
 | | DLSS Ray Reconstruction | **Alpha, ships OFF, not recommended** — wired up for experiments but not stable enough to play with. The reason is upstream of RR itself: it expects a signal close to its training distribution, which means full BRDF/light **MIS** and real **area-light transport** — this renderer has neither. Without them RR only looks decent when brute-forced: samples per pixel and ReSTIR light candidates raised well above the shipping defaults, which costs more than it buys at 1 spp. A-SVGF is the intended path. | [`RAYRECONSTRUCTION.md`](RAYRECONSTRUCTION.md) · [`plan-area-lights-mis`](docs/plan-area-lights-mis.md) |
@@ -200,6 +200,14 @@ stand-in, untested here.
 
 It checks everything first and tells you what is missing, with a link to each
 download. Green ticks all the way down, then **RIP AND TEAR**.
+
+Once every line is green, the window offers **Setup is done — go straight to the
+game next time**. Tick it and the check stops appearing: it writes `configdone.txt`
+beside the launcher, and from then on a double-click goes straight into Doom 64.
+The files are still tested on every start, so if one of them later moves or is
+deleted the window comes back on its own with the reason. To open it deliberately
+— to point at a different `doom2.wad`, or to turn the recolour add-on on or off —
+run `launch-doom64-rt.cmd setup`, or just delete `configdone.txt`.
 
 <br>
 
@@ -366,12 +374,25 @@ build it.
   <td><code>tools\launch-texture-gallery-rt.cmd</code></td>
   <td>MAP99 — texture PBR gallery.</td>
 </tr>
+<tr>
+  <td><code>tools\ui-wpf.cmd</code> · <code>tools\ui-classic.cmd</code></td>
+  <td>Open a startup-check window on its own, without starting the game — the WPF one that ships, or the WinForms fallback.</td>
+</tr>
 </table>
 
 > [!NOTE]
 > The launcher pins ~600 cvars via `+exec tools\d64rt-pins.cfg` rather than on the command line.
 > That is deliberate: `cmd.exe` truncates at 8191 characters, and the old inline form silently
 > dropped the tail — arms ran on defaults while the tool printed values it never applied.
+
+> [!NOTE]
+> **The startup window** is `launch-doom64-rt-ui.ps1`, WPF over Windows PowerShell 5.1 —
+> chosen over WinForms because WPF scales itself on a 4K display and lets every control be
+> retemplated, down to the checkbox tick and the scrollbar. The WinForms original stays as
+> `launch-doom64-rt-ui-classic.ps1`: if WPF cannot start it answers exit code **2** and the
+> `.cmd` runs that one instead, so a machine that cannot draw the window is never a machine
+> that cannot play. What either window *finds* is in `launch-doom64-rt-checks.ps1`, shared by
+> both — the two differ only in how they look. `D64RT_UI=classic` picks the fallback on purpose.
 
 <br>
 
@@ -391,7 +412,7 @@ Three that matter more than the rest:
 | | |
 |---|---|
 | [`AGENTS.md`](AGENTS.md) | The working handbook — diagnostic procedure for a wrongly-lit surface, the `rt/` source map, how to add a cvar, and 36 numbered pitfalls not to repeat. |
-| [`compat-patches.md`](compat-patches.md) | Every engine and RTGL1 change we made, dated, with the reason. |
+| [`compat-patches.md`](docs/compat-patches.md) | Every engine and RTGL1 change we made, dated, with the reason. |
 | [`docs/open-issues-rt-lighting.md`](docs/open-issues-rt-lighting.md) | What still fails. |
 
 <br>
@@ -403,7 +424,8 @@ Three that matter more than the rest:
 
 This project changes lighting, not artwork — with one exception, and it is here so it
 is not a quiet one. It **ships enabled**: `d64r-sflatas-broken.wad` is in the launcher's
-own file list, so this is what the game looks like out of the box.
+own file list, so this is what the game looks like out of the box. A second change is
+opt-in and ships disabled; it is at the end of this section.
 
 ### SFLATAS — the ceiling lamp pane
 
@@ -458,6 +480,50 @@ windows (157 against 53/64/94 — not a judgement call), keeps that one blob in 
 emissive mask and clears the other three, and restores the authored `_n`/`_h`/`_orm`. The
 engine's `SoloBulbTextures` then puts one light on the survivor — at world **(16, 16)**
 for a bulb the image draws at (16, 48), because a ceiling flat's world Y is `64 − imageY`.
+
+### Optional — classic recoloured Cacodemon and Pain Elemental
+
+**Off by default. Not shipped, and not in this repo** — it is someone else's art, so you
+download it yourself. [**D64ClassicRecolored**](https://www.moddb.com/games/doom-64/addons/d64classicrecolored)
+repaints Doom 64's Cacodemon and Pain Elemental in classic Doom hues. Underneath it is
+Retribution's own artwork — all 69 frames are the same drawing, pixel for pixel, 100%
+silhouette match — so it drops straight in.
+
+Put the wad in `Addons\` and the startup window grows a **Classic recoloured Cacodemon /
+Pain Elemental** checkbox. It is loaded exactly as downloaded; nothing here modifies or
+redistributes it.
+
+**Which of the two files.** The download offers a plain wad and an `_OffsetFix` one, with
+identical art and different sprite offsets. Both were cut for Doom 64 CE, whose offsets
+are not Retribution's, so neither is exactly right here:
+
+| | Cacodemon | Pain Elemental |
+|---|---|---|
+| `D64ClassicRecolored.wad` | **exact** on all 36 live frames; 4 death frames up to 13 px high | floats 15–30 px high |
+| `D64ClassicRecolored_OffsetFix.wad` | whole animation sits 5 px low | within 10 px |
+
+**Take the plain wad** unless the Pain Elemental's hover height bothers you. The
+Cacodemon is the one you spend the game looking at and it comes out pixel-exact, while
+both monsters fly — there is no ground contact to give a vertical offset away, and the
+Pain Elemental dies in a mid-air explosion.
+
+**Why there is no patch pk3 for the offsets.** Two routes exist and both are dead ends,
+recorded here so nobody spends an afternoon on them:
+
+- GZDoom's own sprite-offset lump, `SPROFS`, only adjusts sprites that come from the
+  **same file as the lump** (`wadno == ofslumpno`, `texturemanager.cpp`). A companion pk3
+  cannot reach into their wad.
+- Redeclaring the sprites in `TEXTURES` with the right `Offset` looks like it works, and
+  silently does not. The patch reference is self-referencing, and gzdoom resolves that by
+  scanning the texture list from the **oldest** end — which is Retribution's original
+  sprite, not the add-on's. The recolour would simply never appear, with nothing in the
+  log to say so.
+
+Correcting the offsets properly would mean recutting their frames onto Retribution's
+canvas, which puts their pixels in our files — so it is not done here. One RT-side detail
+comes with the same trade: their frames are trimmed 1–7 px narrower than the `_orm`
+material maps in `Retribution-RT-Materials`, and RTGL1 samples `_orm` with the albedo's
+UVs, so the roughness/metal map is squeezed by a few per cent across those sprites.
 
 <br>
 
