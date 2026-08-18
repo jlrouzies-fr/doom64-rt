@@ -566,6 +566,10 @@ OptionMenu "RT_HudMenu" protected
 	Slider "HUD Opacity",				"d64_hud_alpha",		0, 100, 10, 0
 	StaticText " "
 	StaticText "0 hides the status bar.", 1
+	StaticText " "
+	Option "Hide HUD in menus",			"rt_menu_hidehud",		"OnOff"
+	StaticText "Stops long option pages reading through the", 1
+	StaticText "ammo counters. Automap and console keep the HUD.", 1
 }
 
 // RT end
