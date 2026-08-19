@@ -1,8 +1,9 @@
 name: Build beta package
 
 # build-release.yml's dispatch-only twin, for building from WORKING BRANCHES:
-# the engine and RTGL refs are inputs instead of frozen lines, the result is
-# always a prerelease, and its name carries the engine ref it was cut from.
+# the engine and RTGL refs are inputs instead of frozen lines, the version is
+# derived (vX.Y.Z-beta.N, not the word BETA and a run number), and the name
+# carries the engine ref and commit it was cut from.
 # Exists so a branch can be play-tested from a real package without touching
 # the stable recipe -- the alternative, editing build-release.yml's ref for one
 # build, produced three stale releases in one evening (2026-08-18).
@@ -28,10 +29,14 @@ on:
         description: 'jlrouzies-fr/RTGL ref to build (must exist on the remote)'
         default: 'doom64-rt'
         type: string
-      tag:
-        description: 'Release tag (empty = beta-<run number>)'
+      version:
+        description: 'Version to publish (empty = next patch + beta.N, e.g. v0.1.13-beta.2)'
         default: ''
         type: string
+      mark_latest:
+        description: 'Show this build as the Latest release (GitHub refuses that for a prerelease, so this also clears the prerelease flag)'
+        default: true
+        type: boolean
 
 env:
   STOCK_URL: https://github.com/vs-shirokii/gzdoom-rt/releases/download/rt-1.0.2/gzdoom-rt-1.0.2.zip
@@ -95,6 +100,35 @@ jobs:
           echo "engine_sha=$(git -C sourcecode/gzdoom-rt rev-parse --short=9 HEAD)" >> "$GITHUB_OUTPUT"
           echo "engine_subject=$(git -C sourcecode/gzdoom-rt log -1 --format=%s)" >> "$GITHUB_OUTPUT"
           echo "rtgl_sha=$(git -C deps/RTGL rev-parse --short=9 HEAD)" >> "$GITHUB_OUTPUT"
+
+      # A BETA NEEDS A VERSION, not just the word BETA. "beta-7" says nothing
+      # about which release line it previews or whether it is newer than the
+      # beta you already installed; v0.1.13-beta.2 says both, and sorts.
+      #
+      # Derived, not typed: the newest vX.Y.Z tag that is not itself a beta gets
+      # its patch bumped, and the beta number is one past however many betas
+      # already exist for that version. Pass `version` to override -- for the
+      # first beta of a minor bump, say.
+      - name: Work out the beta version
+        id: ver
+        shell: bash
+        run: |
+          set -eu
+          if [ -n "${{ inputs.version }}" ]; then
+            version="${{ inputs.version }}"
+          else
+            latest=$(git tag -l 'v[0-9]*' | grep -v -- '-beta' | sort -V | tail -1)
+            if [ -z "$latest" ]; then latest="v0.0.0"; fi
+            base=${latest#v}
+            major=$(echo "$base" | cut -d. -f1)
+            minor=$(echo "$base" | cut -d. -f2)
+            patch=$(echo "$base" | cut -d. -f3)
+            next="v$major.$minor.$((patch+1))"
+            n=$(git tag -l "$next-beta.*" | wc -l)
+            version="$next-beta.$((n+1))"
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Publishing as $version (newest stable tag seen: ${latest:-n/a})"
 
       - uses: actions/setup-python@v5
         with:
@@ -254,12 +288,16 @@ jobs:
           $rtgl = Get-Content "$p\rt\RTGL1.json" -Raw | ConvertFrom-Json
           if (-not $rtgl.developerMode) { throw 'RTGL1.json: developerMode is off - authored materials would be ignored' }
           if ($rtgl.debugWindows)       { throw 'RTGL1.json: debugWindows is on - the release would open the debug window' }
-          # NO CHEATS AND NO VIDEO OVERRIDES IN THE SHIPPED PINS. The pins file is
-          # written for the tester's launcher and its head carries sv_cheats/god/
-          # notarget plus a windowed block; the release launcher execs the same file.
-          # v0.1.0-v0.1.6 all shipped an invulnerable game that monsters ignored.
-          # package_release.py strips the marked DEV-ONLY block -- this proves it did.
-          foreach ($bad in 'sv_cheats','god','notarget','vid_fullscreen','win_x','queryiwad') {
+          # NO CHEATS, NO VIDEO OVERRIDES AND NO UPSCALER IN THE SHIPPED PINS. The
+          # pins file is written for the tester's launcher and its head carries
+          # sv_cheats/god/notarget plus a windowed block; the release launcher execs
+          # the same file. v0.1.0-v0.1.6 all shipped an invulnerable game that
+          # monsters ignored. The upscaler is in a DEV-ONLY block of its own since
+          # 2026-08-19: it is the one pin that depends on the GPU, and a shipped
+          # file that says rt_upscale_dlss 2 reads as "needs an NVIDIA card" to the
+          # AMD players it cannot apply to. package_release.py strips both marked
+          # blocks -- this proves it did.
+          foreach ($bad in 'sv_cheats','god','notarget','vid_fullscreen','win_x','queryiwad','rt_upscale_dlss','rt_upscale_fsr2') {
             if ($pins -match "(?m)^$bad( |$)") { throw "d64rt-pins.cfg still pins '$bad' - the DEV-ONLY strip did not run" }
           }
           # Nothing that belongs to somebody else's game, and nothing we cannot ship.
@@ -273,21 +311,28 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Doom64-RT-beta-${{ github.run_number }}
+          name: Doom64-RT-${{ steps.ver.outputs.version }}
           path: dist/Doom64-RT.zip
           compression-level: 0        # already a zip
 
-      # ALWAYS a prerelease, named after the engine ref, and the body opens with
-      # the identity line -- the check the stale-release evening lacked.
-      - name: Attach as beta prerelease
+      # Versioned, and the body opens with the identity line -- the check the
+      # stale-release evening lacked.
+      #
+      # mark_latest CLEARS the prerelease flag, and has to: GitHub will not put
+      # the Latest badge on a prerelease, so "beta that is also Latest" is not a
+      # state the API offers. The version string carries -beta.N, which is what
+      # actually tells a player what they have.
+      - name: Attach as beta release
         uses: softprops/action-gh-release@v2
         with:
           files: dist/Doom64-RT.zip
-          tag_name: ${{ inputs.tag != '' && inputs.tag || format('beta-{0}', github.run_number) }}
-          name: BETA ${{ inputs.engine_ref }} @ ${{ steps.refs.outputs.engine_sha }}
-          prerelease: true
+          tag_name: ${{ steps.ver.outputs.version }}
+          name: ${{ steps.ver.outputs.version }} -- ${{ inputs.engine_ref }} @ ${{ steps.refs.outputs.engine_sha }}
+          prerelease: ${{ inputs.mark_latest == false }}
+          make_latest: ${{ inputs.mark_latest }}
           body: |
-            BETA -- cut from a working branch for play-testing. Not a release.
+            BETA ${{ steps.ver.outputs.version }} -- cut from a working branch for
+            play-testing. Not a stable release.
 
             Doom64-RT: ${{ github.ref_name }} @ ${{ github.sha }}
             Engine: jlrouzies-fr/gzdoom-rt @ ${{ inputs.engine_ref }} = ${{ steps.refs.outputs.engine_sha }} ("${{ steps.refs.outputs.engine_subject }}")
