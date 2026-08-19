@@ -11,7 +11,16 @@ name: Build release package
 on:
   workflow_dispatch:
   push:
-    tags: ['v*']
+    tags:
+      - 'v*'
+      # NOT the beta versions. build-beta.yml names its releases vX.Y.Z-beta.N
+      # now, and 'v*' matched those too: pushing the retagged v0.1.13-beta.0 by
+      # hand started THIS lane, which builds from the frozen doom64-rt engine and
+      # would have replaced a beta's zip with a stale one under its own tag
+      # (2026-08-19, cancelled 2 minutes in). The beta lane creates its tag with
+      # GITHUB_TOKEN, which cannot start a workflow, so only a human pushing a
+      # beta tag ever reaches this -- which is exactly the case to exclude.
+      - '!v*-beta*'
 
 env:
   STOCK_URL: https://github.com/vs-shirokii/gzdoom-rt/releases/download/rt-1.0.2/gzdoom-rt-1.0.2.zip
