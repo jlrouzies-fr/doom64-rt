@@ -231,17 +231,38 @@ has been acted on.
 ### The runtime answer: `rt_sector_emis_freeze`
 
 **The 203 calls do not have to be triaged one at a time.** Since 2026-08-19 the
-engine holds a sector's self-emission at its **authored** lightlevel for as long
-as a light thinker owns that sector — which is exactly what clearing the special
-does by hand, applied to every map at once. `rt_sector_emis_freeze` (archived,
-default on) is the switch.
+engine holds a sector's self-emission still for as long as that sector's
+lightlevel is being animated. `rt_sector_emis_freeze` (archived) is the switch,
+and it has two modes, because "held" has two meanings:
 
-It covers all three families in one rule, because all three are `DLighting`
-thinkers on `STAT_LIGHT`: the blink specials, the sequence chains (`DPhased`)
-and the ACS calls (`DGlow2` for `Light_Glow`/`Light_Fade`, `DStrobe`,
-`DLightFlash`). The snapshot is taken in `MapLoader::LoadLevel` immediately
-before `SpawnSpecials`, so it is the map author's number and not one an
-animation is already driving.
+| mode | holds at | MAP05's pylon panel |
+|---|---|---|
+| 1 | the **authored** lightlevel | 255 → still a light, no longer blinking |
+| **2** (default) | the **dim end** of the swing | 220 → below the 240 threshold, not a light at all |
+
+Mode 1 is what clearing the special does by hand — the sector rests where the
+author left it. That is the right repair when the author left it dark, and the
+wrong one when they left it at 255: the blink goes, the sourceless glow stays.
+Mode 2 settles on the trough instead, which is what the strip was always *for*.
+Mode 1 remains because it is the smaller change, and a room leaning on that glow
+for its light may want it.
+
+**The test is movement, not ownership.** A sector counts as animated while its
+lightlevel has moved within the last 70 tics. Asking which `DLighting` thinker
+owns it right now is *not* enough, and this document already said why before the
+feature existed — see the MAP13 entry below: *"Light_Fade's thinker is created
+per call by the loop, so a dump at load sees none."* A freeze that lets go
+between calls blinks exactly like the thing it is removing, and
+`Light_ChangeToValue` creates no thinker at all. The thinker walk survives as a
+second source only, for a strobe that has not reached its first flip.
+
+That one rule covers all three families, plus the computed-argument calls no
+survey can see: MAP05's reported panel is sector 84, tag 35, and tag 35 appears
+in none of the eight calls `scan_light_specials.py` can decode on that map.
+
+The snapshot is taken in `MapLoader::LoadLevel` immediately before
+`SpawnSpecials`, so it is the map author's number and not one an animation is
+already driving.
 
 Four deliberate limits, each of which is why the obvious version is wrong:
 
@@ -251,15 +272,33 @@ Four deliberate limits, each of which is why the obvious version is wrong:
 - **Only the emission ramp.** `SetColor`/`SetFog` and every analytic light still
   read the live value, so a monitor with its own 9802 FlickerLight keeps
   flickering; only its painted glow holds still.
-- **Only while a thinker lives.** `Light_ChangeToValue` leaves none behind, so a
-  scripted lights-out still puts the panels out.
+- **Only while it keeps moving.** A one-shot change goes still and releases after
+  two seconds, so a scripted lights-out still puts the panels out — two seconds
+  late, which is the price of not having to know whether a script means to come
+  back.
 - **The offset is undone, not the value replaced** — a glow, a linedef's
   relative light and `hw_ClampLight` all survive.
 
 Read it with `rt_emis_freeze_show`, or set `rt_sector_emis_debug 1` and watch
-`rt-console.log`: the owned set is reported whenever it changes. MAP05 settles
-at *9 sectors animated, threshold 240*; MAP03 holds its 22 chain and blink
-sectors at 180 under a 220 threshold.
+`rt-console.log`: the held set, how many of it currently straddle the threshold,
+and **how many surfaces were actually substituted last frame** — that last one is
+the only number that distinguishes the feature from a no-op. MAP05 settles at
+*17 sectors animated, 12 crossing, threshold 240*; MAP03 holds its 22 chain and
+blink sectors at 180 under a 220 threshold.
+
+Measured at MAP05's pylons with `rt_tex_probe SPACECC`, which is how this was
+verified without a screenshot:
+
+| | lightlevel | `sector_emis` |
+|---|---|---|
+| `0` off | 220 ↔ 255 | 0.000 ↔ 0.350 |
+| `1` authored | 255, every sample | 0.350, steady |
+| `2` dim end | 220, every sample | 0.000, steady |
+
+Note the trap that cost a round trip: the cvar is **archived**, so a `0` typed
+once to compare arms is still `0` in `gzdoom-rt2.ini` next launch, and the next
+test is a null test. The report says `on` or `OFF` in every line for that
+reason.
 
 **This does not retire `make_seqlight_fix.py`.** The wad still owns everything
 the freeze cannot see — painted shafts, added lamp and panel lights, colour
