@@ -306,6 +306,59 @@ tints, the 3D-floor strips — and a stripped special is still the better fix fo
 a case that has been judged in play, because it also repairs the rasterized
 look. The freeze is the floor under the un-triaged remainder.
 
+### The whole game, measured twice (2026-08-19)
+
+Two censuses, because neither instrument is complete. **static** is
+`scan_light_specials.py`: it reads every map but only decodes calls with literal
+arguments. **silenced / animated** is the engine's own count with
+`rt_sector_emis_debug 1`, standing at the player start for nine seconds: it sees
+everything actually running, including the computed-argument calls, but nothing a
+script only starts later in the level. MAP20's 48 calls report zero for exactly
+that reason. Check any map where *either* column is high.
+
+| map | silenced by mode 2 | animated | static | ACS calls | blink | chain | in the wad |
+|---|---|---|---|---|---|---|---|
+| MAP18 | **42** | 43 | 2 | 3 | – | – | ACS stripped |
+| MAP05 | **17** | 17 | 6 | 8 | 10 | – | specials only |
+| MAP21 | 11 | 13 | 12 | 9 | – | – | ACS stripped |
+| MAP12 | 8 | 28 | 8 | 6 | – | 20 | ACS stripped |
+| MAP14 | 5 | 6 | 6 | 5 | – | – | specials only |
+| MAP19 | 5 | 6 | 5 | 2 | – | – | ACS stripped |
+| MAP15 | 4 | 4 | 4 | 1 | – | – | ACS stripped |
+| MAP33 | 4 | 4 | 0 | 0 | – | – | ACS stripped |
+| MAP16 | 3 | 4 | 3 | 7 | 1 | – | specials only |
+| MAP28 | 3 | 3 | 3 | 3 | – | – | not in the wad |
+| MAP10 | 3 | 3 | 3 | 3 | – | – | ACS stripped |
+| MAP24 | 2 | 5 | 4 | 2 | 3 | – | ACS stripped |
+| MAP30 | 2 | 83 | 1 | 5 | – | – | not in the wad |
+| MAP32 | 1 | 2 | 1 | 5 | – | – | not in the wad |
+| MAP03 | 1 | 22 | 0 | 1 | 7 | 63 | specials only |
+| MAP13 | 1 | 1 | **17** | 3 | – | – | ACS stripped |
+| MAP11 | 1 | 1 | 0 | 0 | – | – | specials only |
+| MAP23 | 0 | 23 | **14** | 10 | 9 | – | ACS stripped |
+| MAP02 | 0 | 46 | 0 | 10 | 13 | – | not in the wad |
+| MAP08 | 0 | 45 | 0 | 29 | – | – | specials only |
+| MAP06 | 0 | 14 | 0 | 4 | 4 | – | specials only |
+| MAP29 | 0 | 13 | 0 | 4 | 9 | – | specials only |
+| MAP01 | 0 | 8 | 0 | 2 | 6 | – | ACS stripped |
+| MAP31 | 0 | 7 | 0 | 2 | 4 | – | not in the wad |
+| MAP25 | 0 | 3 | 0 | 0 | 3 | – | specials only |
+| MAP04 | 0 | 1 | 0 | 6 | – | – | not in the wad |
+| MAP20 | 0 | 0 | 0 | **48** | – | – | ACS stripped, none of it runs at the start |
+
+Three readings worth keeping:
+
+- **"ACS stripped" never meant finished.** MAP18 is stripped and still leads the
+  table by a factor of two; the wad names one or two calls per map, and MAP18's
+  other forty are computed-argument ones no signature can reach.
+- **A high `animated` with zero `silenced` is the good case** — MAP02's 46 and
+  MAP30's 83 sit below their maps' thresholds, so they never emitted and mode 2
+  changes nothing there. Those maps, and MAP03 with its 63 chain sectors, are
+  where to look if mode 2 is suspected of taking away light that was wanted.
+- **The two columns disagree in both directions**, which is why both are here:
+  MAP13 reads 17 statically and 1 live because the wad already stripped it;
+  MAP18 reads 2 statically and 42 live because the scanner cannot see its calls.
+
 ### Why it took until 2026-08-19 to notice
 
 The animations were always there. `rt_sector_emis_override` (engine `ed229d76d`,
