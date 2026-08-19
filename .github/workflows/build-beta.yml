@@ -254,12 +254,16 @@ jobs:
           $rtgl = Get-Content "$p\rt\RTGL1.json" -Raw | ConvertFrom-Json
           if (-not $rtgl.developerMode) { throw 'RTGL1.json: developerMode is off - authored materials would be ignored' }
           if ($rtgl.debugWindows)       { throw 'RTGL1.json: debugWindows is on - the release would open the debug window' }
-          # NO CHEATS AND NO VIDEO OVERRIDES IN THE SHIPPED PINS. The pins file is
-          # written for the tester's launcher and its head carries sv_cheats/god/
-          # notarget plus a windowed block; the release launcher execs the same file.
-          # v0.1.0-v0.1.6 all shipped an invulnerable game that monsters ignored.
-          # package_release.py strips the marked DEV-ONLY block -- this proves it did.
-          foreach ($bad in 'sv_cheats','god','notarget','vid_fullscreen','win_x','queryiwad') {
+          # NO CHEATS, NO VIDEO OVERRIDES AND NO UPSCALER IN THE SHIPPED PINS. The
+          # pins file is written for the tester's launcher and its head carries
+          # sv_cheats/god/notarget plus a windowed block; the release launcher execs
+          # the same file. v0.1.0-v0.1.6 all shipped an invulnerable game that
+          # monsters ignored. The upscaler is in a DEV-ONLY block of its own since
+          # 2026-08-19: it is the one pin that depends on the GPU, and a shipped
+          # file that says rt_upscale_dlss 2 reads as "needs an NVIDIA card" to the
+          # AMD players it cannot apply to. package_release.py strips both marked
+          # blocks -- this proves it did.
+          foreach ($bad in 'sv_cheats','god','notarget','vid_fullscreen','win_x','queryiwad','rt_upscale_dlss','rt_upscale_fsr2') {
             if ($pins -match "(?m)^$bad( |$)") { throw "d64rt-pins.cfg still pins '$bad' - the DEV-ONLY strip did not run" }
           }
           # Nothing that belongs to somebody else's game, and nothing we cannot ship.
