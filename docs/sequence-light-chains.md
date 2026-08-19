@@ -228,6 +228,59 @@ almost none of it has been looked at in play. MAP20 alone re-arms the same eight
 tags from four different scripts (48 calls); MAP08 has 29, MAP34 17. Only MAP07
 has been acted on.
 
+### The runtime answer: `rt_sector_emis_freeze`
+
+**The 203 calls do not have to be triaged one at a time.** Since 2026-08-19 the
+engine holds a sector's self-emission at its **authored** lightlevel for as long
+as a light thinker owns that sector — which is exactly what clearing the special
+does by hand, applied to every map at once. `rt_sector_emis_freeze` (archived,
+default on) is the switch.
+
+It covers all three families in one rule, because all three are `DLighting`
+thinkers on `STAT_LIGHT`: the blink specials, the sequence chains (`DPhased`)
+and the ACS calls (`DGlow2` for `Light_Glow`/`Light_Fade`, `DStrobe`,
+`DLightFlash`). The snapshot is taken in `MapLoader::LoadLevel` immediately
+before `SpawnSpecials`, so it is the map author's number and not one an
+animation is already driving.
+
+Four deliberate limits, each of which is why the obvious version is wrong:
+
+- **Not the thinker's maximum.** MAP03's chains sit at base 180 with a crest of
+  255 against a 220 threshold — freezing at the maximum makes a sourceless
+  emitter *permanent* instead of removing it.
+- **Only the emission ramp.** `SetColor`/`SetFog` and every analytic light still
+  read the live value, so a monitor with its own 9802 FlickerLight keeps
+  flickering; only its painted glow holds still.
+- **Only while a thinker lives.** `Light_ChangeToValue` leaves none behind, so a
+  scripted lights-out still puts the panels out.
+- **The offset is undone, not the value replaced** — a glow, a linedef's
+  relative light and `hw_ClampLight` all survive.
+
+Read it with `rt_emis_freeze_show`, or set `rt_sector_emis_debug 1` and watch
+`rt-console.log`: the owned set is reported whenever it changes. MAP05 settles
+at *9 sectors animated, threshold 240*; MAP03 holds its 22 chain and blink
+sectors at 180 under a 220 threshold.
+
+**This does not retire `make_seqlight_fix.py`.** The wad still owns everything
+the freeze cannot see — painted shafts, added lamp and panel lights, colour
+tints, the 3D-floor strips — and a stripped special is still the better fix for
+a case that has been judged in play, because it also repairs the rasterized
+look. The freeze is the floor under the un-triaged remainder.
+
+### Why it took until 2026-08-19 to notice
+
+The animations were always there. `rt_sector_emis_override` (engine `ed229d76d`,
+v0.1.3) is what made them visible: before it, a texture carrying **any**
+`textures.json` entry had its computed emission replaced by the material's
+`emissiveMult`, which defaults to 0, so 2091 of 3015 entries silently zeroed the
+sector ramp. MAP05's SPACECE/SPACECG/SPACECD panels are all in that set. Fixing
+the override turned every un-stripped script animation on at once, and it read
+as "the ACS removal stopped being applied".
+
+`rt_sector_emis_override 0` does stop the blinking, and is the wrong switch: it
+also puts out the painted light features the override exists for (MAP02's red
+corridor panels).
+
 ### DONE — MAP07 script 669, all eight calls
 
 Reported from play as a white patch blinking on a wall beside a tech pole
