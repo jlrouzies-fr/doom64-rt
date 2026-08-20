@@ -77,11 +77,20 @@ set "MOD="
 if exist "%GAME%\D64RTR[v1.5].WAD" set "MOD=%GAME%\D64RTR[v1.5].WAD"
 if not defined MOD if exist "%GAME%\D64RTR_v15.WAD" set "MOD=%GAME%\D64RTR_v15.WAD"
 
+rem  The key is matched by "contains", not by equality, and that is deliberate:
+rem  a UTF-8 BOM on the first line of the settings file lands INSIDE %%A, so
+rem  `iwad` arrives as `<BOM>iwad` and an == test drops the saved path. The
+rem  launcher then had no IWAD, listed doom2.wad as missing, and reopened the
+rem  startup window on every start -- with the "setup is done" box still ticked
+rem  and every line green, because the window finds the IWAD its own way. The
+rem  window no longer writes a BOM; this keeps the files it already wrote working.
+rem  The three keys share no substring, so a loose match is safe.
 if exist "%SETTINGS%" (
   for /f "usebackq tokens=1,* delims==" %%A in ("%SETTINGS%") do (
-    if /i "%%A"=="iwad" set "IWAD=%%B"
-    if /i "%%A"=="mod"  set "MOD=%%B"
-    if /i "%%A"=="recolor" set "RECOLOR=%%B"
+    set "K=%%A"
+    if not "!K:iwad=!"=="!K!"    set "IWAD=%%B"
+    if not "!K:mod=!"=="!K!"     set "MOD=%%B"
+    if not "!K:recolor=!"=="!K!" set "RECOLOR=%%B"
   )
 )
 
@@ -131,10 +140,11 @@ if not "%UIRC%"=="0" exit /b 1
 
 if defined SHOWUI if exist "%SETTINGS%" (
   for /f "usebackq tokens=1,* delims==" %%A in ("%SETTINGS%") do (
-    if /i "%%A"=="iwad" set "IWAD=%%B"
-    if /i "%%A"=="mod"  set "MOD=%%B"
+    set "K=%%A"
+    if not "!K:iwad=!"=="!K!" set "IWAD=%%B"
+    if not "!K:mod=!"=="!K!"  set "MOD=%%B"
     rem Written on every launch, so an unticked box CLEARS a previous 1.
-    if /i "%%A"=="recolor" set "RECOLOR=%%B"
+    if not "!K:recolor=!"=="!K!" set "RECOLOR=%%B"
   )
 )
 

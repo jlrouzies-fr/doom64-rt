@@ -267,6 +267,18 @@ function Get-ConfigDonePath {
 
 function Test-ConfigDone { Test-Path (Get-ConfigDonePath) }
 
+#  Windows PowerShell's `-Encoding UTF8` means UTF-8 *with* a BOM, and the reader
+#  is a .cmd: `for /f` hands those three bytes to the caller as part of the first
+#  key, so `iwad=` came back as `<BOM>iwad` and never matched. The launcher then
+#  had no IWAD, reported doom2.wad missing, and reopened this window on every
+#  start -- ticked box, green checklist and all. Write plain UTF-8, no BOM.
+function Write-TextNoBom {
+    param([string] $Path, [string[]] $Lines)
+    $full = [System.IO.Path]::GetFullPath($Path)
+    $enc  = New-Object System.Text.UTF8Encoding($false)
+    [System.IO.File]::WriteAllText($full, (($Lines -join "`r`n") + "`r`n"), $enc)
+}
+
 function Save-Launch {
     param([bool] $Recolor, [bool] $SkipNextTime)
 
@@ -278,11 +290,12 @@ function Save-Launch {
     # Always written, both ways: the launcher reads this file into RECOLOR, so
     # an unticked box has to be able to turn a previous 1 back off.
     $lines += "recolor=$([int]$Recolor)"
-    if ($Settings -and $lines) { Set-Content -Path $Settings -Value $lines -Encoding UTF8 }
+    if ($Settings -and $lines) { Write-TextNoBom $Settings $lines }
 
     $done = Get-ConfigDonePath
     if ($SkipNextTime) {
-        @("Doom 64 - Ray Traced : setup confirmed, startup window disabled.",
+        Write-TextNoBom $done @(
+          "Doom 64 - Ray Traced : setup confirmed, startup window disabled.",
           "",
           "Delete this file to get the startup window back, or run",
           "    launch-doom64-rt.cmd setup",
@@ -292,7 +305,7 @@ function Save-Launch {
           "the window anyway if one of them has gone missing.",
           "",
           "iwad = $($script:IwadPath)",
-          "mod  = $($script:RetroWad)") | Set-Content -Path $done -Encoding UTF8
+          "mod  = $($script:RetroWad)")
     } elseif (Test-Path $done) {
         Remove-Item $done -Force -ErrorAction SilentlyContinue
     }
