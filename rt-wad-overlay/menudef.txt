@@ -411,7 +411,9 @@ LISTMENU "RT_OptionsMenu"
 										Linespacing	14
 	TextItem_RT	"Quality",				"RT_QualityMenu"
 										Linespacing	10
-	
+	TextItem_RT	"Flashlight",			"RT_FlashlightMenu"
+										Linespacing	10
+
 	// "HUD"
 	// RTMNU_HUD_STYLE (None / Simple / Classic, i.e. screenblocks 12/11/10)
 	// is deliberately not offered - the mod ships one HUD.
@@ -615,6 +617,35 @@ OptionMenu "RT_HudMenu" protected
 	Option "Hide HUD in menus",			"rt_menu_hidehud",		"OnOff"
 	StaticText "Stops long option pages reading through the", 1
 	StaticText "ammo counters. Automap and console keep the HUD.", 1
+}
+
+//
+// Flashlight. All cvars here are RT_CVAR (archived), declared in rt_cvars.inc
+// next to rt_flsh -- see RT_AddFlashlight in rt_weapon.cpp for how the battery
+// state machine (on -> dying flicker -> recharge -> repeat) uses them.
+//
+OptionMenu "RT_FlashlightMenu" protected
+{
+	Title "FLASHLIGHT"
+
+	Option "Enabled",					"rt_flsh",				"OnOff"
+	StaticText " "
+
+	StaticText "Battery", 1
+	Option "Battery drain",				"rt_flsh_battery",		"OnOff"
+	StaticText "Off = never dims or needs to recharge.", 1
+	Slider "Battery lifetime (secs)",	"rt_flsh_on_secs",		5, 120, 5, 0
+	Slider "Dying flicker (secs)",		"rt_flsh_die_secs",		1, 15, 1, 0
+	Slider "Recharge time (secs)",		"rt_flsh_off_secs",		1, 60, 1, 0
+	Slider "Idle recharge rate",		"rt_flsh_idle_recharge", 0, 4, 0.25, 2
+	StaticText "How fast the battery refills while switched off,", 1
+	StaticText "as a fraction of the post-burnout recharge rate.", 1
+	Slider "Timing randomness",			"rt_flsh_jitter",		0, 1, 0.05, 2
+	StaticText " "
+
+	StaticText "Beam", 1
+	Slider "Brightness",				"rt_flsh_intensity",	20, 400, 10, 0
+	ColorPicker "Color",					"rt_flsh_color"
 }
 
 // RT end
