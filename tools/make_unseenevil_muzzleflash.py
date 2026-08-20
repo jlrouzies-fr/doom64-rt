@@ -25,6 +25,12 @@ two path-traced frames. The overlay slows only that visual actor to 12 units per
 tic; the hitscan damage has already happened, so gameplay is unchanged while
 the beam and its distributed lights remain observable.
 
+Retribution stores its shotgun and super-shotgun animation art as ordinary
+sprites. Those files must stay in the PK3 ``sprites/`` namespace; putting them
+under ``patches/`` makes SHTG I/J disappear and makes every SH2G/SH2F firing
+frame invisible. Composite chaingun/plasma/BFG/Unmaker art remains in
+``patches/`` because the copied TEXTURES blocks reference it there.
+
 Two more compatibility repairs belong beside the muzzle trigger:
 
 * gzdoom-rt's built-in ``CheelloRocket replaces Rocket`` wins over UE's own
@@ -280,6 +286,7 @@ STATE_SPANS: dict[str, tuple[str, str, str]] = {
         "\t\t\tGoto Ready;\n"
         "\t\tFlash:\n"
         "\t\t\tUEMF A 3 Bright A_Light1;\n"
+        "\t\t\tUEMF A 8 Bright A_Light0;\n"
         "\t\t\tGoto LightDone;\n",
     ),
 }
@@ -309,6 +316,14 @@ RETRIBUTION_TEXTURE_SPRITES = (
     *(f"BFGG{frame}0" for frame in "ABCDE"),
     *(f"BFGF{frame}0" for frame in "ABCDEFGH"),
     "UNMAA0", "UNMFA0",
+)
+
+# Entries not rebuilt as TEXTURES composites are live state sprites. Keep the
+# namespaces distinct: a patch can be consumed by a composite but cannot be
+# resolved directly by a four-letter weapon state.
+RETRIBUTION_DIRECT_SPRITES = tuple(
+    name for name in RETRIBUTION_WEAPON_PATCHES
+    if name not in RETRIBUTION_TEXTURE_SPRITES
 )
 
 # Keep Retribution's exact composite geometry but give the two UE-only flash
@@ -348,6 +363,24 @@ def retr_texture_blocks(blob: bytes) -> bytes:
             block = block.replace(
                 f"Sprite {name},", f"Sprite {UE_FLASH_ALIASES[name]},", 1
             )
+        if name == "UNMAA0":
+            old = "Offset -99, -113 // -78"
+            if block.count(old) != 1:
+                raise SystemExit("UNMAA0: expected Retribution offset was not found")
+            block = block.replace(
+                old,
+                "Offset -99, -133 // UE: lower the gun by 20 logical pixels",
+                1,
+            )
+        elif name == "UNMFA0":
+            old = "Offset -114, -113 // -78"
+            if block.count(old) != 1:
+                raise SystemExit("UNMFA0: expected Retribution offset was not found")
+            block = block.replace(
+                old,
+                "Offset -114, -133 // UE: keep the red cap aligned with the gun",
+                1,
+            )
         blocks.append(block)
     return ("// Exact first-person Sprite definitions from D64RTR_v15.WAD.\n\n" +
             "\n\n".join(blocks) + "\n").encode("utf-8")
@@ -384,7 +417,10 @@ def patched_sources() -> dict[str, bytes]:
     for name in RETRIBUTION_WEAPON_PATCHES:
         if name not in lumps:
             raise SystemExit(f"{RETRIBUTION.name}: missing {name}")
-        result[f"patches/{name}"] = lumps[name]
+        if name in RETRIBUTION_DIRECT_SPRITES:
+            result[f"sprites/{name}.png"] = lumps[name]
+        else:
+            result[f"patches/{name}"] = lumps[name]
     if "TEXTURES" not in lumps:
         raise SystemExit(f"{RETRIBUTION.name}: missing TEXTURES")
     result["TEXTURES"] = retr_texture_blocks(lumps["TEXTURES"])
@@ -401,6 +437,15 @@ def verify_output(expected: dict[str, bytes]) -> None:
     if files != expected:
         raise SystemExit("generated muzzle-flash package differs from patched sources")
 
+    direct_paths = {f"sprites/{name}.png" for name in RETRIBUTION_DIRECT_SPRITES}
+    composite_paths = {
+        f"patches/{name}" for name in RETRIBUTION_TEXTURE_SPRITES
+    }
+    if {path for path in files if path.startswith("sprites/")} != direct_paths:
+        raise SystemExit("direct shotgun/SSG art is not exactly in the sprite namespace")
+    if {path for path in files if path.startswith("patches/")} != composite_paths:
+        raise SystemExit("TEXTURES inputs are not exactly in the patch namespace")
+
     joined = b"\n".join(files.values())
     for required in (
         b"A_Light1",
@@ -416,8 +461,11 @@ def verify_output(expected: dict[str, bytes]) -> None:
         b"PLSG EFG 2",
         b"BFGF HGFE 1 Bright A_Light2",
         b"UEMF A 3 Bright A_Light1",
+        b"UEMF A 8 Bright A_Light0",
         b"dist += 12 * D64_SCALEX",
         b"Sprite UEMFA0,",
+        b"Offset -99, -133",
+        b"Offset -114, -133",
     ):
         if required not in joined:
             raise SystemExit(f"generated package is missing {required!r}")
@@ -435,7 +483,11 @@ def main() -> None:
     sources = patched_sources()
     source_count = sum(path.startswith(f"{WEAPON_DIR}/") for path in sources)
     patch_count = sum(path.startswith("patches/") for path in sources)
-    print(f"affected UE weapon sources: {source_count}; Retribution patches: {patch_count}")
+    sprite_count = sum(path.startswith("sprites/") for path in sources)
+    print(
+        f"affected UE weapon sources: {source_count}; Retribution art: "
+        f"{patch_count} composite patches + {sprite_count} direct sprites"
+    )
     if not args.write:
         print(f"census only; pass --write to build {OUT.name}")
         return
