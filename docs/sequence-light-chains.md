@@ -336,7 +336,7 @@ that reason. Check any map where *either* column is high.
 | MAP13 | 1 | 1 | **17** | 3 | – | – | ACS stripped |
 | MAP11 | 1 | 1 | 0 | 0 | – | – | specials only |
 | MAP23 | 0 | 23 | **14** | 10 | 9 | – | ACS stripped |
-| MAP02 | 0 | 46 | 0 | 10 | 13 | – | not in the wad |
+| MAP02 | 0 | 46 | 0 | 10 | 13 | – | tint only |
 | MAP08 | 0 | 45 | 0 | 29 | – | – | specials only |
 | MAP06 | 0 | 14 | 0 | 4 | 4 | – | specials only |
 | MAP29 | 0 | 13 | 0 | 4 | 9 | – | specials only |
@@ -901,6 +901,139 @@ ever have touched them. H119 itself is dull mottled brown-purple stone — the g
 look was *entirely* the sector colour, pillars lit warm by nothing in a night courtyard
 whose only real light is a cool moon.
 
+### DONE — MAP02 sector 63, the blue corridor floor
+
+Reported as a blue-tinted floor faking blue light, *"in a room (not the room that
+becomes blue)"* — and that parenthesis is the whole difficulty, because MAP02's
+blue armor room is the effect `rt_sector_tint_albedo=1.0` was tuned on
+([blue-room-rt-lighting.md](blue-room-rt-lighting.md)) and must not move.
+
+| sectors | what | from | to |
+|---|---|---|---|
+| 63 | corridor floor, cold blue `(0,80,255)` inside a room at warm `(255,170,130)` | donor 66 | the room's warm |
+
+`whatsthat` settled the family before any work started:
+
+    whatsthat: sector 63  lightlevel 100  tag 0  floor texture 'SFLATAJ'
+               threshold 190 -> below: not self-emitting
+               brightest neighbour: sector 62 at 100  (delta +0)
+
+At 100 against a threshold of 190 this never emitted, so it is purely the colour
+half — the same shape as the MAP13 pillars and the MAP25 alcoves, and invisible to
+every brightness scanner for the same reason.
+
+**How it is separated from the armor room, which shares the identical colormap.**
+MAP02 carries `0x0050FF` on **50 sectors**, but they fall into **35 disconnected
+clusters**. The armor room is the 13-sector cluster at (−624..608, −1712..−688),
+all at lightlevel 255. This is a *different* 2-sector cluster at
+(1680..1840, −2592..−1952), at 100 and 140, on the other side of the map. Clustering
+by adjacency — not by colour value — is what tells the reported room from the
+protected one.
+
+The geometry is three concentric strips down one corridor, all floored `SFLATAJ` at
+height −192, unbroken:
+
+| sector | size | colour | light | ceiling |
+|---|---|---|---|---|
+| 66 — room outside | 256×704u | warm `(255,170,130)` | 85 | SFLATBB |
+| **63 — corridor floor** | 160×640u | **cold blue** | 100 | SFLATAB |
+| 62 — centre channel | 64×576u | cold blue | 140 | **SPORTB**, raised to −48 |
+
+So the split lands as a hard blue/warm edge across one continuous floor with nothing
+casting it.
+
+**Sector 62 is deliberately left blue, and that is the whole judgement.** `SPORTB`
+matches `RT_IsCeilingInsetLampTexture`, so `rt_ceiling_lamps` uploads real
+shadow-casting lights under that ceiling channel — and their colour is
+`RT_SectorHue(sector.Colormap.LightColor, rt_sector_tint_lights)`, i.e. it comes from
+62's own colormap. Retinting 62 would turn a blue port strip's real light warm. 62
+holds the fixture; 63 is the floor around it and holds nothing (ceiling `SFLATAB`,
+which no lamp predicate takes). Strip the paint from 63 and the blue on that floor
+becomes the light 62 actually casts, with a falloff instead of a sector edge.
+
+This is the host test from `whatsthat`'s docstring decided by the engine's own
+matcher rather than by proximity — which has pointed the wrong way every time it has
+been used on its own.
+
+## Key doors: the same defect, wearing a stripe
+
+Reported alongside the MAP02 floor: *"the red key and blue key doors themselves also
+appear self emissive (and they would need fixing in every level they exist)"*. From
+the game on MAP05:
+
+    whatsthat: sector 31  lightlevel 255  tag 0  middle texture 'STRAKR3'
+               threshold 240 -> ABOVE: this surface SELF-EMITS
+               brightest neighbour: sector 292 at 200  (delta +55)
+    whatsthat: sector 222  lightlevel 255  tag 0  middle texture 'STRAKB5'
+               threshold 240 -> ABOVE: this surface SELF-EMITS
+               brightest neighbour: sector 94 at 220  (delta +35)
+
+`STRAKR3`/`STRAKB5` are frames 3 and 5 of the animated red/blue hazard-stripe frame
+that marks a key door; the map data stores frame 1. This is a `SHAFTS` case — the
+brightness half — but it is worth its own section because of how the *scope* was
+settled.
+
+### Scoping it: the stripe finds them, the lock confirms them
+
+Survey: every sector carrying a `STRAK[RBY]*` or `C[RBY]TRAK*` frame that is at or
+above its own map's threshold **and** brighter than every neighbour — **16 sectors on
+6 maps**. Then correlate each against the locked linedefs on it and on its neighbours.
+That needs all four lock specials, and the lock argument is not in the same place:
+
+| special | name | lock arg |
+|---|---|---|
+| 13, 14 | `Door_LockedRaise` | `arg3` |
+| 83 | `ACS_LockedExecute` | `arg4` |
+| 85 | `ACS_LockedExecuteDoor` | `arg4` |
+
+**A survey of `Door_LockedRaise` alone misses half the game's key doors**, MAP05's red
+one included — it is an `ACS_LockedExecute`. The stripe texture is what found it.
+
+The correlation splits the 16 cleanly:
+
+- **8 key doors on 2 maps** — MAP05 31/222, MAP08 56/93/95/110/190/201. Every one has
+  a locked line whose lock number **agrees with the stripe colour**, so the frame is
+  not being read as decoration anywhere here.
+- **8 not key doors** — MAP02 265/272, ABS01 315/372, ABS02 292/293, RDM04 201/741.
+  Same coloured stripe, no locked line anywhere near: it is trim, on switch alcoves
+  and wall slivers. Left alone — a different question from the one that was asked, and
+  a stripe colour on its own is not evidence of anything.
+
+So "every level they exist" is **two maps**, not the whole game.
+
+### Why levelling them darkens nothing
+
+**All eight have real 9800 `PointLight` things at or inside the door** — six of them,
+in stacked triples, 48–57u from the recess centre, and present in the **base WAD**, so
+this is Retribution's own lighting and not something this project added.
+
+That is the `whatsthat` docstring's rule verbatim: *a fixture inside the element means
+the paint is redundant, not warranted*. The painted 255 is a second, sourceless copy
+laid over a light that is already there. Dropping it does not darken these doors; it
+stops them emitting twice, and what is left is the point lights that were always
+lighting them. All eight are `tag 0`, so no ACS is animating the lightlevel either.
+
+### DONE — MAP05 and MAP08, all three key colours
+
+| map | sectors | key | from | to | threshold |
+|---|---|---|---|---|---|
+| MAP05 | 31 | red (`ACS_LockedExecute` script 13, arg4=1) | 255 | 200 | 240 |
+| MAP05 | 222 | blue (`Door_LockedRaise`, arg3=2) | 255 | 220 | 240 |
+| MAP08 | 110, 190 | red (`Door_LockedRaise`, arg3=1) | 255 | 140 | 180 |
+| MAP08 | 56, 201 | yellow (`ACS_LockedExecuteDoor` script 28, arg4=3) | 255 | 140 | 180 |
+| MAP08 | 93, 95 | blue (`ACS_LockedExecuteDoor` script 7, arg4=2) | **220** | 140 | 180 |
+
+**Note MAP08 93/95's `from_light`: 220, not 255.** Still well over the map's threshold
+of 180 and +80 on its neighbours, so they self-emit just as hard — but a table that
+assumed every painted door is 255 would have skipped them silently. Read the value,
+never assume it.
+
+MAP05's 31 is levelled with the *brighter* of the two rooms it opens between (292 at
+200, not 297 at 160), so nothing around it goes darker than it already is. MAP08's
+yellow pair was included even though only red and blue were reported: leaving one key
+colour on a map self-emitting while the other two are levelled is worse than either
+state, because the doors stop matching each other.
+
 ## Load-order trap: maps that are also in the 3D-floor wad
 
 `d64r-seqlight-fix.wad` loads *after* `d64r-3dfloor-rtfix.wad`, so for any map
@@ -921,6 +1054,11 @@ wad — MAP34 alone has 16 `special=160` linedefs. The guard held: the build rep
 1, 4, 0, 2 and 16 re-stripped respectively. A family that adds new *maps* to the
 wad silently inherits this trap, so check the re-strip counts in the build output
 whenever the map list grows.
+
+**And again with the key doors.** That entry set brought MAP02 in for the first
+time, via its `TINTS` row. MAP02 is in the 3D-floor wad with two `special=160`
+linedefs, and the build reports 2 re-stripped — checked, per the rule above.
+MAP08 was already here through `PANEL_LAMPS` and has none.
 
 ## The eighth family: wall panels that need a light ADDED
 

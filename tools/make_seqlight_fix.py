@@ -1469,6 +1469,112 @@ SHAFTS = [
              "west pair rather than left to be re-reported -- it is one room away "
              "and the same shot would have caught it next.",
     ),
+
+    # ---- KEY DOORS -------------------------------------------------------------
+    # THE REPORTED ONE, from the game (rt-console.log, MAP05):
+    #
+    #   whatsthat: sector 31  lightlevel 255  tag 0  middle texture 'STRAKR3'
+    #              threshold 240 -> ABOVE: this surface SELF-EMITS
+    #              brightest neighbour: sector 292 at 200  (delta +55)
+    #   whatsthat: sector 222  lightlevel 255  tag 0  middle texture 'STRAKB5'
+    #              threshold 240 -> ABOVE: this surface SELF-EMITS
+    #              brightest neighbour: sector 94 at 220  (delta +35)
+    #
+    # STRAKR3/STRAKB5 are frames 3 and 5 of the animated red / blue hazard-stripe
+    # frame the game puts around a KEY door; the map data stores frame 1. Reported
+    # as "the red key and blue key doors themselves also appear self emissive".
+    #
+    # SCOPE, because the report asked for every level. The survey is: every sector
+    # carrying a STRAK[RBY]* or C[RBY]TRAK* frame that is at or above its own map's
+    # rt_sector_emis threshold AND brighter than every neighbour -- 16 sectors on 6
+    # maps. Correlating each against the locked linedefs on it and on its neighbours
+    # (Door_LockedRaise 13/14, ACS_LockedExecute 83, ACS_LockedExecuteDoor 85, whose
+    # lock argument is arg3 for the door specials and arg4 for the ACS pair) splits
+    # them cleanly in two:
+    #
+    #   KEY DOORS, 8 sectors on 2 maps -- the six entries below. Every one of them
+    #   has a locked line whose lock number AGREES with the stripe colour, so the
+    #   frame is not being read as decoration anywhere here.
+    #
+    #   NOT key doors, 8 sectors: MAP02 265/272, ABS01 315/372, ABS02 292/293,
+    #   RDM04 201/741. Same coloured stripe, no locked line anywhere near -- it is
+    #   trim, on switch alcoves and wall slivers. Left alone: they are a different
+    #   question from the one that was asked, and the stripe colour alone is not
+    #   evidence of anything. MAP02 265/272 are already in scan_painted_light.py's
+    #   UNREVIEWED suggestions if they ever want judging on their own merits.
+    #
+    # WHY THESE ARE SAFE TO LEVEL, and the thing that makes the whole family a
+    # one-line judgement rather than eight: ALL EIGHT HAVE REAL 9800 PointLight
+    # THINGS AT OR INSIDE THE DOOR -- six of them, in stacked triples, 48-57u from
+    # the recess centre, and present in the BASE WAD, so this is Retribution's own
+    # lighting and not something this project added. That is the practices §12 case
+    # verbatim: a fixture inside the element means the painted 255 is a SECOND,
+    # sourceless copy laid over a light that is already there. Dropping the paint
+    # does not darken these doors; it stops them emitting twice, and what is left
+    # is the point lights that were always lighting them.
+    #
+    # tag 0 on all eight, so no ACS is animating the lightlevel and there is
+    # nothing here for the Scripted or Blink families to own.
+    Shaft(
+        "MAP05", [31], from_light=255, to_light=200,
+        enabled=True,
+        note="THE REPORTED ONE, red half. MAP05's RED key door: a 104x104u recess "
+             "at (664..768, -896..-792), SDOOR6 top and bottom, STRAKR1 frame, "
+             "floor SFLATCG / ceiling SDFLTA. Lines 57 and 60 are ACS_LockedExecute "
+             "(special 83) script 13 with arg4=1, i.e. locked on the red key -- "
+             "which is why the plain Door_LockedRaise survey missed it and the frame "
+             "texture is what found it. Painted 255 against MAP05's threshold of "
+             "240, neighbours 292 at 200 and 297 at 160. Levelled with 292, the "
+             "brighter of the two rooms it opens between, so nothing around it goes "
+             "darker than it already is. Six 9800 PointLights stand inside it at "
+             "56u and keep lighting it.",
+    ),
+    Shaft(
+        "MAP05", [222], from_light=255, to_light=220,
+        enabled=True,
+        note="THE REPORTED ONE, blue half. MAP05's BLUE key door: a 16x128u recess "
+             "at (1280..1296, -1024..-896), SDOOR3 top, STRAKB1 frame, SDFLTA on "
+             "both flats. Line 107 is Door_LockedRaise (special 13) with arg3=2, the "
+             "blue key. Painted 255 against the 240 threshold with BOTH neighbours "
+             "-- 94 and 291 -- sitting at 220, which is the giveaway: the recess is "
+             "the only thing in the doorway that is brighter than anything, and it "
+             "is brighter than the rooms on both sides at once. Six 9800s inside at "
+             "48u.",
+    ),
+    Shaft(
+        "MAP08", [110, 190], from_light=255, to_light=140,
+        enabled=True,
+        note="MAP08's RED key door, both halves of the doorway (160x17u and "
+             "128x16u at (-688, -88) and (-688, -56)), SDOOR1 top, STRAKR1 frame. "
+             "Line 1136 is Door_LockedRaise arg3=1. 255 against MAP08's threshold "
+             "of 180 with all four neighbours -- 111, 112, 189 -- at 140, a delta "
+             "of +115, the widest in this family. Six 9800s at 48-57u. Fixed with "
+             "MAP05's pair rather than left to be re-reported: same defect, same "
+             "shape, and the report asked for every level.",
+    ),
+    Shaft(
+        "MAP08", [56, 201], from_light=255, to_light=140,
+        enabled=True,
+        note="MAP08's YELLOW key door, both 16x128u recesses at (16..144 in z), "
+             "SDOOR6 top and bottom, STRAKY1 frame, floor SFLATAJ / ceiling "
+             "SFLATCF. Lines 1403/1404 are ACS_LockedExecuteDoor (special 85) "
+             "script 28 with arg4=3, the yellow key. 255 against 180, neighbours "
+             "152/180/200 all at 140. Six 9800s inside each at 48u. Included "
+             "because leaving one key colour on a map self-emitting while the other "
+             "two are levelled is worse than either state -- the doors would stop "
+             "matching each other.",
+    ),
+    Shaft(
+        "MAP08", [93, 95], from_light=220, to_light=140,
+        enabled=True,
+        note="MAP08's BLUE key door, two 16x128u recesses at z 128..256, SDOOR6 top "
+             "and bottom, STRAKB1 frame. Lines 764/767 are ACS_LockedExecuteDoor "
+             "script 7 with arg4=2, the blue key. NOTE THE from_light: these are "
+             "220, not 255 -- still well over MAP08's threshold of 180 and +80 on "
+             "neighbours 184/187/188 at 140, so they self-emit just as hard, but a "
+             "table that assumed 255 would have silently skipped them. Six 9800s "
+             "inside each at 48u.",
+    ),
 ]
 
 
@@ -2104,6 +2210,54 @@ TINTS = [
              "as hard-edged. Donor 15 is the hall; 32 opens off 14, which carries "
              "the identical blue, so one donor serves both and the two doors stay "
              "consistent with each other.",
+    ),
+    Tint(
+        "MAP02", [63], donor=66, from_lightcolor=0x0050FF,
+        enabled=True,
+        note="THE REPORTED ONE, from the game (rt-console.log, MAP02):\n"
+             "\n"
+             "  whatsthat: sector 63  lightlevel 100  tag 0  floor texture "
+             "'SFLATAJ'\n"
+             "             threshold 190 -> below: not self-emitting\n"
+             "             brightest neighbour: sector 62 at 100  (delta +0)\n"
+             "\n"
+             "Reported as a blue-tinted floor faking blue light, with the explicit "
+             "note that it is NOT the room that turns blue. The probe settles that "
+             "outright: at lightlevel 100 against a threshold of 190 this never "
+             "emitted, so it is purely the colour half and no brightness work would "
+             "ever have touched it -- the same shape as the MAP13 pillars and the "
+             "MAP25 alcoves.\n"
+             "\n"
+             "IT IS NOT THE BLUE ARMOR ROOM, which matters because that room is the "
+             "one rt_sector_tint_albedo=1.0 was tuned on (see the cvar comment and "
+             "docs/blue-room-rt-lighting.md) and must not move. MAP02 carries the "
+             "SAME 0x0050FF colormap on 50 sectors, but they fall into 35 "
+             "DISCONNECTED clusters. The armor room is the 13-sector cluster at "
+             "(-624..608, -1712..-688), all at lightlevel 255. This is a separate "
+             "2-sector cluster at (1680..1840, -2592..-1952), the other side of the "
+             "map, at 100 and 140.\n"
+             "\n"
+             "The geometry is three concentric strips down one corridor, all "
+             "floored SFLATAJ at height -192, unbroken: room 66 outside (256x704u, "
+             "warm rgb(255,170,130), L85), corridor floor 63 in the middle "
+             "(160x640u, cold blue, L100), and channel 62 down the centre "
+             "(64x576u, blue, L140) whose ceiling is raised to -48 and clad in "
+             "SPORTB. So the split lands as a hard blue/warm edge across one "
+             "continuous floor with nothing casting it, which is what was seen.\n"
+             "\n"
+             "SECTOR 62 IS DELIBERATELY LEFT BLUE, and this is the whole judgement. "
+             "SPORTB matches RT_IsCeilingInsetLampTexture, so rt_ceiling_lamps "
+             "uploads real shadow-casting lights under that ceiling channel -- and "
+             "their colour is RT_SectorHue(sector.Colormap.LightColor, "
+             "rt_sector_tint_lights), i.e. it comes from 62's own colormap. "
+             "Retinting 62 would turn a blue port strip's real light warm. 62 holds "
+             "the fixture; 63 is the floor around it and holds nothing (ceiling "
+             "SFLATAB, which no lamp predicate takes). Strip the paint from 63 and "
+             "the blue on that floor becomes the light 62 actually casts, with a "
+             "falloff instead of a sector edge.\n"
+             "\n"
+             "Donor 66 is the host room and 63's only non-blue neighbour, and it "
+             "shares the SFLATAJ floor across the seam being repaired.",
     ),
 ]
 
@@ -2950,6 +3104,11 @@ def show_table() -> None:
         print(f"[{state}] {h.mapname} painted shaft sectors={h.sectors} "
               f"L{h.from_light} -> L{h.to_light}")
         print(f"          {h.note}")
+    for t in TINTS:
+        state = "STRIP" if t.enabled else "keep "
+        print(f"[{state}] {t.mapname} painted tint sectors={t.sectors} "
+              f"0x{t.from_lightcolor:06X} -> donor sector {t.donor}")
+        print(f"          {t.note}")
     for p in PANEL_LAMPS:
         state = "ADD  " if p.enabled else "keep "
         print(f"[{state}] {p.texture} panel lights x{sum(p.maps.values())} "
