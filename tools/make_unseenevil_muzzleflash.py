@@ -28,8 +28,13 @@ the beam and its distributed lights remain observable.
 Retribution stores its shotgun and super-shotgun animation art as ordinary
 sprites. Those files must stay in the PK3 ``sprites/`` namespace; putting them
 under ``patches/`` makes SHTG I/J disappear and makes every SH2G/SH2F firing
-frame invisible. Composite chaingun/plasma/BFG/Unmaker art remains in
-``patches/`` because the copied TEXTURES blocks reference it there.
+frame invisible. UE already supplies SHTG A-H and applies ``NoTrim`` to those
+exact texture objects while its own TEXTURES file is parsed. Overriding them
+from a later archive changes the object seen by that directive and aborts
+startup, so the overlay deliberately keeps UE's eight compatible base frames
+and adds only the missing Retribution sprites. Composite
+chaingun/plasma/BFG/Unmaker art remains in ``patches/`` because the copied
+TEXTURES blocks reference it there.
 
 Two more compatibility repairs belong beside the muzzle trigger:
 
@@ -321,9 +326,11 @@ RETRIBUTION_TEXTURE_SPRITES = (
 # Entries not rebuilt as TEXTURES composites are live state sprites. Keep the
 # namespaces distinct: a patch can be consumed by a composite but cannot be
 # resolved directly by a four-letter weapon state.
+UE_OWNED_DIRECT_SPRITES = tuple(f"SHTG{frame}0" for frame in "ABCDEFGH")
 RETRIBUTION_DIRECT_SPRITES = tuple(
     name for name in RETRIBUTION_WEAPON_PATCHES
     if name not in RETRIBUTION_TEXTURE_SPRITES
+    and name not in UE_OWNED_DIRECT_SPRITES
 )
 
 # Keep Retribution's exact composite geometry but give the two UE-only flash
@@ -417,6 +424,8 @@ def patched_sources() -> dict[str, bytes]:
     for name in RETRIBUTION_WEAPON_PATCHES:
         if name not in lumps:
             raise SystemExit(f"{RETRIBUTION.name}: missing {name}")
+        if name in UE_OWNED_DIRECT_SPRITES:
+            continue
         if name in RETRIBUTION_DIRECT_SPRITES:
             result[f"sprites/{name}.png"] = lumps[name]
         else:

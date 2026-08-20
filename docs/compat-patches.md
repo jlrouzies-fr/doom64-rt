@@ -138,7 +138,8 @@ Rebuilt: `sourcecode/gzdoom-rt/build/RelWithDebInfo/gzdoom.exe`
   `rt_smoke_rocket` remains enabled.
 - `make_unseenevil_muzzleflash.py` now restores complete Retribution
   first-person presentation, not only a light flag: eight exact UE sources, 34
-  composite patch inputs, and 35 direct shotgun/SSG sprites. UE firing
+  composite patch inputs, and 27 added shotgun/SSG sprites (UE's compatible
+  SHTG A-H remain in their original archive). UE firing
   functions, ammo, projectile, recoil, and sound behavior remain in the action
   blocks. BFG now has its
   original `BFGF H-A` green charge and `A_Light2`, but still calls UE's
@@ -157,8 +158,10 @@ Rebuilt: `sourcecode/gzdoom-rt/build/RelWithDebInfo/gzdoom.exe`
 - Raw weapon art must be under `sprites/`, not `patches/`. The first overlay
   accidentally hid that mistake behind UE's existing SHTG A-H files: only
   shotgun I/J vanished, while every new SH2G/SH2F SSG firing frame vanished.
-  The final package audits all 35 direct sprite paths separately from its 34
-  TEXTURES inputs.
+  The final package audits all 27 added sprite paths separately from its 34
+  TEXTURES inputs. Do not override UE's SHTG A-H: its earlier
+  `TEXTURES.weapons` applies `NoTrim` to those objects, and a late same-name raw
+  override aborts startup with `SHTGA0 is not a sprite`.
 - UE's psprite aspect hook leaves Retribution's Unmaker composite about 20
   logical pixels above the bottom. UNMA and its UEMF overlay receive the same
   UE-only -20 Y correction. UEMF remains visible across the 11-tic firing span,
