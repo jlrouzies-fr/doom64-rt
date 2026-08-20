@@ -161,6 +161,40 @@ if defined SHOWUI if not exist "%UI%" (
   )
 )
 
+rem --- flight recorder ------------------------------------------------------
+rem  ALWAYS ON, and deliberately invisible. A stutter is a single frame: it is
+rem  gone before you can open a console, and by the time you have relaunched with
+rem  logging the session that had it no longer exists. So the release build keeps
+rem  a running record of its own outlier frames and nothing else.
+rem
+rem  WHY IT COSTS NOTHING TO WATCH. rt_stat_force turns on glcycle_t, which is
+rem  one rdtsc per bracket -- about forty per frame, so a few thousand a second
+rem  against a 115 fps budget. rt_stat_spike then prints ONLY for frames over the
+rem  threshold, at RT_DiagPrintLevel: console buffer and this log, never the
+rem  on-screen notify overlay (that needs rt_verbose 1). A clean session writes
+rem  a handful of lines from level load and nothing else.
+rem
+rem  THE THRESHOLD IS A MULTIPLE, NOT A MILLISECOND COUNT. A fixed value is only
+rem  correct for the frame rate it was chosen at: 14 ms was picked against a
+rem  115 fps measurement run, and the first release-path session it met ran at
+rem  58 fps -- where 17 ms is normal -- so it fired on every frame and wrote 2123
+rem  useless lines. Resolution, upscaler, vsync and window focus all move the
+rem  baseline and none of them are known here. 1.6x the measured average is.
+rem
+rem  D64RT_SPIKE_MS is the FLOOR under that multiple, so a machine running at
+rem  400 fps does not start reporting 4 ms frames as hitches. 0 turns the
+rem  counters off and leaves only the plain console log.
+if not defined D64RT_SPIKE_MS set "D64RT_SPIKE_MS=8"
+if not defined D64RT_SPIKE_REL set "D64RT_SPIKE_REL=1.6"
+
+rem  One generation of history. `logfile` truncates on open, so without this the
+rem  act of relaunching to show someone the log is what destroys it.
+set "LOGF=%PROJ%\rt-console.log"
+if exist "%LOGF%" move /y "%LOGF%" "%PROJ%\rt-console.prev.log" >nul 2>&1
+
+set "RECORDER=+logfile "%LOGF%" +rt_stat_force 1 +rt_stat_spike %D64RT_SPIKE_MS% +rt_stat_spike_rel %D64RT_SPIKE_REL%"
+if "%D64RT_SPIKE_MS%"=="0" set "RECORDER=+logfile "%LOGF%""
+
 rem --- upscaler: pick one, then write BOTH cvars ----------------------------
 rem  D64RT_UPSCALER = dlss | fsr | none   overrides the detection.
 rem  The whole decision is made inside PowerShell on purpose. Matching the vendor
@@ -207,6 +241,7 @@ echo.
 echo   Doom 64 - Ray Traced
 echo   engine    : %ENGINE%
 echo   iwad      : %IWAD%
+echo   log       : %LOGF%
 echo   upscaler  : %D64RT_UPSCALER%   ^(override with D64RT_UPSCALER=dlss^|fsr^|none^)
 echo.
 
@@ -245,6 +280,6 @@ start "" "%ENGINE%\gzdoom.exe" -iwad "%IWAD%" ^
   "%MODS%\d64r-widescreen-gfx.pk3" "%MODS%\d64r-mugshot.pk3" "%MODS%\d64r-rt-titlelogo.pk3" ^
   %RECOLORARGS% ^
   -rtnolauncher ^
-  +exec "%PINS%" %UPSCALE% %MAPARG%%REST%
+  +exec "%PINS%" %UPSCALE% %RECORDER% %MAPARG%%REST%
 
 endlocal
