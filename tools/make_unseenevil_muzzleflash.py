@@ -29,12 +29,11 @@ Retribution stores its shotgun and super-shotgun animation art as ordinary
 sprites. Those files must stay in the PK3 ``sprites/`` namespace; putting them
 under ``patches/`` makes SHTG I/J disappear and makes every SH2G/SH2F firing
 frame invisible. UE already supplies SHTG A-H and applies ``NoTrim`` to those
-exact texture objects while its own TEXTURES file is parsed. Overriding them
-from a later archive changes the object seen by that directive and aborts
-startup, so the overlay deliberately keeps UE's eight compatible base frames
-and adds only the missing Retribution sprites. Composite
-chaingun/plasma/BFG/Unmaker art remains in ``patches/`` because the copied
-TEXTURES blocks reference it there.
+exact texture objects while its own TEXTURES file is parsed. A late same-name
+override changes the object seen by that directive and aborts startup, so the
+complete Retribution shotgun uses private ``UESG``/``UESF`` aliases instead.
+Composite chaingun/plasma/BFG/Unmaker art remains in ``patches/`` because the
+copied TEXTURES blocks reference it there.
 
 Two more compatibility repairs belong beside the muzzle trigger:
 
@@ -177,9 +176,9 @@ STATE_SPANS: dict[str, tuple[str, str, str]] = {
         "\t\tSH2F MNOPQ 2;\n"
         "\t\tSH2F R 2 A_StartSound(\"weapons/sshotc\", CHAN_5);\n"
         "\t\tSH2F S 2;\n"
-        "\t\tTNT1 A 0 Offset(0,32);\n"
         "\t\tSH2G A 2;\n"
         "\t\tSH2G A 1 A_Refire;\n"
+        "\t\tTNT1 A 0 Offset(0,32);\n"
         "\t\tGoto Ready;\n"
         "\tFlash:\n"
         "\t\tSSGF A 2 Bright A_Light1;\n"
@@ -486,7 +485,7 @@ def verify_output(expected: dict[str, bytes]) -> None:
         b"UESG J 1",
         b"UESF A 2 BRIGHT A_Light1",
         b"TNT1 A 0 Offset(0,52)",
-        b"TNT1 A 0 Offset(0,32)",
+        b"SH2G A 1 A_Refire;\n\t\tTNT1 A 0 Offset(0,32)",
         b"SH2F R 2",
         b"SSGF A 2 Bright A_Light1",
         b"CHGG ABCD 3 A_WeaponReady",

@@ -732,8 +732,11 @@ from. Copied `UNMF` inherited its 900-intensity attached light and cast from the
 first-person quad, bleaching the gun and room; copied `CHGF` inherited a screen
 multiplier that was too bright under UE exposure. The compatibility package
 keeps the exact art/offsets but aliases them to `UEMF` and `UECF`, then retains
-`Bright A_Light1` / `A_Light2` in the weapon states. This separates visible HUD
-art from the analytic world source without changing Retribution's metadata.
+`Bright A_Light1` / `A_Light2` in the weapon states. UE's required
+`rt_mod_compat 0` also skipped the engine's additive Flash-layer setup, making
+the metadata-free `UECF` flame disappear; the exact UE identity now restores
+additive composition only for `PSP_FLASH`. This separates visible HUD art from
+the analytic world source without changing Retribution's metadata.
 
 Rule: when two mods share a sprite name but use different presentation paths,
 do not tune the global metadata until the actual rendered primitive is known.

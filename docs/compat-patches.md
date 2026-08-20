@@ -147,7 +147,11 @@ Rebuilt: `sourcecode/gzdoom-rt/build/RelWithDebInfo/gzdoom.exe`
 - Copied `CHGF` was too bright under UE exposure, while copied `UNMF` inherited
   a global 900-intensity material light that illuminated the room from the HUD
   quad. Exact-art aliases `UECF`/`UEMF` avoid those global rows; their Bright
-  states and analytic `A_Light` triggers remain.
+  states and analytic `A_Light` triggers remain. Because UE requires
+  `rt_mod_compat 0`, `hw_weapon.cpp` now restores additive composition only for
+  its actual `PSP_FLASH` layer under the UE identity pair. This brings back the
+  red/yellow chaingun flame card without restoring CHGF's material emission or
+  changing any weapon-body frame.
 - Do not attach one light to `D64UE_UnmakerBolt`: UE initially places that actor
   at the complete beam's midpoint and moves it toward the impact. That failed
   repair produced delayed downrange light and left the gun dark. The final
@@ -165,8 +169,10 @@ Rebuilt: `sourcecode/gzdoom-rt/build/RelWithDebInfo/gzdoom.exe`
   SHTG override aborts startup with `SHTGA0 is not a sprite`.
 - Retribution's raw shotgun sprites do not need UE's `CORRECTASPECT`; its exact
   Ready-through-Flash replacement removes that hook. The SSG's UE rest frame is
-  already correct, so only Fire moves its psprite from Y=32 to Y=52 and restores
-  Y=32 before Ready. Neither adjustment can leak to another weapon.
+  already correct, so only Fire moves its psprite from Y=32 to Y=52. The offset
+  now remains through the final two `SH2G A` recovery states and restores Y=32
+  immediately before Ready; restoring before those states caused the last few
+  tics to jump upward. Neither adjustment can leak to another weapon.
 - UE's psprite aspect hook leaves Retribution's Unmaker composite about 20
   logical pixels above the bottom. UNMA and its UEMF overlay receive the same
   UE-only -20 Y correction. UEMF remains visible across the 11-tic firing span,

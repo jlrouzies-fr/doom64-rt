@@ -45,6 +45,15 @@ The Unseen Evil launcher sets `+rt_mod_compat 0` **after** the shared pins file.
 That is the actual fix for the missing/wrong texture-rendering report.  It is
 not a bulk conversion of texture names to Retribution names.
 
+Despite its name, `rt_mod_compat` is not a universal compatibility level. It
+is a bundle of the original gzdoom-rt mod-compatibility policies: among other
+things it changes world opacity/alpha handling, removes baked sector shading
+from traced albedo, enables selected brightmap and weapon-presentation paths,
+and unconditionally suppresses `FLevelLocals::ReplaceTextures`. Those policies
+fit Retribution but are not all valid for every mod. UE therefore keeps the
+bundle off so its core Terraformer works, then restores only the renderer
+behaviours it actually needs through `rt_world_white` and exact UE gates.
+
 `rt_mod_compat` also used to keep sector lightlevel and sector colour out of
 path-traced albedo. Turning it off for Unseen Evil exposed its Terraformer's
 authored sector palette as an albedo tint. Commit `439e6c00c` added
@@ -354,14 +363,26 @@ makes UE's earlier `TEXTURES.weapons` `NoTrim` directives fail with
 
 The SSG deliberately keeps UE's correctly aligned resting SHT2 frame and its
 aspect hook. Only its borrowed firing animation was high, so Fire temporarily
-sets the psprite Y offset from 32 to 52 and restores 32 before returning to
-Ready. This is state-local; it does not move the resting weapon or any other
-weapon.
+sets the psprite Y offset from 32 to 52 and restores 32 immediately before
+returning to Ready. The restore belongs after the final two `SH2G A` recovery
+states; placing it before them made the last three tics jump upward. This is
+state-local and does not move the resting weapon or any other weapon.
 
 The chaingun fire composites use the UE-private `UECF A-D` aliases described
 above. This is the same Retribution art, placement, and two-pair cadence, but it
 does not inherit the globally authored `CHGF` screen multiplier that made UE's
-muzzle card excessively bright. Its `A_Light2` world source is unchanged.
+muzzle card excessively bright. The alias also revealed an engine split:
+`hw_weapon.cpp` made bright flash layers additive only when `rt_mod_compat` was
+enabled, while UE must disable that cvar for its Terraformer. Under UE's exact
+identity pair, only `PSP_FLASH` now regains additive composition. The red/yellow
+flame art is submitted as a separate additive card again, without restoring
+CHGF material emission; its
+`A_Light2` world source is unchanged.
+
+A minimized MAP02 slot-4 autofire run confirmed the split at the renderer
+boundary: the `CHGG` weapon body logged `destalpha=3, emis=0`, while the live
+`UECFC0` flash logged `destalpha=1, emis=0.150`. The one-tic flame is therefore
+on the Flash layer rather than baked into or emitted by the gun body.
 
 ### BFG charge
 
@@ -436,7 +457,7 @@ keeping each minimized game run to a few seconds.
 | UE RT menu / HUD | Passed: RT labels and live values render instead of raw `RTMNU_*` keys. The active HUD is Retribution's unchanged SBARINFO layout: BATTERY/HEALTH/mugshot left and keys/ARMOR/AMMO right; BATTERY follows the same integer scale. |
 | UE key actors | Runtime wiring passed: MAP02 found 24 transformed faces and spawned 72 ordinary PointLights, and the close capture proved they cast onto geometry. That capture was over-bright; the final quarter-flux narrow-face rule and 0.5 surface multiplier were applied after the fifth permitted launch and remain the first visual check for the next iteration budget. |
 | UE player muzzle flash | Passed: a real MAP02 pistol shot raised `extralight` 0 -> 1 -> 2, activated the shared RT muzzle source, spawned firing smoke, visibly lit nearby geometry, returned to 0 through `LightDone`, and auto-quit. |
-| UE weapon presentation | Plasma captured Retribution's blue `PLSF` discharge and recovery sequence. The final package statically verifies Retribution's BFG charge, UE-private chaingun/Unmaker flash aliases, immediate analytic light states, the slowed visual-only Unmaker beam, and all 35 shotgun/SSG raw frames in the sprite namespace. Full Retribution shotgun art uses collision-free `UESG`/`UESF` aliases with UE's aspect hook removed; the SSG applies a firing-only +20 Y offset and preserves its correct rest position. Unmaker retains `CORRECTASPECT`, uses a UE-only 20-pixel lower art offset, keeps the red cap visible after its three-tic analytic light ends, and gains a separately gated three-tic red light at the actual weapon quad. The generated PK3 passed a short startup/parser run; a final normal-play visual check remains appropriate. |
+| UE weapon presentation | Plasma captured Retribution's blue `PLSF` discharge and recovery sequence. The final package statically verifies Retribution's BFG charge, UE-private chaingun/Unmaker flash aliases, immediate analytic light states, the slowed visual-only Unmaker beam, and all 35 shotgun/SSG raw frames in the sprite namespace. Full Retribution shotgun art uses collision-free `UESG`/`UESF` aliases with UE's aspect hook removed; the SSG applies a firing-only +20 Y offset through its final recovery states and preserves its correct rest position. UE's exact `PSP_FLASH` layer regains additive composition, restoring the chaingun's red/yellow flame without CHGF material emission. Unmaker retains `CORRECTASPECT`, uses a UE-only 20-pixel lower art offset, keeps the red cap visible after its three-tic analytic light ends, and gains a separately gated three-tic red light at the actual weapon quad. The generated PK3 passed a short startup/parser run; a final normal-play visual check remains appropriate. |
 | UE exploding barrel | Passed: a real `D64UE_ExplosiveBarrel` reached `BEXP E`; one tic produced the visible explosion, six volumetric burst parcels, the floor/scorch event, and all 60 authored shard pieces. |
 | UE rocket raster trail | Implemented and statically verified: UE alone pins `cl_rockettrails 0` while `rt_smoke_rocket` remains on; a normal-play square-free trail capture is pending because the automated shot occurred during weapon selection. |
 | Retribution MAP01/MAP02 | Passed after the UE changes: MAP01 keeps its original RT lighting/HUD path; MAP02 retains `D64RtSkyFix: MAP02 sky -> SKYMTNA` and its own scene identity. |

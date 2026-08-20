@@ -68,7 +68,10 @@
   replacement: all 35 shotgun/SSG direct frames now live under `sprites/`.
   Retribution's shotgun uses unique `UESG`/`UESF` aliases to avoid UE's earlier
   same-name `NoTrim` objects and drops UE's incompatible aspect hook. The SSG
-  retains its correct resting position but moves its firing span down 20 pixels.
+  retains its correct resting position but moves its complete firing span,
+  including both final recovery frames, down 20 pixels. UE's exact flash layer
+  also regains additive composition under its isolated identity, restoring the
+  chaingun's red/yellow muzzle card without the over-bright CHGF material row.
   The UE Unmaker composite is lowered 20 logical pixels, its red cap persists
   without extending `A_Light1`, and an exact-class three-tic gun-anchor light
   now recreates the red wash on the first-person weapon without touching
