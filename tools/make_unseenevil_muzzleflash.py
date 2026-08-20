@@ -98,6 +98,13 @@ PATCHES: dict[str, tuple[tuple[str, str, int], ...]] = {
             1,
         ),
     ),
+    f"{WEAPON_DIR}/shotgun.zsc": (
+        (
+            "\t\t+D64UE_Weapon_Base.CORRECTASPECT\n",
+            "\t\t// RT: UESG/UESF use Retribution's native psprite aspect.\n",
+            1,
+        ),
+    ),
     f"{WEAPON_DIR}/unmaker.zsc": (
         (
             "\t\tdist += 32 * D64_SCALEX;",
@@ -112,37 +119,47 @@ PATCHES: dict[str, tuple[tuple[str, str, int], ...]] = {
 # remains UE's because every firing action below calls the original UE method.
 STATE_SPANS: dict[str, tuple[str, str, str]] = {
     f"{WEAPON_DIR}/shotgun.zsc": (
-        "\t\tFire:\n",
+        "\t\tReady:\n",
         "\t\tSpawn:\n",
+        "\t\tReady:\n"
+        "\t\t\tUESG A 1 A_WeaponReady;\n"
+        "\t\t\tLoop;\n"
+        "\t\tDeselect:\n"
+        "\t\t\tUESG A 1 A_Lower();\n"
+        "\t\t\tLoop;\n"
+        "\t\tSelect:\n"
+        "\t\t\tUESG A 1 A_Raise();\n"
+        "\t\t\tLoop;\n"
         "\t\tFire:\n"
-        "\t\t\tSHTG J 1\n"
+        "\t\t\tUESG J 1\n"
         "\t\t\t{\n"
         "\t\t\t\tA_FireShotgun();\n"
         "\t\t\t\tA_D64Recoil();\n"
         "\t\t\t}\n"
-        "\t\t\tSHTG J 2;\n"
-        "\t\t\tSHTG I 3;\n"
-        "\t\t\tSHTG B 1;\n"
-        "\t\t\tSHTG C 1;\n"
-        "\t\t\tSHTG D 2;\n"
-        "\t\t\tSHTG E 3;\n"
-        "\t\t\tSHTG F 4;\n"
-        "\t\t\tSHTG G 1;\n"
-        "\t\t\tSHTG H 3;\n"
-        "\t\t\tSHTG GFEDC 2;\n"
-        "\t\t\tSHTG BIA 1;\n"
-        "\t\t\tSHTG A 2;\n"
-        "\t\t\tSHTG A 1 A_Refire();\n"
+        "\t\t\tUESG J 2;\n"
+        "\t\t\tUESG I 3;\n"
+        "\t\t\tUESG B 1;\n"
+        "\t\t\tUESG C 1;\n"
+        "\t\t\tUESG D 2;\n"
+        "\t\t\tUESG E 3;\n"
+        "\t\t\tUESG F 4;\n"
+        "\t\t\tUESG G 1;\n"
+        "\t\t\tUESG H 3;\n"
+        "\t\t\tUESG GFEDC 2;\n"
+        "\t\t\tUESG BIA 1;\n"
+        "\t\t\tUESG A 2;\n"
+        "\t\t\tUESG A 1 A_Refire();\n"
         "\t\t\tGoto Ready;\n"
         "\t\tFlash:\n"
-        "\t\t\tSHTF A 2 BRIGHT A_Light1;\n"
-        "\t\t\tSHTF B 2 BRIGHT A_Light2;\n"
+        "\t\t\tUESF A 2 BRIGHT A_Light1;\n"
+        "\t\t\tUESF B 2 BRIGHT A_Light2;\n"
         "\t\t\tGoto LightDone;\n",
     ),
     f"{WEAPON_DIR}/superdupershotgun.zsc": (
         "\tFire:\n",
         "\tSpawn:\n",
         "\tFire:\n"
+        "\t\tTNT1 A 0 Offset(0,52);\n"
         "\t\tSH2G C 1\n"
         "\t\t{\n"
         "\t\t\tA_FireShotgun2();\n"
@@ -160,6 +177,7 @@ STATE_SPANS: dict[str, tuple[str, str, str]] = {
         "\t\tSH2F MNOPQ 2;\n"
         "\t\tSH2F R 2 A_StartSound(\"weapons/sshotc\", CHAN_5);\n"
         "\t\tSH2F S 2;\n"
+        "\t\tTNT1 A 0 Offset(0,32);\n"
         "\t\tSH2G A 2;\n"
         "\t\tSH2G A 1 A_Refire;\n"
         "\t\tGoto Ready;\n"
@@ -326,12 +344,15 @@ RETRIBUTION_TEXTURE_SPRITES = (
 # Entries not rebuilt as TEXTURES composites are live state sprites. Keep the
 # namespaces distinct: a patch can be consumed by a composite but cannot be
 # resolved directly by a four-letter weapon state.
-UE_OWNED_DIRECT_SPRITES = tuple(f"SHTG{frame}0" for frame in "ABCDEFGH")
 RETRIBUTION_DIRECT_SPRITES = tuple(
     name for name in RETRIBUTION_WEAPON_PATCHES
     if name not in RETRIBUTION_TEXTURE_SPRITES
-    and name not in UE_OWNED_DIRECT_SPRITES
 )
+
+UE_DIRECT_ALIASES = {
+    **{f"SHTG{frame}0": f"UESG{frame}0" for frame in "ABCDEFGHIJ"},
+    **{f"SHTF{frame}0": f"UESF{frame}0" for frame in "AB"},
+}
 
 # Keep Retribution's exact composite geometry but give the two UE-only flash
 # overlays names that cannot inherit the shared material rows described above.
@@ -424,10 +445,9 @@ def patched_sources() -> dict[str, bytes]:
     for name in RETRIBUTION_WEAPON_PATCHES:
         if name not in lumps:
             raise SystemExit(f"{RETRIBUTION.name}: missing {name}")
-        if name in UE_OWNED_DIRECT_SPRITES:
-            continue
         if name in RETRIBUTION_DIRECT_SPRITES:
-            result[f"sprites/{name}.png"] = lumps[name]
+            alias = UE_DIRECT_ALIASES.get(name, name)
+            result[f"sprites/{alias}.png"] = lumps[name]
         else:
             result[f"patches/{name}"] = lumps[name]
     if "TEXTURES" not in lumps:
@@ -446,7 +466,10 @@ def verify_output(expected: dict[str, bytes]) -> None:
     if files != expected:
         raise SystemExit("generated muzzle-flash package differs from patched sources")
 
-    direct_paths = {f"sprites/{name}.png" for name in RETRIBUTION_DIRECT_SPRITES}
+    direct_paths = {
+        f"sprites/{UE_DIRECT_ALIASES.get(name, name)}.png"
+        for name in RETRIBUTION_DIRECT_SPRITES
+    }
     composite_paths = {
         f"patches/{name}" for name in RETRIBUTION_TEXTURE_SPRITES
     }
@@ -460,8 +483,10 @@ def verify_output(expected: dict[str, bytes]) -> None:
         b"A_Light1",
         b"A_Light2",
         b"Goto LightDone",
-        b"SHTG J 1",
-        b"SHTF A 2 BRIGHT A_Light1",
+        b"UESG J 1",
+        b"UESF A 2 BRIGHT A_Light1",
+        b"TNT1 A 0 Offset(0,52)",
+        b"TNT1 A 0 Offset(0,32)",
         b"SH2F R 2",
         b"SSGF A 2 Bright A_Light1",
         b"CHGG ABCD 3 A_WeaponReady",

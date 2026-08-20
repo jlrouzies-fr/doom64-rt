@@ -138,8 +138,8 @@ Rebuilt: `sourcecode/gzdoom-rt/build/RelWithDebInfo/gzdoom.exe`
   `rt_smoke_rocket` remains enabled.
 - `make_unseenevil_muzzleflash.py` now restores complete Retribution
   first-person presentation, not only a light flag: eight exact UE sources, 34
-  composite patch inputs, and 27 added shotgun/SSG sprites (UE's compatible
-  SHTG A-H remain in their original archive). UE firing
+  composite patch inputs, and all 35 direct shotgun/SSG sprites. The complete
+  Retribution shotgun is exposed as UE-private `UESG` / `UESF` aliases. UE firing
   functions, ammo, projectile, recoil, and sound behavior remain in the action
   blocks. BFG now has its
   original `BFGF H-A` green charge and `A_Light2`, but still calls UE's
@@ -158,21 +158,33 @@ Rebuilt: `sourcecode/gzdoom-rt/build/RelWithDebInfo/gzdoom.exe`
 - Raw weapon art must be under `sprites/`, not `patches/`. The first overlay
   accidentally hid that mistake behind UE's existing SHTG A-H files: only
   shotgun I/J vanished, while every new SH2G/SH2F SSG firing frame vanished.
-  The final package audits all 27 added sprite paths separately from its 34
-  TEXTURES inputs. Do not override UE's SHTG A-H: its earlier
-  `TEXTURES.weapons` applies `NoTrim` to those objects, and a late same-name raw
-  override aborts startup with `SHTGA0 is not a sprite`.
+  The intermediate 27-frame correction still used UE's differing SHTG A-H art.
+  The final package audits all 35 direct sprite paths separately from its 34
+  TEXTURES inputs. SHTG/SHTF are renamed to `UESG`/`UESF`: UE's earlier
+  `TEXTURES.weapons` applies `NoTrim` to the same-name objects, and a late raw
+  SHTG override aborts startup with `SHTGA0 is not a sprite`.
+- Retribution's raw shotgun sprites do not need UE's `CORRECTASPECT`; its exact
+  Ready-through-Flash replacement removes that hook. The SSG's UE rest frame is
+  already correct, so only Fire moves its psprite from Y=32 to Y=52 and restores
+  Y=32 before Ready. Neither adjustment can leak to another weapon.
 - UE's psprite aspect hook leaves Retribution's Unmaker composite about 20
   logical pixels above the bottom. UNMA and its UEMF overlay receive the same
   UE-only -20 Y correction. UEMF remains visible across the 11-tic firing span,
   but clears `A_Light1` after three tics so room lighting is not extended.
+- The ordinary Unmaker muzzle light illuminated the world but not the rendered
+  view weapon. Under the exact UE identity and exact
+  `D64UE_Weapon_Unmaker` class, `rt_draw.cpp` now records the `UNMA` gun quad and
+  `RT_AddWeaponGlow()` places a red source centimetres in front of it only while
+  `extralight > 0`. It reuses the plasma anchor mechanism without changing the
+  plasma arm. Retribution cannot enter the UE gate and keeps its authored path.
 - `make_unseenevil_barrel.py` makes UE's replacement barrel enter the same
   `BEXP E` edge used by `RT_BarrelSmoke()` and `BarrelWalkActor()`, while keeping
   its UE gameplay properties and damage type. It copies Retribution's BEXP A-E
   frames and explosion-helper timing in a launcher-only overlay.
 - Short-run results: plasma and Unmaker first-person animation captured; the
   final Unmaker is aligned, no longer bleached by the HUD-attached material
-  light, and retains its immediate analytic discharge; a real
+  light, and retains its immediate world discharge plus the UE-only gun-quad
+  wash. The 69-frame shotgun/SSG package passed its startup/parser check; a real
   `D64UE_ExplosiveBarrel` logged six volumetric parcels and all 60 authored
   shards on tic 127. BFG/chaingun/shotgun feel, beam persistence, and the
   square-free rocket trail remain normal-play visual checks; package/config

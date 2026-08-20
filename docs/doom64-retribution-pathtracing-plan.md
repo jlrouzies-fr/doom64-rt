@@ -64,12 +64,15 @@
   behavior. UE-only aliases stop CHGF/UNMF global material rows from
   over-lighting HUD flashes; the `A_Light` world sources remain. Plasma and
   Unmaker were captured live; the others await a normal-play feel check.
-- Follow-up package audit fixed the raw-art namespace: 27 missing shotgun/SSG
-  state frames now live under `sprites/` instead of `patches/`, removing the
-  SHTG I/J holes and the fully invisible SH2G/SH2F sequence. UE's own SHTG A-H
-  remain untouched because its earlier `NoTrim` directives own those texture
-  objects. The UE Unmaker composite is lowered 20 logical pixels, and its red
-  cap persists visually without extending the three-tic analytic muzzle light.
+- Follow-up package audit fixed the raw-art namespace, then completed the
+  replacement: all 35 shotgun/SSG direct frames now live under `sprites/`.
+  Retribution's shotgun uses unique `UESG`/`UESF` aliases to avoid UE's earlier
+  same-name `NoTrim` objects and drops UE's incompatible aspect hook. The SSG
+  retains its correct resting position but moves its firing span down 20 pixels.
+  The UE Unmaker composite is lowered 20 logical pixels, its red cap persists
+  without extending `A_Light1`, and an exact-class three-tic gun-anchor light
+  now recreates the red wash on the first-person weapon without touching
+  Retribution or plasma behavior.
 - UE's barrel now reaches Retribution's `BEXP E` contract. Live MAP02 validation
   produced the explosion animation, volumetric burst, scorch/embers, and 60
   authored plate shards instead of removing the prop immediately.

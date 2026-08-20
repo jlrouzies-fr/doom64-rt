@@ -156,9 +156,12 @@ Repairing only that signal was not enough. A source-level comparison against
 `tools/make_unseenevil_muzzleflash.py` patches eight exact UE weapon sources.
 It preserves UE's firing functions, ammo rules, projectiles, recoil calls, and
 sounds, while replacing only the visual state spans. The generated archive
-uses 69 compatible presentation frames: eight existing UE SHTG A-H sprites,
-34 Retribution patch-namespace inputs for exact chaingun/plasma/BFG/Unmaker
-`TEXTURES` composites, and 27 added direct sprite-namespace shotgun/SSG frames.
+uses 69 Retribution presentation frames: 34 patch-namespace inputs for exact
+chaingun/plasma/BFG/Unmaker `TEXTURES` composites and 35 direct
+sprite-namespace shotgun/SSG frames. The complete shotgun is renamed to the
+UE-private `UESG` / `UESF` families instead of reusing UE's `SHTG` objects;
+this preserves Retribution's art while avoiding UE's earlier same-name
+`NoTrim` declarations.
 The generator requires exact source matches before writing, so a future UE
 update cannot silently patch a similar-looking state.
 Rebuild it with:
@@ -191,10 +194,14 @@ extralight=0 -> wantFlash=0
 The later short runs confirmed the full plasma discharge/recovery art and the
 Unmaker's `UNMF`-derived overlay (now named `UEMF` in the final package). At
 Unmaker tic 110 the trace showed
-`weapon=D64UE_Weapon_Unmaker extralight=1`, while the capture shows the complete
-gun illuminated red rather than a delayed light travelling downrange. Because
-the archive is referenced only by `launch-unseenevil-rt.cmd`, Retribution keeps
-its original states and never loads UE source.
+`weapon=D64UE_Weapon_Unmaker extralight=1`. A subsequent comparison found that
+the ordinary muzzle source illuminated the world but did not reliably wash the
+first-person gun. The engine now borrows the existing geometry-derived weapon
+glow anchor for the exact UE Unmaker class during that same three-tic
+`extralight` edge. It is red, centimetres in front of the actual `UNMA` quad,
+and cannot activate for Retribution. Because the archive is referenced only by
+`launch-unseenevil-rt.cmd`, Retribution also keeps its original states and
+never loads UE source.
 
 ## Projectile and remaining weapon parity -- 2026-08-20
 
@@ -224,8 +231,12 @@ appeared late and downrange and could not illuminate the gun. The attachment
 has been removed. The compatibility overlay now uses Retribution's `UNMA` gun
 and `UNMF A 3 BRIGHT A_Light1` state while retaining UE's
 `A_D64_FireLaser()`. `RT_AddMuzzleFlash()` supplies the immediate world light,
-and its existing per-weapon class match selects
-`rt_mzlflsh_color_unmaker`; no new global light or Retribution branch is needed.
+and its existing per-weapon class match selects `rt_mzlflsh_color_unmaker`.
+That source is not close enough to the rasterized first-person quad to recreate
+Retribution's red wash on the weapon itself, so `RT_AddWeaponGlow()` also uses
+the captured `UNMA` quad anchor for exact `D64UE_Weapon_Unmaker` while
+`extralight > 0`. The gate is UE's isolated identity pair plus exact class;
+the passive plasma glow is unchanged and Retribution cannot enter the new arm.
 
 `rt_impacts.cpp` now accepts the exact class `D64UE_UnmakerPuff` as the second
 door into the existing laser-impact implementation. The alias is enabled only
@@ -317,24 +328,35 @@ and the full `PLSG D-E-F-G-H-G-F-E-D` recovery. The shotgun and SSG use the
 original long `SHTG` and `SH2F B-S` pump/reload sequences and their `SHTF` /
 `SSGF` flash art. UE's actual firing calls remain in the action blocks.
 
-The final package audit passed with eight patched sources and 61 borrowed art
-files, including BFG; UE's own eight SHTG A-H sprites complete the 69-frame
-presentation set. Plasma was captured live with the full blue discharge and gun
-animation. Chaingun and both shotguns are source/package verified but still
-need a normal-play feel check; no result from a different selected weapon is
-counted as visual evidence.
+The final package audit passed with eight patched sources and all 69 borrowed
+art files, including BFG. Plasma was captured live with the full blue discharge
+and gun animation. Chaingun and both shotguns are source/package verified but
+still need a normal-play feel check; no result from a different selected weapon
+is counted as visual evidence.
 
 The first package incorrectly wrote every retrieved WAD lump to `patches/`.
 That namespace is correct only when a copied TEXTURES composite consumes the
 image. A weapon state resolves raw art through the sprite namespace. UE happened
 to supply SHTG A-H itself, hiding most of the mistake; SHTG I/J disappeared,
 while the new SH2G/SH2F SSG sequence had no resolvable frame and vanished for
-its complete firing animation. The generator now writes the 27 missing raw
-SHTG I/J, SHTF, SH2G/SH2F, and SSGF images as `sprites/<lump>.png` and keeps
-only the 34 composite inputs under `patches/`. It must not recopy SHTG A-H:
-UE's earlier `TEXTURES.weapons` applies `NoTrim` to its own eight sprite
-objects, and a late same-name raw override makes startup fail with
+its complete firing animation. A first correction added only the 27 missing
+raw frames and retained UE's own SHTG A-H, but that was not a full visual
+replacement: their art and aspect treatment still differed from Retribution.
+
+The final generator writes all 35 direct frames under `sprites/`. Retribution's
+SHTG A-J and SHTF A-B are renamed to `UESG A-J` and `UESF A-B`, while SH2G,
+SH2F, and SSGF retain their names. The normal shotgun's complete Ready through
+Flash span uses those aliases and removes UE's `CORRECTASPECT`, because
+Retribution's raw sprites already use their native psprite aspect. Unique names
+are essential: placing the same-name SHTG A-H raw files late in the load order
+makes UE's earlier `TEXTURES.weapons` `NoTrim` directives fail with
 `NoTrim: SHTGA0 is not a sprite` before our TEXTURES lump can run.
+
+The SSG deliberately keeps UE's correctly aligned resting SHT2 frame and its
+aspect hook. Only its borrowed firing animation was high, so Fire temporarily
+sets the psprite Y offset from 32 to 52 and restores 32 before returning to
+Ready. This is state-local; it does not move the resting weapon or any other
+weapon.
 
 The chaingun fire composites use the UE-private `UECF A-D` aliases described
 above. This is the same Retribution art, placement, and two-pair cadence, but it
@@ -414,7 +436,7 @@ keeping each minimized game run to a few seconds.
 | UE RT menu / HUD | Passed: RT labels and live values render instead of raw `RTMNU_*` keys. The active HUD is Retribution's unchanged SBARINFO layout: BATTERY/HEALTH/mugshot left and keys/ARMOR/AMMO right; BATTERY follows the same integer scale. |
 | UE key actors | Runtime wiring passed: MAP02 found 24 transformed faces and spawned 72 ordinary PointLights, and the close capture proved they cast onto geometry. That capture was over-bright; the final quarter-flux narrow-face rule and 0.5 surface multiplier were applied after the fifth permitted launch and remain the first visual check for the next iteration budget. |
 | UE player muzzle flash | Passed: a real MAP02 pistol shot raised `extralight` 0 -> 1 -> 2, activated the shared RT muzzle source, spawned firing smoke, visibly lit nearby geometry, returned to 0 through `LightDone`, and auto-quit. |
-| UE weapon presentation | Plasma captured Retribution's blue `PLSF` discharge and recovery sequence. The final package statically verifies Retribution's BFG charge, UE-private chaingun/Unmaker flash aliases, immediate analytic light states, the slowed visual-only Unmaker beam, and all 27 missing shotgun/SSG raw frames in the sprite namespace while preserving UE's `NoTrim`-owned SHTG A-H. Unmaker retains `CORRECTASPECT`, uses a UE-only 20-pixel lower offset, and keeps the red cap visible after its three-tic analytic light ends. A final normal-play feel check remains appropriate. |
+| UE weapon presentation | Plasma captured Retribution's blue `PLSF` discharge and recovery sequence. The final package statically verifies Retribution's BFG charge, UE-private chaingun/Unmaker flash aliases, immediate analytic light states, the slowed visual-only Unmaker beam, and all 35 shotgun/SSG raw frames in the sprite namespace. Full Retribution shotgun art uses collision-free `UESG`/`UESF` aliases with UE's aspect hook removed; the SSG applies a firing-only +20 Y offset and preserves its correct rest position. Unmaker retains `CORRECTASPECT`, uses a UE-only 20-pixel lower art offset, keeps the red cap visible after its three-tic analytic light ends, and gains a separately gated three-tic red light at the actual weapon quad. The generated PK3 passed a short startup/parser run; a final normal-play visual check remains appropriate. |
 | UE exploding barrel | Passed: a real `D64UE_ExplosiveBarrel` reached `BEXP E`; one tic produced the visible explosion, six volumetric burst parcels, the floor/scorch event, and all 60 authored shard pieces. |
 | UE rocket raster trail | Implemented and statically verified: UE alone pins `cl_rockettrails 0` while `rt_smoke_rocket` remains on; a normal-play square-free trail capture is pending because the automated shot occurred during weapon selection. |
 | Retribution MAP01/MAP02 | Passed after the UE changes: MAP01 keeps its original RT lighting/HUD path; MAP02 retains `D64RtSkyFix: MAP02 sky -> SKYMTNA` and its own scene identity. |

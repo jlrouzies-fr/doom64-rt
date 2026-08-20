@@ -143,9 +143,10 @@ rem   Retribution's first-person weapons  YES, through d64ue-muzzleflash.pk3.
 rem       The overlay retains UE's firing functions and ammo rules, but restores
 rem       Retribution's original shotgun/SSG/chaingun/plasma/BFG/Unmaker frames
 rem       and timing plus the A_Light triggers consumed by the shared RT flash
-rem       path. UE-private flash aliases avoid global CHGF/UNMF material lights,
-rem       and the visual Unmaker model retracts slowly enough to reach an RT
-rem       frame. Retribution already has these states and never loads the overlay.
+rem       path. UE-private UESG/UESF shotgun and UECF/UEMF flash aliases avoid
+rem       UE NoTrim conflicts and global material lights. The SSG offset changes
+rem       only during Fire, and the visual Unmaker model retracts slowly enough
+rem       to reach an RT frame. Retribution never loads this overlay.
 rem   Retribution's exploding barrel path  YES, through d64ue-retribution-barrel.pk3.
 rem       UE normally dies on BAR1 D and stops, bypassing the BEXP E edge used by
 rem       both volumetric barrel smoke and the RT plate/scorch/ember system. The

@@ -719,8 +719,12 @@ that texture: `D64UE_UnmakerBolt` is one stretched OBJ skinned with
 `models/beam_unmaker.png`. Mapping more `UNML` names therefore cannot affect it.
 The UE compatibility path handles the exact model skin as a screen-emissive,
 no-shadow primitive and places three analytic lights along the reconstructed
-beam segment. The immediate gun illumination is still the separate weapon
-`A_Light1` muzzle source.
+beam segment. `A_Light1` still drives the immediate world muzzle source, but
+that light alone did not reliably illuminate the first-person gun quad. During
+the same three-tic edge, the exact UE Unmaker class now borrows the plasma
+weapon-glow geometry anchor and places a red light centimetres in front of the
+actual `UNMA` quad. Both its content identity and class gate are UE-only;
+Retribution and the passive plasma core keep their existing paths.
 
 The opposite failure happened after copying Retribution HUD art into UE.
 Texture metadata is global by rendered name, not by the archive the patch came
