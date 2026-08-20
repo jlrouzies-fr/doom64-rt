@@ -24,14 +24,6 @@ Every light in the game is a real emitter, and every surface answers to it.
 <a href="AI-DECLARATION.md"><img src="https://img.shields.io/badge/䷼%20AI--DECLARATION-copilot-fee2e2?labelColor=fee2e2" alt="AI-DECLARATION: copilot"></a>
 </p>
 
-<sub>
-Written by AI under human direction. The author is a .NET engineer, not a graphics
-programmer:<br>the direction, the judgement of every rendered frame and every decision are
-theirs — the code is Claude's. <a href="AI-DECLARATION.md">Details</a>.
-</sub>
-
-<sub><b><a href="AGENTS.md">AGENTS.md</a></b> &nbsp;·&nbsp; <a href="docs/doom64-retribution-pathtracing-plan.md">Path-tracing plan</a> &nbsp;·&nbsp; <a href="docs/material-authoring-spec.md">Material spec</a> &nbsp;·&nbsp; <a href="docs/compat-patches.md">Compat patches</a> &nbsp;·&nbsp; <b><a href="CREDITS.md">Credits</a></b></sub>
-
 </div>
 
 ---
