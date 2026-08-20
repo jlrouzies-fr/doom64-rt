@@ -34,6 +34,7 @@ rem   .\tools\launch-unseenevil-rt.cmd menu       -> title screen, no +map
 rem   .\tools\launch-unseenevil-rt.cmd doom1      -> doom.wad, E1M1
 rem   .\tools\launch-unseenevil-rt.cmd doom1 e3m8 -> doom.wad, the custom Dis
 rem   .\tools\launch-unseenevil-rt.cmd bare       -> no Retribution patches at all
+rem   .\tools\launch-unseenevil-rt.cmd min 2      -> MAP02, start minimized
 rem   .\tools\launch-unseenevil-rt.cmd 5 -- +rt_sky 40      -> extra cvars win
 rem
 rem Anything that is not a number and not a keyword is passed to +map verbatim,
@@ -57,6 +58,12 @@ set "SKYRT=%PROJ%\Doom64-UnseenEvil\d64ue-sky-rt.pk3"
 rem Pickup glows. The mod lights its keys and weapon projectiles but nothing else;
 rem armour and the spheres define no light, so they sit unlit under RT.
 set "PICKLT=%PROJ%\Doom64-UnseenEvil\d64ue-pickup-lights.pk3"
+rem Routes UE's Options entry through the compact RT menu, whose Other entry
+rem reaches base GZDoom. It uses the stock drawer only on that RT page because
+rem UE's drawer bypasses TextItem_RT values. Its additive customization subclass
+rem also removes only the Player tab and recentres Gameplay/Aesthetics/Music.
+rem Rebuild with the script below.
+set "RTMENU=%PROJ%\Doom64-UnseenEvil\d64ue-rt-menu.pk3"
 rem FLAT2 retarget. The mod maps FLAT2 -- an ordinary grey DOOM II ceiling flat used
 rem over huge areas -- onto Doom 64's inset-lamp flat SFLATAS, which this engine
 rem treats as a FIXTURE (emissiveMult 20 in rt/data/textures.json, plus real analytic
@@ -118,9 +125,31 @@ rem       harmless result of sharing one pins file across two mods.
 rem   d64r-seqlight-fix.wad / d64r-3dfloor-rtfix.wad / d64r-ctel-fix.wad /
 rem   d64r-bulb-textures.wad  NO -- map and texture replacements for Retribution's
 rem       own MAP01-34. Nothing here has those maps.
-rem   d64r-mugshot.pk3 / d64r-widescreen-gfx.pk3 / d64r-rt-titlelogo.pk3  NO --
-rem       they override the status bar, TITLEPIC and title music, and Unseen Evil
-rem       ships its own (StatusBarClass = D64UE_StatusBar, a custom TITLEMAP).
+rem   d64r-widescreen-gfx.pk3 / d64r-rt-titlelogo.pk3  NO -- they override
+rem       TITLEPIC/title music and Unseen Evil ships its own custom TITLEMAP.
+rem   d64r-mugshot.pk3  YES, through d64ue-retribution-hud.pk3. The compatibility
+rem       package copies its SBARINFO/TEXTURES/FONTDEFS/mugface unchanged, then adds
+rem       only the glyphs/key icons and IsPlaying token Retribution normally gets
+rem       from D64RTR_v15.WAD. Because it loads after UE, GZDoom's existing
+rem       last-definition rule selects that SBARINFO over D64UE_StatusBar.
+rem   Retribution's player sprites  YES, through d64ue-retribution-player.pk3.
+rem       UE's PLAY/PLYC sprite files are flat green colour masks whose real art is
+rem       reconstructed by a GZDoom fragment shader. RTGL1 never runs that shader,
+rem       so it traces the green mask itself. The compatibility package copies the
+rem       exact Retribution PLAY PNGs over those masks, uses the same art for UE's
+rem       crouch frames, and restores normal material sampling. The RT menu
+rem       package above removes the obsolete Player page.
+rem   Retribution's first-person weapons  YES, through d64ue-muzzleflash.pk3.
+rem       The overlay retains UE's firing functions and ammo rules, but restores
+rem       Retribution's original shotgun/SSG/chaingun/plasma/BFG/Unmaker frames
+rem       and timing plus the A_Light triggers consumed by the shared RT flash
+rem       path. UE-private flash aliases avoid global CHGF/UNMF material lights,
+rem       and the visual Unmaker model retracts slowly enough to reach an RT
+rem       frame. Retribution already has these states and never loads the overlay.
+rem   Retribution's exploding barrel path  YES, through d64ue-retribution-barrel.pk3.
+rem       UE normally dies on BAR1 D and stops, bypassing the BEXP E edge used by
+rem       both volumetric barrel smoke and the RT plate/scorch/ember system. The
+rem       UE-only overlay keeps its class/gameplay but enters Retribution's frames.
 rem   d64r-rt-sky.pk3  NO -- Unseen Evil has its own sky system, GLDEFS.skies plus
 rem       the sky_3d.fp and skyfire.fp shaders.
 rem
@@ -131,17 +160,31 @@ rem       is additive, so it sits alongside Unseen Evil's handlers rather than
 rem       replacing them. Worth having precisely because this is a dark
 rem       path-traced game.
 rem
-rem       CAVEAT, untested in play: the battery HUD is authored against
-rem       Retribution's ForceScaled 320x240 bar, so on Unseen Evil's own status
-rem       bar it may not land where intended. It draws from RenderOverlay, which
-rem       is independent of the status bar, so the worst case is cosmetic. Launch
-rem       with "bare" as the first argument to drop it and every other patch.
+rem       The battery overlay was already authored against the Retribution
+rem       ForceScaled+FullScreenOffsets SBARINFO copied by the HUD package, so
+rem       it follows the exact same integer clean scale here without a UE-only
+rem       placement branch. Launch with "bare" to drop every patch.
 set "FLSH=%PROJ%\Doom64-Retribution\d64r-rt-flashlight.pk3"
+set "HUD=%PROJ%\Doom64-UnseenEvil\d64ue-retribution-hud.pk3"
+set "PLAYER=%PROJ%\Doom64-UnseenEvil\d64ue-retribution-player.pk3"
+set "MUZZLE=%PROJ%\Doom64-UnseenEvil\d64ue-muzzleflash.pk3"
+set "BARREL=%PROJ%\Doom64-UnseenEvil\d64ue-retribution-barrel.pk3"
 rem The quotes live INSIDE the value: PROJ is derived from this script's path and
 rem a clone can sit somewhere with a space in it, at which point an unquoted
 rem expansion would split into two bogus -file arguments.
-set "PATCHES="%FLSH%""
+set "PATCHES="%FLSH%" "%HUD%" "%PLAYER%" "%MUZZLE%" "%BARREL%""
 if not exist "%FLSH%" set "PATCHES="
+if not exist "%HUD%" set "PATCHES="
+if not exist "%PLAYER%" set "PATCHES="
+if not exist "%MUZZLE%" set "PATCHES="
+if not exist "%BARREL%" set "PATCHES="
+rem Retribution lights each locked-door jamb with a vertical stack of three
+rem ordinary 9800 PointLight map things. UE transforms IWAD maps at runtime, so
+rem this late EventHandler finds the final key-trim faces and spawns those same
+rem stacks after the Terraformer has finished.
+set "KEYLIGHTS=%PROJ%\Doom64-UnseenEvil\d64ue-keytrim-lights.pk3"
+if not exist "%KEYLIGHTS%" set "KEYLIGHTS="
+if defined KEYLIGHTS set "KEYLIGHTS="%KEYLIGHTS%""
 set "PINS=%PROJ%\tools\d64rt-pins.cfg"
 rem World lighting for DOOM 1/2 maps. Exec'd AFTER the pins so it wins. Both invented
 rem light schemes -- the per-sector PointLight rig and sector self-emission -- are
@@ -158,10 +201,12 @@ rem quietly broke "doom1 bare": the second keyword had already slid into %1 by t
 rem time its own test was reached, so it fell through to the map parser and became
 rem "+map bare". Consuming them in a loop removes the ordering entirely.
 set "WANT=doom2.wad"
+set "STARTMODE="
 :flags
-if /i "%~1"=="bare"  ( set "PATCHES=" & set "AUTO=" & shift & goto :flags )
+if /i "%~1"=="bare"  ( set "PATCHES=" & set "KEYLIGHTS=" & set "AUTO=" & shift & goto :flags )
 if /i "%~1"=="doom1" ( set "WANT=doom.wad" & shift & goto :flags )
 if /i "%~1"=="nolights" ( set "AUTO=" & shift & goto :flags )
+if /i "%~1"=="min" ( set "STARTMODE=/min" & shift & goto :flags )
 
 rem Steam's modern "Ultimate Doom" depot is a BUNDLE: one app folder holds every
 rem classic IWAD, with DOOM.WAD at base\ and the rest one level down in
@@ -212,6 +257,8 @@ if not exist "%TEXFIX%" set "TEXFIX="
 if defined TEXFIX set "TEXFIX="%TEXFIX%""
 if not exist "%PICKLT%" set "PICKLT="
 if defined PICKLT set "PICKLT="%PICKLT%""
+if not exist "%RTMENU%" set "RTMENU="
+if defined RTMENU set "RTMENU="%RTMENU%""
 if not exist "%SKYRT%" set "SKYRT="
 if defined SKYRT set "SKYRT="%SKYRT%""
 if not exist "%LIQANIM%" set "LIQANIM="
@@ -337,15 +384,16 @@ rem That is why the pins live in a cfg and arrive via +exec.
 rem WINDOWED 960x540, PINNED TOP-LEFT. -width/-height set the RENDER size and do
 rem not size the window at all; only vid_defwidth/vid_defheight do, which is why
 rem the old line above them still opened a full-desktop window.
-start "" gzdoom.exe ^
-  -iwad "%IWAD%" -file "%MOD%" %PATCHES% "%TONE%" %TEXFIX% %LIQANIM% %SKYRT% %PICKLT% %AUTO% -rtnolauncher -nostartup ^
+start "" %STARTMODE% gzdoom.exe ^
+  -iwad "%IWAD%" -file "%MOD%" %PATCHES% "%TONE%" %TEXFIX% %LIQANIM% %SKYRT% %PICKLT% %RTMENU% %KEYLIGHTS% %AUTO% -rtnolauncher -nostartup ^
   +vid_fullscreen 0 +vid_defwidth 960 +vid_defheight 540 +win_x 0 +win_y 0 ^
   +logfile "%LOGF%" ^
   +exec "%PINS%" ^
   +exec "%LIGHTCFG%" ^
   +rt_mod_compat 0 ^
-  +rt_sun 0 +rt_moon_geo 0 +rt_moon_presets 0 +rt_clouds_presets 0 +rt_fog_presets 0 ^
+  +rt_sun 0 +rt_sky 25 +rt_moon_geo 0 +rt_moon_presets 0 +rt_clouds_presets 0 +rt_fog_presets 0 ^
   +rt_volume_shaft_mult 0.1 ^
-  +rt_keytrim_lights 1 ^
+  +rt_keytrim_lights 0 ^
+  +rt_ue_keytrim_emis 0.5 ^
   %MAPARG% %MAPLUMP% %EXTRA%
 exit /b 0

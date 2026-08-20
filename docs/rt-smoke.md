@@ -187,11 +187,13 @@ weapon with no smoke costs nothing at all.
 | exploding barrel | the SPRITE FRAME `A_Explode` sits on | `RT_BarrelSmoke` |
 | flames | continuous, per actor, on a countdown | `RT_AMBIENT_FLAMES` |
 
-**All six are trigger-free by necessity, not by preference.** Every actor class
-involved belongs to the WAD — `64Rocket`, `64ZombieMan`, `64ExplosiveBarrel`,
-`64BigFire` — so nothing here may require a DECORATE edit or a ZScript. That one
-constraint is why the triggers look so different from each other: each is
-whichever property of the actor happens to be readable from the renderer.
+**All six renderer paths are trigger-free by necessity, not by preference.**
+Retribution's actor classes belong to the WAD — `64Rocket`, `64ZombieMan`,
+`64ExplosiveBarrel`, `64BigFire` — so the renderer cannot require a DECORATE
+edit or ZScript hook. That constraint is why the triggers look so different:
+each uses whichever property of the actor is already readable by the renderer.
+The UE compatibility overlay does not add a new renderer hook; it makes UE's
+replacement barrel play the same readable `BEXP E` contract.
 
 **The sprite frame is the workhorse.** A monster's attack and a barrel's
 explosion are both DECORATE states, invisible to the renderer — but what frame an
@@ -200,6 +202,13 @@ is the aim; `BEXP E` is where `A_Explode` sits. Same rule
 `tools/gen_fx_emissives.py` already uses to pick which frames get a muzzle
 emissive, so the light on the sprite and the smoke off the barrel agree by
 construction.
+
+UE v1.0.3 originally exploded `D64UE_ExplosiveBarrel` on `BAR1 D` and reached
+`Stop` immediately. That bypassed both this smoke edge and the independently
+gated plate/scorch/ember edge. `make_unseenevil_barrel.py` preserves UE's actor
+gameplay but supplies Retribution's BEXP A-E death presentation in a UE-only
+late overlay. Live validation logged six burst parcels and 60 plate shards on
+the same tic.
 
 **`MF_MISSILE` is what keeps `FIRE`'s two owners apart.** The sprite belongs to
 both `64MotherFire`, a projectile, and `64BigFire`, the ambient bonfire that
@@ -298,6 +307,14 @@ above were lowered once already and never took effect in play, because
 `d64rt-pins.cfg` still held the pre-reduction `rt_smoke_boom 10` /
 `rt_smoke_boom_radius 0.45`. Changing a compiled default is half the change; the
 other half is the pin, and the pin is the one the game reads.
+
+**Unseen Evil has a second rocket-trail path.** gzdoom-rt's built-in
+`CheelloRocket replaces Rocket` is the live UE projectile and inherits stock
+`+ROCKETTRAIL`. With `cl_rockettrails 1`, GZDoom draws small grey raster
+particle billboards on top of the volumetric parcels. UE therefore pins
+`cl_rockettrails 0` in `d64ue-lighting.cfg`; `d64rt-pins.cfg` pins the normal
+and Retribution baseline back to `1`. This changes neither the class match nor
+any `rt_smoke_rocket_*` value.
 
 ### The monsters shoot back, and now their guns smoke
 

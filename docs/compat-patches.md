@@ -35,6 +35,137 @@ Enter-fade (`d64_enterfade`) was a red herring — disabling it did not fix.
 
 Rebuilt: `sourcecode/gzdoom-rt/build/RelWithDebInfo/gzdoom.exe`
 
+### C. Unseen Evil monitor fixtures (2026-08-20)
+- `rt_lights_fixtures.cpp` adds cyan analytic wall lights for `SMONDA` through
+  `SMONDD` only while Unseen Evil runs with `rt_mod_compat 0`.
+- Retribution remains on its map-authored monitor lights (`rt_mod_compat 1`), so
+  no existing fixture is doubled.
+
+### D. Unseen Evil key-trim light and brightmap isolation (2026-08-20)
+- MAP02's `STRAKR` is not an accidental ordinary wall. UE's Terraformer maps a
+  16-wide `DOORRED` pillar to `STRAKR` on all four faces; the matching UE
+  `GLDEFS.brightmaps` entry uses `d64_keytrim_bm_wide.png`.
+- Retribution does **not** derive the surrounding illumination from that
+  texture. Its base WAD already places six ordinary type-9800 `PointLight`
+  things at a locked-door recess, as two vertical stacks of three. The RT
+  engine's dynamic-light uploader has explicit attenuation for these
+  co-located stacks. Texture emission only makes the painted inlay itself glow.
+- `d64ue-keytrim-lights.pk3`, built by
+  `tools/make_unseenevil_keylights.py`, waits one tic for UE's Terraformer,
+  scans the final STRAKR/B/Y and full-path key-trim faces, then adds the same
+  vertical three-`PointLight` actor stack in front of each face. A four-sided
+  narrow pillar exposes one fixture four times, so each of its face stacks uses
+  one quarter of the RGB energy; wider door jambs retain full energy.
+- The old engine analytic key-trim approximation is pinned off in the UE
+  launcher. It is not used for this compatibility path, and the attempted
+  eleven-cell mask-shaped light and dedicated key radius were removed.
+- The PBR catalogue has a STRAKR metal/roughness entry but no `emissiveMult`.
+  RTGL therefore replaced the primitive fallback multiplier with zero even
+  though the brightmap mask was present. UE world brightmaps now claim
+  `RG_MESH_PRIMITIVE_EMISSIVE_OVERRIDE`, only under UE's isolated compatibility
+  pair. Retribution's authored emissive metadata remains authoritative.
+- `rt_ue_keytrim_emis 0.5` applies only to UE's key-trim frames and matches
+  gzdoom-rt's stock brightmap fallback. The existing mask continues to select
+  every exact red/blue/yellow pixel; the separate PointLight actors cast onto
+  the floor and walls. Monitors, non-key brightmaps, and Retribution do not read
+  this UE-only multiplier.
+
+### E. Unseen Evil IWAD scene namespace and sky leak isolation (2026-08-20)
+- UE retextures IWAD maps at runtime, so MAP02 previously stayed plain `map02`
+  and matched RTGL's unrelated `rt/data/scenes.json` row. RTGL applies scene
+  metadata after frame parameters; that row forced sky intensity to 400, making
+  `+rt_sky 0` appear broken and leaking UE's red sky through sealed geometry.
+- `RT_GetMapName()` now returns `d64ue_<mapname>` only for UE's existing
+  compatibility pair (`rt_mod_compat 0` + `rt_world_white 1`). This prevents
+  both metadata and baked-scene collisions on every transformed IWAD map.
+- RTGL now separates visible sky from indirect environment lighting with
+  `RgDrawFrameSkyParams::skyLightingMultiplier`. UE restores `rt_sky 25` so its
+  background remains visible, but sends a lighting multiplier of zero for its
+  isolated compatibility pair. Primary visibility is preserved while unsealed
+  DOOM I/II voids cannot sample the dome as interior bounce light.
+- Retribution keeps multiplier 1, its original map names, scene metadata, sky,
+  and authored environment lighting.
+
+### F. Unseen Evil material, water, and menu follow-up (2026-08-20)
+- UE needs `rt_mod_compat 0` for its Terraformer, but bit 1 of that cvar used to
+  be the brightmap/glowmap -> RT-emissive fallback. `rt_draw.cpp` now restores
+  that fallback only for UE's dedicated pair (`rt_mod_compat 0` plus
+  `rt_world_white 1`). Sprite albedo receives the same sector-colour isolation.
+  Retribution remains controlled solely by its original modcompat bit.
+- UE water was already tagged engine-side; `rt_water_glow 0.08` makes the live
+  shader readable in dark maps without creating an analytic light.
+- UE's custom ListMenu drawer paints `TextItem.mText` directly, bypassing
+  `TextItem_RT.Draw()` and exposing raw `RTMNU_*` keys. `d64ue-rt-menu.pk3`
+  preserves UE's main-menu class but routes Options to a compact RT page using
+  the stock drawer; **Other** then reaches base GZDoom Options.
+- UE now loads `d64ue-retribution-hud.pk3`, built by
+  `tools/make_unseenevil_hud.py`. The builder copies `d64r-mugshot.pk3`
+  wholesale rather than recreating its SBARINFO: BATTERY, HEALTH, and mugshot
+  remain on the left; keys, ARMOR, and AMMO remain on the right. It adds only
+  the eight font glyphs, six key icons, and inventory token definitions that
+  Retribution normally supplies from `D64RTR_v15.WAD`.
+- The flashlight overlay is already authored against that Retribution
+  ForceScaled SBARINFO, so UE uses the same existing integer scale and placement
+  code with no content-identity branch.
+
+### G. Unseen Evil weapon-projectile parity (2026-08-20)
+
+- `rt_impacts.cpp` accepts exact `D64UE_UnmakerPuff` as an Unmaker impact marker
+  only under `rt_mod_compat 0` plus `rt_world_white 1`. UE is a hitscan/model
+  implementation and never creates Retribution's dead `UnmakerLaser`; both now
+  enter the same surface probe and `rt_laser_*` burn/arc path. Retribution's
+  existing class match is unchanged.
+- `rt_lights_fx.cpp` restores UE's authored orange projectile light to the
+  exact live `CheelloRocket` class. gzdoom-rt's built-in voxel replacement wins
+  over UE's `D64UE_Rocket`, bypassing its smoke sprites and attached light. The
+  engine volumetric tracker already produced the in-flight parcels; the missing
+  moving light was why they disappeared in UE's dark maps while the explosion
+  burst remained visible.
+- The projectile light uses a pointer-stable ID in the bit-51 range, obeys the
+  existing dynamic-light scale/radius/minimum/maximum controls, and exists only
+  under UE's compatibility identity. Retribution's material-lit rocket cannot
+  be doubled by it.
+- UE's Unmaker is one stretched `D64UE_UnmakerBolt` OBJ, not Retribution's
+  `UNML` sprite trail. `rt_draw.cpp` gives exact asset
+  `models/beam_unmaker.png` a UE-only emissive/no-shadow override, while
+  `RT_UploadUnseenEvilProjectileLights()` reconstructs the model direction and
+  current length and distributes three red analytic samples along the segment.
+  The separate `A_Light1` muzzle edge remains responsible for lighting the gun.
+- The grey squares around UE's rocket were not the volumetric system. The live
+  `CheelloRocket` also inherits stock `+ROCKETTRAIL`; `cl_rockettrails 1` draws
+  its raster particles independently. `d64ue-lighting.cfg` suppresses that path
+  with `0`, while `d64rt-pins.cfg` restores the normal/Retribution baseline `1`.
+  `rt_smoke_rocket` remains enabled.
+- `make_unseenevil_muzzleflash.py` now restores complete Retribution
+  first-person presentation, not only a light flag: eight exact UE sources, 69
+  original shotgun/SSG/chaingun/plasma/BFG/Unmaker patches, and the original
+  composite scale/offset definitions. UE firing functions, ammo, projectile,
+  recoil, and sound behavior remain in the action blocks. BFG now has its
+  original `BFGF H-A` green charge and `A_Light2`, but still calls UE's
+  `A_FireBFG`.
+- Copied `CHGF` was too bright under UE exposure, while copied `UNMF` inherited
+  a global 900-intensity material light that illuminated the room from the HUD
+  quad. Exact-art aliases `UECF`/`UEMF` avoid those global rows; their Bright
+  states and analytic `A_Light` triggers remain.
+- Do not attach one light to `D64UE_UnmakerBolt`: UE initially places that actor
+  at the complete beam's midpoint and moves it toward the impact. That failed
+  repair produced delayed downrange light and left the gun dark. The final
+  three-sample segment light is distinct and accompanies the muzzle source.
+- UE retracts the visual model at 32 map units per tic, fast enough to complete
+  between path-traced frames. The overlay uses 12 only for that visual actor;
+  the hitscan damage and impact are resolved before it exists.
+- `make_unseenevil_barrel.py` makes UE's replacement barrel enter the same
+  `BEXP E` edge used by `RT_BarrelSmoke()` and `BarrelWalkActor()`, while keeping
+  its UE gameplay properties and damage type. It copies Retribution's BEXP A-E
+  frames and explosion-helper timing in a launcher-only overlay.
+- Short-run results: plasma and Unmaker first-person animation captured; the
+  final Unmaker is aligned, no longer bleached by the HUD-attached material
+  light, and retains its immediate analytic discharge; a real
+  `D64UE_ExplosiveBarrel` logged six volumetric parcels and all 60 authored
+  shards on tic 127. BFG/chaingun/shotgun feel, beam persistence, and the
+  square-free rocket trail remain normal-play visual checks; package/config
+  audits passed.
+
 ---
 
 ## Launch

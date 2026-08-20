@@ -247,7 +247,21 @@ an occlusion test — everything above applies. The **dome** is sampled on ray
 If a room still leaks with `rt_sun 0`, it is the dome, and it needs its own
 approach. `screen/purpleleakfromtheleft.png` is a dome leak, photographed under
 the magenta diagnostic sky — which is why `require_sky` did nothing to it.
-**Not yet investigated.**
+**2026-08-20: the visible-sky / environment-light split is implemented.**
+`RgDrawFrameSkyParams::skyLightingMultiplier` reaches
+`ShGlobalUniform::skyLightingMultiplier`. Primary-ray misses still go through
+`storeSky()` -> `adjustSky()` and therefore retain the visible sky controlled by
+`skyColorMultiplier`. Only indirect bounce misses call `getSky()`, which applies
+the additional lighting multiplier.
+
+Unseen Evil sets that multiplier to zero through its already isolated
+compatibility pair (`rt_mod_compat 0` + `rt_world_white 1`) while restoring
+`rt_sky 25`. Its orange sky is visible outdoors on MAP01, but a ray escaping an
+unsealed DOOM I/II room no longer turns that sky into interior bounce light.
+Retribution passes the default multiplier `1`, so its authored dome lighting is
+unchanged. This is a conservative policy switch, not a proof that a bounce ray
+reached sky; a future visibility-gated environment implementation may replace
+the UE zero without changing primary visibility.
 
 ---
 

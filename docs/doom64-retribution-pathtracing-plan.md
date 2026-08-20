@@ -18,10 +18,10 @@
 
 | Field | Value |
 |---|---|
-| **Last updated** | 2026-08-03 |
-| **Current phase** | **Phase 4** materials + emissives; Phase 5 launchers usable; Phase 6 RR default |
+| **Last updated** | 2026-08-20 |
+| **Current phase** | **Phase 4** materials + emissives; Phase 5 launchers usable; UE compatibility sidecar active; Phase 6 RR/NRD available |
 | **Blocked on** | — |
-| **Next action** | Close MAP01 ceiling blink/cast (`open-issues-rt-lighting.md` §1.1–1.3); wash still open; prefer play launcher over WashScratch for light A/B |
+| **Next action** | UE: normal-play feel check for BFG/shotgun/SSG/chaingun, Unmaker beam persistence, and a square-free rocket-trail capture, then regression-check Retribution; Retribution: continue the open lighting list |
 
 ### Progress
 
@@ -45,6 +45,28 @@
 - Lost Soul: sprite tint pk3 only (no actor replace); same-sprite attached light abandoned (white bloom); LSGL offset glow experimental/unfinished.
 - **Monster muzzle:** `POSSF`/`SPOSF`/`CPOSF`/`PLAYF` fire frames get attached `lightIntensity` (`ff8c52`) via `gen_fx_emissives.py` — player uses `rt_mzlflsh`/extralight, monsters do not.
 - Debug: MAP98 enemy gallery + `review_enemy_gallery_batch.ps1`. Details in `AGENTS.md` + `material-authoring-spec.md`.
+
+### Recent compatibility note (Unseen Evil, 2026-08-20)
+
+- UE's hitscan/model Unmaker now feeds its exact puff hit into Retribution's
+  existing `rt_laser_*` surface burn/arcs. Its Flash state restores the same
+  `UNMA`/`UNMF`-derived presentation and immediate `A_Light1` red discharge
+  trigger Retribution uses. Its unique model skin is UE-only emissive and three
+  red samples follow the beam segment; its visual retraction is slowed without
+  changing the preceding hitscan damage. The failed single midpoint light was
+  removed.
+- The live UE rocket is the built-in `CheelloRocket`; its volumetric trail was
+  already generated but unlit. A UE-gated moving orange light restores the
+  authored `D64UE_Rocket` intent, and UE alone disables the duplicate stock
+  grey-square raster trail. Smoke tuning and Retribution remain unchanged.
+- UE's late weapon overlay now carries Retribution's complete shotgun, SSG,
+  chaingun, plasma, BFG, and Unmaker frames/timing while preserving UE firing
+  behavior. UE-only aliases stop CHGF/UNMF global material rows from
+  over-lighting HUD flashes; the `A_Light` world sources remain. Plasma and
+  Unmaker were captured live; the others await a normal-play feel check.
+- UE's barrel now reaches Retribution's `BEXP E` contract. Live MAP02 validation
+  produced the explosion animation, volumetric burst, scorch/embers, and 60
+  authored plate shards instead of removing the prop immediately.
 
 ### Workspace (this machine)
 

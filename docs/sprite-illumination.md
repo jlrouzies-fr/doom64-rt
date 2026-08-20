@@ -711,6 +711,33 @@ Registered in `check_emis_hygiene.py` (`textures_dart.json` in `OVERLAY_KEEPS`, 
 
 ---
 
+## Case 11 -- Unseen Evil's model beam and HUD-flash name collision
+
+Retribution's Unmaker trail is a family of `UNML` sprite cards, so its existing
+texture metadata can make those cards glow and cast. Unseen Evil never draws
+that texture: `D64UE_UnmakerBolt` is one stretched OBJ skinned with
+`models/beam_unmaker.png`. Mapping more `UNML` names therefore cannot affect it.
+The UE compatibility path handles the exact model skin as a screen-emissive,
+no-shadow primitive and places three analytic lights along the reconstructed
+beam segment. The immediate gun illumination is still the separate weapon
+`A_Light1` muzzle source.
+
+The opposite failure happened after copying Retribution HUD art into UE.
+Texture metadata is global by rendered name, not by the archive the patch came
+from. Copied `UNMF` inherited its 900-intensity attached light and cast from the
+first-person quad, bleaching the gun and room; copied `CHGF` inherited a screen
+multiplier that was too bright under UE exposure. The compatibility package
+keeps the exact art/offsets but aliases them to `UEMF` and `UECF`, then retains
+`Bright A_Light1` / `A_Light2` in the weapon states. This separates visible HUD
+art from the analytic world source without changing Retribution's metadata.
+
+Rule: when two mods share a sprite name but use different presentation paths,
+do not tune the global metadata until the actual rendered primitive is known.
+First-person composites, world sprite trails, and model skins are three
+different attachment points even when they depict the same effect.
+
+---
+
 ## Tuning
 
 - **Fire too bright / too dim, too twitchy, too still** → the `rt_flame_light_*` cvars in

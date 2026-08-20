@@ -582,4 +582,5 @@ ledge. `spriteao-loud`, a cacodemon and a lift are what test those.
 | **a faint cross around an actor** | §1's instance mask is wrong. This is the single failure mode that design has, and nothing new should ever be *visible* |
 | **shadow gone outdoors** | `rt_sun_split` — see `moon-and-sky-leaks.md` §5.2. Sprite shadows the moon never resolved |
 | **a mirror shows no blob** | expected. §2 is rasterized into the primary G-buffer only |
+| **UE player is a neon-green rectangle / nearby wall turns green** | not a shadow-proxy colour leak: shadow-only instances cannot contribute albedo or indirect light. UE's `sprites/player/PLAY*` files are flat green shader masks, and RTGL1 does not run their reconstruction shader. Rebuild `d64ue-retribution-player.pk3`; see `unseenevil-retribution-compatibility.md` |
 | **a blob under a live spectre / nightmare imp** | `rt_sprite_ao_ghosts` is on, or `rt_ghost_solid` is making them solid sprites. A blob under their **corpses** is correct |
