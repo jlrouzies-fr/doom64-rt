@@ -910,7 +910,7 @@ blue armor room is the effect `rt_sector_tint_albedo=1.0` was tuned on
 
 | sectors | what | from | to |
 |---|---|---|---|
-| 63 | corridor floor, cold blue `(0,80,255)` inside a room at warm `(255,170,130)` | donor 66 | the room's warm |
+| 62, 63 | the corridor, cold blue `(0,80,255)` inside a room at warm `(255,170,130)` | donor 66 | the room's warm |
 
 `whatsthat` settled the family before any work started:
 
@@ -935,25 +935,46 @@ height −192, unbroken:
 
 | sector | size | colour | light | ceiling |
 |---|---|---|---|---|
-| 66 — room outside | 256×704u | warm `(255,170,130)` | 85 | SFLATBB |
+| 66 — room outside, the donor | 256×704u | warm `(255,170,130)` | 85 | SFLATBB |
 | **63 — corridor floor** | 160×640u | **cold blue** | 100 | SFLATAB |
-| 62 — centre channel | 64×576u | cold blue | 140 | **SPORTB**, raised to −48 |
+| **62 — centre channel** | 64×576u | **cold blue** | 140 | **SPORTB**, raised to −48 |
 
 So the split lands as a hard blue/warm edge across one continuous floor with nothing
 casting it.
 
-**Sector 62 is deliberately left blue, and that is the whole judgement.** `SPORTB`
-matches `RT_IsCeilingInsetLampTexture`, so `rt_ceiling_lamps` uploads real
-shadow-casting lights under that ceiling channel — and their colour is
-`RT_SectorHue(sector.Colormap.LightColor, rt_sector_tint_lights)`, i.e. it comes from
-62's own colormap. Retinting 62 would turn a blue port strip's real light warm. 62
-holds the fixture; 63 is the floor around it and holds nothing (ceiling `SFLATAB`,
-which no lamp predicate takes). Strip the paint from 63 and the blue on that floor
-becomes the light 62 actually casts, with a falloff instead of a sector edge.
+#### The matcher matched, and the fixture was off anyway
 
-This is the host test from `whatsthat`'s docstring decided by the engine's own
-matcher rather than by proximity — which has pointed the wrong way every time it has
-been used on its own.
+The first version of this entry **held sector 62 back**, on what looked like solid
+engine evidence: `SPORTB` matches `RT_IsCeilingInsetLampTexture`, so
+`rt_ceiling_lamps` hangs real shadow-casting lights under that ceiling channel, and
+their colour is `RT_SectorHue(sector.Colormap.LightColor, rt_sector_tint_lights)` —
+straight from 62's own colormap. Retinting it would turn a blue port strip's light
+warm. That reads like the host test decided by the engine's own matcher instead of
+by proximity, which is exactly what this project keeps saying to do.
+
+It was wrong, and play said so: *"still one blue floor"*, then the distinction stated
+precisely — *"its pure blue colored, not light related even if yes there is a blue
+light cast above"*.
+
+**The path is switched off.** `tools/d64rt-pins.cfg:811` pins `rt_ceiling_lamps 0`,
+which `rt_lights_fixtures.cpp` even notes in passing — *"currently switched off
+entirely via `rt_ceiling_lamps 0` in the launcher"*. `rt_ceiling_edge_lamps` **is**
+on, but that path takes only `SFLATAS`/`SFLATAQ`, not `SPORT*`. So no analytic light
+reads this sector's colormap at all. The blue overhead is the `SPORTB` `_e` mask, and
+under the ray-traced contract that is the **raw sample** — nothing multiplies it by
+sector colour or by albedo. Retinting 62 cannot touch it: the pads stay blue, the
+floor stops being painted.
+
+> **A fixture classifier matching a texture is not evidence the fixture is lit.**
+> Check the launcher pin for that family's cvar before resting a decision on it —
+> `rt_ceiling_lamps` and `rt_sector_lights` both ship at 0. Same shape as a change
+> that is not live, one layer further out: the code path exists, is correct, and
+> never runs.
+
+The albedo tint and the light tint are separate channels — `rt_sector_tint_albedo`
+for paint, `rt_sector_tint_lights` for lights (`rt_draw.cpp`, the `l_isemis()`
+branch) — but they read the **same** `lightcolor`, so there is no per-sector way to
+keep one and drop the other. With the lamp path off, that costs nothing here.
 
 ## Key doors: the same defect, wearing a stripe
 

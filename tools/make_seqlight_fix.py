@@ -2212,7 +2212,7 @@ TINTS = [
              "consistent with each other.",
     ),
     Tint(
-        "MAP02", [63], donor=66, from_lightcolor=0x0050FF,
+        "MAP02", [62, 63], donor=66, from_lightcolor=0x0050FF,
         enabled=True,
         note="THE REPORTED ONE, from the game (rt-console.log, MAP02):\n"
              "\n"
@@ -2245,19 +2245,33 @@ TINTS = [
              "SPORTB. So the split lands as a hard blue/warm edge across one "
              "continuous floor with nothing casting it, which is what was seen.\n"
              "\n"
-             "SECTOR 62 IS DELIBERATELY LEFT BLUE, and this is the whole judgement. "
-             "SPORTB matches RT_IsCeilingInsetLampTexture, so rt_ceiling_lamps "
-             "uploads real shadow-casting lights under that ceiling channel -- and "
-             "their colour is RT_SectorHue(sector.Colormap.LightColor, "
-             "rt_sector_tint_lights), i.e. it comes from 62's own colormap. "
-             "Retinting 62 would turn a blue port strip's real light warm. 62 holds "
-             "the fixture; 63 is the floor around it and holds nothing (ceiling "
-             "SFLATAB, which no lamp predicate takes). Strip the paint from 63 and "
-             "the blue on that floor becomes the light 62 actually casts, with a "
-             "falloff instead of a sector edge.\n"
+             "BOTH SECTORS GO, INCLUDING THE ONE UNDER THE FIXTURE -- and the first "
+             "attempt at this entry got that wrong, so the reasoning is worth "
+             "keeping. 62 was held back on the grounds that SPORTB matches "
+             "RT_IsCeilingInsetLampTexture, so rt_ceiling_lamps would hang real "
+             "lights under that channel and take their colour from 62's own "
+             "colormap via RT_SectorHue -- retinting it would turn a blue port "
+             "strip's light warm. Reported back from play as still blue, with the "
+             "distinction stated exactly right: 'its pure blue colored, not light "
+             "related even if yes there is a blue light cast above'.\n"
              "\n"
-             "Donor 66 is the host room and 63's only non-blue neighbour, and it "
-             "shares the SFLATAJ floor across the seam being repaired.",
+             "THE PATH IS SWITCHED OFF. tools/d64rt-pins.cfg:811 pins "
+             "rt_ceiling_lamps 0, which rt_lights_fixtures.cpp itself notes in "
+             "passing ('currently switched off entirely via rt_ceiling_lamps 0 in "
+             "the launcher'). rt_ceiling_edge_lamps IS on, but that path takes only "
+             "SFLATAS/SFLATAQ -- not SPORT*. So NO analytic light reads this "
+             "sector's colormap, and the blue overhead is the SPORTB _e mask, which "
+             "under the ray-traced contract is the RAW sample with nothing "
+             "multiplying it by sector colour or albedo. Retinting 62 cannot touch "
+             "it: the pads stay blue, the floor stops being painted.\n"
+             "\n"
+             "The lesson generalises past this entry: a fixture classifier matching "
+             "a texture is NOT evidence the fixture is lit. Check the launcher pin "
+             "for the family's cvar before resting a decision on it -- three of "
+             "these families ship off.\n"
+             "\n"
+             "Donor 66 is the host room and the cluster's only non-blue neighbour, "
+             "and it shares the SFLATAJ floor across the seam being repaired.",
     ),
 ]
 
