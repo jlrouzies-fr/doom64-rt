@@ -44,6 +44,12 @@ rem inside three broken bulbs. See README "Art changes" and
 rem docs\lamp-panes-broken-bulbs.md.
 set "PANEBRK=%PROJ%\Doom64-Retribution\d64r-sflatas-broken.wad"
 set "CTELFIX=%PROJ%\Doom64-Retribution\d64r-ctel-fix.wad"
+rem MAP05's world-edge sky seam (sectors 321/311): blanks the ISUCK top
+rem texture on 5 linedefs so hw_walls.cpp's existing "missing texture, both
+rem sides sky" hack fires instead of drawing a real wall there. Loads after
+rem %SEQL%, which supplies the MAP05 this is layered on top of -- see
+rem tools/make_map05_skyseam_fix.py.
+set "SKYSEAM=%PROJ%\Doom64-Retribution\d64r-map05-skyseam-fix.wad"
 set "SKY=%PROJ%\Doom64-Retribution\d64r-rt-sky.pk3"
 set "LAVAFX=%PROJ%\Doom64-Retribution\d64r-lava-fx.pk3"
 set "BLOODFX=%PROJ%\Doom64-Retribution\d64r-blood-persist.pk3"
@@ -396,6 +402,10 @@ if not exist "%CTELFIX%" (
   echo   C:\Users\Winter\AppData\Local\Programs\Python\Python313\python.exe tools\make_ctel_static_center.py
   exit /b 1
 )
+if not exist "%SKYSEAM%" (
+  echo ERROR: missing %SKYSEAM% — run: python tools\make_map05_skyseam_fix.py
+  exit /b 1
+)
 if not exist "%BULBTEX%" (
   echo ERROR: missing %BULBTEX% — run with Python 3.13 ^(needs Pillow^):
   echo   C:\Users\Winter\AppData\Local\Programs\Python\Python313\python.exe tools\make_bulb_textures.py
@@ -654,7 +664,7 @@ rem
 rem Order matters and is preserved: the pins (including god/notarget) run BEFORE
 rem +map, exactly as they did inline, and %EXTRA% runs LAST so an arm still wins.
 start "" gzdoom.exe ^
-  -iwad "%IWAD%" -file "%MOD%" "%BM%" "%SKUL%" "%FLSH%" "%MUS%" "%FIX3D%" "%SEQL%" "%BULBTEX%" "%PANEBRK%" "%CTELFIX%" "%SKY%" -file "%LAVAFX%" "%BLOODFX%" "%WIDEGFX%" "%MUGSHOT%" "%TITLOGO%" -rtnolauncher -width 1280 -height 720 %RTDEBUG% ^
+  -iwad "%IWAD%" -file "%MOD%" "%BM%" "%SKUL%" "%FLSH%" "%MUS%" "%FIX3D%" "%SEQL%" "%BULBTEX%" "%PANEBRK%" "%CTELFIX%" "%SKYSEAM%" "%SKY%" -file "%LAVAFX%" "%BLOODFX%" "%WIDEGFX%" "%MUGSHOT%" "%TITLOGO%" -rtnolauncher -width 1280 -height 720 %RTDEBUG% ^
   +logfile "%LOGF%" ^
   +win_y %WINY% ^
   +exec "%PINS%" ^
