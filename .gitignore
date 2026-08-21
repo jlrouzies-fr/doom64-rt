@@ -226,3 +226,7 @@ NRD-Doom64RT.log
 # gallery). The compressed docs/img/preview/preview-*.jpg files are what's
 # tracked and linked from the README; these originals stay local.
 docs/img/preview/*.png
+
+# Flashlight sound source (external MP3, not our asset). The generated
+# DFL*.wav clips and D64FLK*.wav are committed as game assets.
+music/fluorescentflicker.mp3

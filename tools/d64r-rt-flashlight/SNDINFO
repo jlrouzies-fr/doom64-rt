@@ -1,11 +1,28 @@
-// Flashlight battery cues (synthesized by tools/gen_flashlight_sounds.py).
-// Played by D64RtFlashlightHud from the rt_flsh_battstate / rt_flsh_flicker
-// readouts the engine writes each frame.
+// Flashlight battery cues (extracted from fluorescentflicker.mp3).
+// 16 random flicker clips via $random group.
 
 d64rt/flashlight/out		D64FLKO
-d64rt/flashlight/flicker	D64FLKR
 d64rt/flashlight/on		D64FLKN
 
-$limit d64rt/flashlight/out		1
+d64rt/flashlight/f00	DFL00
+d64rt/flashlight/f01	DFL01
+d64rt/flashlight/f02	DFL02
+d64rt/flashlight/f03	DFL03
+d64rt/flashlight/f04	DFL04
+d64rt/flashlight/f05	DFL05
+d64rt/flashlight/f06	DFL06
+d64rt/flashlight/f07	DFL07
+d64rt/flashlight/f08	DFL08
+d64rt/flashlight/f09	DFL09
+d64rt/flashlight/f10	DFL10
+d64rt/flashlight/f11	DFL11
+d64rt/flashlight/f12	DFL12
+d64rt/flashlight/f13	DFL13
+d64rt/flashlight/f14	DFL14
+d64rt/flashlight/f15	DFL15
+
+$random d64rt/flashlight/flicker { d64rt/flashlight/f00 d64rt/flashlight/f01 d64rt/flashlight/f02 d64rt/flashlight/f03 d64rt/flashlight/f04 d64rt/flashlight/f05 d64rt/flashlight/f06 d64rt/flashlight/f07 d64rt/flashlight/f08 d64rt/flashlight/f09 d64rt/flashlight/f10 d64rt/flashlight/f11 d64rt/flashlight/f12 d64rt/flashlight/f13 d64rt/flashlight/f14 d64rt/flashlight/f15 }
+
+$limit d64rt/flashlight/out	1
 $limit d64rt/flashlight/flicker	1
-$limit d64rt/flashlight/on		1
+$limit d64rt/flashlight/on	1
