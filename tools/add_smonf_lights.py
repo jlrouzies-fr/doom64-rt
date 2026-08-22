@@ -69,7 +69,10 @@ OUTWAD = PROJ_ROOT / r"Doom64-Retribution\d64r-smonf-lights.wad"
 
 LIGHT_TYPE = 9801          # PointLightPulse
 LIGHT_ANGLE = 25           # pulse period in tics; matches the re-timed blink
-LIGHT_RGB = (50, 80, 255)  # the mask's blue
+# 50% more saturated than the first pass's (50,80,255): pulling R and G down is
+# what saturates a blue, since saturation is (max-min)/max and blue is already
+# pinned at 255. Requested 2026-08-22.
+LIGHT_RGB = (25, 40, 255)
 LIGHT_R1 = 20              # see rt_dynlight_rsoft -- bigger is DIMMER, keep 16..20
 LIGHT_R2 = 16
 FACE_OFFSET = 8.0          # units off the wall face
