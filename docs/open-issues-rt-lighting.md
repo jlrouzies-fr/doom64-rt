@@ -11,6 +11,17 @@ Do not treat this as a progress cheer sheet — only unresolved / partially reso
 
 ## 1. Unfixed / incomplete
 
+### 1.0 Weapon silhouette trails over lingering lights (surface denoiser) — **fix built 2026-08-22, awaiting in-play verdict**
+
+`screen/smearingIssueOverLingeringLight.png`: after a rocket, the launcher sweeps a
+dark silhouette-shaped band over the **wall and floor** beside it. Same class as
+`docs/rt-volumetric-weapon-trails.md`, one buffer over: A-SVGF's history test has no
+notion of first-person, so every pixel the gun uncovers restarts from one sample at
+the decaying light's current level beside neighbours lagging at its brighter past.
+Fix: `rt_svgf_fp 1` (neighbour borrow on full rejection) + `rt_svgf_fp_grad 1` (the
+antilag gradient never samples the weapon). Arms: `.	oolsb.cmd lingtrail-<control|fp|grad|fix|debugfp|nogun>`.
+Details in the volumetric doc's new section.
+
 ### 1.2f Sourceless `Light_Fade` sweep on 14 maps — **FIXED 2026-08-10** (MAP13 confirmed in play)
 
 Reported on MAP13 as pillars and walls that "get illuminated regularly" — multiple
