@@ -7194,16 +7194,19 @@
     },
     {
       "textureName": "SMONF2",
+      "emissiveMult": 2.8,
       "metallicDefault": 1.0,
       "roughnessDefault": 0.8
     },
     {
       "textureName": "SMONF3",
+      "emissiveMult": 2.8,
       "metallicDefault": 1.0,
       "roughnessDefault": 0.8
     },
     {
       "textureName": "SMONF4",
+      "emissiveMult": 2.8,
       "metallicDefault": 1.0,
       "roughnessDefault": 0.8
     },
@@ -7897,6 +7900,7 @@
     },
     {
       "textureName": "SMONF5",
+      "emissiveMult": 2.8,
       "metallicDefault": 1.0,
       "roughnessDefault": 0.8
     },

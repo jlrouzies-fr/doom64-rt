@@ -9,12 +9,29 @@ contributing nothing to either surface (one gated by colour, one below the
 lightlevel threshold); the material's own authored value is what reaches the
 screen.
 
-  SMONF, SMONF1..SMONF5  -- NOT MONITORS. The art is a circuitry/vent wall
-      panel with a dark round port: no screen, no lamp, nothing that should
-      self-illuminate. Retribution ships no brightmap for them and neither do
-      their patches, so no `_e` was ever generated -- correctly. The
-      `emissiveMult` was the mistake. REMOVED entirely; the panel is lit by the
-      room like any other wall.
+  SMONF..SMONF5 -- A BLINKING INDICATOR, and the frames disagree. The panel
+      itself is circuitry/vent wall art that must never glow, but a round cyan
+      bulb and a row of small LEDs along the bottom ramp up across the frames:
+
+          frame    max luminance   blue-dominant texels
+          SMONF              129                      0   bulb OFF
+          SMONF1             129                      0   bulb OFF
+          SMONF2             139                    111
+          SMONF3             161                    111
+          SMONF4             186                    157
+          SMONF5             238                    157   fully lit
+
+      Retribution ships no brightmap for any of them, so no `_e` was ever
+      generated and `emissiveMult` lit the WHOLE PANEL on every frame. Fixed
+      per frame, because a shared mask would make the dark frames glow (the
+      same per-frame rule as tools/sync_anim_relief_maps.py):
+
+        SMONF, SMONF1 -- genuinely dark. No mask, and `emissiveMult` REMOVED.
+        SMONF2..F5    -- mask covering ONLY the bulb and the LED row (2.7-3.8%
+              of the tile), `emissiveMult` kept so they still cast. The mask
+              keeps the frame's OWN albedo RGB rather than a flat tint, so the
+              blink ramp comes straight from the art -- a dim frame yields a
+              dim mask -- instead of being authored per frame.
 
   SMONLB1..SMONLB4  -- GENUINE MONITORS, and a generator gap. Each is a TEXTURES
       composite of one SMONB* patch placed twice (`Patch SMONBA, 0, 0` +
@@ -90,7 +107,12 @@ SMONLB = {
     "SMONLB3": "SMONBC",
     "SMONLB4": "SMONBD",
 }
-SMONF = ["SMONF", "SMONF1", "SMONF2", "SMONF3", "SMONF4", "SMONF5"]
+# The blink frames whose bulb+LEDs are genuinely dark: no mask, no emissiveMult.
+SMONF_DARK = ["SMONF", "SMONF1"]
+# The lit frames: mask the bulb+LEDs only, keep emissiveMult so they cast.
+SMONF_LIT = ["SMONF2", "SMONF3", "SMONF4", "SMONF5"]
+# Matches SMONBA and SMONLC; the per-frame ramp lives in the mask, not here.
+SMONF_MULT = "2.8"
 
 
 def read_wad_lumps(path: Path) -> list[tuple[str, bytes]]:
@@ -125,6 +147,55 @@ def composite_pair(img: Image.Image) -> Image.Image:
     out.paste(img, (0, 0))
     out.paste(img.transpose(Image.FLIP_LEFT_RIGHT), (img.width, 0))
     return out
+
+
+def make_e_blue_indicator(
+    img: Image.Image, *, gain: float = 1.25, blue_over: int = 28, blue_min: int = 70
+) -> Image.Image:
+    """Cyan bulb + LED row only: blue-dominant texels, the frame's own RGB kept.
+
+    Blue-dominance is what separates the indicator from the panel: the
+    circuitry is brown/grey (r >= b), the bulb and LEDs are the only things on
+    the tile where blue leads. Keeping albedo RGB instead of slapping a flat
+    tint is what makes the BLINK work without authoring a ramp -- a dim frame
+    yields a dim mask, so the animation comes out of the art itself.
+    """
+    img = img.convert("RGBA")
+    out = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    ip, op = img.load(), out.load()
+    for y in range(img.size[1]):
+        for x in range(img.size[0]):
+            r, g, b, a = ip[x, y]
+            if a < 40:
+                continue
+            if not (b >= r + blue_over and b >= blue_min):
+                continue
+            op[x, y] = (
+                min(255, int(r * gain)),
+                min(255, int(g * gain)),
+                min(255, int(b * gain)),
+                255,
+            )
+    return out
+
+
+def set_emissive_mult(text: str, name: str, value: str | None) -> tuple[str, bool]:
+    """Set (or with value=None remove) one entry's emissiveMult. Idempotent."""
+    have = re.compile(
+        r'("textureName":\s*"' + re.escape(name) + r'",)(\s*\n\s*"emissiveMult":\s*)[0-9.]+(,)'
+    )
+    if have.search(text):
+        if value is None:
+            return have.sub(r"\1", text), True
+        return have.sub(lambda m: m.group(1) + m.group(2) + value + m.group(3), text), True
+    if value is None:
+        return text, True  # already absent
+    # Absent and wanted: insert straight after the name line, same indent.
+    add = re.compile(r'(\n(\s*)"textureName":\s*"' + re.escape(name) + r'",)')
+    m = add.search(text)
+    if not m:
+        return text, False
+    return add.sub(lambda mm: mm.group(1) + f'\n{mm.group(2)}"emissiveMult": {value},', text), True
 
 
 def build_lb_mask(name: str, raw: dict[str, bytes], z: zipfile.ZipFile) -> Image.Image:
@@ -164,6 +235,25 @@ def verify(raw: dict[str, bytes], z: zipfile.ZipFile) -> bool:
         d = int(np.abs(rebuilt - have).max()) if rebuilt.shape == have.shape else -1
         print(f"  rebuild {patch}_e: max abs diff = {d}  -> {'OK' if d == 0 else 'MISMATCH'}")
         ok &= d == 0
+
+    # 3) the blink selector must find NOTHING on the frames whose bulb is off.
+    #    If it lights those, it is picking up panel circuitry and the dark half
+    #    of the animation would glow -- the exact defect this repairs.
+    for name in SMONF_DARK:
+        n = int((np.asarray(make_e_blue_indicator(
+            Image.open(io.BytesIO(raw[name])).convert("RGBA")))[..., 3] > 0).sum())
+        print(f"  {name} (bulb off) lit texels = {n}  -> {'OK' if n == 0 else 'LEAKS'}")
+        ok &= n == 0
+    prev = -1
+    for name in SMONF_LIT:
+        m = np.asarray(make_e_blue_indicator(
+            Image.open(io.BytesIO(raw[name])).convert("RGBA"))).astype(int)
+        lit = m[..., 3] > 0
+        mean_b = int(m[..., 2][lit].mean()) if lit.any() else 0
+        print(f"  {name} lit texels = {int(lit.sum()):4}  mean blue = {mean_b:3}"
+              f"  -> {'OK' if mean_b > prev else 'NOT BRIGHTER THAN PREVIOUS FRAME'}")
+        ok &= mean_b > prev
+        prev = mean_b
     return ok
 
 
@@ -204,21 +294,41 @@ def apply(raw: dict[str, bytes], z: zipfile.ZipFile) -> None:
             img.save(d / f"{name}_e.png")
         print(f"  {name}_e.png  {img.size}  {nz} lit texels  -> {len(MAT_DIRS)} dirs")
 
-    # --- SMONF: remove the emissiveMult that never belonged ---------------
+    # --- SMONF lit frames: mask the bulb + LED row, per frame -------------
+    for name in SMONF_LIT:
+        img = make_e_blue_indicator(Image.open(io.BytesIO(raw[name])).convert("RGBA"))
+        nz = sum(1 for a in img.getchannel("A").tobytes() if a > 0)
+        for d in MAT_DIRS:
+            if not d.exists():
+                continue
+            img.save(d / f"{name}_e.png")
+        print(f"  {name}_e.png  {img.size}  {nz} lit texels "
+              f"({100*nz/(img.width*img.height):.1f}% of tile)  -> {len(MAT_DIRS)} dirs")
+
+    # --- SMONF dark frames: no mask must exist, or the blink stays lit -----
+    for name in SMONF_DARK:
+        for d in MAT_DIRS:
+            stale = d / f"{name}_e.png"
+            if stale.exists():
+                stale.unlink()
+                print(f"  removed stale {stale}")
+
+    # --- textures.json: mult only where a mask now scopes it --------------
     for jf in JSONS:
         if not jf.exists():
             print(f"  ! {jf} missing -- skipped")
             continue
         text = jf.read_text(encoding="utf-8")
-        removed = 0
-        for name in SMONF:
-            pat = re.compile(
-                r'("textureName":\s*"' + re.escape(name) + r'",)\s*\n\s*"emissiveMult":\s*[0-9.]+,'
-            )
-            text, n = pat.subn(r"\1", text)
-            removed += n
+        for name in SMONF_DARK:
+            text, ok = set_emissive_mult(text, name, None)
+            if not ok:
+                raise SystemExit(f"{jf}: no entry for {name}")
+        for name in SMONF_LIT:
+            text, ok = set_emissive_mult(text, name, SMONF_MULT)
+            if not ok:
+                raise SystemExit(f"{jf}: no entry for {name}")
         jf.write_text(text, encoding="utf-8")
-        print(f"  {jf}: removed emissiveMult from {removed}/{len(SMONF)} SMONF entries")
+        print(f"  {jf.name}: SMONF/F1 mult removed, SMONF2..F5 mult={SMONF_MULT}")
 
 
 def main() -> None:
