@@ -49,6 +49,13 @@ rem lump; GZDoom takes the LAST definition for a texture and this loads after
 rem the mod, so it replaces the run without editing Retribution's own lump.
 rem Built by tools/fix_smon_emissives.py.
 set "SMONFBLINK=%PROJ%\Doom64-Retribution\d64r-smonf-blink.wad"
+rem The SMONF panels' missing light. Retribution wires every other SMON family
+rem with a 9801/9802 thing off the face and skipped this one -- only 13 of its
+rem 125 walls game-wide had one, so the panel glowed and lit nothing. 99
+rem PointLightPulse things, period matched to the blink. MUST load after %SEQL%:
+rem for the maps that wad also carries, this one is built ON TOP of its copy.
+rem Built by tools/add_smonf_lights.py.
+set "SMONFLIT=%PROJ%\Doom64-Retribution\d64r-smonf-lights.wad"
 
 set "SKY=%PROJ%\Doom64-Retribution\d64r-rt-sky.pk3"
 set "LAVAFX=%PROJ%\Doom64-Retribution\d64r-lava-fx.pk3"
@@ -662,7 +669,7 @@ rem
 rem Order matters and is preserved: the pins (including god/notarget) run BEFORE
 rem +map, exactly as they did inline, and %EXTRA% runs LAST so an arm still wins.
 start "" gzdoom.exe ^
-  -iwad "%IWAD%" -file "%MOD%" "%BM%" "%SKUL%" "%FLSH%" "%MUS%" "%FIX3D%" "%SEQL%" "%BULBTEX%" "%PANEBRK%" "%CTELFIX%" "%SMONFBLINK%" "%SKY%" -file "%LAVAFX%" "%POISONFX%" "%BLOODFX%" "%WIDEGFX%" "%MUGSHOT%" "%TITLOGO%" -rtnolauncher -width 1280 -height 720 %RTDEBUG% ^
+  -iwad "%IWAD%" -file "%MOD%" "%BM%" "%SKUL%" "%FLSH%" "%MUS%" "%FIX3D%" "%SEQL%" "%BULBTEX%" "%PANEBRK%" "%CTELFIX%" "%SMONFBLINK%" "%SMONFLIT%" "%SKY%" -file "%LAVAFX%" "%POISONFX%" "%BLOODFX%" "%WIDEGFX%" "%MUGSHOT%" "%TITLOGO%" -rtnolauncher -width 1280 -height 720 %RTDEBUG% ^
   +logfile "%LOGF%" ^
   +win_y %WINY% ^
   +exec "%PINS%" ^
