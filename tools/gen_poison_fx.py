@@ -1,0 +1,686 @@
+"""Build d64r-poison-fx.pk3 -- bubbles that swell out of the poison and burst.
+
+The same split as the lava sprays (tools/gen_lava_fx.py): everything else about
+a nukage lake is a SURFACE, but a bubble is an OBJECT -- it grows, it leaves the
+plane of the floor, it pops and it is gone -- so it belongs to the game sim, not
+to the renderer. And it lands on the one place RTGL1 texture meta actually
+works: lightIntensity on a SPRITE gives it a light. On a flat it does nothing,
+which is the whole reason rt_lava_light_* had to be written in C++.
+
+WHICH FLOORS. D64N1_01 is the poison the user asked about, but it is frame 1 of
+64 -- the ANIMDEFS sequence runs D64N1_01..D64N1_64, and GetTexture() returns
+whichever frame is showing this tic. An exact-name match therefore succeeds on
+1 tic in 64 and the bubbles flicker on and off. The match is a PREFIX, "D64N",
+which covers D64N1_*, D64N2_* and the two D64NUKG stills, and nothing else in
+the texture set (checked against rt/data/textures.json).
+
+Poison floors in Retribution, from the UDMF: MAP07 (50 sectors -- the map to
+test on), MAP16 (1), MAP18 (2), MAP22 (4), MAP24 (4), MAP25 (1), MAP34 (the
+texture-sampler map, one of each fluid).
+
+THE SPRITES ARE SLICED, NOT DRAWN. tools/_assets/poisonbubble.png is authored
+art: five growth stages and a burst, laid out left to right on one row with
+uneven gaps. The slicer finds the occupied column runs and merges the smallest
+gaps until exactly six clusters remain -- the burst is a RING of separate
+droplets, so it reads as four runs and would otherwise be counted as four
+frames. Two things the output must get right:
+
+  - grAb. PIL drops the PNG offset chunk, so a sprite written with plain
+    im.save() is anchored at its top-left and renders sunk into the floor. The
+    chunk is written by hand below. The growth frames anchor at their own
+    bottom, so a bubble meets the fluid where it is spawned; the burst anchors
+    on the ring's centre pushed down by half the last bubble's height, so the
+    ring appears where the bubble WAS rather than jumping up the moment it pops.
+  - HARD ALPHA. RT rasterizes these sprites as an alpha-tested cutout: a soft
+    edge becomes a hard edge at the 0.5 threshold anyway, and the actor's own
+    Alpha is never applied. So the alpha is binarised here, at the same
+    threshold the renderer will use, and nothing about the look is left to a
+    RenderStyle that this path ignores.
+
+Usage:
+    tools\\.venv-ai\\Scripts\\python.exe tools/gen_poison_fx.py           # report
+    tools\\.venv-ai\\Scripts\\python.exe tools/gen_poison_fx.py --apply
+"""
+
+from __future__ import annotations
+
+import argparse
+import struct
+import sys
+import zipfile
+import zlib
+from pathlib import Path
+
+import numpy as np
+from PIL import Image
+
+ROOT = Path(__file__).resolve().parent.parent
+SHEET = ROOT / "tools/_assets/poisonbubble.png"
+OUT = ROOT / "Doom64-Retribution/d64r-poison-fx.pk3"
+
+# Sprite name. Four characters plus frame letter plus rotation, like any Doom
+# sprite: PBUBA0 .. PBUBF0.
+SPR = "PBUB"
+FRAMES = "ABCDEF"
+
+# How tall the LAST growth frame is, in sprite pixels == map units at scale 1.
+# A D64N flat is 64 units square, so 20 puts roughly three bubbles across one
+# tile of the texture -- big enough to read as a bubble, small enough that a
+# lake does not turn into a bag of marbles. Every other frame is scaled from
+# this one by the ratio it has on the sheet, so the growth curve is the art's.
+TARGET_H = 20
+
+ALPHA_CUT = 128  # the alpha-test threshold the RT path uses
+
+# THE SATURATION LADDER, AND WHY IT IS A LADDER AND NOT A DIAL.
+#
+# The obvious way to tint a sprite at runtime is a GZDoom translation, and on
+# this renderer it silently breaks the effect. RTHardwareTexture appends a
+# per-translation SUFFIX to the RTGL1 material name (rt_buffers.h -- it has to,
+# or every translation of a sprite collides on one name and RTGL1 keeps the
+# first). So a translated PBUBA0 is uploaded as a DIFFERENT material, which has
+# no entry in textures.json, which means it loses lightIntensity and
+# emissiveMult: the bubble would change colour and stop glowing. Per-actor
+# SetShade has the same problem from the other end -- the RT path never reads it.
+#
+# So saturation is baked, at build time, into one sprite set per rung, each with
+# its own textures.json entries. d64_poison_sat picks the nearest rung. Five is
+# enough to find the look; if a value between two rungs is wanted, move a rung
+# here and rebuild rather than adding more.
+#
+# PBUB stays the rung the rest of the code treats as default, so the lab's probe
+# row keeps referencing one stable sprite name.
+#
+# MATCHED TO THE POOL, MEASURED OFF A FRAME -- not to the flat's albedo.
+#
+# D64NUKG1, the patch D64N1_01 is built from, is nearly black: mean RGB 4,12,1,
+# value never above 0.22. Sampling it says "the poison is dark green" and tells
+# you nothing useful, because almost all the green you see is the RT water
+# shader on top of it. So the reference is the RENDERED pool, taken from a lab
+# capture (MAP91, `dense`):
+#
+#     pool            hue 105 deg   sat 0.40   val 0.25
+#     bubble, before  hue  98 deg   sat 0.73   val 0.60
+#
+# The bubbles were 1.8x the pool's saturation and 7 degrees off its hue, which
+# is exactly the "too saturated" that was reported. BASE_SAT brings them onto
+# it; HUE_SHIFT is a ROTATION, not an assignment, so the art's own hue variation
+# (the highlights run yellower than the body) survives.
+#
+# They stay brighter than the pool by a wide margin -- val 0.60 against 0.25 --
+# which is the "just a bit brighter" half of the brief, and it comes from the
+# art plus the emissive rather than from a value push.
+POOL_HUE_DEG = 105.0
+BUBBLE_HUE_DEG = 98.1
+HUE_SHIFT = ( POOL_HUE_DEG - BUBBLE_HUE_DEG ) / 360.0
+BASE_SAT = 0.575          # 0.404 / 0.733, measured
+VAL_LIFT = 1.06           # a touch, so desaturating does not read as dulling
+
+# The rungs are RELATIVE TO SHIPPING: d64_poison_sat 1 is the matched look, 2 is
+# roughly the art as drawn, 0 is grey. That is the scale the cvar should be read
+# on -- "how much more saturated than shipping" -- rather than an absolute whose
+# value only means something next to a table in this file.
+SAT_SETS = [
+    ("PBUA", 0.00),   # grey -- the control for "is the green coming from the art"
+    ("PBUC", 0.50),
+    ("PBUB", 1.00),   # matched to the pool. The default, and what the lab probes use.
+    ("PBUD", 1.50),
+    ("PBUE", 2.00),   # about the original, over-saturated art
+]
+SAT_DEFAULT_INDEX = 2
+
+
+def retint(img: Image.Image, sat_rung: float) -> Image.Image:
+    """Rotate hue onto the pool's, scale chroma by BASE_SAT * rung, lift value.
+
+    Per-pixel through colorsys rather than a vectorised transform: the largest
+    frame is 23x23, so it costs nothing, and hand-rolling an HSV round trip in
+    numpy is how off-by-one hue wraps get shipped."""
+    import colorsys
+
+    a = np.asarray(img).astype(np.float32).copy()
+    h, w, _ = a.shape
+    for y in range(h):
+        for x in range(w):
+            if a[y, x, 3] <= 0:
+                continue
+            r, g, b = a[y, x, 0] / 255.0, a[y, x, 1] / 255.0, a[y, x, 2] / 255.0
+            hh, ss, vv = colorsys.rgb_to_hsv(r, g, b)
+            hh = (hh + HUE_SHIFT) % 1.0
+            ss = min(1.0, ss * BASE_SAT * sat_rung)
+            vv = min(1.0, vv * VAL_LIFT)
+            r, g, b = colorsys.hsv_to_rgb(hh, ss, vv)
+            a[y, x, 0], a[y, x, 1], a[y, x, 2] = r * 255.0, g * 255.0, b * 255.0
+    return Image.fromarray(a.round().clip(0, 255).astype(np.uint8), "RGBA")
+
+
+def png_with_grab(img: Image.Image, ox: int, oy: int) -> bytes:
+    """PNG bytes with a grAb chunk. PIL will not write one, and without it
+    GZDoom anchors the sprite at its top-left corner: the bubble renders half a
+    sprite low and clips through the floor."""
+    import io
+
+    raw = io.BytesIO()
+    img.save(raw, format="PNG")
+    data = raw.getvalue()
+
+    grab = struct.pack(">ii", ox, oy)
+    chunk = struct.pack(">I", len(grab)) + b"grAb" + grab
+    chunk += struct.pack(">I", zlib.crc32(b"grAb" + grab) & 0xFFFFFFFF)
+
+    # after IHDR (8 byte signature + 4 len + 4 type + 13 data + 4 crc)
+    ihdr_end = 8 + 4 + 4 + 13 + 4
+    return data[:ihdr_end] + chunk + data[ihdr_end:]
+
+
+def column_clusters(occ, want):
+    """Occupied column runs, merged across the smallest gaps until `want`
+    clusters remain. The burst frame is a ring of loose droplets with 2-5 px of
+    empty column between them; the growth frames are 29-49 px apart. Merging by
+    gap size rather than against a fixed threshold picks that apart without a
+    magic number that would have to be retuned for a redrawn sheet."""
+    cols = occ.any(0)
+    runs, start = [], None
+    for i, v in enumerate(cols):
+        if v and start is None:
+            start = i
+        elif not v and start is not None:
+            runs.append((start, i - 1))
+            start = None
+    if start is not None:
+        runs.append((start, len(cols) - 1))
+
+    while len(runs) > want:
+        gaps = [runs[i + 1][0] - runs[i][1] for i in range(len(runs) - 1)]
+        j = int(np.argmin(gaps))
+        runs[j : j + 2] = [(runs[j][0], runs[j + 1][1])]
+    return runs
+
+
+def slice_sheet(sheet: Path):
+    """Six (image, ox, oy) triples, already scaled and alpha-cut."""
+    src = np.asarray(Image.open(sheet).convert("RGBA"))
+    occ = src[..., 3] > 16
+    runs = column_clusters(occ, len(FRAMES))
+    if len(runs) != len(FRAMES):
+        raise SystemExit(f"{sheet.name}: found {len(runs)} frame(s), expected {len(FRAMES)}")
+
+    boxes = []
+    for x0, x1 in runs:
+        rows = np.where(occ[:, x0 : x1 + 1].any(1))[0]
+        boxes.append((x0, x1, int(rows.min()), int(rows.max())))
+
+    # Scale is set by the last GROWTH frame, not by the burst: the burst is a
+    # ring wider than the bubble it came from, and letting it drive the scale
+    # would shrink every bubble to pay for it.
+    last = boxes[len(FRAMES) - 2]
+    s = TARGET_H / (last[3] - last[2] + 1)
+    half_last = (last[3] - last[2] + 1) * 0.5
+
+    out = []
+    for i, (x0, x1, y0, y1) in enumerate(boxes):
+        crop = Image.fromarray(src[y0 : y1 + 1, x0 : x1 + 1], "RGBA")
+        w = max(1, int(round(crop.width * s)))
+        h = max(1, int(round(crop.height * s)))
+        small = crop.resize((w, h), Image.LANCZOS)
+
+        a = np.asarray(small).copy()
+        a[..., 3] = np.where(a[..., 3] >= ALPHA_CUT, 255, 0)
+        img = Image.fromarray(a, "RGBA")
+
+        if i < len(FRAMES) - 1:
+            ox, oy = w // 2, h                       # anchored on the fluid
+        else:
+            # The ring, placed where the bubble was: its own centroid pushed
+            # down by half the last bubble's height.
+            sub = occ[y0 : y1 + 1, x0 : x1 + 1]
+            cy = float(np.where(sub.any(1))[0].mean())
+            cx = float(np.where(sub.any(0))[0].mean())
+            ox = int(round(cx * s))
+            oy = int(round((cy + half_last) * s))
+        out.append((img, ox, oy))
+    return out
+
+
+ZSCRIPT = r'''version "4.12"
+
+// Doom64-RT: poison bubbles.
+//
+// A nukage lake is otherwise completely static -- the flat cycles through its
+// 64 ANIMDEFS frames and nothing else about the room changes. A bubble is the
+// one element with real motion, and it is cheap: six frames, no collision, and
+// RTGL1 gives a SPRITE a light from its texture meta, which is the one place
+// that meta works at all.
+//
+// EVERYTHING LIVES IN THE EVENT HANDLER, for the reason written up in
+// gen_lava_fx.py: a custom Thinker's Tick did not run there, and the effect
+// reported itself working while spawning nothing. An EventHandler's WorldTick
+// is guaranteed to run, so there is no second object whose lifecycle can go
+// wrong.
+
+class D64PoisonBubble : Actor
+{
+    Default
+    {
+        Radius 1;
+        Height 1;
+        Speed 0;
+        RenderStyle "Normal";
+        // Opaque on purpose. RT rasterizes the sprite as an alpha-tested
+        // cutout and never applies the actor's Alpha, so a translucent bubble
+        // is a thing you can write and not a thing you can see -- and a bubble
+        // of sludge is not translucent anyway.
+        +NOBLOCKMAP +NOGRAVITY +NOCLIP +NOTELEPORT +THRUACTORS
+        +CLIENTSIDEONLY +FORCEXYBILLBOARD +NOTRIGGER +DONTSPLASH
+        -SOLID
+    }
+    States
+    {
+__STATES__
+    }
+
+    // WHICH RUNG. Read once, at spawn, and jumped to as a STATE -- the sprite
+    // name is what carries the material identity, so this is the only place the
+    // choice can be made without losing the textures.json entry (see the note
+    // above SAT_SETS in gen_poison_fx.py).
+    override void PostBeginPlay()
+    {
+        Super.PostBeginPlay();
+
+        let cv = CVar.FindCVar( "d64_poison_sat" );
+        double s = cv ? cv.GetFloat() : 1.0;
+
+        State st;
+__SATPICK__
+        if( st ) { SetState( st ); }
+    }
+
+    override void Tick()
+    {
+        Super.Tick();
+        if( isFrozen() ) { return; }
+        // The rise slows as the bubble swells, so it settles at the surface
+        // instead of drifting off it over the 43 tics it is alive.
+        vel.z *= 0.94;
+    }
+}
+
+class D64PoisonFx : EventHandler
+{
+    int poisonSectors;
+    int spawned;
+    int tick;
+
+    // Rate is what the PLAYER sees, not what the lake covers. MAP07 has 50
+    // poison sectors; spawning uniformly over their area puts nearly every
+    // bubble out of frame while the log cheerfully reports them thrown. The
+    // sample disc follows the camera and the rate is per second, not per acre
+    // -- the same correction the lava sprays needed.
+    //
+    // d64_poison_dist is the effect's DRAW DISTANCE. Raising it quadruples the
+    // area the same burst has to cover, so the rate goes up with it or the near
+    // field visibly thins out; the two are not independent knobs.
+    const PERIOD    = 9;     // tics between bursts
+    const PER_BURST = 3;     // bubbles per burst
+    const NEAR_MIN  = 40;    // no closer than this, or they swell in your face
+
+    static int DiagLevel()
+    {
+        let cv = CVar.FindCVar( "rt_verbose" );
+        return ( cv && cv.GetBool() ) ? PRINT_HIGH : PRINT_HIGH | PRINT_NONOTIFY;
+    }
+
+    static bool IsPoison( String fl )
+    {
+        // PREFIX, not an exact name. D64N1_01 is frame 1 of a 64-frame ANIMDEFS
+        // sequence and GetTexture returns the frame showing right now, so an
+        // exact match hits on 1 tic in 64 and the bubbles strobe.
+        return fl.MakeUpper().IndexOf( "D64N" ) == 0;
+    }
+
+    override void WorldLoaded( WorldEvent e )
+    {
+        poisonSectors = 0;
+        spawned = 0;
+        tick = 0;
+
+        for( int i = 0; i < level.sectors.Size(); i++ )
+        {
+            if( IsPoison( TexMan.GetName( level.sectors[ i ].GetTexture( Sector.floor ) ) ) )
+            {
+                poisonSectors++;
+            }
+        }
+
+        if( poisonSectors > 0 )
+        {
+            Console.PrintfEx( DiagLevel(), "D64PoisonFx: %d poison sector(s), %d bubble(s) every %d tics near the player",
+                            poisonSectors, PER_BURST, PERIOD );
+        }
+    }
+
+    override void WorldTick()
+    {
+        if( poisonSectors == 0 ) { return; }
+
+        let cvOn = CVar.FindCVar( "d64_poison_fx" );
+        if( cvOn && !cvOn.GetBool() ) { return; }
+
+        let pmo = players[ consoleplayer ].mo;
+        if( !pmo ) { return; }
+
+        if( --tick > 0 ) { return; }
+        tick = PERIOD;
+
+        let cvRate = CVar.FindCVar( "d64_poison_rate" );
+        let cvDist = CVar.FindCVar( "d64_poison_dist" );
+        let cvSize = CVar.FindCVar( "d64_poison_size" );
+        let cvZ    = CVar.FindCVar( "d64_poison_z" );
+        double rate = cvRate ? cvRate.GetFloat() : 1.0;
+        double far  = cvDist ? cvDist.GetFloat() : 1100.0;
+        // Clamped low rather than allowed to reach 0: a zero scale is an
+        // invisible bubble that still ticks, lights the room and costs the
+        // same, which reads as "the effect broke". d64_poison_fx is the off
+        // switch and it is the only one.
+        double szMul = cvSize ? max( 0.05, cvSize.GetFloat() ) : 1.0;
+        double zOff  = cvZ ? cvZ.GetFloat() : 1.0;
+        if( far <= NEAR_MIN ) { return; }
+
+        // Fractional rates still work: the remainder is the probability of one
+        // more bubble, so 0.5 is genuinely half as many rather than the same
+        // count rounded back up.
+        double want = PER_BURST * rate;
+        int n = int( want );
+        if( frandom( 0, 1 ) < want - n ) { n++; }
+
+        for( int i = 0; i < n; i++ )
+        {
+            for( int tries = 0; tries < 10; tries++ )
+            {
+                double ang = frandom( 0, 360 );
+                // sqrt, or the disc's samples pile up in the middle: uniform in
+                // radius is not uniform in area, and the far half of the draw
+                // distance is three quarters of the lake you can see.
+                double rad = NEAR_MIN + ( far - NEAR_MIN ) * sqrt( frandom( 0, 1 ) );
+                double px  = pmo.pos.x + cos( ang ) * rad;
+                double py  = pmo.pos.y + sin( ang ) * rad;
+
+                Sector sec = level.PointInSector( (px, py) );
+                if( !sec ) { continue; }
+                if( !IsPoison( TexMan.GetName( sec.GetTexture( Sector.floor ) ) ) ) { continue; }
+
+                // SPAWNED ON THE PLANE, OFFSET WHEN DRAWN. d64_poison_z used
+                // to be added to the spawn z, and negative values did nothing:
+                // P_ZMovement clamps an actor to floorz on its first tic, so
+                // every bubble asked to sit below the surface was pushed back
+                // up onto it. SpriteOffset.Y is added straight to the sprite
+                // quad's world z (hw_sprites.cpp: `z1 += offy; z2 += offy`)
+                // with no clamp anywhere, so it goes both ways.
+                //
+                // The cvar is still the WHOLE offset, not a delta on a hidden
+                // constant: what it says is where the bubble's foot is drawn,
+                // and the sprite is bottom-anchored by grAb. Negative sinks it
+                // into the poison, which is the useful direction -- a bubble
+                // that breaks the plane reads better than one resting on it.
+                double fz = sec.floorplane.ZatPoint( (px, py) );
+                let b = D64PoisonBubble( Actor.Spawn( "D64PoisonBubble", (px, py, fz) ) );
+                if( b )
+                {
+                    spawned++;
+                    // A bubble is round in plan, so the two scales stay equal
+                    // -- the lava spark stretches its filaments on purpose,
+                    // this one would just look like an egg.
+                    // The per-bubble variation stays, and d64_poison_size
+                    // scales the whole spread -- so raising it makes a bigger
+                    // lake, not a uniform one.
+                    //
+                    // THIS SPREAD IS THE AUTHORED ART AND DOES NOT MOVE.
+                    // 0.7-1.25 draws the 20 px sprite at 20 px; the shipping
+                    // size lives entirely in d64_poison_size's DEFAULT, below
+                    // in CVARINFO.
+                    //
+                    // It is written down because two rounds of retuning were
+                    // lost to the other arrangement: the multiplier was baked
+                    // in here AND the cvar kept defaulting to 1, so "make it
+                    // 0.7" meant a different absolute size each time and the
+                    // lab's `small` arm drifted with it. One number, one place,
+                    // and `size 1` always means the art at its drawn size.
+                    double sc = frandom( 0.7, 1.25 ) * szMul;
+                    b.scale = ( sc, sc );
+                    b.SpriteOffset = ( 0, zOff );
+                    b.vel   = ( 0, 0, frandom( 0.06, 0.20 ) );
+
+                    let cvDbg = CVar.FindCVar( "d64_poison_debug" );
+                    if( cvDbg && cvDbg.GetBool() && ( spawned <= 3 || ( spawned % 200 ) == 0 ) )
+                    {
+                        Console.PrintfEx( DiagLevel(), "D64PoisonFx: bubble %d at (%.0f %.0f %.0f), %.0f from player",
+                                        spawned, px, py, fz, rad );
+                    }
+                }
+                break;
+            }
+        }
+    }
+}
+'''
+
+
+# NOSAVE, and that is not incidental. An A/B knob that persists means the next
+# run silently inherits whichever arm was tried last, and a null result gets
+# blamed on the change instead of on the leftover value.
+CVARINFO = """server nosave bool  d64_poison_fx    = true;
+server nosave float d64_poison_rate  = 1.0;
+server nosave float d64_poison_dist  = 1100.0;
+server nosave float d64_poison_size  = 0.35;
+server nosave float d64_poison_z     = 1.0;
+server nosave float d64_poison_sat   = 1.0;
+server nosave bool  d64_poison_debug = false;
+"""
+
+
+# NO GLDEFS LIGHT, AND WHY -- measured in the poison lab (MAP91), not reasoned.
+#
+# The first version gave every frame a GLDEFS pointlight, copying the lava
+# sprays. In the lab that rendered a lake of WHITE PILLS: a point light sitting
+# inside a 20-unit billboard is at zero distance from it, so the sprite lights
+# itself into clipping and the art -- the shading, the highlight, the whole
+# reason the bubble looks like a bubble -- is gone. The lava spark gets away
+# with it because it is 6 px and already meant to read as a white-hot dot.
+#
+# Turning dynamic lights off proved the second half: the bubbles still threw
+# green pools onto the nukage under them. That is RTGL1's SPRITE light, from
+# lightIntensity in textures.json below, and it was doing the job on its own.
+# So the GLDEFS half was not the light -- it was only the blowout.
+#
+# If a future change needs a light that is NOT co-located with the billboard
+# (a flare above the pop, say), it has to be a separate actor at a real
+# distance, not a light attached to this frame.
+
+
+# An EventHandler in a ZSCRIPT lump is NOT registered on its own -- it has to be
+# named in MAPINFO. Without this the class compiles, loads and never runs, which
+# is exactly what happened to the lava sprays for a whole round. AddEventHandlers
+# appends rather than replaces, so this coexists with d64r-lava-fx.pk3's line.
+MAPINFO = """GameInfo
+{
+\tAddEventHandlers = "D64PoisonFx"
+}
+"""
+
+
+# The sprite half of the lighting, and it has to be written by the tool: this
+# lives in rt/data/textures.json under build/, which is gitignored and rewritten
+# wholesale by the PBR tooling, so a hand edit is neither recorded nor durable.
+# Deliberately an order of magnitude under the lava sparks (760 lm at the hot
+# end): "a slight green light" is the brief, and a bubble is cold.
+# The sprite half of the lighting, and it has to be written by the tool: this
+# lives in rt/data/textures.json under build/, which is gitignored and rewritten
+# wholesale by the PBR tooling, so a hand edit is neither recorded nor durable.
+#
+# Deliberately an order of magnitude under the lava sparks (760 lm at the hot
+# end): "a slight green light" is the brief, and a bubble is cold.
+#
+# lightColor is retinted with the ART, per rung. A grey bubble throwing a
+# saturated green light would be the one combination that cannot happen in the
+# world, and the grey rung exists precisely to answer "where is the green coming
+# from" -- it has to be honest about it.
+BUBBLE_BASE_META = [
+    (55,  [110, 235, 60], 0.30),
+    (70,  [110, 235, 60], 0.34),
+    (85,  [112, 238, 62], 0.38),
+    (100, [114, 240, 64], 0.42),
+    (120, [116, 242, 66], 0.46),
+    (150, [130, 250, 80], 0.55),
+]
+
+
+def rung_meta(prefix: str, sat_rung: float) -> dict:
+    import colorsys
+
+    out = {}
+    for letter, (lm, col, em) in zip(FRAMES, BUBBLE_BASE_META):
+        hh, ss, vv = colorsys.rgb_to_hsv(*[c / 255.0 for c in col])
+        hh = (hh + HUE_SHIFT) % 1.0
+        ss = min(1.0, ss * BASE_SAT * sat_rung)
+        vv = min(1.0, vv * VAL_LIFT)
+        rgb = [int(round(min(255.0, c * 255.0))) for c in colorsys.hsv_to_rgb(hh, ss, vv)]
+        out[f"{prefix}{letter}0"] = (lm, rgb, em)
+    return out
+
+
+BUBBLE_META = {}
+for _pfx, _rung in SAT_SETS:
+    BUBBLE_META.update(rung_meta(_pfx, _rung))
+
+TEXJSON = ROOT / "sourcecode/gzdoom-rt/build/RelWithDebInfo/rt/data/textures.json"
+
+
+def patch_texjson() -> int:
+    import json
+
+    if not TEXJSON.exists():
+        print(f"  (skipped {TEXJSON.name}: not found -- build gzdoom first)")
+        return 0
+    data = json.loads(TEXJSON.read_text(encoding="utf-8"))
+    seen, n = set(), 0
+    for e in data["array"]:
+        nm = e.get("textureName")
+        if nm in BUBBLE_META and nm not in seen:
+            seen.add(nm)
+            i, c, em = BUBBLE_META[nm]
+            e["lightIntensity"], e["lightColor"], e["emissiveMult"] = i, c, em
+            n += 1
+    for nm, (i, c, em) in BUBBLE_META.items():
+        if nm not in seen:
+            data["array"].append(
+                {"textureName": nm, "lightIntensity": i, "lightColor": c,
+                 "emissiveMult": em, "metallicDefault": 0}
+            )
+            n += 1
+    TEXJSON.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    return n
+
+
+# The six-frame sequence, once, with the sprite name left open so it can be
+# stamped per rung. The durations and the burst growth are the SAME on every
+# rung -- saturation is the only thing the ladder changes, or an A/B between two
+# rungs would be comparing two effects.
+STATE_SEQ = """    {label}:
+        {spr} A 8;
+        {spr} B 6;
+        {spr} C 6;
+        {spr} D 6;
+        {spr} E 10;
+        // The ring flies apart rather than sitting still for seven tics. Frame
+        // F is already a ring of loose droplets; growing it is what turns it
+        // from a stamp into a pop.
+        {spr} F 2 {{ scale *= 1.14; }}
+        {spr} F 2 {{ scale *= 1.14; }}
+        {spr} F 3 {{ scale *= 1.14; }}
+        Stop;"""
+
+
+def build_states() -> str:
+    """One sequence per rung. Spawn is a second label on the default rung, so an
+    actor spawned before PostBeginPlay runs -- or with the cvar missing
+    entirely -- still has the shipping look rather than no sprite at all."""
+    out = []
+    for i, (prefix, _rung) in enumerate(SAT_SETS):
+        label = f"Sat{i}"
+        if i == SAT_DEFAULT_INDEX:
+            out.append("    Spawn:")
+        out.append(STATE_SEQ.format(label=label, spr=prefix))
+    return "\n".join(out)
+
+
+def build_satpick() -> str:
+    """A ladder of midpoint thresholds, generated from SAT_SETS so the code and
+    the table cannot drift apart."""
+    lines, first = [], True
+    for i in range(len(SAT_SETS) - 1):
+        mid = (SAT_SETS[i][1] + SAT_SETS[i + 1][1]) / 2.0
+        kw = "if" if first else "else if"
+        lines.append(f"        {kw}( s < {mid:.3f} ) {{ st = ResolveState( \"Sat{i}\" ); }}")
+        first = False
+    lines.append(f'        else {{ st = ResolveState( "Sat{len(SAT_SETS) - 1}" ); }}')
+    return "\n".join(lines)
+
+
+def build(dry: bool) -> int:
+    if not SHEET.exists():
+        raise SystemExit(f"missing source art: {SHEET}")
+
+    sliced = slice_sheet(SHEET)
+
+    # One sprite set per rung. The geometry -- crop, scale, grAb -- is shared,
+    # so the rungs cannot drift apart in anything except colour.
+    sets = []
+    for prefix, rung in SAT_SETS:
+        frames = []
+        for letter, (img, ox, oy) in zip(FRAMES, sliced):
+            tinted = retint(img, rung)
+            frames.append((f"{prefix}{letter}0", tinted, ox, oy,
+                           png_with_grab(tinted, ox, oy)))
+        sets.append((prefix, rung, frames))
+
+    zscript = ZSCRIPT.replace("__STATES__", build_states())
+    zscript = zscript.replace("__SATPICK__", build_satpick())
+
+    total = sum(len(f) for _, _, f in sets)
+    print(f"{OUT.name}: {total} sprite(s) -- {len(FRAMES)} frames x {len(SAT_SETS)} "
+          f"saturation rung(s) -- sliced from {SHEET.name}")
+    print(f"   hue {BUBBLE_HUE_DEG:.1f} -> {POOL_HUE_DEG:.1f} deg, chroma x{BASE_SAT:.3f} "
+          f"at rung 1.0, value x{VAL_LIFT:.2f}  (matched to the rendered pool)")
+    for prefix, rung, frames in sets:
+        star = "  <- default (d64_poison_sat 1)" if rung == SAT_SETS[SAT_DEFAULT_INDEX][1] else ""
+        print(f"   {prefix}  sat x{rung:.2f}  {len(frames)} frame(s){star}")
+    print(f"   ZSCRIPT {len(zscript)} bytes, MAPINFO registers D64PoisonFx, "
+          f"CVARINFO adds 7 nosave knobs; NO GLDEFS -- see the note above BUBBLE_BASE_META")
+    for name, img, ox, oy, blob in sets[SAT_DEFAULT_INDEX][2]:
+        print(f"   sprites/{name}.png  {img.width}x{img.height}  offset ({ox},{oy})  {len(blob)} bytes")
+    if dry:
+        print("\nPass --apply to write the pk3.")
+        return 0
+
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+    with zipfile.ZipFile(OUT, "w", zipfile.ZIP_DEFLATED) as z:
+        z.writestr("MAPINFO", MAPINFO)
+        z.writestr("CVARINFO", CVARINFO)
+        z.writestr("ZSCRIPT", zscript)
+        for _prefix, _rung, frames in sets:
+            for name, img, ox, oy, blob in frames:
+                z.writestr(f"sprites/{name}.png", blob)
+    print(f"\nwrote {OUT}")
+    print(f"{patch_texjson()} bubble entr(ies) written to textures.json")
+    return 0
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--apply", action="store_true")
+    args = ap.parse_args()
+    return build(dry=not args.apply)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

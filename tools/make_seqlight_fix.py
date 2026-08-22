@@ -2273,6 +2273,37 @@ TINTS = [
              "Donor 66 is the host room and the cluster's only non-blue neighbour, "
              "and it shares the SFLATAJ floor across the seam being repaired.",
     ),
+    Tint(
+        "MAP07",
+        [156, 157, 161, 162, 362, 363], donor=164, from_lightcolor=0x8DFB3C,
+        enabled=True,
+        note="THE REPORTED ONE (`whatsthat` on the SPACEAM wall): sector 157, "
+             "lightlevel 255, below MAP07's threshold of 260, not self-emitting -- "
+             "purely the colour half. A small D64N1_01 nukage alcove at "
+             "(1664..1792, -288..-96), six sectors, painted saturated green "
+             "rgb(141,251,60) top to bottom -- floor, ceiling AND walls, not just "
+             "one element against a neutral room. That is the author drawing the "
+             "poison gas itself onto every surface, and it is exactly the effect "
+             "d64r-poison-fx.pk3 (see docs/poison-bubbles.md) now renders for "
+             "real, so the flat paint is double-counted the same way MAP13's "
+             "torchlit floor was.\n"
+             "\n"
+             "The alcove is not an isolated colour -- 9304892 (0x8DFB3C) recurs on "
+             "75 sectors across MAP07, but adjacency shows only these six actually "
+             "touch each other; the rest are unrelated reuses of the same hue "
+             "elsewhere on the map and must not be touched (see AGENTS.md, cluster "
+             "a colormap by adjacency).\n"
+             "\n"
+             "Donor 164 is the OTHER nukage room immediately north (1440..1792, "
+             "-96..272), sharing the identical D64N1_01 floor and, on its SDFLTC "
+             "sub-sectors, the identical texture the alcove's non-floor sectors "
+             "(157/161/362/363) wear too -- so this is the same room finish "
+             "continued, not a foreign colour borrowed from a different area. 164 "
+             "and its own SDFLTC neighbour 366 already carry the SAME six colour "
+             "fields byte for byte, so one donor recolours the whole alcove "
+             "consistently. Lightlevel is left at 255 -- only the paint is fake, "
+             "not the brightness.",
+    ),
 ]
 
 
