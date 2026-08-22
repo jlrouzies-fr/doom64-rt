@@ -307,9 +307,27 @@ __SATPICK__
 
 class D64PoisonFx : EventHandler
 {
+    // One entry per poison sector, with its bounding box. See WorldLoaded.
+    Array<int>    secIdx;
+    Array<double> minx, miny, maxx, maxy;
+
     int poisonSectors;
     int spawned;
     int tick;
+
+    // THE INSTRUMENT. "Nothing is happening" and "one in forty samples lands on
+    // poison" look identical from inside the game, and the first three spawn
+    // lines cannot tell them apart -- they print and then the effect goes quiet.
+    // What matters is the HIT RATE: how many sampled points fell on a poison
+    // floor. On a lake it is near 1; on a corridor it is what makes the effect
+    // disappear.
+    //
+    // NOT called `tries`: the sampling loop below already declares
+    // `for( int tries = 0; ... )`, and a field of that name is shadowed by it --
+    // the counter reads 0 forever while the loop quietly runs half its attempts.
+    int samples;
+    int hits;
+    int report;
 
     // Rate is what the PLAYER sees, not what the lake covers. MAP07 has 50
     // poison sectors; spawning uniformly over their area puts nearly every
@@ -343,13 +361,38 @@ class D64PoisonFx : EventHandler
         poisonSectors = 0;
         spawned = 0;
         tick = 0;
+        samples = 0;
+        hits = 0;
+        report = 0;
+
+        secIdx.Clear(); minx.Clear(); miny.Clear(); maxx.Clear(); maxy.Clear();
 
         for( int i = 0; i < level.sectors.Size(); i++ )
         {
-            if( IsPoison( TexMan.GetName( level.sectors[ i ].GetTexture( Sector.floor ) ) ) )
+            let s = level.sectors[ i ];
+            if( !IsPoison( TexMan.GetName( s.GetTexture( Sector.floor ) ) ) ) { continue; }
+
+            // Bounding box from the sector's own linedefs. Sector indices rather
+            // than Sector refs: ZScript will not hold a dynamic array of struct
+            // pointers, so these are parallel arrays -- same shape as the lava
+            // sprays' lake list.
+            double x0 = 1e30, y0 = 1e30, x1 = -1e30, y1 = -1e30;
+            for( int li = 0; li < s.lines.Size(); li++ )
             {
-                poisonSectors++;
+                let ln = s.lines[ li ];
+                for( int v = 0; v < 2; v++ )
+                {
+                    Vertex vx = ( v == 0 ) ? ln.v1 : ln.v2;
+                    if( !vx ) { continue; }
+                    x0 = min( x0, vx.p.x ); x1 = max( x1, vx.p.x );
+                    y0 = min( y0, vx.p.y ); y1 = max( y1, vx.p.y );
+                }
             }
+            if( x0 > x1 ) { continue; }
+
+            secIdx.Push( i );
+            minx.Push( x0 ); miny.Push( y0 ); maxx.Push( x1 ); maxy.Push( y1 );
+            poisonSectors++;
         }
 
         if( poisonSectors > 0 )
@@ -389,6 +432,30 @@ class D64PoisonFx : EventHandler
         // Fractional rates still work: the remainder is the probability of one
         // more bubble, so 0.5 is genuinely half as many rather than the same
         // count rounded back up.
+        let cvDbg2 = CVar.FindCVar( "d64_poison_debug" );
+        if( cvDbg2 && cvDbg2.GetBool() && ++report >= 4 )
+        {
+            report = 0;
+            Console.PrintfEx( DiagLevel(), "D64PoisonFx: %d spawned, %d/%d samples hit poison (%d%%)",
+                            spawned, hits, samples, samples > 0 ? ( 100 * hits ) / samples : 0 );
+        }
+
+        // The sectors in range, rebuilt each burst because the player moves.
+        // Bbox-to-point distance: clamp the player into the box and measure to
+        // that, so a long channel counts as near along its whole length rather
+        // than by its centre.
+        Array<int> cand;
+        for( int i = 0; i < secIdx.Size(); i++ )
+        {
+            double cx = clamp( pmo.pos.x, minx[ i ], maxx[ i ] );
+            double cy = clamp( pmo.pos.y, miny[ i ], maxy[ i ] );
+            if( ( ( cx, cy ) - ( pmo.pos.x, pmo.pos.y ) ).Length() <= far )
+            {
+                cand.Push( i );
+            }
+        }
+        if( cand.Size() == 0 ) { return; }
+
         double want = PER_BURST * rate;
         int n = int( want );
         if( frandom( 0, 1 ) < want - n ) { n++; }
@@ -397,17 +464,38 @@ class D64PoisonFx : EventHandler
         {
             for( int tries = 0; tries < 10; tries++ )
             {
-                double ang = frandom( 0, 360 );
-                // sqrt, or the disc's samples pile up in the middle: uniform in
-                // radius is not uniform in area, and the far half of the draw
-                // distance is three quarters of the lake you can see.
-                double rad = NEAR_MIN + ( far - NEAR_MIN ) * sqrt( frandom( 0, 1 ) );
-                double px  = pmo.pos.x + cos( ang ) * rad;
-                double py  = pmo.pos.y + sin( ang ) * rad;
+                // SAMPLE THE POISON, NOT THE WORLD.
+                //
+                // This used to throw a dart at a disc around the player and keep
+                // it if it happened to land on a poison floor. On the lab's lake
+                // that hits 17% of the time; in MAP07, where the nukage runs
+                // down corridors a couple of hundred units wide, it hits 5% --
+                // so most bubbles were never placed at all, and the few that
+                // were landed wherever the disc happened to clip some other
+                // pool. That is the "bubble 1000 from player" in the report,
+                // with the poison underfoot staying still.
+                //
+                // Now a poison SECTOR is picked first, from those whose bbox is
+                // in range, and the point is drawn inside that sector. The
+                // PointInSector check stays -- a bbox is not the sector, and an
+                // L-shaped pool has corners that are not in it -- but it is now
+                // rejecting the odd corner rather than the entire map.
+                if( cand.Size() == 0 ) { break; }
+                int ci  = cand[ random( 0, cand.Size() - 1 ) ];
+                double px = frandom( minx[ ci ], maxx[ ci ] );
+                double py = frandom( miny[ ci ], maxy[ ci ] );
 
+                samples++;
                 Sector sec = level.PointInSector( (px, py) );
                 if( !sec ) { continue; }
-                if( !IsPoison( TexMan.GetName( sec.GetTexture( Sector.floor ) ) ) ) { continue; }
+                if( sec.Index() != secIdx[ ci ] ) { continue; }
+
+                // Distance still matters: a lake can be far wider than the draw
+                // distance, and a bubble behind you at 2000 units is cost with
+                // nothing to show for it.
+                double rad = ( ( px, py ) - ( pmo.pos.x, pmo.pos.y ) ).Length();
+                if( rad < NEAR_MIN || rad > far ) { continue; }
+                hits++;
 
                 // SPAWNED ON THE PLANE, OFFSET WHEN DRAWN. d64_poison_z used
                 // to be added to the spawn z, and negative values did nothing:
@@ -469,7 +557,7 @@ class D64PoisonFx : EventHandler
 # run silently inherits whichever arm was tried last, and a null result gets
 # blamed on the change instead of on the leftover value.
 CVARINFO = """server nosave bool  d64_poison_fx    = true;
-server nosave float d64_poison_rate  = 1.0;
+server nosave float d64_poison_rate  = 2.0;
 server nosave float d64_poison_dist  = 1100.0;
 server nosave float d64_poison_size  = 0.35;
 server nosave float d64_poison_z     = 1.0;

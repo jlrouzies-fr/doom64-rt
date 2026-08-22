@@ -26,15 +26,16 @@ rem      from it, so every bubble rendered as a white pill with the art gone.
 rem      The sprite meta was already throwing the green, which is what
 rem      rt_dynlight 0 proved -- see the "nodyn" arm.
 rem
-rem   on      the default: 3 bubbles every 9 tics inside 1100 units.
+rem   on      the default: rate 2, so 6 bubbles every 9 tics inside 1100
+rem           units.
 rem   off     d64_poison_fx 0. The A/B for "is that green coming from the
 rem           bubbles or from the flat's own emissive".
-rem   dense   4x the rate. Too many on purpose -- use it to see the shape of one
+rem   dense   4x the shipping rate (8). Too many on purpose -- use it to see the shape of one
 rem           bubble's life without waiting for the next.
-rem   sparse  1/4 the rate.
+rem   sparse  1/4 the shipping rate (0.5).
 rem   near    draw distance 400. The bubbles crowd around you and the far half
 rem           of the lake goes still, which is what the default trades away.
-rem   far     draw distance 2200 at 4x rate. Distance and rate are NOT
+rem   far     draw distance 2200 at 4x the shipping rate. Distance and rate are NOT
 rem           independent: doubling the radius quadruples the area, so the rate
 rem           has to go up with it or the near field visibly thins out.
 rem   nodyn   rt_dynlight 0. GLOBAL -- it kills every dynamic light in the game,
@@ -100,14 +101,14 @@ rem the evidence from one run is destroyed by the next unrelated launch before i
 rem can be read. +logfile comes after the launcher's own, so it wins.
 set "LOG=+logfile %~dp0\..\rt-poison.log"
 
-if /i "%ARM%"=="on"     set "ARGS=+d64_poison_fx 1 +d64_poison_rate 1    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_debug 0"
-if /i "%ARM%"=="off"    set "ARGS=+d64_poison_fx 0 +d64_poison_rate 1    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_debug 0"
-if /i "%ARM%"=="dense"  set "ARGS=+d64_poison_fx 1 +d64_poison_rate 4    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_debug 0"
-if /i "%ARM%"=="sparse" set "ARGS=+d64_poison_fx 1 +d64_poison_rate 0.25 +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_debug 0"
-if /i "%ARM%"=="near"   set "ARGS=+d64_poison_fx 1 +d64_poison_rate 1    +d64_poison_dist 400  +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_debug 0"
-if /i "%ARM%"=="far"    set "ARGS=+d64_poison_fx 1 +d64_poison_rate 4    +d64_poison_dist 2200 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_debug 0"
-if /i "%ARM%"=="nodyn"  set "ARGS=+d64_poison_fx 1 +d64_poison_rate 1    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_debug 0 +rt_dynlight 0"
-if /i "%ARM%"=="debug"  set "ARGS=+d64_poison_fx 1 +d64_poison_rate 1    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_debug 1 +rt_verbose 1"
+if /i "%ARM%"=="on"     set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_debug 0"
+if /i "%ARM%"=="off"    set "ARGS=+d64_poison_fx 0 +d64_poison_rate 2    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_debug 0"
+if /i "%ARM%"=="dense"  set "ARGS=+d64_poison_fx 1 +d64_poison_rate 8    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_debug 0"
+if /i "%ARM%"=="sparse" set "ARGS=+d64_poison_fx 1 +d64_poison_rate 0.5  +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_debug 0"
+if /i "%ARM%"=="near"   set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2    +d64_poison_dist 400  +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_debug 0"
+if /i "%ARM%"=="far"    set "ARGS=+d64_poison_fx 1 +d64_poison_rate 8    +d64_poison_dist 2200 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_debug 0"
+if /i "%ARM%"=="nodyn"  set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_debug 0 +rt_dynlight 0"
+if /i "%ARM%"=="debug"  set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_debug 1 +rt_verbose 1"
 
 if not defined ARGS (
   echo Usage: %~nx0 ^<on^|off^|dense^|sparse^|near^|far^|nodyn^|debug^> [1-34]

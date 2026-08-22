@@ -88,13 +88,29 @@ lava sprays first put their per-lake emitters in a custom `Thinker` created with
 `new(...)`, and its `Tick` never ran — the handler reported the lakes fine and
 not one spark was thrown. `WorldTick` is guaranteed to run.
 
-It also spawns **near the player**, not uniformly over the lake. Uniform-over-area
-is the obvious reading of "a lake seethes" and it is wrong in practice: nearly
-every bubble lands out of frame while the log cheerfully reports it. The sample
-disc follows the camera and the rate is per second, not per acre. Samples are
-drawn with `sqrt` on the radius, or they pile up in the middle — uniform in
-radius is not uniform in area, and the far half of the draw distance is three
-quarters of the lake you can see.
+It samples the **poison sectors**, not the world. Each burst it collects the
+poison sectors whose bounding box is within `d64_poison_dist` of the camera,
+picks one, and draws a point inside it. The `PointInSector` check stays — a bbox
+is not the sector, and an L-shaped pool has corners outside it — but it now
+rejects the odd corner instead of the entire map.
+
+**The version before it threw a dart at a disc around the player** and kept it
+only if it happened to land on poison. Measured hit rate:
+
+| | disc | sector |
+|---|---|---|
+| lab lake (768×1024) | 17% | 96% |
+| lab corridor (192 wide) | 5% | 97% |
+| MAP07 | ~5% | 74% |
+
+At 10 attempts per bubble, a 5% hit rate places about 40% of what you asked for,
+and places it wherever the disc happened to clip some *other* pool. That is why
+the effect looked fine in the lab and dead in the game: the report was a bubble
+"1000 from player" while the nukage underfoot stayed still. A lake hides this
+completely — **test spawner changes on MAP92, the corridor**, not on the lake.
+
+The residual 26% on MAP07 is real map geometry: bounding boxes of irregular
+sectors contain rock. That is the cost of the bbox, and it is cheap.
 
 **Distance and rate are coupled.** Doubling `d64_poison_dist` quadruples the
 area the same burst has to cover, so the rate has to go up with it or the near
@@ -138,7 +154,7 @@ result gets blamed on the change instead of on the leftover value.
 | cvar | default | |
 |---|---|---|
 | `d64_poison_fx` | `1` | master switch |
-| `d64_poison_rate` | `1.0` | multiplier on 3 bubbles per 9 tics. Fractional works: the remainder is the probability of one more |
+| `d64_poison_rate` | `2.0` | multiplier on a base of 3 bubbles per 9 tics, so shipping is **6 per 9 tics**. Fractional works: the remainder is the probability of one more |
 | `d64_poison_dist` | `1100` | draw distance, in map units |
 | `d64_poison_size` | `0.35` | **absolute** scale on the per-bubble spread (0.7–1.25), where `1` draws the sprite at its authored 20 px. It multiplies the whole spread, so raising it makes a bigger lake, not a uniform one. Clamped at 0.05 — a zero-scale bubble is invisible but still ticks and still lights, which reads as a broken effect; `d64_poison_fx` is the off switch |
 | `d64_poison_z` | `1.0` | where the bubble's **foot is drawn**, relative to the fluid plane. **Negative sinks it into the surface** — the useful direction, since a bubble that breaks the plane reads better than one resting on it |
@@ -189,6 +205,7 @@ of the spawn, and nothing else in it:
 |---|---|
 | **MAP90** | dark — lightlevel 0 and **not one light thing**. Whatever green lands on the wall came from a bubble. |
 | **MAP91** | lit — lightlevel 160 and a ceiling grid. Read the sprite as a shape: size, growth, whether the burst reads as a burst. |
+| **MAP92** | channel — the same room with the poison as a 192-unit **corridor** instead of a lake, which is the shape the real maps have. The lake is a comfortable test and hides sampler bugs; this one does not. |
 
 **The probe row is the first thing to read.** Six static bubbles, one locked to
 each frame, stand down the west walkway (`D64PoisonProbe`, DoomEdNum 9910,
@@ -255,3 +272,21 @@ to sit below the surface was pushed straight back onto it. The actor now spawns
 *on* the plane and the offset goes to `SpriteOffset.Y`, which is added directly
 to the sprite quad's world z (`hw_sprites.cpp`: `z1 += offy; z2 += offy`) with no
 clamp anywhere, so it works in both directions.
+
+## The hit-rate instrument
+
+`d64_poison_debug 1` prints, once a second:
+
+```
+D64PoisonFx: 93 spawned, 93/125 samples hit poison (74%)
+```
+
+The spawn-position lines only print for the first three bubbles, and "nothing is
+happening" and "one sample in twenty lands on poison" look identical from inside
+the game. The rate is the number that tells them apart, and it is what turned a
+guess about MAP07 into a measurement.
+
+One trap, paid for once: the counter field must **not** be called `tries`. The
+sampling loop already declares `for( int tries = 0; ... )`, which shadows it — the
+counter reads 0 forever *and* the loop quietly runs half its attempts per bubble.
+The instrument reported `18/0` before that was spotted.

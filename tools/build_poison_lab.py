@@ -289,6 +289,64 @@ class D64PoisonProbeAnim : D64PoisonBubble
 '''
 
 
+def build_channel_textmap() -> str:
+    """MAP92 -- a NARROW CHANNEL of poison, which is what the game actually has.
+
+    MAP91 is a 768x1024 lake, and a lake hides the one bug that matters: the
+    spawner samples a random point in a disc around the player and keeps it only
+    if it lands on a poison floor. On the lake nearly every sample hits. In
+    MAP07 the nukage runs down corridors a couple of hundred units wide, so
+    almost every sample lands on rock, and the handful that survive are wherever
+    the disc happened to clip some other pool -- which is how a bubble ends up
+    reported "1000 from player" while the poison you are standing in stays
+    still.
+
+    So: the same room, the same spawn, the same lighting, and the poison is a
+    192-unit channel down the middle instead of a lake. Any sampler that works
+    here works in the game."""
+    parts = ['namespace = "zdoom";']
+
+    RW, RD = 320, ROOM_D
+    CX0, CX1 = 64, 256          # the channel: 192 wide, like a corridor
+
+    room_v = [(0, 0), (0, RD), (RW, RD), (RW, 0)]
+    pool_v = [(CX0, 192), (CX0, RD - 192), (CX1, RD - 192), (CX1, 192)]
+    for x, y in room_v + pool_v:
+        parts.append(blk("vertex", x=float(x), y=float(y)))
+
+    parts.append(blk("sector", heightfloor=0, heightceiling=CEIL_H,
+                     texturefloor=FLOOR, textureceiling=CEIL, lightlevel=160))
+    parts.append(blk("sector", heightfloor=POOL_Z, heightceiling=CEIL_H,
+                     texturefloor=POOL, textureceiling=CEIL, lightlevel=160))
+
+    for _ in range(4):
+        parts.append(blk("sidedef", sector=0, texturemiddle=WALL))
+    for i in range(4):
+        parts.append(blk("linedef", v1=i, v2=(i + 1) % 4, sidefront=i,
+                         blocking=True))
+
+    side = 4
+    for e in range(4):
+        parts.append(blk("sidedef", sector=1, texturebottom=WALL))
+        parts.append(blk("sidedef", sector=0, texturebottom=WALL))
+        parts.append(blk("linedef", v1=4 + e, v2=4 + (e + 1) % 4,
+                         sidefront=side, sideback=side + 1, twosided=True))
+        side += 2
+
+    # Standing ON the channel, looking down it -- which is where the report came
+    # from, and the case a disc sampler is worst at.
+    parts.append(thing(x=float((CX0 + CX1) // 2), y=96.0, angle=90, type=1))
+
+    for gx in range(2):
+        for gy in range(5):
+            parts.append(thing(x=float(RW * (gx + 0.5) / 2.0),
+                               y=float(RD * (gy + 0.5) / 5.0),
+                               height=float(CEIL_H - 16), angle=0,
+                               type=T_POINTLIGHT,
+                               arg0=255, arg1=250, arg2=240, arg3=20))
+    return "\n".join(parts)
+
+
 MAPINFO = """map MAP90 "RT Poison Lab (dark)"
 {
     sky1 = "SKY1"
@@ -309,6 +367,15 @@ map MAP91 "RT Poison Lab (lit)"
     secretnext = "MAP91"
 }
 
+map MAP92 "RT Poison Lab (channel)"
+{
+    sky1 = "SKY1"
+    music = ""
+    cluster = 1
+    next = "MAP92"
+    secretnext = "MAP92"
+}
+
 DoomEdNums
 {
     9910 = D64PoisonProbe
@@ -325,6 +392,9 @@ def main() -> None:
         ("MAP91", b""),
         ("TEXTMAP", build_textmap(True).encode("ascii")),
         ("ENDMAP", b""),
+        ("MAP92", b""),
+        ("TEXTMAP", build_channel_textmap().encode("ascii")),
+        ("ENDMAP", b""),
     ])
     OUT_WAD.write_bytes(wad)
     with zipfile.ZipFile(OUT_MAPINFO, "w", zipfile.ZIP_DEFLATED) as z:
@@ -340,6 +410,7 @@ def main() -> None:
     print( "  probes  six frames in a row at 72 units, plus one on a loop")
     print( "  MAP90   dark: lightlevel 0, no light things -- judge the LIGHT")
     print( "  MAP91   lit:  lightlevel 160 + ceiling grid -- judge the SPRITE")
+    print( "  MAP92   channel: a 192-unit corridor of poison -- the shape the game has")
 
 
 if __name__ == "__main__":
