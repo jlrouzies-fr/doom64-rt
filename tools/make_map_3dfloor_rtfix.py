@@ -1,16 +1,27 @@
 """
-Build RT hang fixes: strip Sector_Set3dFloor (linedef special 160).
+Sector_Set3dFloor (linedef special 160) handling for the Retribution map overlays.
 
-Same root cause as MAP01 (compat-patches.md): 3D floors hang RT live upload.
-Keeps original BEHAVIOR + ZNODES so ACS still runs.
+HISTORY. From 2026-08-02 to 2026-08-23 this stripped every 3D floor in the game
+(44 maps / 209 linedefs) because a single one on MAP01 froze the engine. The
+freeze was never in the map data: gzdoom-rt clears a 3D-floor sector's lightlist
+under RT and P_GetPlaneLight then read past the end of the empty array on the
+render worker thread (p_3dfloors.cpp). That is fixed in the engine, and 166 of the
+209 floors are the bridges and catwalks Nevander built the levels around --
+stripping them made levels uncompletable. Default is now MODE "keep".
 
-Default: scan all MAPxx in D64RTR_v15.WAD, write one combined PWAD
-  Doom64-Retribution/d64r-3dfloor-rtfix.wad
-plus per-map copies d64r-mapNN-rtfix.wad for maps that had 160s.
+MODES (rewrite_3dfloor / --mode):
+  keep   -- leave special 160 alone (default). Nothing to write; the script
+            reports the census and writes no wad.
+  strip  -- the old behaviour: delete `special` + `argN` on every 160 linedef.
+            Emergency arm only, for an engine without the P_GetPlaneLight guard.
 
-  python tools/make_map_3dfloor_rtfix.py           # all maps → combined
-  python tools/make_map_3dfloor_rtfix.py 2         # MAP02 only
-  python tools/make_map_3dfloor_rtfix.py --all     # same as default
+Other overlay builders (make_seqlight_fix.py, add_smonf_lights.py) import
+rewrite_3dfloor so every map-replacing wad applies the SAME policy; a map in a
+later-loading wad silently wins, so they must never disagree.
+
+  python tools/make_map_3dfloor_rtfix.py                 # census (keep)
+  python tools/make_map_3dfloor_rtfix.py --mode strip    # old combined wad
+  python tools/make_map_3dfloor_rtfix.py --mode strip 2  # MAP02 only
 """
 from __future__ import annotations
 
@@ -55,11 +66,10 @@ def write_wad(path: Path, items: list[tuple[str, bytes]]) -> None:
 def is_map_marker(lumps: list[tuple[str, bytes]], i: int) -> bool:
     """A map marker is a zero-length lump whose next lump starts the map body.
 
-    Name-matching on ``MAP\\d\\d`` is what left the five extra campaigns
-    unprotected: Retribution's own levels are ``RTR01``, and the Absolution /
-    Outcast / Redemption / Reckoning / bonus sets are ``ABS01``, ``OUT01``,
-    ``RDM01``, ``REC01``, ``FUN00``. Those maps kept their 3D floors and froze
-    on entry exactly like MAP01 used to.
+    Name-matching on ``MAP\\d\\d`` is what left the extra campaigns out of the
+    strip while it existed: the Absolution / Outcast / Redemption / bonus sets
+    are ``ABS01``, ``OUT01``, ``RDM01``, ``FUN00`` (v15 has no ``REC*`` or
+    ``RTR*`` maps). Structural detection also makes the census above complete.
     """
     if i + 1 >= len(lumps):
         return False
@@ -94,7 +104,34 @@ def decode_textmap(blob: bytes) -> str:
     return blob.decode("utf-8", "replace")
 
 
+# Policy shared by every overlay builder. "keep" or "strip"; see module docstring.
+MODE3D = "keep"
+
+
+def count_3dfloor(text: str) -> int:
+    """Number of linedefs carrying special 160, untouched."""
+    return sum(
+        1
+        for m in re.finditer(r"(?ms)^linedef\s*\{(.*?)\}", text)
+        if re.search(r"special\s*=\s*160\s*;", m.group(1))
+    )
+
+
+def rewrite_3dfloor(text: str, mode: str | None = None) -> tuple[str, int]:
+    """Apply the 3D-floor policy. Returns (text, linedefs_changed).
+
+    mode "keep" returns the text unchanged with 0; "strip" is strip_3dfloor.
+    """
+    mode = MODE3D if mode is None else mode
+    if mode == "keep":
+        return text, 0
+    if mode == "strip":
+        return strip_3dfloor(text)
+    raise ValueError(f"unknown 3D-floor mode {mode!r} (keep|strip)")
+
+
 def strip_3dfloor(text: str) -> tuple[str, int]:
+    """The old unconditional strip. Prefer rewrite_3dfloor(); this ignores MODE3D."""
     count = 0
 
     def scrub(m: re.Match[str]) -> str:
@@ -124,7 +161,7 @@ def build_map_items(
         return None, 0
 
     text = decode_textmap(members["TEXTMAP"])
-    fixed, n = strip_3dfloor(text)
+    fixed, n = rewrite_3dfloor(text)
     if n == 0:
         return None, 0
 
@@ -156,8 +193,27 @@ def build_map(mapnum: int, lumps: list[tuple[str, bytes]] | None = None) -> Path
     return out
 
 
-def build_all() -> Path:
+def census(lumps: list[tuple[str, bytes]]) -> dict[str, int]:
+    """Map name -> number of special-160 linedefs, for every map in the IWAD."""
+    out: dict[str, int] = {}
+    for mapname in list_map_names(lumps):
+        start, end = map_lump_range(lumps, mapname)
+        members = {nm.upper(): blob for nm, blob in lumps[start:end]}
+        if "TEXTMAP" in members:
+            out[mapname] = count_3dfloor(decode_textmap(members["TEXTMAP"]))
+    return out
+
+
+def build_all() -> Path | None:
     lumps = read_wad_lumps(WAD)
+    if MODE3D == "keep":
+        c = {k: v for k, v in census(lumps).items() if v}
+        print(f"3D-floor mode keep: nothing to write. {sum(c.values())} special-160 "
+              f"linedefs on {len(c)} maps stay in the game.")
+        print("  " + ", ".join(f"{k}({v})" for k, v in c.items()))
+        if COMBINED.exists():
+            print(f"NOTE: stale {COMBINED} still on disk; nothing loads it any more.")
+        return None
     combined: list[tuple[str, bytes]] = []
     total = 0
     maps_fixed: list[str] = []
@@ -183,10 +239,19 @@ def build_all() -> Path:
 
 
 def main() -> None:
+    global MODE3D
     args = sys.argv[1:]
+    if "--mode" in args:
+        i = args.index("--mode")
+        MODE3D = args[i + 1]
+        del args[i : i + 2]
+    if MODE3D not in ("keep", "strip"):
+        raise SystemExit(f"--mode must be keep or strip, not {MODE3D!r}")
     if not args or args == ["--all"]:
         build_all()
         return
+    if MODE3D == "keep":
+        raise SystemExit("per-map wads only make sense with --mode strip")
     lumps = read_wad_lumps(WAD)
     for a in args:
         if a == "--all":

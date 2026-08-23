@@ -1057,6 +1057,15 @@ state, because the doors stop matching each other.
 
 ## Load-order trap: maps that are also in the 3D-floor wad
 
+> **Moot since 2026-08-23.** The 3D-floor strip wad is withdrawn: the freeze it
+> hid was an engine bug (`P_GetPlaneLight` on an empty lightlist — see
+> `docs/compat-patches.md`), and the stripped floors were the bridges the levels
+> need. The builder still runs every map through
+> `make_map_3dfloor_rtfix.rewrite_3dfloor`, now with the shared policy `keep`, and
+> prints "3D floors: N kept" per map. The section below is kept as the record of
+> why that call exists; the *rule* — every map-replacing overlay applies one
+> policy — still stands.
+
 `d64r-seqlight-fix.wad` loads *after* `d64r-3dfloor-rtfix.wad`, so for any map
 present in both, **ours wins and ours alone decides what the map contains**.
 

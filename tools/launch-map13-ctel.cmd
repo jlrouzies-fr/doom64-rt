@@ -13,8 +13,8 @@ rem run in order, so this one wins and the transcript goes somewhere unambiguous
 rem
 rem What to look for in rt-map13.log:
 rem   "d64r-seqlight-fix_map13"  -> the patched MAP13 is the one in use.
-rem     If it says d64r-3dfloor-rtfix_map13, that wad is winning the load order and
-rem     none of the map changes apply.
+rem     If it says d64rtr_v15_map13, the seqlight wad is not loaded and none of the
+rem     map changes apply.
 rem
 rem What to look for in game, in the 64x64 alcove at (864,-1312):
 rem   - gems no longer cycle bright/dim on their own (ANIMDEFS pinned to CTEL5)

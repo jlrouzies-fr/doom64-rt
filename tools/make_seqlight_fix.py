@@ -35,8 +35,11 @@ one looks like in game and why it is or is not on. A blink with a real fixture
 in the room -- a hanging lamp, a monitor with its own light thing -- is kept:
 the complaint is sourceless light, not animation as such.
 
-Any map that also appears in d64r-3dfloor-rtfix.wad gets its Sector_Set3dFloor
-linedefs re-stripped here, because this wad loads later and therefore wins.
+Every map this wad emits goes through make_map_3dfloor_rtfix.rewrite_3dfloor,
+because a map in this (later-loading) wad wins over any other overlay and so
+decides on its own whether its Sector_Set3dFloor linedefs exist. The shared
+policy is "keep" since 2026-08-23 (the freeze was an engine bug, now fixed);
+the per-map line reports the 160 count either way so a change shows in the log.
 
   python tools/make_seqlight_fix.py           # build the wad
   python tools/make_seqlight_fix.py --list    # show the table, build nothing
@@ -67,8 +70,9 @@ from make_map_3dfloor_rtfix import (
     WAD,
     decode_textmap,
     map_lump_range,
+    count_3dfloor,
     read_wad_lumps,
-    strip_3dfloor,
+    rewrite_3dfloor,
     write_wad,
 )
 
@@ -3349,16 +3353,15 @@ def main() -> None:
         )
         nacs += ncomp
 
-        # Carry the 3D-floor strip forward on any map that needs it.
+        # Apply the shared 3D-floor policy (make_map_3dfloor_rtfix.MODE3D).
         #
-        # This wad loads AFTER d64r-3dfloor-rtfix.wad, so for a map present in
-        # both, ours is the one GZDoom uses and ours alone decides what the map
-        # contains. MAP03 was safe by accident -- it has no special-160 linedefs
-        # and is absent from the combined wad. MAP05 has one and IS in it, so
-        # replacing the map without re-stripping would silently hand back the 3D
-        # floor that hangs RT live upload, undoing a fix from another tool
-        # entirely. Re-derived here rather than assumed.
-        fixed, n3d = strip_3dfloor(fixed)
+        # This wad loads late, so for any map it carries, ours is the one GZDoom
+        # uses and ours alone decides what the map contains. While the policy was
+        # "strip" (2026-08-02..23) forgetting this would have silently handed a
+        # map its 3D floors back; now that it is "keep" the same call makes sure
+        # no builder strips them on its own. Re-derived here rather than assumed.
+        n160 = count_3dfloor(fixed)
+        fixed, n3d = rewrite_3dfloor(fixed)
 
         items.append((mapname, b""))
         for nm, blob in lumps[start + 1 : end]:
@@ -3377,6 +3380,7 @@ def main() -> None:
               f"recoloured {ntint} sector(s), added {nlamp} light thing(s), "
               f"{npanel} panel light(s), "
               f"{nacs} acs call(s) ({', '.join(labels[mapname])})"
+              f"{f', 3D floors: {n160} kept' if n160 and not n3d else ''}"
               f"{f', re-stripped {n3d} 3D-floor linedef(s)' if n3d else ''}")
 
     if activeAnims:

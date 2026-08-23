@@ -129,6 +129,7 @@ Things that are wrong and known to be wrong.
 
 - MAP05: when at the outdoor area, the moon can get occluded by an invisible wall. It is like a form of "unculling", no fix found yet.
 - You can notice textures that look too bright / sticking out. It can happen if their emissive is not well updated, those get fixed over time as I do a real play through the whole game
+- Retribution's 3D-floor bridges and catwalks are back (earlier builds removed all of them to dodge an engine freeze, which made some levels impossible to finish). Particles and debris still fall through them.
 - Loading a save made on an older version will fail with a clear "save is from an older version" message. This is expected: each update can change map data, which invalidates old saves for that level. Start that level fresh from the console (`map mapXX`) or load a save from an earlier level instead.
 
 <br>

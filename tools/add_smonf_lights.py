@@ -55,10 +55,12 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from make_map_3dfloor_rtfix import (
+    count_3dfloor,
     decode_textmap,
     is_map_marker,
     map_lump_range,
     read_wad_lumps,
+    rewrite_3dfloor,
     write_wad,
 )
 
@@ -247,6 +249,15 @@ def main() -> None:
         patched = text.rstrip() + "\n\n" + "".join(
             thing_block(x, y, h) for x, y, h, _ in placements
         )
+        # Shared 3D-floor policy (make_map_3dfloor_rtfix.MODE3D). This wad loads
+        # after every other map overlay, so a map taken from "stock" here is the
+        # one the game plays: while the policy was "strip", ABS02/ABS03/OUT04
+        # shipped from this builder with their 3D floors intact -- the very freeze
+        # the other builders had removed. Same call as the others, so they agree.
+        n160 = count_3dfloor(patched)
+        patched, n3d = rewrite_3dfloor(patched)
+        if n160:
+            print(f"    3D floors: {n160} {'re-stripped' if n3d else 'kept'}")
         items: list[tuple[str, bytes]] = [(mapname, b"")]
         for n, b in src[s + 1 : e]:
             items.append((n, patched.encode("utf-8") if n.upper() == "TEXTMAP" else b))

@@ -110,15 +110,34 @@ Not ACS (script 12 terminate still froze). Real MAP01 `TEXTMAP` without `BEHAVIO
 | Disable only `Sector_Set3dFloor` (special 160) | OK |
 | Keep 3D floor, replace control sector 18 `F_SKY1` → `FLAT1` | Still freezes |
 
-**Fix pack:** `d64r-3dfloor-rtfix.wad` — every Retribution map that had `Sector_Set3dFloor` (special 160) stripped (**44 maps / 209 linedefs**, 2026-08-13; was 28/161 while the scan was `MAP\d\d`-only). Keeps `BEHAVIOR`/`ZNODES`. Loaded via `tools/launch-retribution-rt.cmd`. Regen: `python tools/make_map_3dfloor_rtfix.py`. Side effect: 3D-floor visuals won’t appear until an engine-side RT 3D-floor fix exists. Per-map copies `d64r-<mapname>-rtfix.wad` also written for debugging.
+**Fix pack (2026-08-02 → 2026-08-23, withdrawn):** `d64r-3dfloor-rtfix.wad` — every Retribution map that had `Sector_Set3dFloor` (special 160) stripped (**44 maps / 209 linedefs**, 2026-08-13; was 28/161 while the scan was `MAP\d\d`-only). Keeps `BEHAVIOR`/`ZNODES`. This was a bisect result, not a diagnosis, and it cost more than it saved — see the real root cause below.
+
+### Real root cause — ENGINE FIX 2026-08-23 (needs play confirm)
+
+The bisect blamed the map data; the map data was never at fault. **166 of the 209
+stripped floors are the bridges, catwalks and stair treads Nevander built the levels
+around** (MAP34 has a four-tread 3D-floor staircase, MAP31 has 24 slabs, MAP28 13), and
+stripping special 160 removes *collision*, not just visuals. Player report (Immorpher,
+2026-08-23): some levels could no longer be completed. The RT renderer was also never the
+problem — `common/rendering/rt/` contains no 3D-floor code at all.
+
+| | |
+|---|---|
+| **Where** | `sourcecode/gzdoom-rt/src/playsim/p_3dfloors.cpp`. The fork ends `P_Recalculate3DFloors` with `#if HAVE_RT lightlist.Clear()` ("force no light splitting"). Stock guarantees a sector with 3D floors has ≥1 lightlist entry; `P_GetPlaneLight` relies on it and returns `&lightlist[Size()-1]` — with an empty list that is `&Array[0xFFFFFFFF]`, dereferenced at once by `hw_flats.cpp` (`SetFrom3DFloor`, and the sector's *own* floor/ceiling whenever `ffloors.Size()`), `hw_walls.cpp`, `am_map.cpp`. |
+| **Why a hang, not a crash** | `HWFlat::ProcessSector` runs as a `FlatJob` on the render worker thread (`gl_multithread`, default on). `i_main.cpp` `CatchAllExceptions` parks a faulting secondary thread in `SleepForever` and queues an APC on the main thread — which was inside a non-alertable `future.wait()` in `hw_bsp.cpp`. The APC never ran, `TerminateJob` was never consumed, the window stopped pumping, the audio thread kept playing, nothing was logged. |
+| **Why it looked data-dependent** | It isn't. MAP01/MAP02/ABS01 (froze) and RDM01 ("worked") have byte-identical 3D floors (solid, alpha 255, `dontdraw`, one target sector with an `F_SKY1` ceiling). The fault fires when the sector enters the render set — at spawn on MAP01, "at the red-key approach" on MAP02. The `F_SKY1`→`FLAT1` arm above could never have helped; no Retribution control sector uses `F_SKY1` at all (the sky is on the *target* sectors). |
+| **Fix** | `P_GetPlaneLight`: under `HAVE_RT`, an empty list returns a `thread_local` entry equal to stock's element 0 (the sector's own light). Plus hardening: the worker wait now polls `wait_for` + `SleepEx(0, TRUE)` so a future worker fault becomes the crash dialog; `RT_Print` logs RTGL1 errors with `Printf` (was `DPrintf`, invisible at `developer 0`) and owns its MessageBox; `DrawIndexed` rejects negative indices and the vertex formatter clamps to the buffer (an `F3DFloor` is born with `vindex = -1`); the rover loop in `hw_flats.cpp` skips `skyflatnum` like the sector planes do. |
+| **Data** | `make_map_3dfloor_rtfix.py` now has `MODE3D = "keep"` (default) and `--mode strip` as an emergency arm; `make_seqlight_fix.py` and `add_smonf_lights.py` apply the same `rewrite_3dfloor` so no overlay can disagree. `d64r-3dfloor-rtfix.wad` is gone from every launcher, `package_release.py` and the tree. Note `add_smonf_lights.py` had been shipping ABS02/ABS03/OUT04 **with** their 3D floors (8 linedefs) since it was written — a latent freeze in every build until now, and a ready repro: `+map ABS02`. |
+| **Confirm** | `launch-retribution-rt.cmd 1`, `2` (walk to the red-key approach), `34` (climb the 3D-floor stairs), `31`, and New Game → the bonus campaigns: responsive, bridges present and walkable. `+gl_multithread 0` on an unfixed build turns the hang into a crash dialog naming `P_GetPlaneLight` — the proof the diagnosis is right. Known follow-up: particles/impacts fall through 3D floors (`docs/rt-impact-fx.md`), and a *moving* 3D floor would not update under RT (`rt_buffers.h` `Upload()` is a no-op) — Retribution's are all static. |
 
 **The extra campaigns were never covered (2026-08-13).** `list_map_names()` matched
 `MAP\d{2}`, so the five bonus episodes — whose lumps are `FUN00`, `ABS01`–`ABS06`,
-`OUT01`–`OUT10`, `RDM01`–`RDM08`, `REC01`–`REC09`, `RTR01`–`RTR10` — kept their 3D
-floors and froze on New Game exactly like MAP01 used to: black screen, "Not
-Responding", process alive. Reported as **Bonus Fun Maps and Absolution Levels crash
-while Outcast and Redemption work**; that split is content, not category — a map only
-freezes if its 3D floor is heavy enough, so OUT01/RDM01 have 160s and survive.
+`OUT01`–`OUT10`, `RDM01`–`RDM08` (there are no `REC*`/`RTR*` maps in v15, whatever an
+earlier revision of this note said) — kept their 3D floors and froze on New Game exactly
+like MAP01 used to: black screen, "Not Responding", process alive. Reported as **Bonus
+Fun Maps and Absolution Levels crash while Outcast and Redemption work**. The "heavy
+enough" explanation given at the time was wrong: OUT01/RDM01 simply were not played
+into the sector that carries the floor (see the root cause above).
 Map markers are now detected structurally (a zero-length lump followed by
 `TEXTMAP`/`THINGS`), which also picks up any future map whatever its name.
 

@@ -148,12 +148,11 @@ Desktop.ini
 *.tmp
 *.bak
 
-# --- Generated 3D-floor patches (regenerate via make_map_3dfloor_rtfix.py) ---
-# The PER-MAP copies are debug artifacts and stay out. The COMBINED wad ships:
-# the launcher refuses to start without it, and it is the same class of artifact
-# as d64r-seqlight-fix.wad, which has always been tracked.
+# --- 3D-floor strip wads (make_map_3dfloor_rtfix.py --mode strip) ---
+# Nothing loads them since 2026-08-23: the 3D floors are played as authored and
+# the freeze that motivated the strip is fixed in gzdoom-rt (p_3dfloors.cpp).
+# Kept out of the tree entirely; the emergency strip arm regenerates them.
 Doom64-Retribution/d64r-*-rtfix.wad
-!Doom64-Retribution/d64r-3dfloor-rtfix.wad
 
 # --- Scratch / temp scripts ---
 tools/_tmp_*.py

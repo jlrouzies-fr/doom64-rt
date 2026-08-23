@@ -55,12 +55,13 @@ Doom source code © 1997 **id Software**, **Raven Software**, and contributors.
 
 > **Notice, 2026-08-14.** Nevander was contacted through the Doomworld thread listed in
 > `D64RTR_README.TXT` to say that this project distributes two patch WADs derived from
-> Retribution's maps — `d64r-3dfloor-rtfix.wad` (strips `Sector_Set3dFloor`, which hangs the
-> ray-traced upload) and `d64r-seqlight-fix.wad` (sector lighting painted for the software
-> renderer) — both of which keep the original `BEHAVIOR`/`ZNODES` and are inert without
-> `D64RTR_v15.WAD`. The offer stands to withdraw them and have the launcher build them on the
-> user's own copy instead; `tools/make_map_3dfloor_rtfix.py` and `tools/make_seqlight_fix.py`
-> already do exactly that.
+> Retribution's maps — `d64r-3dfloor-rtfix.wad` (stripped `Sector_Set3dFloor`; withdrawn
+> 2026-08-23 once the freeze it worked around turned out to be an engine bug, so the 3D-floor
+> bridges are played as Nevander built them) and `d64r-seqlight-fix.wad` (sector lighting
+> painted for the software renderer) — which keep the original `BEHAVIOR`/`ZNODES` and are
+> inert without `D64RTR_v15.WAD`. The offer stands to withdraw them and have the launcher
+> build them on the user's own copy instead; `tools/make_seqlight_fix.py` already does
+> exactly that.
 
 Retribution's own credits, in full (from `D64RTR_README.TXT`):
 

@@ -501,7 +501,7 @@ declaration cannot drift from its definition. Put nothing in that file except an
 
 | Script | Purpose |
 |---|---|
-| `tools/launch-retribution-rt.cmd` | Play — native RT + DLSS-RR. Optional arg `1`–`32` → `map01`…`map32` (default 1). Loads `d64r-lostsoul-rt.pk3` + `d64r-3dfloor-rtfix.wad` (all-map 3D-floor hang strip — **all** map lumps, including the `FUN`/`ABS`/`OUT`/`RDM`/`REC`/`RTR` campaigns). |
+| `tools/launch-retribution-rt.cmd` | Play — native RT + DLSS-RR. Optional arg `1`–`32` → `map01`…`map32` (default 1). Loads `d64r-lostsoul-rt.pk3` + the map overlays (`d64r-seqlight-fix.wad`, `d64r-smonf-lights.wad`, …). **3D floors are played as authored** — the old `d64r-3dfloor-rtfix.wad` strip is gone (2026-08-23): the freeze behind it was `P_GetPlaneLight` on an empty lightlist, fixed in `p_3dfloors.cpp`; every map-replacing overlay applies `make_map_3dfloor_rtfix.MODE3D = keep`. Never bring the strip back as a workaround; `--mode strip` exists only as an emergency arm. |
 | `tools/launch-enemy-gallery-rt.cmd` | MAP98 dark no-aggro enemy eye review hall. |
 | `tools/launch-texture-gallery-rt.cmd` | MAP99 texture PBR gallery (baseline mats). |
 | `tools/launch-emis-gallery.cmd` | MAP99 **world-emissives only** (`d64remis.wad` — monitors/EXIT/keys/CRT/lava). |

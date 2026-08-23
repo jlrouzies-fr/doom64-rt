@@ -361,5 +361,6 @@ The startup log line is the check: `N set, M kept from config, K not present`.
   the N-2 fence, i.e. genuine GPU-bound time, and the honest place to look for
   GPU cost.
 - The MAP01/MAP00 `rt/scenes` folders are a byte-identical copy of Doom 2's
-  MAP01 scene. They do not bind today (the map name is `d64r-3dfloor-rtfix_map01`,
-  not `d64rtr_v15_map01`), but they would if the load order changed.
+  MAP01 scene. They do not bind today (the map name is `d64r-seqlight-fix_map01` —
+  MAP01 is in the seqlight overlay — not `d64rtr_v15_map01`), but they would if the
+  load order changed.

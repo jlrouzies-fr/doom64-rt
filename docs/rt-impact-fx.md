@@ -632,8 +632,8 @@ without taking effect.
 - **Sparks appear in no reflection and cast no GI** — inherent to the additive raster overlay.
   Only the analytic lights are traced. Debris does not pay this; it is opaque and traced.
 - **3D floors are not handled.** Tier 1 reads only the sector's own planes, so a particle
-  falls through a 3D floor. Narrow, because `d64r-3dfloor-rtfix.wad` already strips them on
-  the play launcher — but real.
+  falls through a 3D floor. Real since 2026-08-23: the 3D floors (209 of them, mostly
+  bridges) are back in the game now that the engine freeze behind the old strip is fixed.
 - **Debris colour is the texture's flat average**, not a sample at the impact point. A wall
   that is half rust and half steel gives one blended chip colour.
 - **Scope is hitscans.** Projectile and explosion impacts produce nothing;

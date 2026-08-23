@@ -255,8 +255,8 @@ crack into a visible shaft. Run `nosun` first.
 |---|---|
 | **Symptom** | Window freezes (audio still plays) when entering the red-key door approach on MAP02. |
 | **Cause** | Same as MAP01: `Sector_Set3dFloor` (special **160**) — two linedefs, control sectors tag 1/2 with `F_SKY1`. RT live-upload hang when that geometry is in play. |
-| **Fix** | Combined `d64r-3dfloor-rtfix.wad` strips special 160 on **all 28 maps** that had it (161 linedefs). Keeps `BEHAVIOR`/`ZNODES`. Regen: `python tools/make_map_3dfloor_rtfix.py`. |
-| **Confirm** | `tools\launch-retribution-rt.cmd 2`, walk to red-key door room — should stay responsive. Outdoor 3D-floor prop may be missing until engine fix. |
+| **Fix (superseded 2026-08-23)** | Was: strip special 160 on every map (`d64r-3dfloor-rtfix.wad`, finally 44 maps / 209 linedefs). That removed the bridges the levels need. The real cause was `P_GetPlaneLight` reading an empty lightlist on the render worker thread — fixed in `p_3dfloors.cpp`; the strip wad is withdrawn and the 3D floors are played as authored. Full account: `docs/compat-patches.md` "Real root cause". |
+| **Confirm** | `tools\launch-retribution-rt.cmd 2`, walk to the red-key door room — responsive, and the two outdoor 3D-floor slabs are present. |
 
 ### 1.6e MAP02 fake mid-ceiling blink blobs — **ENGINE FIX 2026-08-05** (needs confirm)
 
@@ -391,7 +391,7 @@ Short status: debug match = unfiltered diffuse direct; ceiling lamps confirmed a
 - Enemy eyes: brightmap `_e`, `emissiveMult≈2`, red, **no** eye `lightIntensity`, **no** `noShadow` — regen: `gen_enemy_eye_emissives.py`.
 - World allowlist emis: SMON/EXIT/CRT/keys/lava/logo + switch ON frames (`SWX*B` / GLDEFS) muted green — `gen_world_emissives.py`.
 - Monster muzzle frames: `lightIntensity` via `gen_fx_emissives.py` (not Lost Soul).
-- MAP01 hangy 3D floor fix wad (TEXTMAP + **BEHAVIOR**); night `SPACE` sky pk3 + `rt_sky 25`.
+- 3D floors kept on every map (engine guard in `P_GetPlaneLight`; no strip wad); night `SPACE` sky pk3 + `rt_sky 25`.
 - Gallery halls: texture / emis / enemy / empty + wash-qa / WashScratch tooling.
 - RR path firefly clamp in `CmNoisyCompose` + muzzle soft fade (`rt_mzlflsh_fade`).
 

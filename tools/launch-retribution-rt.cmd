@@ -32,7 +32,6 @@ set "MOD=%PROJ%\Doom64-Retribution\D64RTR_v15.WAD"
 set "BM=%PROJ%\Doom64-Retribution\D64RTR_BRIGHTMAPS.PK3"
 set "SKUL=%PROJ%\Doom64-Retribution\d64r-lostsoul-rt.pk3"
 set "FLSH=%PROJ%\Doom64-Retribution\d64r-rt-flashlight.pk3"
-set "FIX3D=%PROJ%\Doom64-Retribution\d64r-3dfloor-rtfix.wad"
 set "SEQL=%PROJ%\Doom64-Retribution\d64r-seqlight-fix.wad"
 set "BULBTEX=%PROJ%\Doom64-Retribution\d64r-bulb-textures.wad"
 rem SFLATAS, the ceiling lamp pane, repainted with three bulbs SMASHED and one
@@ -147,7 +146,10 @@ rem The expensive lever is rt_spp_direct / rt_spp_indirect [1..8], left at 1.
 rem Measured ~20% improvement at 8, which is a poor trade -- and that result also
 rem shows the residual motion noise is NOT Monte Carlo variance.
 rem Requires tools\build-rtgl.cmd (RTGL1.dll + nvngx_dlssd.dll in rt\bin\).
-rem All maps: d64r-3dfloor-rtfix.wad strips hangy Sector_Set3dFloor (special 160).
+rem 3D floors (Sector_Set3dFloor, 209 linedefs on 44 maps, mostly bridges) are
+rem  played as authored since 2026-08-23. The old d64r-3dfloor-rtfix.wad strip is
+rem  gone: the freeze it hid was P_GetPlaneLight reading an empty lightlist, fixed
+rem  in gzdoom-rt (p_3dfloors.cpp). See docs/compat-patches.md.
 rem Sky: sector skyboxes ignored under RT (white/black fix), so rt_sky_always fills
 rem  every F_SKY1 opening with the flat sky DOME and d64r-rt-sky's ZSCRIPT picks the
 rem  dome texture PER MAP at WorldLoaded. Retribution sets no sky in MAPINFO at all --
@@ -397,10 +399,6 @@ if not exist "%MOD%" (
   echo ERROR: missing %MOD%
   exit /b 1
 )
-if not exist "%FIX3D%" (
-  echo ERROR: missing %FIX3D% — run: python tools\make_map_3dfloor_rtfix.py
-  exit /b 1
-)
 if not exist "%SEQL%" (
   echo ERROR: missing %SEQL% — run: python tools\make_seqlight_fix.py
   exit /b 1
@@ -619,8 +617,8 @@ rem out wrong. Load it last so it wins over the WAD.
 rem
 rem sourceless glow. Currently only MAP03's twin staircases; three more chains
 rem are surveyed and awaiting playtest in docs/sequence-light-chains.md.
-rem Load order note: MAP03 has no special-160 linedefs, so it is absent from
-rem FIX3D and the two wads never touch the same map.
+rem Load order note: every map-replacing overlay applies the one 3D-floor policy
+rem (make_map_3dfloor_rtfix.MODE3D = keep), so load order cannot lose a bridge.
 rem
 rem rt_sector_tint_albedo is pinned at 1.0 but eleven maps do not run at 1.0, and
 rem that is not a contradiction: the 1.0 here is the BASE that RT_TINT_PRESETS
@@ -669,7 +667,7 @@ rem
 rem Order matters and is preserved: the pins (including god/notarget) run BEFORE
 rem +map, exactly as they did inline, and %EXTRA% runs LAST so an arm still wins.
 start "" gzdoom.exe ^
-  -iwad "%IWAD%" -file "%MOD%" "%BM%" "%SKUL%" "%FLSH%" "%MUS%" "%FIX3D%" "%SEQL%" "%BULBTEX%" "%PANEBRK%" "%CTELFIX%" "%SMONFBLINK%" "%SMONFLIT%" "%SKY%" -file "%LAVAFX%" "%POISONFX%" "%BLOODFX%" "%WIDEGFX%" "%MUGSHOT%" "%TITLOGO%" -rtnolauncher -width 1280 -height 720 %RTDEBUG% ^
+  -iwad "%IWAD%" -file "%MOD%" "%BM%" "%SKUL%" "%FLSH%" "%MUS%" "%SEQL%" "%BULBTEX%" "%PANEBRK%" "%CTELFIX%" "%SMONFBLINK%" "%SMONFLIT%" "%SKY%" -file "%LAVAFX%" "%POISONFX%" "%BLOODFX%" "%WIDEGFX%" "%MUGSHOT%" "%TITLOGO%" -rtnolauncher -width 1280 -height 720 %RTDEBUG% ^
   +logfile "%LOGF%" ^
   +win_y %WINY% ^
   +exec "%PINS%" ^

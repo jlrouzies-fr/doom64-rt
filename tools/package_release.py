@@ -63,7 +63,7 @@ RT_WAD_DROP = {"filter", "sounds"}
 # the user brings it with the rest of the mod.
 MODS = [
     "d64r-lostsoul-rt.pk3", "d64r-rt-flashlight.pk3",
-    "d64r-3dfloor-rtfix.wad", "d64r-seqlight-fix.wad",
+    "d64r-seqlight-fix.wad",
     "d64r-bulb-textures.wad", "d64r-sflatas-broken.wad", "d64r-ctel-fix.wad",
     
     "d64r-rt-sky.pk3", "d64r-lava-fx.pk3", "d64r-poison-fx.pk3",

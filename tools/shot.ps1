@@ -92,7 +92,7 @@ Start-Sleep -Milliseconds 400
 # Same file list as tools\launch-retribution-rt.cmd
 $names = @(
   'D64RTR_v15.WAD','D64RTR_BRIGHTMAPS.PK3','d64r-lostsoul-rt.pk3','d64r-rt-flashlight.pk3',
-  'D64MUS.PK3','d64r-3dfloor-rtfix.wad','d64r-seqlight-fix.wad','d64r-bulb-textures.wad',
+  'D64MUS.PK3','d64r-seqlight-fix.wad','d64r-bulb-textures.wad',
   'd64r-sflatas-broken.wad',
   'd64r-ctel-fix.wad','d64r-rt-sky.pk3','d64r-lava-fx.pk3','d64r-poison-fx.pk3','d64r-blood-persist.pk3',
   'd64r-widescreen-gfx.pk3','d64r-mugshot.pk3'
