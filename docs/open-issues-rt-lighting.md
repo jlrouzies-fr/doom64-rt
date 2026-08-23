@@ -11,16 +11,15 @@ Do not treat this as a progress cheer sheet — only unresolved / partially reso
 
 ## 1. Unfixed / incomplete
 
-### 1.0 Weapon silhouette trails over lingering lights (surface denoiser) — **fix built 2026-08-22, awaiting in-play verdict**
+### 1.0 Weapon silhouette trails over lingering lights — **FIXED 2026-08-23** (verified in play)
 
-`screen/smearingIssueOverLingeringLight.png`: after a rocket, the launcher sweeps a
-dark silhouette-shaped band over the **wall and floor** beside it. Same class as
-`docs/rt-volumetric-weapon-trails.md`, one buffer over: A-SVGF's history test has no
-notion of first-person, so every pixel the gun uncovers restarts from one sample at
-the decaying light's current level beside neighbours lagging at its brighter past.
-Fix: `rt_svgf_fp 1` (neighbour borrow on full rejection) + `rt_svgf_fp_grad 1` (the
-antilag gradient never samples the weapon). Arms: `.	oolsb.cmd lingtrail-<control|fp|grad|fix|debugfp|nogun>`.
-Details in the volumetric doc's new section.
+`screen/smearingIssueOverLingeringLight.png`. The "lingering light" after a rocket was
+not a light: it was A-SVGF's **indirect** ghost (256-frame history, antilag suppressed
+on bright indirect), and the band was the gun's silhouette restarting that history — a
+hole in the ghost. Bisected by layer with the new `rt_debug_show`. Fix:
+`rt_svgf_indir_maxhist 16` + `rt_svgf_indir_antilag 1` (with `rt_svgf_fp` /
+`rt_svgf_fp_grad` kept for silhouette restarts). Cost: noisier indirect in bounce-lit
+dark areas — watch for it. Details: `docs/rt-volumetric-weapon-trails.md`.
 
 ### 1.2f Sourceless `Light_Fade` sweep on 14 maps — **FIXED 2026-08-10** (MAP13 confirmed in play)
 

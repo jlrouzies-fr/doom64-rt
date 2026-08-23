@@ -8,7 +8,7 @@ and a froxel volumetric, and none of them is the temporal upscaler.*
 
 | | |
 |---|---|
-| **Status** | Surface-denoiser sibling (`rt_svgf_fp`) built 2026-08-22, awaiting in-play verdict -- see its section. Medium: **Fixed structurally** by `rt_volume_taccum 8` (in-grid temporal accumulation, SS3) plus `rt_volume_spriteshadow 0`; `rt_volume_fp` / `rt_volume_reproj` remain as the screen-space fallback's fixes. Verified visually in the MAP94 lab frame-for-frame (the sprite stamp, the casing shadow rectangle, and the fog-on-gun are each gone, and the isolation arms attribute each to its mechanism). MAP12 thunder awaits an in-play pass |
+| **Status** | Surface-denoiser sibling **fixed 2026-08-23** (`rt_svgf_indir_maxhist`; the "lingering light" was the indirect ghost) -- see its section. Medium: **Fixed structurally** by `rt_volume_taccum 8` (in-grid temporal accumulation, SS3) plus `rt_volume_spriteshadow 0`; `rt_volume_fp` / `rt_volume_reproj` remain as the screen-space fallback's fixes. Verified visually in the MAP94 lab frame-for-frame (the sprite stamp, the casing shadow rectangle, and the fog-on-gun are each gone, and the isolation arms attribute each to its mechanism). MAP12 thunder awaits an in-play pass |
 | **Lab** | `MAP94`, `tools/build_trail_lab.py`, `tools/trail-lab.ps1` (`-All` runs the five-arm ladder) |
 | **Measurement** | `tools/measure_weapon_trails.py` — honest caveat: at ~12 usable frames per arm its window statistic could not separate even the no-gun floor from the control at 2×se; the verdicts here rest on matched frames read by eye, where the artefacts are unmistakable |
 | **Not** | the temporal upscaler ([`rt-volumetric-edge-outlines.md`](rt-volumetric-edge-outlines.md)), not the depth gate alone, and not the weapon specifically — any sprite |
@@ -63,57 +63,71 @@ With taccum on, `rt_volume_history`, `rt_volume_reproj` and the accumulator
 half of `rt_volume_fp` are inert -- they govern a code path that no longer
 runs. They remain for `rt_volume_taccum 0`.
 
-## The same class on the surface denoiser: lingering lights (2026-08-22)
+## The same class on the surface denoiser: lingering lights (2026-08-22/23)
 
-*Built, liveness-verified, awaiting the in-play verdict.*
+*Fixed; verified in play (`lingtrail-fix`: no linger, no trail).*
 
-`screen/smearingIssueOverLingeringLight.png`: after a rocket, the launcher sweeps
-a dark silhouette-shaped band across the **wall and floor** beside it -- on
-surfaces, not in the fog, so `rt_volume_taccum` cannot touch it. It is §2 above
-reproduced in A-SVGF, the surface denoiser (`CmSVGFTemporalAccumulation.comp`):
+`screen/smearingIssueOverLingeringLight.png`: after a rocket, the launcher
+swept a dark silhouette-shaped band across the **wall and floor** beside it --
+on surfaces, so `rt_volume_taccum` could not touch it.
 
-- A rocket leaves lights that change every frame for seconds: the impact flash
-  (`rt_arc_light_life` 2.5 s, `(1-t)²`), arc glows re-pathed at 24 Hz, embers
-  for `rt_ember_life` 20 s.
-- The gun is real geometry at ~0.3 m in the shared g-buffer. The history test
-  is a flat 10 % depth + `dot > 0.95` normal rule with **no notion of
-  first-person**, so every pixel the gun uncovers fails, and a failed pixel
-  restarts from **one** sample with `historyLength = 1`. The surface path never
-  had the neighbour borrow the media path grew.
-- The restarted band sits at the light's *current* level; its neighbours carry
-  up to 256 frames of history that *lags* the decay -- brighter. Correct-now
-  beside stale-and-brighter reads as a dark silhouette. Same shape, same cause.
-- The antilag gradient that should make the neighbours track the decay measures
-  one pixel per 3×3 stratum, back-projected to the previous frame -- which
-  beside the band **is the weapon** -- and a 4-pass non-edge-aware a-trous then
-  smears the gun's own delta ±24 px over the wall.
+### The wrong first diagnosis, and the bisect that corrected it
 
-Ruled out: a cast shadow. `INSTANCE_MASK_FIRST_PERSON` is in no world shadow
-mask and the viewmodel has no shadow proxy. (The *viewer body* billboard is in
-the shadow mask and is only exempted for the flashlight -- `rt_debug_visibility
-2` tells the two apart if the band ever comes back red.)
+The first plan read it as §2 above on the DIRECT diffuse path: A-SVGF's history
+test (10 % depth + normal, no notion of first-person) rejects every pixel the
+gun uncovers, and a rejected pixel restarts from one sample. That mechanism is
+real -- the magenta debug showed rejections along the silhouette all the time --
+but it was **not where the band was**: the band sat on pixels whose history
+was accepted. A fix aimed there (`rt_svgf_fp`) changed nothing visible.
 
-**`rt_svgf_fp 1`** -- on full rejection, a non-weapon pixel borrows history from
-the previous frame around its reprojected position: ring radius 1, then 2, then
-3; donors must pass the current surface's depth and normal tests, must not be
-first-person, and must have history of their own. The borrowed length is capped
-at 8 so the pixel still converges on the truth quickly; it merely starts at the
-same lag as its neighbours instead of at the truth alone. Moments are borrowed
-too, so variance does not spike. The weapon's own pixels keep the stock path.
-`2` paints borrowed pixels magenta -- the liveness check.
+`rt_debug_show` (new: the dev window's layer views as a cvar) settled it in
+four runs:
 
-**`rt_svgf_fp_grad 1`** -- the stratum never picks a pixel that is first-person
-now or was last frame. (A light that vanished already reads as a full change:
-forward-projected luminance 0 against a positive previous -- checked, not the
-bug it looked like.)
+| view | result |
+|---|---|
+| raw direct (`4`) | no band -- nothing upstream of the denoiser |
+| shadow visibility (`rt_debug_visibility 2`) | no red -- not a cast shadow |
+| denoised direct only (`32`) | no band **and no lingering light** |
+| gradient (`2`) | flat beside the gun -- antilag not firing |
 
-The two new uniforms shifted `ShGlobalUniform` by 8 bytes; the build's layout
-check refused the dll until two pads restored the 16-byte run. Worth knowing:
-that check is the only thing between a new uniform and a silent zero.
+So the "lingering light" was never a light. The real lights (the 2.5 s flash,
+the embers) decay correctly in direct. What lingered for seconds was the
+**indirect buffer's temporal ghost**: the flash's bounce, accumulated with a
+256-frame cap (`clamp(..., 1, 256)`) and blended out at 1/256 per frame after
+the light died. And the band was the gun's silhouette **restarting the
+indirect history** to the true current value -- a hole in the ghost. Fix the
+ghost and the hole has nothing to sit in.
 
-**Arms**: `.	oolsb.cmd lingtrail-control|fp|grad|fix|debugfp|nogun [map]`.
-Fire a rocket at a wall, then bob and strafe through the 2.5 s flash and the
-ember decay. `nogun` is the floor; `fix` should match it.
+Why upstream kept it that long: indirect is 1 spp and very noisy, so SVGF
+averages it over a long window, tuned for static lights. The antilag meant to
+break the window drives indirect only from a *direct* luminance drop and then
+multiplies by `1 - smoothstep(0, 0.5, indirectBrightness)` -- "if it's bright
+enough, don't drop history" -- which protects exactly the brightest stale
+bounce. No light in this project decayed over seconds before the impact-FX
+work, so it never showed.
+
+### The fix
+
+- **`rt_svgf_indir_maxhist 16`** -- cap the indirect history length
+  (`CmSVGFTemporalAccumulation.comp`). 0 = stock 256. Gone in well under a
+  second; the cost is noisier indirect in bounce-lit dark areas. The knob.
+- **`rt_svgf_indir_antilag 1`** -- drop the brightness suppression on the
+  indirect antilag (`RtGradients.rgen`).
+- **`rt_svgf_fp 1`** -- kept: on full rejection a non-weapon pixel borrows
+  history from its *current-frame* neighbours' reprojections (rings 2..20 px;
+  the previous-frame ring was all gun at any real bob speed), capped at 8
+  frames. Removes the 1-spp restart noise along any silhouette. `2` = magenta
+  borrowed / cyan rejected-no-donor.
+- **`rt_svgf_fp_grad 1`** -- kept: the gradient stratum never picks a
+  first-person pixel, current or previous.
+
+Uniform plumbing: the first two fields shifted `ShGlobalUniform` by 8 bytes
+and the build's layout check refused the dll until padded; those pads then
+became the indirect pair. That check is the only thing between a new uniform
+and a silent zero.
+
+**Arms**: `.	oolsb.cmd lingtrail-control|fix|ghost|fp|grad|debugfp|nogun`
+and the bisect views `lingtrail-view-raw|direct|spec|indir|grad|shadow`.
 
 ## The three mechanisms, each confirmed by its own experiment
 
