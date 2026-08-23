@@ -68,6 +68,7 @@ Every one of them is documented in full elsewhere — this table is the index, n
 | | Dust motes | Hashed-grid quads lit only where a shaft reaches (`rt_dust_*`). | — |
 | | Water | Stylized surface with projected caustics, tagged engine-side. | [`rt-water`](docs/rt-water.md) |
 | | Lava | Drifting quantized heat field as the emitter, slow whole-surface breath (`rt_lava_flow*`). | — |
+| | Poison bubbles | Bubbles swell out of the nukage, burst into a ring of droplets and throw a little green while they do. Sliced from one painted sheet into six frames; colour matched to the *rendered* pool, since the flat's own albedo is nearly black. Seven `d64_poison_*` knobs (rate, distance, size, height, saturation) and a lab map to tune them in. | [`poison-bubbles`](docs/poison-bubbles.md) |
 | **Materials** | Limited PBR, on purpose | 898 wall/flat textures + 132 sprite codes (1,087 frames) hand-classified into roughness/metalness — but both mix dials ship at **0.35**, not 1, because full PBR breaks flat-normal sprites, exposes dithered art, and adds noise. `rt_sprite_pbr_mix`, `rt_tex_pbr_mix`. | [`plan-sprite-materials`](docs/plan-sprite-materials.md) |
 | **Sprites & gore** | Enemy eyes | Brightmap-only emissive masks — glow without lighting the room or killing the shadow. | — |
 | | Lost Souls | Light rides the fire frames (A–F) only, so a corpse stays dark. | — |
@@ -124,34 +125,9 @@ In-engine captures, uncropped, no post-processing beyond what the game itself do
 
 Things that are wrong and known to be wrong.
 
-
-### Recently fixed
-
-Kept here because they were listed as known issues for a
-long time, and because the reasoning is worth reading if you hit something like them.
-
-**Volumetric trails behind sprites and edges.** *Fixed.* Firing into smoke used to leave a
-weapon-shaped stamp in it; the ejected shell left its own trail; and during MAP12's storm,
-every monster and every geometry edge smeared through the moon shafts as the camera moved.
-All of it was one mechanism: the medium was accumulated in **screen space**, where its
-history has to be validated against surface depth — so every silhouette threw that history
-away and restarted from a single noisy sample, which against a lightning flash differs from
-its neighbours by most of the flash. The medium is now accumulated **in the froxel grid, in
-world space** (`rt_volume_taccum`), where no surface is involved and there is nothing to
-reject. Sprites also no longer cast shadows into the medium (`rt_volume_spriteshadow 0`) —
-a camera-facing cutout's shadow sheet swings with the view, and its stand-in shadow proxies
-are solid rectangles. See
-[`docs/rt-volumetric-weapon-trails.md`](docs/rt-volumetric-weapon-trails.md).
-
-**Black outlines behind volumetrics.** *Fixed*, by the same change. This was the README's
-first known issue for a long time: a one-pixel dark line wherever a medium met a geometric
-edge, drawn by the **temporal upscaler** — gone with DLSS and FSR both off, worst under
-DLAA — after six volumetric settings had been ruled out by measurement. `rt_volume_edgesoft`
-removed the sprite and geometry half of it by softening the medium across a silhouette;
-in-grid accumulation removed the rest, because a medium that is temporally smooth in world
-space no longer presents the upscaler with the step it was ringing on. The full
-investigation, including four approaches that were built and measured negative, is in
-[`docs/rt-volumetric-edge-outlines.md`](docs/rt-volumetric-edge-outlines.md).
+- MAP05: when at the outdoor area, the moon can get occluded by an invisible wall. It is like a form of "unculling", no fix found yet.
+- You can notice textures that look too bright / sticking out. It can happen if their emissive is not well updated, those get fixed over time as I do a real play through the whole game
+- Loading a save made on an older version will fail with a clear "save is from an older version" message. This is expected: each update can change map data, which invalidates old saves for that level. Start that level fresh from the console (`map mapXX`) or load a save from an earlier level instead.
 
 <br>
 
