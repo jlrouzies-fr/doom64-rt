@@ -1,14 +1,20 @@
 # The fire skies
 
 **Status:** two things exist now, and they are **alternatives, not stages**.
+Since **v0.1.14 it is §3a that ships**, and §2 is what you get with it off.
 
-- **§2, the default.** The five hell maps keep the WAD's own animated fire dome
+- **§2, the fallback.** The five hell maps keep the WAD's own animated fire dome
   and it was a *number* that was wrong: `rt_sky` 1.2 / 2.7 → **175 / 400**, five
-  rows of `RT_MOON_PRESETS`. Shipped, judged in play on MAP23.
-- **§3a, opt-in: `rt_fireskies_new`.** A different sky for the same five maps —
-  the dome swapped for a dark backdrop, and the sky built out of the cloud deck,
-  falling meteors and coloured strikes. Implemented (`rt_firesky.cpp`,
-  `rt_firesky_*` pins). Ships **off** by default.
+  rows of `RT_MOON_PRESETS`. Shipped, judged in play on MAP23. Reached with
+  `rt_fireskies_new 0`.
+- **§3a, `rt_fireskies_new` — SHIPS ON since v0.1.14.** A different sky for the
+  same five maps: the dome swapped for volumetric clouds with fire in the gaps
+  and cascades falling out of the cloud base (`rt_firesky_vclouds`, and the
+  `rt_vclouds_fire*` / `rt_vclouds_cascade*` block in the pins).
+  **The cvar's compiled default is `false` and `tools/d64rt-pins.cfg` pins it to
+  1** — the pin is what ships, so do not read the default as the shipped state.
+  This doc said "ships off" over a pin of 1, and a v0.1.14 release note was
+  drafted from it before the pin was checked.
 
 §1 is measured. §4 onward remain proposals; §5 in particular is untouched by
 either of the above and is now the biggest single win left for the default sky.
@@ -244,9 +250,10 @@ improve the **default** sky, which is what most players will see.
 
 ## 3a. `rt_fireskies_new` — the alternative sky
 
-**Ships off.** `rt_firesky.cpp`, plus a draw pass in `hw_skyportal.cpp` and art
-from `tools/gen_fire_sky.py`. **Written but never compiled or run** — the first
-thing to do with it is build it, and the second is `firesky-fat`.
+**Ships ON since v0.1.14**, via the `rt_fireskies_new 1` pin in
+`tools/d64rt-pins.cfg` (the compiled default is `false`; the pin overrides it).
+`rt_firesky.cpp`, plus a draw pass in `hw_skyportal.cpp` and art from
+`tools/gen_fire_sky.py`. Built and run.
 
 It is opt-in and it is not a fix to the default: §2 made the old dome work, and
 this replaces it. Both are runnable, and the pair `firesky-base` /
