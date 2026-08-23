@@ -289,7 +289,7 @@ class D64PoisonProbeAnim : D64PoisonBubble
 '''
 
 
-def build_channel_textmap() -> str:
+def build_channel_textmap(lit: bool = True) -> str:
     """MAP92 -- a NARROW CHANNEL of poison, which is what the game actually has.
 
     MAP91 is a 768x1024 lake, and a lake hides the one bug that matters: the
@@ -314,10 +314,11 @@ def build_channel_textmap() -> str:
     for x, y in room_v + pool_v:
         parts.append(blk("vertex", x=float(x), y=float(y)))
 
+    light = 160 if lit else 0
     parts.append(blk("sector", heightfloor=0, heightceiling=CEIL_H,
-                     texturefloor=FLOOR, textureceiling=CEIL, lightlevel=160))
+                     texturefloor=FLOOR, textureceiling=CEIL, lightlevel=light))
     parts.append(blk("sector", heightfloor=POOL_Z, heightceiling=CEIL_H,
-                     texturefloor=POOL, textureceiling=CEIL, lightlevel=160))
+                     texturefloor=POOL, textureceiling=CEIL, lightlevel=light))
 
     for _ in range(4):
         parts.append(blk("sidedef", sector=0, texturemiddle=WALL))
@@ -337,13 +338,18 @@ def build_channel_textmap() -> str:
     # from, and the case a disc sampler is worst at.
     parts.append(thing(x=float((CX0 + CX1) // 2), y=96.0, angle=90, type=1))
 
-    for gx in range(2):
-        for gy in range(5):
-            parts.append(thing(x=float(RW * (gx + 0.5) / 2.0),
-                               y=float(RD * (gy + 0.5) / 5.0),
-                               height=float(CEIL_H - 16), angle=0,
-                               type=T_POINTLIGHT,
-                               arg0=255, arg1=250, arg2=240, arg3=20))
+    # MAP93 gets NO ceiling grid and lightlevel 0 -- the corridor as the game
+    # actually presents it. This is the room the "no bubbles on MAP07" report is
+    # really about: a lit lab proves the sprite draws, and proves nothing at all
+    # about whether it lights anything.
+    if lit:
+        for gx in range(2):
+            for gy in range(5):
+                parts.append(thing(x=float(RW * (gx + 0.5) / 2.0),
+                                   y=float(RD * (gy + 0.5) / 5.0),
+                                   height=float(CEIL_H - 16), angle=0,
+                                   type=T_POINTLIGHT,
+                                   arg0=255, arg1=250, arg2=240, arg3=20))
     return "\n".join(parts)
 
 
@@ -376,6 +382,15 @@ map MAP92 "RT Poison Lab (channel)"
     secretnext = "MAP92"
 }
 
+map MAP93 "RT Poison Lab (channel, dark)"
+{
+    sky1 = "SKY1"
+    music = ""
+    cluster = 1
+    next = "MAP93"
+    secretnext = "MAP93"
+}
+
 DoomEdNums
 {
     9910 = D64PoisonProbe
@@ -393,7 +408,10 @@ def main() -> None:
         ("TEXTMAP", build_textmap(True).encode("ascii")),
         ("ENDMAP", b""),
         ("MAP92", b""),
-        ("TEXTMAP", build_channel_textmap().encode("ascii")),
+        ("TEXTMAP", build_channel_textmap(True).encode("ascii")),
+        ("ENDMAP", b""),
+        ("MAP93", b""),
+        ("TEXTMAP", build_channel_textmap(False).encode("ascii")),
         ("ENDMAP", b""),
     ])
     OUT_WAD.write_bytes(wad)
@@ -411,6 +429,7 @@ def main() -> None:
     print( "  MAP90   dark: lightlevel 0, no light things -- judge the LIGHT")
     print( "  MAP91   lit:  lightlevel 160 + ceiling grid -- judge the SPRITE")
     print( "  MAP92   channel: a 192-unit corridor of poison -- the shape the game has")
+    print( "  MAP93   channel, DARK: the same corridor at lightlevel 0, no lights at all")
 
 
 if __name__ == "__main__":

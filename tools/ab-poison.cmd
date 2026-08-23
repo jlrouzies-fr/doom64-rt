@@ -101,14 +101,14 @@ rem the evidence from one run is destroyed by the next unrelated launch before i
 rem can be read. +logfile comes after the launcher's own, so it wins.
 set "LOG=+logfile %~dp0\..\rt-poison.log"
 
-if /i "%ARM%"=="on"     set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_debug 0"
-if /i "%ARM%"=="off"    set "ARGS=+d64_poison_fx 0 +d64_poison_rate 2    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_debug 0"
-if /i "%ARM%"=="dense"  set "ARGS=+d64_poison_fx 1 +d64_poison_rate 8    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_debug 0"
-if /i "%ARM%"=="sparse" set "ARGS=+d64_poison_fx 1 +d64_poison_rate 0.5  +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_debug 0"
-if /i "%ARM%"=="near"   set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2    +d64_poison_dist 400  +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_debug 0"
-if /i "%ARM%"=="far"    set "ARGS=+d64_poison_fx 1 +d64_poison_rate 8    +d64_poison_dist 2200 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_debug 0"
-if /i "%ARM%"=="nodyn"  set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_debug 0 +rt_dynlight 0"
-if /i "%ARM%"=="debug"  set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_debug 1 +rt_verbose 1"
+if /i "%ARM%"=="on"     set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 0"
+if /i "%ARM%"=="off"    set "ARGS=+d64_poison_fx 0 +d64_poison_rate 2    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 0"
+if /i "%ARM%"=="dense"  set "ARGS=+d64_poison_fx 1 +d64_poison_rate 8    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 0"
+if /i "%ARM%"=="sparse" set "ARGS=+d64_poison_fx 1 +d64_poison_rate 0.5  +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 0"
+if /i "%ARM%"=="near"   set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2    +d64_poison_dist 400  +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 0"
+if /i "%ARM%"=="far"    set "ARGS=+d64_poison_fx 1 +d64_poison_rate 8    +d64_poison_dist 2200 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 0"
+if /i "%ARM%"=="nodyn"  set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 0 +rt_dynlight 0"
+if /i "%ARM%"=="debug"  set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 1 +rt_verbose 1"
 
 if not defined ARGS (
   echo Usage: %~nx0 ^<on^|off^|dense^|sparse^|near^|far^|nodyn^|debug^> [1-34]

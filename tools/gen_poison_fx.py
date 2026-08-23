@@ -293,6 +293,48 @@ __STATES__
         State st;
 __SATPICK__
         if( st ) { SetState( st ); }
+
+        AttachPoisonLight();
+    }
+
+    // A REAL DYNAMIC LIGHT, and this time it does not blow the sprite out.
+    //
+    // The first version put a GLDEFS pointlight on every frame and every bubble
+    // rendered as a white pill: a light sitting inside a 20-unit billboard is at
+    // zero distance from it, so the sprite lit ITSELF into clipping and the art
+    // was gone. That is why GLDEFS was dropped, and the effect then leaned
+    // entirely on textures.json emissive -- which looked fine in a LIT lab and
+    // turned out to cast nothing at all in a dark corridor. Both halves of that
+    // were wrong.
+    //
+    // LF_DONTLIGHTSELF is what makes the light possible: the bubble lights the
+    // room and not its own billboard, so there is no pill and there is real
+    // green on the walls.
+    //
+    // Attached from ZScript rather than declared in GLDEFS because a GLDEFS
+    // light is fixed at parse time, and this one has to be tunable --
+    // d64_poison_light scales it, 0 turns it off.
+    //
+    // SIZE IS NOT BRIGHTNESS. Above rt_dynlight_rsoft (pinned at 20) a LARGER
+    // radius is DIMMER, so d64_poison_lsize is clamped under it: brightness
+    // comes from the colour, which is what the scale multiplies.
+    void AttachPoisonLight()
+    {
+        let cvOn = CVar.FindCVar( "d64_poison_light" );
+        double li = cvOn ? cvOn.GetFloat() : 1.0;
+        if( li <= 0.01 ) { return; }
+
+        let cvSz = CVar.FindCVar( "d64_poison_lsize" );
+        int lsz = int( clamp( cvSz ? cvSz.GetFloat() : 16.0, 1, 20 ) );
+
+        // A green a little cooler than the sprite, so the light reads as the
+        // poison's rather than as a lamp someone left in the sludge.
+        int r = int( clamp(  40 * li, 0, 255 ) );
+        int g = int( clamp( 170 * li, 0, 255 ) );
+        int b = int( clamp(  35 * li, 0, 255 ) );
+
+        A_AttachLight( 'pbub', DynamicLight.PointLight, Color( 255, r, g, b ),
+                       lsz, 0, DynamicLight.LF_DONTLIGHTSELF );
     }
 
     override void Tick()
@@ -395,7 +437,13 @@ class D64PoisonFx : EventHandler
             poisonSectors++;
         }
 
-        if( poisonSectors > 0 )
+        // BEHIND d64_poison_debug, like every other line this handler prints.
+        // It used to be unconditional -- useful while the effect was being
+        // built, noise on every level load once it works. rt_verbose is not the
+        // gate: that is the engine's switch and it is on in the dev launchers,
+        // so the line came back the moment anyone used one.
+        let cvDbg = CVar.FindCVar( "d64_poison_debug" );
+        if( poisonSectors > 0 && cvDbg && cvDbg.GetBool() )
         {
             Console.PrintfEx( DiagLevel(), "D64PoisonFx: %d poison sector(s), %d bubble(s) every %d tics near the player",
                             poisonSectors, PER_BURST, PERIOD );
@@ -562,6 +610,8 @@ server nosave float d64_poison_dist  = 1100.0;
 server nosave float d64_poison_size  = 0.35;
 server nosave float d64_poison_z     = 1.0;
 server nosave float d64_poison_sat   = 1.0;
+server nosave float d64_poison_light = 0.1;
+server nosave float d64_poison_lsize = 16.0;
 server nosave bool  d64_poison_debug = false;
 """
 
@@ -612,13 +662,30 @@ MAPINFO = """GameInfo
 # saturated green light would be the one combination that cannot happen in the
 # world, and the grey rung exists precisely to answer "where is the green coming
 # from" -- it has to be honest about it.
+# MEASURED IN THE DARK, not reasoned about in a lit room.
+#
+# The first numbers (55-150 lm, emissiveMult 0.30-0.55) were signed off in
+# MAP91, which has a ceiling grid -- so what looked like the bubbles glowing was
+# the room lighting their albedo, and they were carrying almost no light of
+# their own. MAP93, the same corridor at lightlevel 0 with nothing else in it,
+# showed the truth: dull olive dots on black nukage, casting nothing. That is
+# the "no light on MAP07" report exactly.
+#
+# Two things made it worse than the first pass. The bubbles are now drawn at
+# d64_poison_size 0.35 rather than ~1.0, so there is roughly a fifth of the
+# sprite area to emit from; and the retint pulled chroma to 0.575 to match the
+# pool. Both are wanted -- neither is free.
+#
+# So lightIntensity goes up ~4.5x and emissiveMult ~2x. Still an order of
+# magnitude under a torch (900 lm) at the top of the ramp, which keeps "slight":
+# the bubble should be a thing you notice on the surface, not a lamp.
 BUBBLE_BASE_META = [
-    (55,  [110, 235, 60], 0.30),
-    (70,  [110, 235, 60], 0.34),
-    (85,  [112, 238, 62], 0.38),
-    (100, [114, 240, 64], 0.42),
-    (120, [116, 242, 66], 0.46),
-    (150, [130, 250, 80], 0.55),
+    (250, [110, 235, 60], 0.60),
+    (300, [110, 235, 60], 0.66),
+    (360, [112, 238, 62], 0.72),
+    (430, [114, 240, 64], 0.78),
+    (520, [116, 242, 66], 0.85),
+    (650, [130, 250, 80], 1.05),
 ]
 
 
