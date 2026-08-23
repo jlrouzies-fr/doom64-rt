@@ -482,6 +482,7 @@ declaration cannot drift from its definition. Put nothing in that file except an
 
 ## Hard rules
 
+- **The renderer never writes the player** — no pitch, position, velocity or flag edits from the RT side, not even for a capture. Camera placement for screenshots is done with playsim commands from the launch line or a console script (`noclip`, `fly`, `warp`, bound `+lookup`). Two `rt_autoshot_*` holds that did this shipped in v0.1.14 and broke play (`map map23` dropped the player from the ceiling, rockets flew 45° up).
 - Engine work is in `sourcecode/gzdoom-rt`. Prebuilt release is not mod-safe (Steam gates + `rt/scenes/map##` name collision).
 - Retribution loads as `-file` on DOOM2.WAD. Prefer `D64RTR_v15.WAD` in PowerShell (`[v1.5]` is a wildcard).
 - Prefer IWAD `D:\Games\GZDoom\doom2.wad` (Steam size 14604584). Avoid `D:\Games\Doom RT\DOOM2.WAD` (different size).
