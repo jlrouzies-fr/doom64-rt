@@ -411,7 +411,9 @@ LISTMENU "RT_OptionsMenu"
 										Linespacing	14
 	TextItem_RT	"Quality",				"RT_QualityMenu"
 										Linespacing	10
-	
+	TextItem_RT	"Flashlight",			"RT_FlashlightMenu"
+										Linespacing	10
+
 	// "HUD"
 	// RTMNU_HUD_STYLE (None / Simple / Classic, i.e. screenblocks 12/11/10)
 	// is deliberately not offered - the mod ships one HUD.
@@ -469,13 +471,20 @@ LISTMENU "RT_OptionsMenuRemix"
 // Ray-tracing quality. Stock OptionMenu items, so no new TextItem_RT key (and
 // therefore no engine rebuild) is needed; reached from RT_OptionsMenu.
 //
+// Two views of the same cvars. RT_QualityMenu is the simplified one -- the
+// preset plus the ray-budget sliders this menu had before the performance
+// work -- and it is what "Quality" opens. RT_QualityMenuFull adds the content
+// budget the preset drives (persistence, effects, per-sprite geometry, lamp
+// lights) and is reached from the last item of the simplified menu; Back
+// returns to it, so the two are one path rather than two entries in Options.
+//
 // NOTE: rt_shadow_samples / rt_spp_direct / rt_spp_indirect / rt_restir_* are
 // declared RT_CVAR_NOARCH in rt_cvars.inc, i.e. NOT archived - they take effect
 // immediately but reset to their compiled default on the next launch.
 // rt_quality_preset IS archived, so choosing a preset is what makes a choice
 // survive a restart; it re-applies the whole group on load.
 //
-// Everything this menu touches is deliberately UNPINNED in tools/d64rt-pins.cfg
+// Everything these menus touch is deliberately UNPINNED in tools/d64rt-pins.cfg
 // -- a pin runs at launch and would overwrite the player's choice every start.
 //
 OptionValue "RTQualityPresets"
@@ -490,6 +499,44 @@ OptionValue "RTQualityPresets"
 OptionMenu "RT_QualityMenu" protected
 {
 	Title "QUALITY"
+
+	StaticText "Preset", 1
+	Option "Quality preset",			"rt_quality_preset",	"RTQualityPresets"
+	StaticText "High is exactly what the game shipped with.", 1
+	StaticText "Balanced and Performance bound what a firefight leaves", 1
+	StaticText "behind - casings, debris, scorch marks, lamp lights.", 1
+	StaticText " "
+
+	StaticText "Direct lighting", 1
+	Slider "Shadow rays / pixel",		"rt_shadow_samples",	1, 8, 1, 0
+	Slider "Direct samples / pixel",	"rt_spp_direct",		1, 8, 1, 0
+	StaticText " "
+	StaticText "Indirect lighting", 1
+	Slider "Indirect samples / pixel",	"rt_spp_indirect",		1, 8, 1, 0
+	Slider "Candidate lights",			"rt_restir_initial",	1, 64, 1, 0
+	Slider "Spatial reuse taps",		"rt_restir_spatial",	0, 16, 1, 0
+	Slider "Temporal history cap",		"rt_restir_mcap",		1, 64, 1, 0
+	StaticText " "
+	StaticText "Ray depth", 1
+	Slider "Shadow ray depth",			"rt_shadowrays",		1, 8, 1, 0
+	Slider "Reflect / refract depth",	"rt_reflrefr_depth",	1, 16, 1, 0
+	StaticText " "
+	StaticText "Higher values cost GPU time.", 1
+	StaticText " "
+	Submenu "Full settings",			"RT_QualityMenuFull"
+	StaticText "Every knob a preset drives, one at a time.", 1
+}
+
+//
+// The full view. Same preset selector at the top so a wrong turn here is one
+// item away from being undone; the sections below it follow the preset table
+// in rt_quality.cpp, section for section. Not a 1:1 map either way: rt_gore_max
+// and rt_gore_life are in the table with no slider here, and rt_restir_mcap has
+// a slider with no table entry.
+//
+OptionMenu "RT_QualityMenuFull" protected
+{
+	Title "QUALITY - FULL"
 
 	StaticText "Preset", 1
 	Option "Quality preset",			"rt_quality_preset",	"RTQualityPresets"
@@ -570,6 +617,40 @@ OptionMenu "RT_HudMenu" protected
 	Option "Hide HUD in menus",			"rt_menu_hidehud",		"OnOff"
 	StaticText "Stops long option pages reading through the", 1
 	StaticText "ammo counters. Automap and console keep the HUD.", 1
+}
+
+//
+// Flashlight. All cvars here are RT_CVAR (archived), declared in rt_cvars.inc
+// next to rt_flsh -- see RT_AddFlashlight in rt_weapon.cpp for how the battery
+// state machine (on -> dying flicker -> recharge -> repeat) uses them.
+//
+OptionMenu "RT_FlashlightMenu" protected
+{
+	Title "FLASHLIGHT"
+
+	Option "Enabled",					"rt_flsh",				"OnOff"
+	StaticText " "
+
+	StaticText "Battery", 1
+	Option "Battery drain",				"rt_flsh_battery",		"OnOff"
+	StaticText "Off = never dims or needs to recharge.", 1
+	Slider "Battery lifetime (secs)",	"rt_flsh_on_secs",		5, 120, 5, 0
+	Slider "Dying flicker (secs)",		"rt_flsh_die_secs",		1, 15, 1, 0
+	Slider "Recharge time (secs)",		"rt_flsh_off_secs",		1, 60, 1, 0
+	Slider "Idle recharge rate",		"rt_flsh_idle_recharge", 0, 4, 0.25, 2
+	StaticText "How fast the battery refills while switched off,", 1
+	StaticText "as a fraction of the post-burnout recharge rate.", 1
+	Slider "Timing randomness",			"rt_flsh_jitter",		0, 1, 0.05, 2
+	StaticText " "
+
+	StaticText "Beam", 1
+	Slider "Brightness",				"rt_flsh_intensity",	20, 400, 10, 0
+	ColorPicker "Color",					"rt_flsh_color"
+		StaticText " "
+
+		StaticText "Sound", 1
+		Option "Enable battery sounds",		"d64rt_flsh_sound",		"OnOff"
+		Slider "Sound volume",				"d64rt_flsh_sound_vol", 0, 1, 0.05, 2
 }
 
 // RT end

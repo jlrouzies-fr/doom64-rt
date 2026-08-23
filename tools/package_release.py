@@ -65,7 +65,9 @@ MODS = [
     "d64r-lostsoul-rt.pk3", "d64r-rt-flashlight.pk3",
     "d64r-3dfloor-rtfix.wad", "d64r-seqlight-fix.wad",
     "d64r-bulb-textures.wad", "d64r-sflatas-broken.wad", "d64r-ctel-fix.wad",
-    "d64r-rt-sky.pk3", "d64r-lava-fx.pk3", "d64r-blood-persist.pk3",
+    
+    "d64r-rt-sky.pk3", "d64r-lava-fx.pk3", "d64r-poison-fx.pk3",
+    "d64r-blood-persist.pk3",
     "d64r-widescreen-gfx.pk3", "d64r-mugshot.pk3", "d64r-rt-titlelogo.pk3",
 ]
 
@@ -235,6 +237,15 @@ def main():
         "The launcher checks all of this on startup and tells you what is missing,\n"
         "with a link to each download.\n",
         encoding="ascii")
+
+    # Ships empty but present, because a folder that has to be created by hand
+    # is a folder nobody creates: the startup window's add-on row says "put the
+    # wad in the Addons folder", and it has to be there to be put into. The same
+    # file the source checkout carries, so the two cannot drift apart.
+    addons = out / "Addons"
+    addons.mkdir()
+    shutil.copy2(PROJ_ROOT / "Addons" / "PUT-YOUR-ADDONS-HERE.txt",
+                 addons / "PUT-YOUR-ADDONS-HERE.txt")
 
     # The engine checks for these at startup (rt_main.cpp) and shows a "DLL check
     # failure" dialog naming whatever is absent. The stock package ships none of

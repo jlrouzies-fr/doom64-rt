@@ -228,6 +228,151 @@ almost none of it has been looked at in play. MAP20 alone re-arms the same eight
 tags from four different scripts (48 calls); MAP08 has 29, MAP34 17. Only MAP07
 has been acted on.
 
+### The runtime answer: `rt_sector_emis_freeze`
+
+**The 203 calls do not have to be triaged one at a time.** Since 2026-08-19 the
+engine holds a sector's self-emission still for as long as that sector's
+lightlevel is being animated. `rt_sector_emis_freeze` (archived) is the switch,
+and it has two modes, because "held" has two meanings:
+
+| mode | holds at | MAP05's pylon panel |
+|---|---|---|
+| 1 | the **authored** lightlevel | 255 → still a light, no longer blinking |
+| **2** (default) | the **dim end** of the swing | 220 → below the 240 threshold, not a light at all |
+
+Mode 1 is what clearing the special does by hand — the sector rests where the
+author left it. That is the right repair when the author left it dark, and the
+wrong one when they left it at 255: the blink goes, the sourceless glow stays.
+Mode 2 settles on the trough instead, which is what the strip was always *for*.
+Mode 1 remains because it is the smaller change, and a room leaning on that glow
+for its light may want it.
+
+**The test is movement, not ownership.** A sector counts as animated while its
+lightlevel has moved within the last 70 tics. Asking which `DLighting` thinker
+owns it right now is *not* enough, and this document already said why before the
+feature existed — see the MAP13 entry below: *"Light_Fade's thinker is created
+per call by the loop, so a dump at load sees none."* A freeze that lets go
+between calls blinks exactly like the thing it is removing, and
+`Light_ChangeToValue` creates no thinker at all. The thinker walk survives as a
+second source only, for a strobe that has not reached its first flip.
+
+That one rule covers all three families, plus the computed-argument calls no
+survey can see: MAP05's reported panel is sector 84, tag 35, and tag 35 appears
+in none of the eight calls `scan_light_specials.py` can decode on that map.
+
+The snapshot is taken in `MapLoader::LoadLevel` immediately before
+`SpawnSpecials`, so it is the map author's number and not one an animation is
+already driving.
+
+Four deliberate limits, each of which is why the obvious version is wrong:
+
+- **Not the thinker's maximum.** MAP03's chains sit at base 180 with a crest of
+  255 against a 220 threshold — freezing at the maximum makes a sourceless
+  emitter *permanent* instead of removing it.
+- **Only the emission ramp.** `SetColor`/`SetFog` and every analytic light still
+  read the live value, so a monitor with its own 9802 FlickerLight keeps
+  flickering; only its painted glow holds still.
+- **Only while it keeps moving.** A one-shot change goes still and releases after
+  two seconds, so a scripted lights-out still puts the panels out — two seconds
+  late, which is the price of not having to know whether a script means to come
+  back.
+- **The offset is undone, not the value replaced** — a glow, a linedef's
+  relative light and `hw_ClampLight` all survive.
+
+Read it with `rt_emis_freeze_show`, or set `rt_sector_emis_debug 1` and watch
+`rt-console.log`: the held set, how many of it currently straddle the threshold,
+and **how many surfaces were actually substituted last frame** — that last one is
+the only number that distinguishes the feature from a no-op. MAP05 settles at
+*17 sectors animated, 12 crossing, threshold 240*; MAP03 holds its 22 chain and
+blink sectors at 180 under a 220 threshold.
+
+Measured at MAP05's pylons with `rt_tex_probe SPACECC`, which is how this was
+verified without a screenshot:
+
+| | lightlevel | `sector_emis` |
+|---|---|---|
+| `0` off | 220 ↔ 255 | 0.000 ↔ 0.350 |
+| `1` authored | 255, every sample | 0.350, steady |
+| `2` dim end | 220, every sample | 0.000, steady |
+
+Note the trap that cost a round trip: the cvar is **archived**, so a `0` typed
+once to compare arms is still `0` in `gzdoom-rt2.ini` next launch, and the next
+test is a null test. The report says `on` or `OFF` in every line for that
+reason.
+
+**This does not retire `make_seqlight_fix.py`.** The wad still owns everything
+the freeze cannot see — painted shafts, added lamp and panel lights, colour
+tints, the 3D-floor strips — and a stripped special is still the better fix for
+a case that has been judged in play, because it also repairs the rasterized
+look. The freeze is the floor under the un-triaged remainder.
+
+### The whole game, measured twice (2026-08-19)
+
+Two censuses, because neither instrument is complete. **static** is
+`scan_light_specials.py`: it reads every map but only decodes calls with literal
+arguments. **silenced / animated** is the engine's own count with
+`rt_sector_emis_debug 1`, standing at the player start for nine seconds: it sees
+everything actually running, including the computed-argument calls, but nothing a
+script only starts later in the level. MAP20's 48 calls report zero for exactly
+that reason. Check any map where *either* column is high.
+
+| map | silenced by mode 2 | animated | static | ACS calls | blink | chain | in the wad |
+|---|---|---|---|---|---|---|---|
+| MAP18 | **42** | 43 | 2 | 3 | – | – | ACS stripped |
+| MAP05 | **17** | 17 | 6 | 8 | 10 | – | specials only |
+| MAP21 | 11 | 13 | 12 | 9 | – | – | ACS stripped |
+| MAP12 | 8 | 28 | 8 | 6 | – | 20 | ACS stripped |
+| MAP14 | 5 | 6 | 6 | 5 | – | – | specials only |
+| MAP19 | 5 | 6 | 5 | 2 | – | – | ACS stripped |
+| MAP15 | 4 | 4 | 4 | 1 | – | – | ACS stripped |
+| MAP33 | 4 | 4 | 0 | 0 | – | – | ACS stripped |
+| MAP16 | 3 | 4 | 3 | 7 | 1 | – | specials only |
+| MAP28 | 3 | 3 | 3 | 3 | – | – | not in the wad |
+| MAP10 | 3 | 3 | 3 | 3 | – | – | ACS stripped |
+| MAP24 | 2 | 5 | 4 | 2 | 3 | – | ACS stripped |
+| MAP30 | 2 | 83 | 1 | 5 | – | – | not in the wad |
+| MAP32 | 1 | 2 | 1 | 5 | – | – | not in the wad |
+| MAP03 | 1 | 22 | 0 | 1 | 7 | 63 | specials only |
+| MAP13 | 1 | 1 | **17** | 3 | – | – | ACS stripped |
+| MAP11 | 1 | 1 | 0 | 0 | – | – | specials only |
+| MAP23 | 0 | 23 | **14** | 10 | 9 | – | ACS stripped |
+| MAP02 | 0 | 46 | 0 | 10 | 13 | – | tint only |
+| MAP08 | 0 | 45 | 0 | 29 | – | – | specials only |
+| MAP06 | 0 | 14 | 0 | 4 | 4 | – | specials only |
+| MAP29 | 0 | 13 | 0 | 4 | 9 | – | specials only |
+| MAP01 | 0 | 8 | 0 | 2 | 6 | – | ACS stripped |
+| MAP31 | 0 | 7 | 0 | 2 | 4 | – | not in the wad |
+| MAP25 | 0 | 3 | 0 | 0 | 3 | – | specials only |
+| MAP04 | 0 | 1 | 0 | 6 | – | – | not in the wad |
+| MAP20 | 0 | 0 | 0 | **48** | – | – | ACS stripped, none of it runs at the start |
+
+Three readings worth keeping:
+
+- **"ACS stripped" never meant finished.** MAP18 is stripped and still leads the
+  table by a factor of two; the wad names one or two calls per map, and MAP18's
+  other forty are computed-argument ones no signature can reach.
+- **A high `animated` with zero `silenced` is the good case** — MAP02's 46 and
+  MAP30's 83 sit below their maps' thresholds, so they never emitted and mode 2
+  changes nothing there. Those maps, and MAP03 with its 63 chain sectors, are
+  where to look if mode 2 is suspected of taking away light that was wanted.
+- **The two columns disagree in both directions**, which is why both are here:
+  MAP13 reads 17 statically and 1 live because the wad already stripped it;
+  MAP18 reads 2 statically and 42 live because the scanner cannot see its calls.
+
+### Why it took until 2026-08-19 to notice
+
+The animations were always there. `rt_sector_emis_override` (engine `ed229d76d`,
+v0.1.3) is what made them visible: before it, a texture carrying **any**
+`textures.json` entry had its computed emission replaced by the material's
+`emissiveMult`, which defaults to 0, so 2091 of 3015 entries silently zeroed the
+sector ramp. MAP05's SPACECE/SPACECG/SPACECD panels are all in that set. Fixing
+the override turned every un-stripped script animation on at once, and it read
+as "the ACS removal stopped being applied".
+
+`rt_sector_emis_override 0` does stop the blinking, and is the wrong switch: it
+also puts out the painted light features the override exists for (MAP02's red
+corridor panels).
+
 ### DONE — MAP07 script 669, all eight calls
 
 Reported from play as a white patch blinking on a wall beside a tech pole
@@ -756,6 +901,160 @@ ever have touched them. H119 itself is dull mottled brown-purple stone — the g
 look was *entirely* the sector colour, pillars lit warm by nothing in a night courtyard
 whose only real light is a cool moon.
 
+### DONE — MAP02 sector 63, the blue corridor floor
+
+Reported as a blue-tinted floor faking blue light, *"in a room (not the room that
+becomes blue)"* — and that parenthesis is the whole difficulty, because MAP02's
+blue armor room is the effect `rt_sector_tint_albedo=1.0` was tuned on
+([blue-room-rt-lighting.md](blue-room-rt-lighting.md)) and must not move.
+
+| sectors | what | from | to |
+|---|---|---|---|
+| 62, 63 | the corridor, cold blue `(0,80,255)` inside a room at warm `(255,170,130)` | donor 66 | the room's warm |
+
+`whatsthat` settled the family before any work started:
+
+    whatsthat: sector 63  lightlevel 100  tag 0  floor texture 'SFLATAJ'
+               threshold 190 -> below: not self-emitting
+               brightest neighbour: sector 62 at 100  (delta +0)
+
+At 100 against a threshold of 190 this never emitted, so it is purely the colour
+half — the same shape as the MAP13 pillars and the MAP25 alcoves, and invisible to
+every brightness scanner for the same reason.
+
+**How it is separated from the armor room, which shares the identical colormap.**
+MAP02 carries `0x0050FF` on **50 sectors**, but they fall into **35 disconnected
+clusters**. The armor room is the 13-sector cluster at (−624..608, −1712..−688),
+all at lightlevel 255. This is a *different* 2-sector cluster at
+(1680..1840, −2592..−1952), at 100 and 140, on the other side of the map. Clustering
+by adjacency — not by colour value — is what tells the reported room from the
+protected one.
+
+The geometry is three concentric strips down one corridor, all floored `SFLATAJ` at
+height −192, unbroken:
+
+| sector | size | colour | light | ceiling |
+|---|---|---|---|---|
+| 66 — room outside, the donor | 256×704u | warm `(255,170,130)` | 85 | SFLATBB |
+| **63 — corridor floor** | 160×640u | **cold blue** | 100 | SFLATAB |
+| **62 — centre channel** | 64×576u | **cold blue** | 140 | **SPORTB**, raised to −48 |
+
+So the split lands as a hard blue/warm edge across one continuous floor with nothing
+casting it.
+
+#### The matcher matched, and the fixture was off anyway
+
+The first version of this entry **held sector 62 back**, on what looked like solid
+engine evidence: `SPORTB` matches `RT_IsCeilingInsetLampTexture`, so
+`rt_ceiling_lamps` hangs real shadow-casting lights under that ceiling channel, and
+their colour is `RT_SectorHue(sector.Colormap.LightColor, rt_sector_tint_lights)` —
+straight from 62's own colormap. Retinting it would turn a blue port strip's light
+warm. That reads like the host test decided by the engine's own matcher instead of
+by proximity, which is exactly what this project keeps saying to do.
+
+It was wrong, and play said so: *"still one blue floor"*, then the distinction stated
+precisely — *"its pure blue colored, not light related even if yes there is a blue
+light cast above"*.
+
+**The path is switched off.** `tools/d64rt-pins.cfg:811` pins `rt_ceiling_lamps 0`,
+which `rt_lights_fixtures.cpp` even notes in passing — *"currently switched off
+entirely via `rt_ceiling_lamps 0` in the launcher"*. `rt_ceiling_edge_lamps` **is**
+on, but that path takes only `SFLATAS`/`SFLATAQ`, not `SPORT*`. So no analytic light
+reads this sector's colormap at all. The blue overhead is the `SPORTB` `_e` mask, and
+under the ray-traced contract that is the **raw sample** — nothing multiplies it by
+sector colour or by albedo. Retinting 62 cannot touch it: the pads stay blue, the
+floor stops being painted.
+
+> **A fixture classifier matching a texture is not evidence the fixture is lit.**
+> Check the launcher pin for that family's cvar before resting a decision on it —
+> `rt_ceiling_lamps` and `rt_sector_lights` both ship at 0. Same shape as a change
+> that is not live, one layer further out: the code path exists, is correct, and
+> never runs.
+
+The albedo tint and the light tint are separate channels — `rt_sector_tint_albedo`
+for paint, `rt_sector_tint_lights` for lights (`rt_draw.cpp`, the `l_isemis()`
+branch) — but they read the **same** `lightcolor`, so there is no per-sector way to
+keep one and drop the other. With the lamp path off, that costs nothing here.
+
+## Key doors: the same defect, wearing a stripe
+
+Reported alongside the MAP02 floor: *"the red key and blue key doors themselves also
+appear self emissive (and they would need fixing in every level they exist)"*. From
+the game on MAP05:
+
+    whatsthat: sector 31  lightlevel 255  tag 0  middle texture 'STRAKR3'
+               threshold 240 -> ABOVE: this surface SELF-EMITS
+               brightest neighbour: sector 292 at 200  (delta +55)
+    whatsthat: sector 222  lightlevel 255  tag 0  middle texture 'STRAKB5'
+               threshold 240 -> ABOVE: this surface SELF-EMITS
+               brightest neighbour: sector 94 at 220  (delta +35)
+
+`STRAKR3`/`STRAKB5` are frames 3 and 5 of the animated red/blue hazard-stripe frame
+that marks a key door; the map data stores frame 1. This is a `SHAFTS` case — the
+brightness half — but it is worth its own section because of how the *scope* was
+settled.
+
+### Scoping it: the stripe finds them, the lock confirms them
+
+Survey: every sector carrying a `STRAK[RBY]*` or `C[RBY]TRAK*` frame that is at or
+above its own map's threshold **and** brighter than every neighbour — **16 sectors on
+6 maps**. Then correlate each against the locked linedefs on it and on its neighbours.
+That needs all four lock specials, and the lock argument is not in the same place:
+
+| special | name | lock arg |
+|---|---|---|
+| 13, 14 | `Door_LockedRaise` | `arg3` |
+| 83 | `ACS_LockedExecute` | `arg4` |
+| 85 | `ACS_LockedExecuteDoor` | `arg4` |
+
+**A survey of `Door_LockedRaise` alone misses half the game's key doors**, MAP05's red
+one included — it is an `ACS_LockedExecute`. The stripe texture is what found it.
+
+The correlation splits the 16 cleanly:
+
+- **8 key doors on 2 maps** — MAP05 31/222, MAP08 56/93/95/110/190/201. Every one has
+  a locked line whose lock number **agrees with the stripe colour**, so the frame is
+  not being read as decoration anywhere here.
+- **8 not key doors** — MAP02 265/272, ABS01 315/372, ABS02 292/293, RDM04 201/741.
+  Same coloured stripe, no locked line anywhere near: it is trim, on switch alcoves
+  and wall slivers. Left alone — a different question from the one that was asked, and
+  a stripe colour on its own is not evidence of anything.
+
+So "every level they exist" is **two maps**, not the whole game.
+
+### Why levelling them darkens nothing
+
+**All eight have real 9800 `PointLight` things at or inside the door** — six of them,
+in stacked triples, 48–57u from the recess centre, and present in the **base WAD**, so
+this is Retribution's own lighting and not something this project added.
+
+That is the `whatsthat` docstring's rule verbatim: *a fixture inside the element means
+the paint is redundant, not warranted*. The painted 255 is a second, sourceless copy
+laid over a light that is already there. Dropping it does not darken these doors; it
+stops them emitting twice, and what is left is the point lights that were always
+lighting them. All eight are `tag 0`, so no ACS is animating the lightlevel either.
+
+### DONE — MAP05 and MAP08, all three key colours
+
+| map | sectors | key | from | to | threshold |
+|---|---|---|---|---|---|
+| MAP05 | 31 | red (`ACS_LockedExecute` script 13, arg4=1) | 255 | 200 | 240 |
+| MAP05 | 222 | blue (`Door_LockedRaise`, arg3=2) | 255 | 220 | 240 |
+| MAP08 | 110, 190 | red (`Door_LockedRaise`, arg3=1) | 255 | 140 | 180 |
+| MAP08 | 56, 201 | yellow (`ACS_LockedExecuteDoor` script 28, arg4=3) | 255 | 140 | 180 |
+| MAP08 | 93, 95 | blue (`ACS_LockedExecuteDoor` script 7, arg4=2) | **220** | 140 | 180 |
+
+**Note MAP08 93/95's `from_light`: 220, not 255.** Still well over the map's threshold
+of 180 and +80 on its neighbours, so they self-emit just as hard — but a table that
+assumed every painted door is 255 would have skipped them silently. Read the value,
+never assume it.
+
+MAP05's 31 is levelled with the *brighter* of the two rooms it opens between (292 at
+200, not 297 at 160), so nothing around it goes darker than it already is. MAP08's
+yellow pair was included even though only red and blue were reported: leaving one key
+colour on a map self-emitting while the other two are levelled is worse than either
+state, because the doors stop matching each other.
+
 ## Load-order trap: maps that are also in the 3D-floor wad
 
 `d64r-seqlight-fix.wad` loads *after* `d64r-3dfloor-rtfix.wad`, so for any map
@@ -776,6 +1075,11 @@ wad — MAP34 alone has 16 `special=160` linedefs. The guard held: the build rep
 1, 4, 0, 2 and 16 re-stripped respectively. A family that adds new *maps* to the
 wad silently inherits this trap, so check the re-strip counts in the build output
 whenever the map list grows.
+
+**And again with the key doors.** That entry set brought MAP02 in for the first
+time, via its `TINTS` row. MAP02 is in the 3D-floor wad with two `special=160`
+linedefs, and the build reports 2 re-stripped — checked, per the rule above.
+MAP08 was already here through `PANEL_LAMPS` and has none.
 
 ## The eighth family: wall panels that need a light ADDED
 
@@ -987,3 +1291,188 @@ and a build failure is the intended way to find out. Derive it with:
 
 It scans past MAP32, which is how it found a SMONBA panel on **MAP34** that a
 MAP01–32 survey had missed.
+
+
+## Giving one of them back: the MAP01 pillar chase
+
+Stripping is not free. MAP01's pre-exit hall is the case where what the strip
+removed was the *point* of the room, and this is how it was put back.
+
+### What was there
+
+Sixteen wedge sectors ringed around a central pillar, and a light travelling
+around it. Not a sector special — ACS, which is why `scan_light_specials.py 1`
+still reports MAP01 as `sequence=0 chains=0` and finds only two ACS light calls.
+The effect is **script 12, type OPEN**, commented in the map's own `SCRIPTS`
+lump as *"Pre-exit room area light fade effect"*: 64 `Light_Fade` calls in an
+infinite loop, eight steps of four tics, moving a 255 crest across tags 20..27
+with a 200/220/240/255/240/220/200 ramp either side.
+
+The eight tags are laid around the ring **twice**, so the original carried two
+crests 180° apart and one crest covered the full circle in 64 tics — 1.83s.
+
+The pillar is sector **131**, tag **29**, a 48×48 block at (376, 1072), floor 80
+ceiling 144, `SPACEAA` top and bottom.
+
+    tag 20 at  12°   tag 20 at 187°       ← tag increases as angle DECREASES,
+    tag 27 at  36°   tag 27 at 216°         so the original crest ran clockwise
+    tag 26 at  55°   tag 26 at 242°
+    tag 25 at  77°   tag 25 at 263°
+    tag 24 at 107°   tag 24 at 278°
+    tag 23 at 127°   tag 23 at 297°
+    tag 22 at 153°   tag 22 at 321°
+    tag 21 at 170°   tag 21 at 349°
+
+### Why it had to go, and why the strip alone would have been worse
+
+All 27 hall sectors **store** lightlevel 255. Removing the animation therefore
+pins them at the top of the ramp — a constant full-strength self-emission
+instead of one that at least dips to 200. So the `ScriptedComputed` entry ships
+paired with a `Shaft` that repaints the hall 255 → 160, and both are marked in
+`make_seqlight_fix.py` as required together. Ship one without the other and the
+hall gets **brighter**.
+
+### What was left lighting the pillar
+
+The wall-strip walk. Of the pillar's twelve faces, four carry `SFLATAQ` — the
+4×4 bulb array — at exactly 0°, 90°, 180° and 270°, and one more at 76° carries
+`SPACEAZ`. With `rt_wall_strip_seglen 64` each 32-unit face is one segment, so
+the pillar gets **six spherical lights** at z=112, two units off the faces.
+Six static lights standing in for a light that used to turn.
+
+### The chase
+
+`rt_pillar_chase` sweeps a crest angle around the pillar once per
+`rt_pillar_chase_period` and scales each of those six lights by its angular
+distance from the crest, smoothstepped. **The lights do not move.** They stay
+glued to the bulb panels, which is the only place on the pillar where the art
+paints bulbs at all — what turns is brightness.
+
+    rt_pillar_chase          1      on
+    rt_pillar_chase_period   1.83   seconds per lap = script 12's own 64 tics
+    rt_pillar_chase_floor    0.35   multiplier for a face the crest is far from
+    rt_pillar_chase_width    140    degrees from crest to floor
+    rt_pillar_chase_cw       1      clockwise, the original direction
+    rt_pillar_chase_debug    0      per-light crest/angle/multiplier dump
+
+**One crest, not the ACS two.** Two opposed crests read as rotation across
+sixteen wedges. Across four faces they degenerate into 0/180, then 90/270, then
+0/180 — an alternation with no direction in it.
+
+**The floor is 0.35, not 0.78.** 0.78 is what script 12's own 200/255 ramp works
+out to, and it is the wrong number to copy: that ramp moved *sector lightlevel*
+across sixteen wedges, where a wave has room to read at low contrast. Here it
+moves six discrete lights, four of them 90° apart. At 0.78 the chase is invisible.
+
+**The width is 140°, wider than the 90° face spacing, on purpose.** The crest is
+still lifting one face as it reaches the next, which is what keeps discrete
+lights reading as one thing turning rather than as four taking turns blinking.
+
+Matched by **tag, not sector index**: `d64r-map01-rtfix.wad` ships its own
+`TEXTMAP` for this map and an index is only stable until someone inserts a
+sector. Tag 29 is on sector 131 and on nothing else, in both wads. The table is
+`kChasePillars` in `rt_lights_fixtures.cpp` and takes more rows.
+
+Driven by `maptime` plus the viewpoint's tic fraction, not a wall clock, so a
+paused game or an open console freezes the light where it is.
+
+### Judging it
+
+    .	oolsb.cmd pillarchase-off  01     the control: four static lights
+    .	oolsb.cmd pillarchase      01     the pins' own values
+    .	oolsb.cmd pillarchase-hard 01     floor 0.12, width 100
+
+**In motion only.** A still frame cannot tell a chase from four lamps sitting at
+four different brightnesses.
+
+To confirm it is live rather than believed-live, `+rt_pillar_chase_debug 1` and
+read `rt-console.log`:
+
+    rt_pillar_chase: crest -267 deg | light at (376,1096) angle 90 deg -> x1.00 (I=180)
+    rt_wall_strip: uploaded=12 (cap 128) | ... | chased=6
+
+`chased=6` is the claim that matters: six lights on the pillar, every frame.
+
+### What had to be fixed before any of it showed
+
+The chase shipped once with `chased=6` in the log and **nothing on screen**.
+That turned into four separate findings, each one measured in the lab.
+
+**1. Every light on the pillar was buried in solid geometry.** The wall-strip
+walk nudges an emitter 2 units off the wall "toward `thisSec->centerspot`".
+`centerspot` is a **bounding-box midpoint**, and a sector is not required to
+contain it. Sector 131 is a *ring* — an outer octagon of sixteen two-sided edges
+onto the hall, an inner octagon of **eight one-sided blocking walls** (the four
+`SFLATAQ` panels and four `SPACEAA`), around a **void core**. Its bbox midpoint
+is in the hole, so "toward the centre" pointed every light into the core.
+
+For a one-sided line there is nothing to guess: Doom defines the front sidedef
+as the **right** of v1→v2, so the open air is on the right. `rt_wall_strip_winding`
+(default 1) uses that; 0 restores the old rule as the *before* half of the A/B.
+Two-sided lines are untouched. Game-wide, **32 of 238** one-sided strip faces
+(13%) were buried this way — MAP01 8, MAP06 8, MAP25 4, ABS03 4, RDM02 4,
+MAP02 2, RDM01 2. The engine's `winding-flipped=` counter agrees with the
+static scan exactly on MAP01.
+
+**2. The painted bulbs could not be dimmed from the engine at all.** RTGL1's
+`HitInfo.inl` is explicit: with an `_e` map, **primary and reflection rays use
+the raw `_e` sample** and `emissiveMult` is applied on the indirect path only.
+So `prim.emissive` can change what a painted lamp feeds the GI and cannot
+change how bright it *looks* — correct for every lamp that is simply on, wrong
+for one that is supposed to switch. `RG_MESH_PRIMITIVE_EMISSIVE_SCREEN_SCALED`
+is a new opt-in flag (following `GEOM_INST_FLAG_LAVA`'s path exactly) that
+applies the multiplier on screen too, for that primitive only. It must be
+combined with `EMISSIVE_OVERRIDE` or `TextureMeta.cpp` replaces the value with
+the material's constant first.
+
+**3. The "real light" that turns is the panels' GI, not the spheres.**
+`SFLATAQ`'s material carries `emissiveMult: 20`, and four 32×64 panels at 20
+are a far bigger source than four I=180 spheres. Setting the panels' emissive
+to ~1 so the bulbs looked right on screen cut that bounce light twenty-fold:
+"no more light cast". Freezing it at a constant 20 instead: "the light is
+always on". So a chased panel now carries **two** animated emissives —
+`RgMeshPrimitiveInfo::emissiveGi` is new, carried through `ShGeometryInstance`
+to the shader, and read only under the flag:
+
+    rt_pillar_chase_bulb_gi     50    the GI, on the TRUE crest  — the light that turns
+    rt_pillar_chase_bulb_emis   1.0   the screen, on the LAGGED crest — the bulbs
+
+**4. The bulbs have to wait for the light.** Both halves read the identical
+crest every frame (`rt_pillar_chase_debug` prints both against `maptime`), but
+a bulb's emission lands on the primary ray and changes the frame it is set,
+while the pool of light arrives late through ReSTIR temporal reuse and the
+A-SVGF history. `rt_pillar_chase_bulb_lagsec 0.6` holds the bulbs back to meet
+it — in **seconds**, because a propagation delay does not change when the lap
+does. Found by eye: 25° (0.13 s) still led by about half a second.
+
+The trap inside finding 4 is why finding 3 exists: while the GI followed the
+*lagged* bulbs, the pool of light was the bulbs' own delayed bounce, so every
+frame of delay added to the bulbs moved the pool by the same amount and the
+gap never closed (0.6 s of lag left exactly 0.6 s of gap). The GI must sit on
+the true crest and never be delayed.
+
+A spot-light variant (`rt_pillar_chase_spot`) was tried on the way and is off:
+RTGL1 clamps a spot cone to 89°, so it cannot express a hemisphere, and aimed
+off a wall it loses the floor the fixture stands on.
+
+### The lab
+
+`tools/build_pillar_lab.py` → MAP94 (dark) / MAP95 (lit): MAP01's ring rebuilt
+alone in an empty room. **The geometry is copied, not approximated** — a convex
+block would not reproduce finding 1 at all, because `centerspot` would land in
+real sector air and the nudge would be correct.
+
+    .	ools\pillar-lab.cmd dark       everything on, the shipping values
+    .	ools\pillar-lab.cmd buried     the old centrespot nudge (finding 1)
+    .	ools\pillar-lab.cmd screenraw  raw-_e primary ray (finding 2)
+    .	ools\pillar-lab.cmd nogi       GI at 1 (finding 3)
+    .	ools\pillar-lab.cmd lag0       bulbs undelayed (finding 4)
+    .	ools\pillar-lab.cmd lag045 | lag080 | lag120   bracket 0.6
+
+Healthy log line, and the one to check before trusting anything on screen:
+
+    uploaded=4 ... chased=4 | winding-flipped=4
+    rt_pillar_chase: BULB face ... screen 0.74 (x0.74) gi 10.6 (x0.53) | maptime 44 bulb crest -131 (lights' crest -249, bulb lag 0.60s)
+
+`screen` and `gi` on different multipliers in the same line is the proof that
+the two crests are both live.

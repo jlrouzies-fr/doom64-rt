@@ -62,6 +62,8 @@ Every one of them is documented in full elsewhere — this table is the index, n
 | | World emissives | Lava, monitors, keys, EXIT signs, teleporters as masked emitters feeding GI. | [`material-authoring-spec`](docs/material-authoring-spec.md) |
 | **Atmosphere** | The moon | Sky disc + real directional light, aimed alike; shadow rays must prove they reached sky (`rt_sun_require_sky`) or it washes sealed rooms. `moon` CCMD. | [`moon-and-sky-leaks`](docs/moon-and-sky-leaks.md) |
 | | Clouds + lightning | 6–8 baked sky-dome slices (`rt_clouds_*`); tints and attenuates moonlight, flashes with MAP11's storm. `thunder` CCMD. | [`rt-clouds-and-lightning`](docs/rt-clouds-and-lightning.md) |
+| | Volumetric clouds | Raymarched cloud volume in the sky cubemap itself, not a painted shell — real interior density/self-shadowing that lights the level through GI for free (`rt_vclouds_*`). | [`plan-volumetric-clouds`](docs/plan-volumetric-clouds.md) |
+| | Fire sky | Alternative sky for the five hell maps: dark backdrop, cloud deck, falling meteors, coloured lightning strikes aimed at the player (`rt_fireskies_new`, `rt_firesky_*`). | [`plan-fire-skies`](docs/plan-fire-skies.md) |
 | | Per-map fog | Froxel volume, near/far ramp tuned per level (`rt_fog_*`, `fog` CCMD). | [`rt-fog`](docs/rt-fog.md) · [implementation](docs/rt-fog-implementation.md) |
 | | Volumetric smoke | Muzzle/impact smoke as a participating medium inside the fog froxel, colour-lit by the room. Six sources; CPU sim. `smoke` CCMD. | [`rt-smoke`](docs/rt-smoke.md) |
 | | Light shafts from lamps | Ordinary ceiling lamps, bulb lattices and solo bulbs cast shafts too, not just the sun (`rt_volume_shafts`). | [`plan-light-shafts`](docs/plan-light-shafts.md) |

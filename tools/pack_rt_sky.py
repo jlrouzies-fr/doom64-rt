@@ -58,7 +58,8 @@ def main() -> None:
             f"missing under {SRC}: {', '.join(missing)}\n"
             "(MOONSKY.png: python tools/gen_moon_sky.py)\n"
             "(SKY*.png: python tools/gen_d64_skies.py)\n"
-            "(CLOUDS*/BOLT*: python tools/gen_clouds.py)"
+            "(CLOUDS*/BOLT*: python tools/gen_clouds.py)\n"
+            "(MTEOR*/FRBACK*: python tools/gen_fire_sky.py)"
         )
     OUT.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(OUT, "w", compression=zipfile.ZIP_DEFLATED) as zf:

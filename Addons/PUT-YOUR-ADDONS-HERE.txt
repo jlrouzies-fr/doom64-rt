@@ -1,0 +1,15 @@
+Optional add-ons go in THIS folder. Nothing here is needed to play, and none of
+it ships with Doom 64 - Ray Traced: these are other people's downloads, loaded
+exactly as you downloaded them. Nothing in this folder is modified.
+
+Understood today:
+
+  D64ClassicRecolored.wad            the Cacodemon and the Pain Elemental
+  D64ClassicRecolored_OffsetFix.wad  repainted in classic Doom hues
+     https://www.moddb.com/games/doom-64/addons/d64classicrecolored
+     Either file works. See README, "Art changes", for which one gets which
+     sprite offsets right - they differ, and neither is exactly right here.
+
+Drop the file in here and press Re-check in the startup window: the add-on's
+line turns green and grows a checkbox that loads it. You do not have to close
+and reopen the launcher.

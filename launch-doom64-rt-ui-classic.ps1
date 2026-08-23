@@ -207,6 +207,10 @@ function Draw-Checks {
     $script:AllOk = ($missing -eq 0)
     $launch.Enabled = $script:AllOk
 
+    # Re-evaluated here, not once at startup: dropping a wad into Addons\ with
+    # this window open and pressing Re-check has to make the box appear.
+    $recolor.Visible = [bool]$script:RecolorWad
+
     # Offering "never show this again" while something is still missing would let
     # the user disable the one window that explains the problem. Hidden, not
     # disabled: WinForms draws disabled text with the system's embossed grey,
@@ -312,7 +316,10 @@ $form.Controls.Add($recolor)
 # --- do not ask me again ----------------------------------------------------
 #  Ticked, this writes configdone.txt and the launcher goes straight to the game
 #  from then on. Enabled only once every required item is green -- see Draw-Checks.
-$skipY = $listTop + $nRows * $rowH + $(if ($recolWad) { 128 } else { 106 })
+# The add-on row's space is reserved whether or not the add-on is there: its
+# checkbox can appear on a Re-check, and a layout that closed the gap would
+# have it land on top of this one.
+$skipY = $listTop + $nRows * $rowH + 128
 $skip              = New-Object System.Windows.Forms.CheckBox
 $skip.Text         = 'Setup is done - go straight to the game next time'
 $skip.Font         = New-Object System.Drawing.Font('Consolas', 9)

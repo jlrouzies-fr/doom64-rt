@@ -73,7 +73,7 @@ arrangement for the changes made *here*:
 [`RTGL`](https://github.com/jlrouzies-fr/RTGL). Everything they inherit from
 upstream is the work of their original authors — see [CREDITS.md](CREDITS.md).
 
-The only AI generated element is the modified mugshot to look more like Doom 64 them. 
+The only AI generated element is the modified mugshot to look more like Doom 64 them, and the poison bubbles. 
 The base game is Doom 64 by Midway and id Software, the total conversion is Doom 64: Retribution
 by Nevander, and the renderer is RTGL1 by Sultim Tsyrendashiev and Vasilii
 Shirokii. Where this project generates assets — emissive masks, ORM and normal

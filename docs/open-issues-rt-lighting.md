@@ -11,6 +11,16 @@ Do not treat this as a progress cheer sheet — only unresolved / partially reso
 
 ## 1. Unfixed / incomplete
 
+### 1.0 Weapon silhouette trails over lingering lights — **FIXED 2026-08-23** (verified in play)
+
+`screen/smearingIssueOverLingeringLight.png`. The "lingering light" after a rocket was
+not a light: it was A-SVGF's **indirect** ghost (256-frame history, antilag suppressed
+on bright indirect), and the band was the gun's silhouette restarting that history — a
+hole in the ghost. Bisected by layer with the new `rt_debug_show`. Fix:
+`rt_svgf_indir_maxhist 16` + `rt_svgf_indir_antilag 1` (with `rt_svgf_fp` /
+`rt_svgf_fp_grad` kept for silhouette restarts). Cost: noisier indirect in bounce-lit
+dark areas — watch for it. Details: `docs/rt-volumetric-weapon-trails.md`.
+
 ### 1.2f Sourceless `Light_Fade` sweep on 14 maps — **FIXED 2026-08-10** (MAP13 confirmed in play)
 
 Reported on MAP13 as pillars and walls that "get illuminated regularly" — multiple

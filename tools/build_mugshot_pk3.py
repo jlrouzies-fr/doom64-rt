@@ -96,6 +96,17 @@ KEY_Y = -22                   # single row, on the value baseline
 # The battery is drawn by d64r-rt-flashlight.pk3's ZScript, which places itself
 # a fixed gap to the left of HEALTH. It only needs to know where HEALTH went.
 
+# Where HEALTH/mugshot sit when rt_flsh_battery is OFF (infinite battery, no
+# meter). The flashlight pk3's RenderOverlay already skips drawing the meter
+# entirely in that case ("if (batt != null && !batt.GetBool()) return;"), so
+# left alone HEALTH and the face would keep sitting in the column that was
+# only ever reserved to make room for it. HEALTH slides back to its original,
+# pre-battery-column position; the face keeps the exact same gap to HEALTH it
+# already has, just translated by the same amount.
+BATTERY_CVAR = "rt_flsh_battery"
+HEALTH_X_NOBATT = 24
+FACE_X_NOBATT = FACE_X - (HEALTH_X - HEALTH_X_NOBATT)
+
 
 def relayout(sbar, face_x, face_y):
     """Move the HUD elements into the new arrangement.
@@ -144,6 +155,54 @@ def relayout(sbar, face_x, face_y):
             raise SystemExit(f"relayout: pattern never matched: {pat}")
     print(f"  layout: BATTERY(auto) | HEALTH {HEALTH_X} | face {face_x} | "
           f"[weapon] | keys {KEY_X[0]},{KEY_X[1]},{KEY_X[2]}@{KEY_Y} | ARMOR {ARMOR_X} | AMMO {AMMO_X}")
+    return out
+
+
+def battery_toggle(sbar, pad):
+    """Slide Modern-style HEALTH and the mugshot back left when there is no
+    battery meter to leave room for (rt_flsh_battery off = infinite battery).
+
+    Classic is untouched on purpose: classicise() never shifted Classic's
+    HEALTH for the battery column in the first place - see docs/hud-mugshot.md
+    §12, "Classic's battery position is computed from the stock HEALTH at 24".
+
+    Runs as a global text substitution AFTER set_hud_alpha() has duplicated
+    the body once per alpha notch, rather than threading a branch through
+    relayout()/set_hud_alpha()'s per-line list splitting. set_hud_alpha pulls
+    any line containing "DrawMugShot" out into its own gamma-adjusted alpha
+    block by matching on that substring; wrapping the line earlier would
+    strand the wrapper's braces in one block while the draw itself left for
+    another.
+    """
+    fx, fy = FACE_X - pad, FACE_Y - pad
+    fx_nb = FACE_X_NOBATT - pad
+    subs = [
+        (rf'DrawString D64HUDFONT, UNTRANSLATED, "HEALTH", {HEALTH_X}, {LABEL_Y}, 0, Alignment\(center\);',
+         f'DrawString D64HUDFONT, UNTRANSLATED, "HEALTH", {HEALTH_X_NOBATT}, {LABEL_Y}, 0, Alignment(center);'),
+        (rf'DrawNumber 3, BIGFONT, RED, Health, Alignment\(center\), {HEALTH_X}, {VALUE_Y};',
+         f'DrawNumber 3, BIGFONT, RED, Health, Alignment(center), {HEALTH_X_NOBATT}, {VALUE_Y};'),
+        (rf'DrawMugShot 5, {fx}, {fy};',
+         f'DrawMugShot 5, {fx_nb}, {fy};'),
+    ]
+    out = sbar
+    total = 0
+    for pat, alt_line in subs:
+        def repl(m, alt_line=alt_line):
+            ws, line = m.group('ws'), m.group('line')
+            return (f'{ws}ifcvarint {BATTERY_CVAR}, 1\n'
+                    f'{ws}{{\n'
+                    f'{ws}\t{line}\n'
+                    f'{ws}}}\n'
+                    f'{ws}ifcvarint {BATTERY_CVAR}, 0, equal\n'
+                    f'{ws}{{\n'
+                    f'{ws}\t{alt_line}\n'
+                    f'{ws}}}')
+        out, n = re.subn(rf'(?P<ws>[ \t]*)(?P<line>{pat})', repl, out)
+        if n == 0:
+            raise SystemExit(f"battery_toggle: pattern never matched: {pat}")
+        total += n
+    print(f"  battery-off layout: HEALTH {HEALTH_X_NOBATT} | face {FACE_X_NOBATT}  "
+          f"({total} occurrence(s) wrapped in ifcvarint {BATTERY_CVAR})")
     return out
 
 
@@ -434,6 +493,8 @@ def main():
         sbar = inject_mugshot(sbar, args.pad)
         sbar = relayout(sbar, FACE_X - args.pad, FACE_Y - args.pad)
     sbar = set_hud_alpha(sbar, args.hud_alpha, args.face_gamma, classic)
+    if not args.debug_grid:
+        sbar = battery_toggle(sbar, args.pad)
 
     with zipfile.ZipFile(args.out, "w", zipfile.ZIP_DEFLATED) as z:
         for fn in frames:

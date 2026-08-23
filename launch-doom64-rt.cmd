@@ -77,11 +77,20 @@ set "MOD="
 if exist "%GAME%\D64RTR[v1.5].WAD" set "MOD=%GAME%\D64RTR[v1.5].WAD"
 if not defined MOD if exist "%GAME%\D64RTR_v15.WAD" set "MOD=%GAME%\D64RTR_v15.WAD"
 
+rem  The key is matched by "contains", not by equality, and that is deliberate:
+rem  a UTF-8 BOM on the first line of the settings file lands INSIDE %%A, so
+rem  `iwad` arrives as `<BOM>iwad` and an == test drops the saved path. The
+rem  launcher then had no IWAD, listed doom2.wad as missing, and reopened the
+rem  startup window on every start -- with the "setup is done" box still ticked
+rem  and every line green, because the window finds the IWAD its own way. The
+rem  window no longer writes a BOM; this keeps the files it already wrote working.
+rem  The three keys share no substring, so a loose match is safe.
 if exist "%SETTINGS%" (
   for /f "usebackq tokens=1,* delims==" %%A in ("%SETTINGS%") do (
-    if /i "%%A"=="iwad" set "IWAD=%%B"
-    if /i "%%A"=="mod"  set "MOD=%%B"
-    if /i "%%A"=="recolor" set "RECOLOR=%%B"
+    set "K=%%A"
+    if not "!K:iwad=!"=="!K!"    set "IWAD=%%B"
+    if not "!K:mod=!"=="!K!"     set "MOD=%%B"
+    if not "!K:recolor=!"=="!K!" set "RECOLOR=%%B"
   )
 )
 
@@ -131,10 +140,11 @@ if not "%UIRC%"=="0" exit /b 1
 
 if defined SHOWUI if exist "%SETTINGS%" (
   for /f "usebackq tokens=1,* delims==" %%A in ("%SETTINGS%") do (
-    if /i "%%A"=="iwad" set "IWAD=%%B"
-    if /i "%%A"=="mod"  set "MOD=%%B"
+    set "K=%%A"
+    if not "!K:iwad=!"=="!K!" set "IWAD=%%B"
+    if not "!K:mod=!"=="!K!"  set "MOD=%%B"
     rem Written on every launch, so an unticked box CLEARS a previous 1.
-    if /i "%%A"=="recolor" set "RECOLOR=%%B"
+    if not "!K:recolor=!"=="!K!" set "RECOLOR=%%B"
   )
 )
 
@@ -150,6 +160,33 @@ if defined SHOWUI if not exist "%UI%" (
     exit /b 1
   )
 )
+
+rem --- flight recorder ------------------------------------------------------
+rem  OFF BY DEFAULT. It was shipped always-on for one dev cycle (2026-08-20) to
+rem  chase a stutter report, and did its job -- but "one rdtsc per bracket, forty
+rem  a frame" was never actually measured against a real player's machine, only
+rem  argued from first principles. Shipping an unmeasured per-frame cost to every
+rem  player by default is the wrong side of that uncertainty. Opt in with
+rem  D64RT_SPIKE_MS set to a nonzero value (or D64RT_SPIKE_REL), same as before.
+rem
+rem  WHAT IT DOES WHEN ON. rt_stat_force turns on glcycle_t counters for the RT
+rem  phases, the playsim and D_Display; rt_stat_spike/_rel print one line per
+rem  frame over an adaptive threshold (a multiple of the recent average, so it
+rem  self-calibrates to the machine's actual frame rate -- a fixed ms threshold
+rem  chosen at 115 fps fired on every frame of a 58 fps session, 2123 lines of
+rem  it, 2026-08-19) at RT_DiagPrintLevel: console buffer and the log, never the
+rem  on-screen notify overlay unless rt_verbose 1 is also set.
+if not defined D64RT_SPIKE_MS set "D64RT_SPIKE_MS=0"
+if not defined D64RT_SPIKE_REL set "D64RT_SPIKE_REL=0"
+
+rem  One generation of history. `logfile` truncates on open, so without this the
+rem  act of relaunching to show someone the log is what destroys it.
+set "LOGF=%PROJ%\rt-console.log"
+if exist "%LOGF%" move /y "%LOGF%" "%PROJ%\rt-console.prev.log" >nul 2>&1
+
+set "RECORDER=+logfile "%LOGF%""
+if not "%D64RT_SPIKE_MS%"=="0" set "RECORDER=+logfile "%LOGF%" +rt_stat_force 1 +rt_stat_spike %D64RT_SPIKE_MS% +rt_stat_spike_rel %D64RT_SPIKE_REL%"
+if not "%D64RT_SPIKE_REL%"=="0" set "RECORDER=+logfile "%LOGF%" +rt_stat_force 1 +rt_stat_spike %D64RT_SPIKE_MS% +rt_stat_spike_rel %D64RT_SPIKE_REL%"
 
 rem --- upscaler: pick one, then write BOTH cvars ----------------------------
 rem  D64RT_UPSCALER = dlss | fsr | none   overrides the detection.
@@ -197,6 +234,7 @@ echo.
 echo   Doom 64 - Ray Traced
 echo   engine    : %ENGINE%
 echo   iwad      : %IWAD%
+echo   log       : %LOGF%
 echo   upscaler  : %D64RT_UPSCALER%   ^(override with D64RT_UPSCALER=dlss^|fsr^|none^)
 echo.
 
@@ -231,10 +269,11 @@ start "" "%ENGINE%\gzdoom.exe" -iwad "%IWAD%" ^
   "%MODS%\d64r-3dfloor-rtfix.wad" "%MODS%\d64r-seqlight-fix.wad" ^
   "%MODS%\d64r-bulb-textures.wad" "%MODS%\d64r-sflatas-broken.wad" ^
   "%MODS%\d64r-ctel-fix.wad" "%MODS%\d64r-rt-sky.pk3" ^
-  -file "%MODS%\d64r-lava-fx.pk3" "%MODS%\d64r-blood-persist.pk3" ^
+  -file "%MODS%\d64r-lava-fx.pk3" "%MODS%\d64r-poison-fx.pk3" ^
+  "%MODS%\d64r-blood-persist.pk3" ^
   "%MODS%\d64r-widescreen-gfx.pk3" "%MODS%\d64r-mugshot.pk3" "%MODS%\d64r-rt-titlelogo.pk3" ^
   %RECOLORARGS% ^
   -rtnolauncher ^
-  +exec "%PINS%" %UPSCALE% %MAPARG%%REST%
+  +exec "%PINS%" %UPSCALE% %RECORDER% %MAPARG%%REST%
 
 endlocal

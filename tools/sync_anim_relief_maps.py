@@ -43,7 +43,11 @@ ROOT = PROJ_ROOT
 MAT = ROOT / r"sourcecode\gzdoom-rt\build\RelWithDebInfo\rt\mat"
 MAT_DEV = ROOT / r"sourcecode\gzdoom-rt\build\RelWithDebInfo\rt\mat_dev"
 OMAT = ROOT / r"Doom64-Retribution\Retribution-RT-Materials\rt\mat"
-DIRS = (MAT, MAT_DEV, OMAT)
+# developerMode reads mat_dev in preference to mat (see rt-materials-mat-dev-wins
+# memory), so the tracked mat_dev copy has to get the same fix or it ghosts:
+# mat looks patched, the running game still reads the old, unpatched mat_dev.
+OMAT_DEV = ROOT / r"Doom64-Retribution\Retribution-RT-Materials\rt\mat_dev"
+DIRS = (MAT, MAT_DEV, OMAT, OMAT_DEV)
 
 SUFFIXES = ("_h", "_n", "_orm")
 
