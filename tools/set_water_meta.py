@@ -116,17 +116,20 @@ META = {
 # Every liquid family has the same frame-01-only overlays, for the same reason:
 # the PBR tooling worked from the names the maps reference.
 #
-# BLOOD IS EXEMPT, AND MUST STAY EXEMPT. d64r-liquid-art.wad redefines all 128
-# D64B1_/D64B2_ frames as one unshifted image and tools/gen_liquid_art.py writes
-# _n/_h/_orm for EVERY one of them, so that family is materially uniform by
-# construction -- it is the "regenerate for 128 frames" this comment rejected for
-# the others, done properly. Quarantining frame 01 here would take the overlay
-# off exactly one frame in 64 and recreate the defect this list exists to stop.
-# Its _h also carries the flow direction in .g/.b, so losing it stills the flow.
+# BLOOD AND SLUDGE ARE EXEMPT, AND MUST STAY EXEMPT. d64r-liquid-art.wad
+# redefines all 128 frames of each as one unshifted image and
+# tools/gen_liquid_art.py writes _n/_h/_orm for EVERY one of them, so those
+# families are materially uniform by construction -- it is the "regenerate for
+# 128 frames" this comment rejected for the others, done properly. Quarantining
+# frame 01 here would take the overlay off exactly one frame in 64 and recreate
+# the defect this list exists to stop. For blood the _h also carries the flow
+# direction in .g/.b, so losing it stills the flow; for sludge the _n IS the
+# effect (rt_sludge_relief), so losing it puts the water ripple back for 2 tics
+# a cycle.
 #
 # Poison is NOT exempt: the same wad replaces its art, but it gets no relief
 # and no flow, so no overlays are written for it and the quarantine stands.
-_RELIEF_FAMILIES = ("D64B1_", "D64B2_")
+_RELIEF_FAMILIES = ("D64B1_", "D64B2_", "D64S1_", "D64S2_")
 FRAME1_ONLY_MATS = tuple(
     f"{p}01" for p in _SEQ + _FALLS if p not in _RELIEF_FAMILIES
 )

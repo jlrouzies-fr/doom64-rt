@@ -199,7 +199,7 @@ All pinned explicitly in `tools/launch-retribution-rt.cmd`.
 | `rt_water_reflmin` | 0.1 | reflection looking straight **down** (physical = 0.02) |
 | `rt_water_reflmax` | 0.75 | reflection at **grazing**; 1 = true mirror |
 | `rt_water_rough` | 0.1 | roughness written for the surface half |
-| `rt_water_glow` | 0.15 | unlit screen-space sheen on the veins; casts no light |
+| `rt_water_glow` | 0.04 | unlit screen-space sheen on the veins; casts no light |
 | `rt_water_wavestren` | 0.4 | wave normal strength (**also** the partial-invisibility warp) |
 | `rt_water_wavespeed` | 0.2 | wave scroll speed (also partial-invisibility) |
 | `rt_water_areascale` | 0.35 | world area one tile of the wave normal covers |

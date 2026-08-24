@@ -1,4 +1,4 @@
-"""Liquid flats from reference art: blood (with relief + flow map) and poison.
+"""Liquid flats from reference art: blood (with relief + flow map), poison, sludge.
 
     tools\\.venv-ai\\Scripts\\python.exe tools/gen_liquid_art.py            # report + preview
     tools\\.venv-ai\\Scripts\\python.exe tools/gen_liquid_art.py --apply
@@ -6,14 +6,16 @@
 
     reads   screen/bloodtexture_coag.png    coagulated blood: dark plates, liquid veins
             screen/poison_texture.png       nukage: marbled swirl, bright rivers
+            screen/sludge_texture.png       sludge: brown crust, rust-gold seams
     writes  Doom64-Retribution/d64r-liquid-art.wad
-              TX_ patches D64BCOAG, D64NCOAG + one TEXTURES lump redefining all
-              256 D64B1_/D64B2_/D64N1_/D64N2_ frames
+              TX_ patches D64BCOAG, D64NCOAG, D64SCOAG + one TEXTURES lump
+              redefining all 384 D64B1_/B2_/N1_/N2_/S1_/S2_ frames
             <4 material dirs>/D64B{1,2}_{01..64}_{n,h,orm}.png   BLOOD ONLY
             screen/liquid_art_preview.png
 
-Poison gets the ART and nothing else: no relief, no flow. Its only other change
-is engine-side -- rt_nukage_caustics 0, because an opaque fluid projects none.
+Poison and sludge get the ART and nothing else: no relief, no flow. Their only
+other change is engine-side -- rt_nukage_caustics / rt_sludge_caustics 0,
+because an opaque fluid refracts nothing and so focuses nothing.
 
 WHY THE ANIMATION HAS TO DIE FIRST.
 
@@ -133,12 +135,42 @@ LIQUIDS = {
         patch="D64BCOAG",
         families=("D64B1_", "D64B2_"),
         relief=True,
+        height_src="mask",      # the vein network IS the structure
+        relief_strength=0.045,
+        relief_depth=0.85,
+        rough=(0.10, 0.55),     # wet vein / dried crust
+        relief_hf=1.0,          # relief() already blurs the mask; nothing to shelve
+        flow=True,
     ),
     "poison": dict(
         src=ROOT / "screen/poison_texture.png",
         patch="D64NCOAG",
         families=("D64N1_", "D64N2_"),
         relief=False,
+    ),
+    "sludge": dict(
+        src=ROOT / "screen/sludge_texture.png",
+        patch="D64SCOAG",
+        families=("D64S1_", "D64S2_"),
+        relief=True,
+        # NOT the vein mask. Sludge's exposed art puts 90% of its texels above
+        # the mask's clip point, so a mask-derived height is a flat plateau with
+        # a few dents -- the opposite of what mud wants. Its structure is in the
+        # full luminance range: lumps, rims, pits, all of it.
+        height_src="luma",
+        # Nearly twice blood's, and deliberately: depth IS the effect here.
+        relief_strength=0.085,
+        relief_depth=1.15,
+        relief_smooth=1,        # barely: the fine speckle IS the texture...
+        parallax_smooth=4,      # ...but NOT in the height map. See below.
+        # ...and the top octave of it is turned down, because at full strength
+        # it destabilised the lighting under a moving flashlight. Only the
+        # RESIDUAL is scaled -- the lumps and rims stay at full depth.
+        relief_hf=0.35,
+        # Rough everywhere -- mud is not a mirror. Wetter in the pits, where
+        # the water pools, than on the humps.
+        rough=(0.55, 0.90),
+        flow=False,
     ),
 }
 FRAMES = 64
@@ -151,10 +183,26 @@ SEAM_FRAC = 0.18            # width of the min-cut overlap band, as a fraction
 VEIN_REF = 0.10             # matches rt_water_veinref: luminance that saturates the mask
 VEIN_PCT = 98.0             # the tile is EXPOSED so this percentile lands on VEIN_REF
 
-RELIEF_STRENGTH = 0.045
-RELIEF_DEPTH = 0.85
-ROUGH_VEIN = 0.10           # wet liquid
-ROUGH_PLATE = 0.55          # dried crust
+# relief_strength / relief_depth / rough now live per liquid in LIQUIDS: blood
+# is a thin skin with channels cut in it, sludge is a thick lumpy bed, and one
+# pair of numbers cannot be both.
+
+HEIGHT_PCT = (2.0, 98.0)    # luma height source: percentiles the range stretches to
+
+# The normal map's high-frequency BUDGET, as (laplacian RMS) / (relief strength).
+#
+# A normal that swings hard from texel to texel makes N.L swing hard for a tiny
+# change in light direction, so a moving flashlight lands on a different answer
+# every frame. The denoiser cannot accumulate that; it arrives as noise that
+# reads as unstable shadows and then averages away the moment the player stops.
+# Bisected to here: rt_heightmap_stren 0 changed nothing (not parallax),
+# rt_upscale_dlss 0 changed nothing (not the upscaler), rt_normalmap_stren 0
+# fixed it completely and 0.4 halved it -- so it is the normal map's amplitude.
+#
+# Blood shipped at 0.0200 / 0.045 = 0.444 and is stable under the same light.
+# Anything above this warns; fix it with relief_hf, NOT by dropping
+# relief_strength, which takes the depth away with the speckle.
+HF_BUDGET = 0.45
 
 FLOW_DIR = np.array([1.0, 1.0]) / np.sqrt(2.0)   # global downstream, image space
 FLOW_TENSOR_RADIUS = 3      # structure-tensor window; ~ a vein width
@@ -289,23 +337,133 @@ def flow_field(mask: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
 # --- the maps -----------------------------------------------------------------
 
 
-def build_maps(tile: np.ndarray):
+def luma_height(tile: np.ndarray) -> np.ndarray:
+    """Height straight from the tile's own luminance, range-stretched.
+
+    For an art style whose structure is CONTINUOUS -- mud: lumps, rims, pits,
+    all of it -- rather than a binary network of channels cut into plates. The
+    vein mask cannot serve here: expose() puts sludge's p98 on the mask's clip
+    point, so 90% of the tile saturates and a mask-derived height is a plateau.
+
+    Bright is high. These references are painted with implied top-light, so
+    luminance IS the photometric height approximation, and the alternative --
+    reading the dark lumps as high -- turns every raised rim into a trench.
+    """
+    lum = 0.2126 * tile[..., 0] + 0.7152 * tile[..., 1] + 0.0722 * tile[..., 2]
+    lo, hi = (float(np.percentile(lum, q)) for q in HEIGHT_PCT)
+    return np.clip((lum - lo) / max(hi - lo, 1e-6), 0.0, 1.0)
+
+
+def hf_shelf(h: np.ndarray, gain: float, radius: int = 3) -> np.ndarray:
+    """Attenuate only the TOP octave of a height field, keeping the shape.
+
+    A blanket blur (or turning rt_normalmap_stren down) removes the lumps and
+    rims along with the speckle, and the lumps are the depth. What actually
+    destabilises the lighting is the highest frequency alone: a normal that
+    swings hard from texel to texel makes N.L swing hard for a tiny change in
+    light direction, so a moving flashlight produces a different answer every
+    frame. The denoiser cannot accumulate that, and it arrives as noise that
+    reads as unstable shadows -- then averages away the moment you stand still.
+
+    So split the field, keep the low band at FULL strength, and scale only the
+    residual. Measured as the RMS of the wrapping laplacian (gen_liquid_art
+    prints it), blood sits at 0.0200 per 0.045 of relief strength and is
+    known-stable; that ratio is the budget.
+    """
+    if gain >= 1.0:
+        return h
+    low = blur(h, radius, passes=2)
+    return low + (h - low) * gain
+
+
+def relief_from_height(h: np.ndarray, strength: float, depth: float, smooth: int):
+    """gen_lava_looks.relief(), but from a height that is already built.
+
+    Two differences from the mask version, both of which matter here:
+
+    WRAPPING gradient. np.gradient does not wrap, which leaves a ridge down the
+    tile seam -- invisible at blood's 0.045, not at sludge's 0.085.
+
+    Far less blur. relief() smooths at radius 2 twice because it is fed a
+    CLIPPED MASK, which is effectively binary and would otherwise give stepped
+    normals. A luminance height is already a continuous image, and the same
+    blur throws away exactly the fine crust speckle that is the point of using
+    it -- the surface comes back as soft rolling humps with no texture on them.
+    """
+    hh = blur(h, smooth, passes=1) ** (1.0 / max(depth, 0.05)) if smooth > 0 else h ** (
+        1.0 / max(depth, 0.05)
+    )
+    gx, gy = _wrap_gradient(hh)
+    return hh, -gx * strength * 64.0, -gy * strength * 64.0
+
+
+def build_maps(tile: np.ndarray, liq: dict):
     """(_n, _h, _orm) as uint8 arrays, plus the intermediates for the preview."""
     mask = vein_mask(tile)
-    height, nx, ny = relief(mask, RELIEF_STRENGTH, RELIEF_DEPTH)
+
+    if liq["height_src"] == "luma":
+        base = luma_height(tile)
+        height, nx, ny = relief_from_height(
+            hf_shelf(base, liq["relief_hf"]),
+            liq["relief_strength"],
+            liq["relief_depth"],
+            liq["relief_smooth"],
+        )
+        # THE FINE DETAIL GOES IN THE NORMAL MAP AND NOWHERE ELSE.
+        #
+        # The two maps are sampled by completely different machinery:
+        #
+        #   _n  getTextureSampleGrad(normalTexture, uv, dTdx, dTdy)  -- ray-cone
+        #       derivatives, so it picks a MIP and filters. Stable at any range.
+        #   _h  textureLod(heightTexture, uv, 0)                     -- LOD 0.
+        #       Always. No mips, no derivatives, and parallaxTexCoords marches
+        #       it ten times plus four binary-search steps.
+        #
+        # So high-frequency content in the HEIGHT map is sampled unfiltered at
+        # full resolution however far away the surface is: once a screen pixel
+        # covers more than a texel, each pixel's march lands on uncorrelated
+        # texels and the parallax offset becomes per-pixel noise. In motion that
+        # flickers as unstable pseudo-shadows; standing still, the upscaler's
+        # jittered accumulation averages it back to flat. Which is exactly the
+        # bug this caused -- shadows under the flashlight that appear when you
+        # walk and vanish when you stop.
+        #
+        # Blood never showed it because relief() blurs its mask at radius 2
+        # twice, leaving almost no high frequency to alias.
+        #
+        # Hence: the normal map keeps every bit of crust speckle, and the height
+        # map carries ONLY what parallax can actually resolve -- the big lumps
+        # and hollows.
+        parallax = blur(base, liq["parallax_smooth"], passes=2) ** (
+            1.0 / max(liq["relief_depth"], 0.05)
+        )
+        # wetness drives roughness: the PITS hold the water, the humps drain
+        wet = 1.0 - height
+    else:
+        height, nx, ny = relief(mask, liq["relief_strength"], liq["relief_depth"])
+        parallax = height   # already blurred at radius 2 twice by relief()
+        wet = mask          # the veins are the liquid
 
     inv = 1.0 / np.sqrt(nx * nx + ny * ny + 1.0)
     nrm = np.stack([nx * inv, ny * inv, inv], -1)
     n_img = np.clip(nrm * 0.5 + 0.5, 0, 1)
 
-    flow, strength = flow_field(mask)
-    # zero vector == "no flow here" == 0.5 in both channels
+    if liq["flow"]:
+        flow, strength = flow_field(mask)
+    else:
+        # a zero vector is "no flow here", and 0.5/0.5 is how the shader reads
+        # it. Baked flat rather than left to stylizedLiquidFlow[id] == 0, so
+        # HitInfo.inl's advection is dead at the SOURCE for this liquid.
+        flow = np.zeros(mask.shape + (2,), np.float32)
+        strength = np.zeros_like(mask)
+
     h_img = np.stack(
-        [np.clip(height, 0, 1), flow[..., 0] * 0.5 + 0.5, flow[..., 1] * 0.5 + 0.5], -1
+        [np.clip(parallax, 0, 1), flow[..., 0] * 0.5 + 0.5, flow[..., 1] * 0.5 + 0.5], -1
     )
 
     occl = np.clip(blur(height, 3, passes=2) * 0.55 + 0.45, 0, 1)
-    rough = ROUGH_PLATE + (ROUGH_VEIN - ROUGH_PLATE) * mask
+    r_wet, r_dry = liq["rough"]
+    rough = r_dry + (r_wet - r_dry) * wet
     orm_img = np.stack([occl, np.clip(rough, 0, 1), np.zeros_like(rough)], -1)
 
     def u8(a):
@@ -313,7 +471,7 @@ def build_maps(tile: np.ndarray):
 
     return (
         u8(n_img), u8(h_img), u8(orm_img),
-        dict(mask=mask, height=height, flow=flow, strength=strength),
+        dict(mask=mask, height=height, parallax=parallax, flow=flow, strength=strength),
     )
 
 
@@ -347,7 +505,7 @@ def textures_lump() -> bytes:
     relief impossible and turns a crisp mosaic into a double image.
     """
     out = [
-        "// d64r-liquid-art: blood and poison flats from reference art.",
+        "// d64r-liquid-art: blood, poison and sludge flats from reference art.",
         "// Every frame is the same image -- see tools/gen_liquid_art.py for why.",
         "",
     ]
@@ -414,13 +572,14 @@ def write_preview(rows) -> None:
             (256, 256), Image.NEAREST
         )
 
-    sheet = Image.new("RGB", (256 * 4, 256 * len(rows)))
+    sheet = Image.new("RGB", (256 * 5, 256 * len(rows)))
     for r, (tile, dbg) in enumerate(rows):
         cells = [cell(np.tile(tile, (2, 2, 1)))]
         if dbg is not None:
             flow = dbg["flow"]
             cells += [
                 cell(np.repeat(dbg["height"][..., None], 3, -1)),
+                cell(np.repeat(dbg["parallax"][..., None], 3, -1)),
                 cell(np.stack([flow[..., 0] * 0.5 + 0.5, flow[..., 1] * 0.5 + 0.5,
                                dbg["strength"]], -1)),
                 cell(np.repeat(dbg["mask"][..., None], 3, -1)),
@@ -453,11 +612,32 @@ def main() -> None:
               f"above 0.25, mean {mask.mean():.3f}")
         maps = dbg = None
         if liq["relief"]:
-            n_u8, h_u8, orm_u8, dbg = build_maps(tile)
+            n_u8, h_u8, orm_u8, dbg = build_maps(tile, liq)
             maps = (n_u8, h_u8, orm_u8)
-            flowing = float((dbg["strength"] > 0.2).mean())
-            print(f"            flow on {flowing * 100:.1f}% of texels, "
-                  f"downstream ({FLOW_DIR[0]:.2f}, {FLOW_DIR[1]:.2f}) in texture space")
+            h, px = dbg["height"], dbg["parallax"]
+            def _hf(a):
+                """RMS of the wrapping laplacian: how much high frequency is in
+                a map. The height map's must stay LOW -- it is sampled at LOD 0."""
+                lap = 4 * a - sum(np.roll(a, s, ax) for ax in (0, 1) for s in (-1, 1))
+                return float(np.sqrt((lap ** 2).mean()))
+            print(f"            height p10 {np.percentile(h, 10):.2f} "
+                  f"p90 {np.percentile(h, 90):.2f} (src {liq['height_src']}), "
+                  f"relief strength {liq['relief_strength']}")
+            hf_n = _hf(h)
+            ratio = hf_n / max(liq["relief_strength"], 1e-6)
+            print(f"            high-freq: normal src {hf_n:.4f}, "
+                  f"PARALLAX map {_hf(px):.4f} (must stay low: _h is LOD 0)")
+            flag = "OVER BUDGET" if ratio > HF_BUDGET else "ok"
+            print(f"            hf/strength {ratio:.3f} vs budget {HF_BUDGET} -- {flag}")
+            if ratio > HF_BUDGET:
+                print(f"            !! {name}'s normal map will destabilise the "
+                      f"lighting under a moving light.")
+                print(f"            !! Lower relief_hf (currently "
+                      f"{liq['relief_hf']}), not relief_strength.")
+            if liq["flow"]:
+                flowing = float((dbg["strength"] > 0.2).mean())
+                print(f"            flow on {flowing * 100:.1f}% of texels, "
+                      f"downstream ({FLOW_DIR[0]:.2f}, {FLOW_DIR[1]:.2f}) in texture space")
         built[name] = (tile, maps)
         rows.append((tile, dbg))
 

@@ -711,6 +711,168 @@ Registered in `check_emis_hygiene.py` (`textures_dart.json` in `OVERLAY_KEEPS`, 
 
 ---
 
+## Case 11 — the armors (`ARM1`, `ARM2`) — the pickup family the table forgot
+
+Reported from play: *"the ARM1 / ARM2 armors are blinking, but their texture is not
+really emitting light"*. Both halves of that are literally true, and the data says why.
+
+`ARM1A0` and `ARM2A0` were in the global `textures.json` as bare `{"textureName": …}`
+with no fields at all, and `ARM1B0` / `ARM2B0` had **no entry anywhere**. Every other
+animated pickup in the game already carried identical meta on *every* frame:
+
+| family | emissiveMult | lightIntensity | hex | frames | noShadow |
+|---|---|---|---|---|---|
+| SUIT | 0.35 | 120 | `44ff66` | A | yes |
+| **ARM1 — green armor** | **0.6** | **160 / 70** | **`44ff88`** | **A / B** | **no** |
+| keys / skulls | 0.6 | 160 | per key | A, B | yes |
+| PINS / PINV | 0.5 | 200 | per item | A–D | yes |
+| **ARM2 — blue armor** | **0.6** | **200 / 94** | **`4488ff`** | **A / B** | **no** |
+| SOUL | 0.6 | 260 | `4488ff` | A–D | yes |
+| MEGA | 0.7 | 300 | `8866ff` | A–D | yes |
+
+The armors are the only two rows with a **per-frame** light, so they live in `FORCE`
+rather than `PREFIX_RULES` — a prefix cannot say "A one value, B another". `BAR1A0` /
+`BAR1B0` set that precedent for a two-frame blinking sprite.
+
+So the armors were the one hole in an otherwise complete ladder, and the two new rows
+sit on rungs that already existed — 160 is the key rung, 200 the PINV rung. 39 pickups
+game-wide (13 green, 26 blue) across 34 maps, roughly one per map: nowhere near the
+scale where a per-frame light would matter.
+
+### The light blinks with the sprite, and A is the bright frame
+
+First shipped with a steady light, on the keys' pattern; asked for in play as
+*"those armor textures are blinking sprites, any chance to match their light to blink
+in time?"*. It costs nothing — the attached light is a property of the **texture**, so
+tying it to the frame syncs it by construction: no thinker, no phase to keep, and it
+cannot drift.
+
+**The phase is the half worth checking.** Vanilla marks the *B* frame bright —
+`ARM1 A 6` / `ARM1 B 7 bright`, `ARM2 A 6` / `ARM2 B 6 bright` — and that is the
+opposite of what RT shows. Measured per pixel, A against B:
+
+| | ARM1 | ARM2 |
+|---|---|---|
+| alpha masks | identical | identical |
+| pixels brighter in B | **0** | **0** |
+| per-pixel B/A luminance, median | 0.424 | 0.478 |
+| whole-sprite output | A = **2.29×** B | A = **2.13×** B |
+
+So B is a flat ~0.44× darkening of the same art — the classic palette-shift blink, a
+whole-sprite brightness pulse with no moving highlight in it. Vanilla pairs that
+darker paint with `bright` so it reads as a twinkle under sector light. Under RT there
+is no such pairing: `forceSpriteUnlitAlbedo` (`rt_draw.cpp`) drops lightlevel from
+sprite vertex colour and the path tracer lights the billboard, so the flag does
+nothing and what the player sees is the paint. **A is the bright frame on screen**, and
+the light follows the screen, not the flag.
+
+The B values are the art's own ratio — 160/2.29 = 70, 200/2.13 = 94. Two things
+deliberately do *not* move with the blink:
+
+- **The hue.** Sampled 145.7° vs 147.1° for ARM1 and 214.3° vs 213.7° for ARM2 — the
+  same colour either way. A hue that shifted with the blink would read as colour
+  flicker rather than a pulse.
+- **`emissiveMult`.** It stays 0.6 on both frames because the sprite's own glow is
+  `baseColor × emissiveMult` and `baseColor` already carries the 2.29×, so the glow
+  blinks in time *for free*. The attached light was the only part that was a fixed
+  number, and therefore the only part that needed a second value.
+
+**Rate** is the sprite's own: 13 tics for green (0.371 s, 2.7 Hz), 12 for blue
+(0.343 s, 2.9 Hz). That is fast for a light, and the `SMONBA` monitors in
+[sequence-light-chains.md](sequence-light-chains.md) are the warning next door — but
+those were 199 fixtures pulsing in phase across one wall, and this is 39 pickups over
+34 maps, about one per level. If it reads as too busy, raise the B values toward A
+(a 1.5× swing is 105 and 133); do not slow it, because the sprite's rhythm is not
+ours to change.
+
+**The hex had to be forced, and for once that is load-bearing rather than convention.**
+`sample_hex()` returns **`None`** on `ARM1B0`. The B frames are painted *darker* than
+the A frames — mean luminance 18.9 vs 43.3 for ARM1, 14.0 vs 29.9 for ARM2 — because
+vanilla draws the B frame `BRIGHT` and the darker paint is what stops a fullbright
+frame blowing out. With `hx=None` the fallback chain in `main()` lands on `"ffffff"`,
+so the green armor would have blinked **green → white**. The values are still derived
+from the art, not chosen: peak-normalised brightest decile is `#2EFF88` for ARM1
+(H 145.7°) and `#2E88FF` for ARM2 (H 214.3°), and `4488ff` sits within 4° of ARM2's own
+hue — the same blue `BKEY`, `BSKU` and `SOUL` already use, which is why the blue armor
+now matches the blue key.
+
+Note also that the A/B luminance runs *backwards* from every other pickup here
+(`BKEYA0` 36.2 → `BKEYB0` 70.5; `YKEY` 67.7 → 120.0). With one `emissiveMult` across
+both frames the armor's own glow therefore dips on the frame vanilla calls bright. That
+is left alone: which frame reads brighter is invisible once the sprite is in a
+path-traced room, and chasing it would need an `emissiveMult` above 1.0 on the darker
+frame.
+
+### `noShadow` came along for the ride, and had to come back off
+
+The first version of this entry copied the pickup profile wholesale, `noShadow: true`
+included, and that was reported straight back: *"why that armor sprite now doesnt seem
+to cast shadows? e.g. with flashlight on it"*. Correct, and the flag is exactly why.
+
+`noShadow` is not cosmetic and it is not scoped to the sprite's own light:
+
+    TextureMeta.cpp              meta->noShadow  ->  RG_MESH_PRIMITIVE_NO_SHADOW
+    VertexCollectorFilterType    that flag       ->  PV_WORLD_1
+    VulkanDevice.cpp:599         rayCullMaskWorld_Shadow = WORLD_0 | RESERVED_0
+
+`WORLD_1` is absent from the shadow mask, so the primitive is invisible to **every**
+shadow ray in the scene. The flashlight has nothing to do with the armor's attached
+light; the flag had taken its shadow too.
+
+**Why the other pickups still carry it.** The attached light is a spherical light
+placed at the **quad's centre** (`VulkanDevice.cpp`, the `quad` branch averages the
+four vertices), i.e. in the billboard's own plane. Let the billboard occlude and it
+shadows its own light across roughly half that sphere's samples — a hard split
+through the small pool of light under the pickup, turning with the camera because the
+billboard does. That is the same failure as the *"black stripe down the middle of
+every enemy in the beam"* in [sprite-shadows-and-ao.md](sprite-shadows-and-ao.md).
+
+**Why the armors go the other way.** They are the largest and lowest pickups, they
+lie flat where a flashlight beam actually rakes them, and their light is the weakest
+in the table (160/200 against SOUL's 260 and MEGA's 300) — so the missing shadow is
+the conspicuous half and the self-occlusion is the subtle one. Pickups are also
+explicitly **out** of the sprite-shadow proxy system (*"corpses and pickups keep their
+stock billboard shadow, exactly as before the feature"*), so this one flag was the
+only thing standing between them and any shadow at all.
+
+Implemented as `KEEP_SHADOW_PREFIXES` in `gen_fx_emissives.py` rather than a fifth
+tuple field, so the 100-odd existing rows stay untouched. If the self-occlusion turns
+out to be the worse artefact in play, empty that tuple to put the flag back — do
+**not** drop `lightIntensity` instead, which is the thing that was asked for.
+
+One propagation trap this exposed: an upsert that merges keys can add `noShadow` but
+never remove it, which `upsert_json` already warns about in its own comment. The
+entries had to be rewritten **whole** in all six merged/scene JSONs, not merged, or
+the flag would have survived in `dist` and the release path after the generator had
+stopped emitting it.
+
+### The generator was writing nothing, and said it had
+
+Adding the two `PREFIX_RULES` rows was not enough — the first run reported both armors
+in its summary and changed **no file**. `patch_global_inline()` had two bugs that only
+bite a name it has never written before:
+
+1. `pat_multi` required a **comma** after `"textureName"`, which a bare entry carrying
+   no other fields does not have. `ARM1A0`/`ARM2A0` matched neither the single-line
+   pattern nor this one.
+2. Both armors then fell to the append branch — and the "drop later single-line
+   duplicates" pass that runs immediately after deleted the line it had just written,
+   because it dropped *every* match rather than every match after the first.
+
+Fixed in `gen_fx_emissives.py`: the comma is optional, and the dedupe now measures
+"later" against the first occurrence of the name in the file. That unblocked 14 more
+entries the same bug had been swallowing — `PUNF*` (12) and `SAWG*` (4), siblings of
+the `PISF`/`SHTF`/`CHGF` weapon-flash rule block, all `lightIntensity 0` so they glow
+without casting — plus `noShadow` on the 47 `RECT*` trail frames.
+
+**Verified from the data**, all nine `textures.json` the game can read — the `fx`
+overlay, the merged source, the build dir, `dist`, the release path, and the
+`d64rtr_v15_map01` scene overlay in four of those — asserting three things per file:
+the hex and the **per-frame** intensity are the intended ones, `noShadow` is
+**absent** on all four ARM frames, and `BKEYA0` still **has** it, so neither the
+opt-out nor the per-frame light leaked into the rest of the table. Not verified
+in-engine.
+
 ## Tuning
 
 - **Fire too bright / too dim, too twitchy, too still** → the `rt_flame_light_*` cvars in
@@ -746,7 +908,11 @@ Registered in `check_emis_hygiene.py` (`textures_dart.json` in `OVERLAY_KEEPS`, 
    passes the eye validator, so re-running it hard-replaces that entry with
    emissive-only and overwrites the mask red. The other 39 are untouched. Add a BOS2 skip
    to that script if this needs to be permanent.
-8. **Saturation-normalising a dark, low-saturation colour shifts its hue.** Scaling to
+9. **A `gen_*` tool reporting an entry does not mean it wrote one.** `patch_global_inline`
+   prints from its in-memory `entries` dict, and for a name it has never written before
+   it could match nothing, append, and then delete its own append — a clean-looking run
+   that changed no file. Diff the JSON before and after, by entry, not by exit code.
+10. **Saturation-normalising a dark, low-saturation colour shifts its hue.** Scaling to
    peak 255 multiplies *every* channel equally, so a dark red `(93,28,2)` comes out
    orange. Fine for a channel-dominant colour like BOS2's green; wrong for anything
    muted. Check the sampled hex by eye before shipping it, and pin an override when the

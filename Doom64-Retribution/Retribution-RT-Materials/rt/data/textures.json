@@ -155,10 +155,16 @@
       "textureName": "GATE4"
     },
     {
-      "textureName": "ARM1A0"
+      "textureName": "ARM1A0",
+      "emissiveMult": 0.6,
+      "lightColorHEX": "44ff88",
+      "lightIntensity": 160
     },
     {
-      "textureName": "ARM2A0"
+      "textureName": "ARM2A0",
+      "emissiveMult": 0.6,
+      "lightColorHEX": "4488ff",
+      "lightIntensity": 200
     },
     {
       "textureName": "BON1D0"
@@ -15257,6 +15263,18 @@
       "textureName": "WFALLT1",
       "metallicDefault": 0.0,
       "roughnessDefault": 0.8
+    },
+    {
+      "textureName": "ARM1B0",
+      "emissiveMult": 0.6,
+      "lightColorHEX": "44ff88",
+      "lightIntensity": 70
+    },
+    {
+      "textureName": "ARM2B0",
+      "emissiveMult": 0.6,
+      "lightColorHEX": "4488ff",
+      "lightIntensity": 94
     }
   ]
 }

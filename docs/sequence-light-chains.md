@@ -976,6 +976,60 @@ for paint, `rt_sector_tint_lights` for lights (`rt_draw.cpp`, the `l_isemis()`
 branch) — but they read the **same** `lightcolor`, so there is no per-sector way to
 keep one and drop the other. With the lamp path off, that costs nothing here.
 
+### DONE — MAP01 sector 98, the blue armor alcove
+
+The first element in this document to need **both halves at once**, and the reason
+`SHAFTS` and `TINTS` each carry an entry for the same sector. Reported off the
+release build as *"a texture level 1 that is brightmapped to blue, need to make it
+back to normal colour / not self-emit"* — two symptoms, and they turn out to have
+two different mechanisms behind them.
+
+    whatsthat: sector 98  lightlevel 255  tag 41  middle texture 'SPACEAM'
+               threshold 200 -> ABOVE: this surface SELF-EMITS
+               colormap tint 50,50,255  saturation 0.804
+                      (rt_sector_emis_saturation 0.58 -> PASSES the colour gate)
+               brightest neighbour: sector 99 at 140  (delta +115)
+
+| half | mechanism | repair |
+|---|---|---|
+| the glow | `L255` over MAP01's threshold of 200, with a saturation the colour gate lets straight through | `Shaft` — 255 → 140, sector 99's own value |
+| the blue | `rgb(50,50,255)` into albedo at `rt_sector_tint_albedo 1.0` | `Tint` — donor 99, warm `0xDCB48C` |
+
+**Neither half alone is enough**, which is worth stating because every earlier entry
+in this document needed exactly one. Drop the lightlevel and three walls stay painted
+saturated blue at full albedo strength; retint and the sector still sits at 255, so
+it emits again the moment `rt_sector_emis_saturation` moves.
+
+**"Brightmapped" is the symptom, not the mechanism.** There is no `_e` for `SPACEAM`
+anywhere in `rt/mat`, and none for the alcove's other three textures either —
+`SPACEAL` upper, `SFLATAJ` floor, `SDFLTAB` ceiling, all plain stock. Both halves are
+the sector, not the art. `tag 41` drives no light ACS.
+
+The element is one 144×64u closet at (−1808..−1664, −976..−912), all four lines
+`dontdraw`, holding the blue armor (thing 2019) and a `64Barrel`. `0x3232FF` appears
+on **exactly one sector** in MAP01, so unlike MAP02 and MAP07 there is no cluster to
+resolve — the easy case of the adjacency rule.
+
+#### It is not the MAP02 blue armor room motif
+
+Same pickup, same idea, and MAP02's blue room is the effect `rt_sector_tint_albedo=1.0`
+was tuned on ([blue-room-rt-lighting.md](blue-room-rt-lighting.md)). That is the shape
+that vetoed MAP02's `SFLATAR` floor plate in `SHAFTS` — one bright plate is a
+candidate, six of seven game-wide is a motif — so it had to be answered the same way,
+by measuring the rule against the whole game before believing what one map shows you.
+
+All **26** blue-armor pickups in the game, each against its own sector's colormap: the
+hues are scattered warm creams and pastels — `0xDCB48C`, `0xFEDC94`, `0xFEFCA9`,
+`0xFFC082` — median saturation **0.41**. MAP01 is the **only** one that is both above
+its map's threshold and past the colour gate; the one other emitter, MAP23's, is
+`0xFFDC5A` gold, a different colour entirely, and MAP32's `0x2896FF` sits at L200,
+under its threshold. So a blue nook is simply not how the game dresses this pickup.
+The frame test that protected `SFLATAR`, run to the opposite verdict.
+
+Donor 99 is the hidden room the alcove's one twosided line opens onto; it shares the
+`SFLATAJ` floor across that seam and carries the warm `0xDCB48C` the rest of the area
+wears, so the closet stops being a blue hole in it.
+
 ## Key doors: the same defect, wearing a stripe
 
 Reported alongside the MAP02 floor: *"the red key and blue key doors themselves also

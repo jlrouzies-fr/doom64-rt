@@ -1,12 +1,12 @@
-# Coagulated blood pools (and the poison art)
+# Coagulated blood pools (and the poison / sludge art)
 
 Blood that reads as a thick fluid with a skin on it: dark plates of clotted
 crust, liquid veins running between them in real relief, and liquid that
 visibly **moves along** those veins.
 
 Art built by `tools/gen_liquid_art.py` into
-`Doom64-Retribution/d64r-liquid-art.wad` — which also carries the poison
-replacement, see the end. A/B it with `tools\ab-bloodpool.cmd <arm> [map]`,
+`Doom64-Retribution/d64r-liquid-art.wad` — which also carries the poison and
+sludge replacements, see the end. A/B it with `tools\ab-bloodpool.cmd <arm> [map]`,
 default MAP17.
 
 ## What was wrong, measured
@@ -71,7 +71,7 @@ surface becomes materially uniform, which is what makes relief legal at all.
 
 Same call as the lava: `gen_lava_material.py` averaged HLAVA1-5 because the
 frames light different cracks and read as blinking, and moved the motion into
-the shader. Here the motion becomes the pulse.
+the shader. Here the motion becomes the flow map.
 
 The wad must load **after** the mod — GZDoom takes the last definition for a
 texture. It is wired into `launch-retribution-rt.cmd` next to the other TX_
@@ -133,13 +133,17 @@ vector's *length*, so junctions, blobs and veins perpendicular to `FLOW_DIR`
 fade to still instead of pointing somewhere random. About 14% of texels carry
 flow — the coherent vein runs — and that is where the eye needs it.
 
-**The advection** (`HitInfo.inl`, primary pass — where the texcoords are): read
-the direction at the parallax-corrected UV, then sample the water normal map
-(`waterNormalTextureIndex`, tileable, already bound — `getLavaHeat` uses it as
-a noise field) at `uv - dir * dist * p` for two phases half a cycle apart,
-cross-faded with weight `|1 - 2p|`. One phase alone must snap back to zero
-every cycle and the snap is visible; two phases with the blend at zero exactly
-when either resets never show it. The result crosses to the shading pass in
+**The advection** (`HitInfo.inl`, primary pass — where the texcoords are): the
+noise (the water normal map — tileable, already bound, `getLavaHeat` uses it as
+a field) is sampled in a **vein-aligned frame**: `u = dot(uv, dir) * scale -
+time * speed` runs along the channel and scrolls forever; `v = dot(uv, perp) *
+scale * aspect` runs across it at `aspect`× the frequency. That stretches the
+noise into elongated streaks sliding lengthwise — the shape that reads as
+liquid moving. Version two advected round blobs from base UV with a ping-pong
+cross-fade, and isotropic blobs at vein scale read as shimmer; no ping-pong is
+needed here at all, because scrolling a wrapping texture's own coordinate never
+resets. Where the direction varies along a run the frame shears the noise
+slightly — fine, liquid shears. The result crosses to the shading pass in
 `framebufAlbedo.a`.
 
 **The modulation** (`getStylizedWaterAlbedo`): `veins * (1 + flow * (2d - 1))`,
@@ -152,21 +156,27 @@ toward zero and the shader treats short as still (`length > 0.15`). And exactly
 0 in the output means "no flow here", so the valid range is nudged off zero
 (`* 0.998 + 0.001`).
 
-**Legibility depends on scale.** `rt_blood_flow_scale` sets detail tiles per
-64-unit tile; around 6 a blob is a vein-width across, which is what makes it
-read as *something in the vein* rather than a texture sliding under it. The
-`coarse`/`fine` arms bracket it.
+**Legibility depends on shape.** Round detail at vein scale reads as shimmer no
+matter how fast it moves; streaks aligned with the channel read as flow even
+slowly. `rt_blood_flow_aspect` is that knob (the `blobs` arm is the round
+version, kept to show why), and `coarse`/`fine` bracket the streak length.
 
 ## Cvars
 
 | cvar | default | |
 |---|---|---|
 | `rt_blood_relief` | `1.0` | how much of the authored `_n` survives vs the water wave. 0 = the old ripple. Rides on `rt_normalmap_stren`; the depth comes from `_h` parallax, which `rt_heightmap_stren` scales |
-| `rt_blood_flow` | `0.7` | depth of the flow-map modulation on the vein mask. 0 = still |
-| `rt_blood_flow_speed` | `0.15` | cycles per second of the advection. Slow — this is a thick fluid, and fast reads as a scrolling texture |
-| `rt_blood_flow_scale` | `6.0` | detail tiles per 64-unit tile. Higher = smaller blobs |
-| `rt_blood_flow_dist` | `0.25` | how far the detail travels per cycle, in tile UV (1 = 64 units). With the speed above, ~2.4 units/s |
+| `rt_blood_flow` | `1.0` | depth of the flow-map modulation on the vein mask. 0 = still. The vein mask clamps at 1, so on saturated veins the DARK half of the modulation is what shows: dark blobs of liquid sliding down the channel |
+| `rt_blood_flow_speed` | `0.5` | detail tiles scrolled per second along the vein |
+| `rt_blood_flow_scale` | `6.0` | detail tiles per 64-unit tile, along the vein. Higher = finer streaks |
+| `rt_blood_flow_aspect` | `3.0` | across-vein frequency multiplier: stretches the noise into lengthwise streaks. 1 = round blobs, which read as shimmer |
 | `rt_nukage_caustics` | `0.0` | same as `rt_blood_caustics`, for poison |
+| `rt_sludge_caustics` | `0.0` | same as `rt_blood_caustics`, for sludge |
+| `rt_sludge_relief` | `1.0` | as `rt_blood_relief`, but the height comes from the art's full luminance range, not the vein mask |
+| `rt_sludge_refl` | `0.0` | how much of the stylized water MIRROR sludge keeps. 1 = the mirror water gets. **0 = no mirror and no checkerboard split**: full-res surface, glossy specular sheen |
+| `rt_liquid_checkerboard` | `1` | **Console only**, not in the Quality menu. 0 forces the no-split path for all four liquids. Archived, unpinned |
+| `rt_sludge_rough` | `0.85` | sludge surface roughness. `<= 0` = use `rt_water_rough` (0.1) |
+| `rt_sludge_autogoto` | `0` | `NOARCH`. As `rt_blood_autogoto`; CCMD is `rt_sludge_goto` |
 | `rt_blood_caustics` | `0.0` | how much of `rt_water_caustics` blood projects onto the geometry around it. 0 because it is opaque — see below |
 | `rt_blood_flow_debug` | `0` | `NOARCH`. Paint the decoded phase instead of the surface |
 | `rt_blood_autogoto` | `0` | `NOARCH`. Put the player on a pool on the first frame |
@@ -225,11 +235,21 @@ one failing silently looks exactly like "the effect is too subtle".
   drift, no jump.
 - **Relief:** `noflow` vs `off`. `flat` (`rt_heightmap_stren 0`) separates the
   normal map from the parallax.
-- **Flow:** `phase` first. Green blobs sliding along each vein mean the bake
-  and the plumbing both work and the rest is tuning; flat blue means the
-  direction never reached the shader or the detail never crossed
-  `framebufAlbedo.a`. Then `fast` — motion too slow to see and motion that is
-  not happening are the same picture.
+- **Flow:** `phase` first, and know the instrument: the debug paints
+  **R = fract(time/4)** (a heartbeat -- if it does not visibly change second to
+  second, the time uniform is dead), **G = the advected detail** (blobs sliding
+  along the veins = the flow map is live), **B = the speed the shader sees**
+  (near-black at shipping 0.5; a test pin of 40 turns the veins cyan). This
+  three-channel split exists because "speed never arrived", "time is frozen"
+  and "motion too subtle" produced the same picture and cost a session to tell
+  apart. Two traps from that session, paid for once:
+  * **Validate the mask against the paint before trusting a null result.** Four
+    consecutive measurements "proved" the flow frozen; three of them had masks
+    that matched dark scenery instead of the debug paint, and the conclusion
+    flipped when the mask was checked against an actual frame.
+  * **Debug paint rides screen emission through exposure and bloom** --
+    absolute channel values are meaningless in a capture; only deltas and
+    ratios survive the tonemapper.
 - **Judge it in motion.** A settled screenshot cannot show a travelling pulse,
   and cannot show whether junctions fade cleanly or tear.
 
@@ -263,24 +283,197 @@ caustic is scaled by `stylizedLiquidCaustics[liquidId]`.
 
 `rt_blood_caustics` and `rt_nukage_caustics` default to **0**. They scale
 `rt_water_caustics`, they do not replace it; 1 restores the old behaviour, which
-is what the `caustics` arm does for blood. Water and sludge stay at 1 and are
-unchanged.
+is what the `caustics` arm does for blood. **Water is now the only liquid that
+projects caustics**; nukage, sludge and blood all wear opaque reference art.
 
-## The poison art
+## Sludge: a mud bed, not a pool
 
-`screen/poison_texture.png` replaces `D64N1_*` / `D64N2_*` through the same wad
-and the same pipeline — crop, min-cut tile, resample, expose — and **nothing
-else**: no relief, no flow. It keeps the stylized wave shimmer the other liquids
-have, and loses its projected caustics for the same reason blood did. No
-overlays are written for it, so `set_water_meta.py`'s frame-01 quarantine still
-applies to the nukage families and must.
+Sludge got the same art treatment as poison, then two things poison did not:
+**relief**, and **its water reflection taken away**. Those are the two halves of
+"mud", and either one alone still reads as a liquid.
 
-The reference is a marbled swirl, far brighter than the flat it replaces (lum
-p50 0.18 against a mask reference of 0.1), so the exposure step matters more
-here than for blood: unexposed, the whole pool would sit at full crest colour.
+**The height cannot come from the vein mask.** Blood's does, and that works
+because blood's structure *is* the vein network — a near-binary thing, plates
+with channels cut through them. Sludge's exposed art puts 90% of its texels
+above the mask's clip point, so a mask-derived height is a flat plateau with a
+few dents in it. Its structure is in the **full luminance range** instead:
+lumps, rims, pits, crust speckle. `height_src="luma"` in `gen_liquid_art.py`
+range-stretches the tile's luminance between its 2nd and 98th percentiles and
+uses that directly, bright = high — these references are painted with implied
+top-light, so luminance *is* the photometric height approximation, and reading
+the dark lumps as high instead would turn every raised rim into a trench.
+
+Two knock-ons, both of which cost a round to find:
+
+- **`relief()`'s blur is wrong for a luminance height.** It smooths at radius 2
+  twice, which is right for a clipped mask (effectively binary, stepped normals
+  otherwise) and destroys exactly the fine crust speckle that is the reason to
+  use luminance at all. The first sludge bake came back as soft rolling humps
+  with no texture on them. `relief_smooth=1`, one pass.
+- **`np.gradient` does not wrap.** Invisible at blood's `relief_strength`
+  0.045; a visible ridge down the tile seam at sludge's 0.085.
+
+### The height map is sampled at LOD 0 — keep it low-frequency
+
+Worth knowing for **any** parallax material, not just sludge. The two relief
+maps go through completely different machinery:
+
+| | how it is sampled | |
+|---|---|---|
+| `_n` | `getTextureSampleGrad(normalTexture, uv, dTdx, dTdy)` | ray-cone derivatives → picks a **mip**, filters. Mips *are* generated for PNG overlays (`TextureManager.cpp` sets `useMipmaps` for everything but `vx_`) |
+| `_h` | `sampleHeightMap()` = `textureLod(heightTexture, uv, 0)` | **LOD 0, always. No mips, no derivatives** — and `parallaxTexCoords` marches it 10 times plus 4 binary-search steps |
+
+So high-frequency content in the *height* map is sampled unfiltered at full
+resolution however far away the surface is. Once a screen pixel covers more than
+a texel, each pixel's march lands on uncorrelated texels.
+
+The fix is a split, not a compromise: **the normal map keeps every bit of crust
+speckle** (it can be filtered) **and the height map carries only the big lumps
+and hollows** (`parallax_smooth=4`). Measure it rather than eyeballing —
+`gen_liquid_art.py` prints the RMS of the wrapping laplacian of both:
+
+```
+blood    high-freq: normal src 0.0200, PARALLAX map 0.0200
+sludge   high-freq: normal src 0.0971, PARALLAX map 0.0056
+```
+
+Blood's 0.0200 is the known-stable ceiling. Sludge's normal now carries ~5x that
+detail while its parallax map sits ~3.5x *below* it.
+
+**This was NOT the cause of the flashlight bug below, though it was the first
+diagnosis.** `rt_heightmap_stren 0` leaves that symptom completely unchanged, so
+parallax is ruled out. The split above is still correct engineering — it is just
+not that bug. Keep the two straight.
+
+### Unstable shadows under the flashlight — the checkerboard
+
+With the flashlight on a sludge bed, bump-like shadows appeared **while moving**
+and vanished when the player stopped. Bisected with `tools\ab-sludge.cmd`:
+
+| arm | result | conclusion |
+|---|---|---|
+| `flat` (`rt_heightmap_stren 0`) | unchanged | not parallax |
+| `nodlss` (`rt_upscale_dlss 0`) | unchanged | not the upscaler |
+| `nomaps` (heightmap **and** normalmap 0) | **clean** | the normal map is the *carrier* |
+| `softnormal` (`rt_normalmap_stren 0.4`) | halved | it scales with normal AMPLITUDE |
+| `denoised` (`rt_debug_show 32`) | clearly visible | it is in the direct diffuse |
+| high-frequency shelf on the bake | **unchanged** | it is not the bake's frequency content |
+
+Three diagnoses died on the way — LOD-0 height sampling, missing normal mips,
+and the normal map's top octave — and each was a real fact about the engine
+that was not this bug. The shelf stays (the budget it enforces is right), but
+it did not fix anything.
+
+**The reading that survives all six rows.** Every denoiser path converges to
+the true per-pixel signal at rest, so *if the surface is flat at rest, flat is
+the correct answer*, and whatever appears in motion is **added by something
+that only acts in motion**. The bake cannot be it: a normal map sets amplitude,
+which explains `softnormal` scaling without being the source.
+
+What acts only in motion and is unique to this surface? **The stylized branch
+checkerboards.** The lit liquid is shaded on odd screen columns only; even
+columns carry the mirror ray, and `CmCheckerboard` rebuilds each missing half as
+a 4-neighbour average, with the denoiser reprojecting history in that
+half-resolution space. Stock water has a smooth wave normal, so RTGL never had
+to notice. On a high-contrast authored normal, every mud texel alternates
+between "shaded directly" and "averaged from its neighbours" as it crosses
+columns while the camera moves — a per-texel contrast pulse that scales with
+slope amplitude, survives the denoiser, ignores parallax and the upscaler, lives
+in direct diffuse, and freezes into a stable pattern the moment the camera
+stops. Blood goes through the same split; at `relief_strength` 0.045 the
+neighbour contrast is too small to see.
+
+**The fix: an opaque bed does not split.** `stylizedLiquidRefl[id] == 0` (which
+is what `rt_sludge_refl` now ships at) takes the whole surface down a no-split
+path: every pixel shades the surface at full resolution, no mirror ray, no
+checkerboard resolve (`framebufThroughput.a = -1`), and the wet sheen is the
+standard glossy specular off `rt_sludge_rough` — which is the lighter, dedicated
+reflection a mud bed wanted in the first place. With no flow the surface is also
+marked non-reactive to the upscaler, like any other static opaque surface.
+
+`tools\ab-sludge.cmd split` is the before-picture: `rt_sludge_refl 0.12`, the dim
+mirror *with* the checkerboard, i.e. the build that had the bug.
+
+`rt_liquid_checkerboard 0` forces the same no-split path for all four liquids,
+water included. It is **console only and deliberately not in the Quality menu**:
+what it trades away is the reflection that sells *water*, and a player meeting
+it in an options list has no way to know that. Sludge needs nothing from it —
+`rt_sludge_refl 0` already takes the mud bed down the full-res path on its own.
+
+Worth being precise about what "no split" costs, because it is less than it
+sounds. The checkerboard exists because the G-buffer holds **one surface per
+pixel**, and a mirror needs a second one: RTGL's answer is to give each half the
+pixels and blend them with `F`. Drop the split and the surface still reflects —
+it goes through the standard path, which does direct specular (the flashlight
+sheen) and *indirect* specular, where the GI bounce samples the GGX lobe around
+the reflection direction. So what is actually traded is a clean deterministic
+mirror ray for a denoised stochastic glossy one. At mud's roughness 0.8 that is
+the physically right model anyway; at water's 0.1 it is sharper but noisier.
+
+**The reflection is the other half.** With `relief = 1` the wave normal is gone,
+so `tilt`, `shimmer` and `stylizedWaterCaustic` all collapse to zero — that part
+is free. What survives is the *mirror*: `F`, the remapped Schlick, and the
+`reflect()` ray that goes with it. A mirror is what sells water, and on an
+opaque bed it is the loudest single thing saying "this is water with brown paint
+on it". Two new per-liquid vec4s, shaped exactly like `stylizedLiquidRelief`:
+
+- `stylizedLiquidRefl[id]` scales `F`. Scaling **`F` itself** rather than the
+  reflection ray's throughput is deliberate: the checkerboard resolves to
+  `F * reflection + (1 - F) * surface`, so light taken off the reflection comes
+  straight back to the diffuse surface instead of vanishing, and the bed does
+  not go dark as it stops reflecting.
+  **Exactly 0 means no mirror ray and no split at all** — see the flashlight
+  section above for why that matters beyond the look.
+- `stylizedLiquidRough[id]` overrides `stylizedWaterRoughness`, with `<= 0`
+  meaning "keep the global" so no other liquid changes. **This does not blur the
+  reflection** — the reflection ray is a mirror off `shadeNormal` either way.
+  What actually scatters it is the relief normal. The roughness is what the
+  denoiser and later bounces see, and it is what stops a rough surface being
+  resolved as a sharp one. The two are meant to be used together.
+
+`rt_sludge_crest` was also retuned down from `255,204,115` to `120,78,38`
+(and the tint to `9,3,1`) for the reason the art section below gives: the
+pale tan was calibrated against the old, dimmer flat and made the bed read
+as light sand.
+
+A/B it with `tools\ab-sludge.cmd <arm> [map]`, default MAP12. **Only MAP12 (6
+sectors) and MAP34 (the fluid sampler) have sludge floors in the whole game**,
+which is why every arm sets `rt_sludge_autogoto 1`. `mirror` is the arm that
+answers "was the reflection really the problem"; `norelief` answers "was the
+relief".
+
+## The poison and sludge art
+
+`screen/poison_texture.png` replaces `D64N1_*` / `D64N2_*` and
+`screen/sludge_texture.png` replaces `D64S1_*` / `D64S2_*`, both through the
+same wad and the same pipeline — crop, min-cut tile, resample, expose — and
+**nothing else**: no relief, no flow. They keep the stylized wave shimmer the
+other liquids have, and lose their projected caustics for the same reason blood
+did. No overlays are written for either, so `set_water_meta.py`'s frame-01
+quarantine still applies to the nukage and sludge families and must.
+
+Both references are far brighter than the flats they replace (poison lum p50
+0.18, sludge 0.15, against a mask reference of 0.1), so the exposure step
+matters more here than for blood: unexposed, the whole pool would sit at full
+crest colour.
+
+(Sludge's relief and reflection are covered above; this section is about the
+art step the three share.)
+
+**Their crest colours were calibrated against the old, dimmer art.** After the
+poison swap `rt_nukage_crest` had to come down from `153,255,115` to
+`50,150,50` and `rt_nukage_tint` from `2,15,4` to `1,5,1`, because the exposed
+art drives the vein mask to a ~0.5 mean and the surface sits half-way to crest
+everywhere. Sludge had the same problem and got the same correction: `rt_sludge_crest`
+`255,204,115` -> `120,78,38`, tint `15,9,2` -> `9,3,1`, which puts the average
+surface at an R:G:B of 1 : 0.61 : 0.29 — brown rather than sand. The crest
+dominates wherever the mask is high, so the tint is mostly what sets how dark
+and how warm the *hollows* go.
 
 ## Not done
 
-- **Per-liquid wave / roughness / Fresnel** for nukage and sludge. The
-  `stylizedLiquid*` vec4s are shaped to take them.
+- **Nukage.** Poison is the only liquid still taking the water wave, the full
+  water reflection and no relief. Roughness and Fresnel now exist per liquid
+  (`stylizedLiquidRough` / `stylizedLiquidRefl`) and the relief array is
+  already shaped for it; only the wave itself is still global.
 - Bubbles or clots breaking the plane — the poison-spawner retarget.

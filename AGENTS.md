@@ -35,12 +35,13 @@ Water (stylized surface + projected caustics, all cvars, four traps):
 
 → **`docs/rt-water.md`**
 
-Coagulated blood pools and the poison art — new flats from reference images,
-authored relief on a liquid (which the water wave used to overwrite), and a
-FLOW MAP so liquid visibly moves along the veins (the phase-pulse version was
-rejected as flicker; the doc says why). Also why blood and nukage project no
-caustics, and the frame-01 `textures.json` bug this uncovered in all eight
-liquid families:
+Coagulated blood pools and the poison / sludge art — new flats from reference
+images, authored relief on a liquid (which the water wave used to overwrite),
+and a FLOW MAP so liquid visibly moves along the veins (the phase-pulse version
+was rejected as flicker; the doc says why). Also why WATER IS NOW THE ONLY
+LIQUID THAT PROJECTS CAUSTICS, why the new art needs the crest colours retuned
+down, and the frame-01 `textures.json` bug this uncovered in all eight liquid
+families:
 
 → **`docs/rt-blood-pools.md`**
 
@@ -535,6 +536,7 @@ declaration cannot drift from its definition. Put nothing in that file except an
 | `tools/ab.cmd spark-<arm>` | Impact spark A/B: `spark-fat` (**run first** — the absurd arm that separates plumbing from values), `spark-on`/`off`, `nolight` (how much is the traced flash), `nogrid` (the before for the pixel look — judge while moving), `nocollide`, `still` (bounce with the fall taken out), `debug`. Ships **off**; judge in the smoke lab (MAP97 dark, MAP96 bright) before a real level. See `docs/plan-impact-fx.md`. |
 | `tools/ab.cmd gi-<arm>` | GI bounce depth ladder, in order: `gi-shadow2`/`3`/**`4`** (zero shader involvement — `rt_shadowrays` is which bounce *vertices* may sample lights, and `shadow4` is the control that must equal `shadow3`), `gi-depth1` (plumbing liveness), `gi-fix` (the ~2π energy fix at depth 2 — expect **dimmer, less saturated**), `gi-fix3`/`gi-fix4` vs `gi-fix3-unlit` (real depth, only meaningful with the fix on), `gi-restirm` (the reuse-contract check). Judge on `rt_debug_show 16`/`128`, never the final image. Ships unchanged: depth 2, legacy weight on. See `docs/rt-gi-bounces.md`. |
 | `tools/ab-bloodpool.cmd` | Blood POOL A/B (the flats, not the splats): `on`/`off`/`norelief`/`noflow`/`fast`/`slow`/`hard`/`soft`/`coarse`/`fine`/`phase`/`flagcheck`/`flat`/`caustics`, default MAP17. Every arm sets `rt_blood_autogoto 1`, which puts the player ON a pool — a pool is a puddle in a corner and MAP08's nine sit at z −256 in pits. Three layers fail identically: the ART (`d64r-liquid-art.wad`, no cvar), the RELIEF (`rt_blood_relief`) and the FLOW (`rt_blood_flow*`, a flow map -- texture advected along the baked vein direction, not a brightness pulse); `phase` and `flagcheck` are tests, not looks. See `docs/rt-blood-pools.md`. |
+| `tools/ab-sludge.cmd` | Sludge / MUD bed A/B: `on`/`off`/`norelief`/`mirror`/`deep`/`flat`/`wet`/`dry`/`flagcheck`/`caustics`, default MAP12. **Only MAP12 (6 sectors) and MAP34 have sludge floors in the whole game**, so every arm sets `rt_sludge_autogoto 1`. Two things make mud out of a water surface and each alone still reads as liquid: the RELIEF (`rt_sludge_relief` — height from the art's full luminance range, NOT the vein mask blood uses, which sludge saturates) and the REFLECTION (`rt_sludge_refl`/`rt_sludge_rough` — a mirror is what sells water). `mirror` and `norelief` isolate the two. Also carries the BISECT arms (`nomaps`/`softnormal`/`normals`/`raw`/`denoised`/`nodlss`/`restir`) that found the "unstable shadows under a moving flashlight" bug: NOT parallax, NOT the upscaler, NOT the bake's frequency content — the CHECKERBOARD SPLIT. The stylized branch shades the lit liquid on odd screen columns and rebuilds the even ones from their neighbours; on a high-contrast authored normal that pattern crawls with the camera and freezes at rest. Fix: `rt_*_refl 0` = no mirror AND no split (full-res surface, glossy specular sheen); sludge ships so. `rt_liquid_checkerboard 0` forces it for all four liquids — console only, kept OUT of the Quality menu because what it trades away is the reflection that sells water. `split` is the before-picture. See `docs/rt-blood-pools.md`. |
 | `tools/ab-blood.cmd` | Persistent blood A/B: `off`/`on`/`uncapped`/`tight`/`plain`/`wild`/`roll`; explosion splash `boom`/`noboom`/`bigboom`; per-monster colour `color`/`nocolor` (try MAP03 or MAP14), default MAP01. The lifetime is DECORATE in the WAD, not a renderer setting; explosive kills leave no blood in stock GZDoom because `P_RadiusAttack` never calls `P_SpawnBlood`; and blood colour needs `rt_tex_translations` (pitfall 30). See `docs/blood-persist.md`. |
 
 Important cvars on Retribution launch (do not crank blindly):

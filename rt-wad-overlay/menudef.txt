@@ -513,6 +513,12 @@ OptionValue "RTBounceEnergy"
 	0, "Physical"
 }
 
+// rt_liquid_checkerboard is deliberately NOT in these menus. It is a real
+// choice -- 0 shades every stylized liquid at full resolution and drops the
+// checkerboard mirror -- but the reflection it trades away is the one thing
+// that sells WATER, and a player meeting it in an options list has no way to
+// know that. Sludge does not need it: rt_sludge_refl 0 already takes the mud
+// bed down the no-split path on its own. Console only, still archived.
 OptionMenu "RT_QualityMenu" protected
 {
 	Title "QUALITY"

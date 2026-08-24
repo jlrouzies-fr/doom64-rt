@@ -32,7 +32,7 @@ rem      along the vein direction baked into the height map, so blobs of
 rem      liquid slide down each channel. Texture moving, not brightness
 rem      pulsing -- the first version pulsed and read as flicker.
 rem
-rem   on        THE DEFAULT. Full relief, flow 0.7 at 0.15 cycles/s.
+rem   on        THE DEFAULT. Full relief, flow 1.0 at 0.5 detail-tiles/s.
 rem   off       relief 0 AND flow 0 -- the stylized water surface in a blood
 rem             palette, i.e. what a blood pool was before any of this. The
 rem             baseline to flip against. If "on" looks the same as this, the
@@ -42,17 +42,18 @@ rem             ripple. If the motion reads here but not in "on", the relief is
 rem             burying it rather than the flow being broken.
 rem   noflow    relief ON, flow 0. Isolates layer 2: a still, ridged, wet
 rem             surface. This is the arm for "do the veins pop".
-rem   fast      flow speed 0.6, four times shipping. Not a look -- a test.
+rem   fast      flow speed 2.0, four times shipping. Not a look -- a test.
 rem             Motion too slow to see and motion that is not happening are the
 rem             same picture, and this tells them apart in one glance.
-rem   slow      flow speed 0.05, for judging the shape of the blobs rather than
-rem             their motion.
+rem   slow      flow speed 0.08, for judging the shape of the streaks rather
+rem             than their motion.
 rem   hard      flow 1.4 -- full-depth contrast on the sliding detail. The arm
 rem             for "I cannot see anything move".
 rem   soft      flow 0.35 -- a gentle drift.
-rem   coarse    flow scale 3, blobs twice as big; travel 0.5 of a tile per
-rem             cycle. Bigger, slower-looking movement.
-rem   fine      flow scale 12, blobs half as big; travel 0.12. Busier.
+rem   coarse    flow scale 3 -- streaks twice as long. Bigger, lazier movement.
+rem   fine      flow scale 12 -- streaks half as long. Busier.
+rem   blobs     aspect 1 -- round blobs instead of streaks. The version-two look
+rem             that read as shimmer; kept as the A/B that shows why streaks.
 rem   phase     PAINTS THE ADVECTED DETAIL. Not a look -- a test, and the first
 rem             one to run if nothing moves. Green blobs sliding ALONG each vein
 rem             mean the bake and the plumbing both work and the problem is
@@ -80,10 +81,10 @@ if "%MAP%"=="" set "MAP=17"
 rem Shipping values. Each arm below overrides only what it is testing, but every
 rem one of these is written on every launch.
 set "RELIEF=1.0"
-set "FLOW=0.7"
-set "SPEED=0.15"
+set "FLOW=1.0"
+set "SPEED=0.5"
 set "SCALE=6.0"
-set "DIST=0.25"
+set "ASPECT=3.0"
 set "HEIGHT=1"
 set "WDEBUG=0"
 set "PDEBUG=0"
@@ -93,25 +94,26 @@ if /i "%ARM%"=="on"        goto :ok
 if /i "%ARM%"=="off"       ( set "RELIEF=0.0" & set "FLOW=0.0" & goto :ok )
 if /i "%ARM%"=="norelief"  ( set "RELIEF=0.0" & goto :ok )
 if /i "%ARM%"=="noflow"    ( set "FLOW=0.0" & goto :ok )
-if /i "%ARM%"=="fast"      ( set "SPEED=0.6" & goto :ok )
-if /i "%ARM%"=="slow"      ( set "SPEED=0.05" & goto :ok )
+if /i "%ARM%"=="fast"      ( set "SPEED=2.0" & goto :ok )
+if /i "%ARM%"=="slow"      ( set "SPEED=0.08" & goto :ok )
 if /i "%ARM%"=="hard"      ( set "FLOW=1.4" & goto :ok )
 if /i "%ARM%"=="soft"      ( set "FLOW=0.35" & goto :ok )
-if /i "%ARM%"=="coarse"    ( set "SCALE=3.0" & set "DIST=0.5" & goto :ok )
-if /i "%ARM%"=="fine"      ( set "SCALE=12.0" & set "DIST=0.12" & goto :ok )
+if /i "%ARM%"=="coarse"    ( set "SCALE=3.0" & goto :ok )
+if /i "%ARM%"=="fine"      ( set "SCALE=12.0" & goto :ok )
+if /i "%ARM%"=="blobs"     ( set "ASPECT=1.0" & goto :ok )
 if /i "%ARM%"=="phase"     ( set "PDEBUG=1" & goto :ok )
 if /i "%ARM%"=="flagcheck" ( set "WDEBUG=1" & goto :ok )
 if /i "%ARM%"=="flat"      ( set "HEIGHT=0" & goto :ok )
 if /i "%ARM%"=="caustics"  ( set "CAUST=1" & goto :ok )
 
 echo Unknown arm "%ARM%".
-echo   usage: tools\ab-bloodpool.cmd ^<on^|off^|norelief^|noflow^|fast^|slow^|hard^|soft^|coarse^|fine^|phase^|flagcheck^|flat^|caustics^> [map]
+echo   usage: tools\ab-bloodpool.cmd ^<on^|off^|norelief^|noflow^|fast^|slow^|hard^|soft^|coarse^|fine^|blobs^|phase^|flagcheck^|flat^|caustics^> [map]
 echo   maps with blood: 17 (39 pools, default) 32 (12) 08 (9, in pits) 18 21 23 24 34
 exit /b 1
 
 :ok
 echo === blood pools: arm "%ARM%" on map %MAP% ===
-echo     relief %RELIEF%  flow %FLOW% speed %SPEED% scale %SCALE% dist %DIST%
+echo     relief %RELIEF%  flow %FLOW% speed %SPEED% scale %SCALE% aspect %ASPECT%
 echo     heightmap %HEIGHT%  caustics %CAUST%  water_debug %WDEBUG%  flow_debug %PDEBUG%
 echo     the player is placed on a pool by rt_blood_autogoto.
 
@@ -121,7 +123,7 @@ call "%~dp0launch-retribution-rt.cmd" %MAP% -- ^
   +rt_blood_flow %FLOW% ^
   +rt_blood_flow_speed %SPEED% ^
   +rt_blood_flow_scale %SCALE% ^
-  +rt_blood_flow_dist %DIST% ^
+  +rt_blood_flow_aspect %ASPECT% ^
   +rt_heightmap_stren %HEIGHT% ^
   +rt_water_debug %WDEBUG% ^
   +rt_blood_caustics %CAUST% ^
