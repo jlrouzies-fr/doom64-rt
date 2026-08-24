@@ -19,17 +19,22 @@ from pathlib import Path
 
 from PIL import Image, ImageFilter, ImageOps
 
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[1]
 ROOT = PROJ_ROOT
 sys.path.insert(0, str(ROOT / "tools"))
 from apply_all_category_pbr import classify  # noqa: E402
-
-# Repo root, derived from this file so a clone can live anywhere.
-PROJ_ROOT = Path(__file__).resolve().parents[1]
 
 WAD = ROOT / r"Doom64-Retribution\D64RTR_v15.WAD"
 MAT = ROOT / r"sourcecode\gzdoom-rt\build\RelWithDebInfo\rt\mat"
 MAT_DEV = ROOT / r"sourcecode\gzdoom-rt\build\RelWithDebInfo\rt\mat_dev"
 OMAT = ROOT / r"Doom64-Retribution\Retribution-RT-Materials\rt\mat"
+# developerMode reads mat_dev in preference to mat, and build-gzdoom-rt.cmd
+# xcopies the tracked tree over the build tree -- so a generator that writes
+# only three of these four leaves the tracked mat_dev stale and its change is
+# undone by the next build, silently. Same gap 59ccdef fixed in
+# sync_anim_relief_maps.py.
+OMAT_DEV = ROOT / r"Doom64-Retribution\Retribution-RT-Materials\rt\mat_dev"
 BOOTHS = ROOT / r"tools\_gallery\booths.json"
 
 

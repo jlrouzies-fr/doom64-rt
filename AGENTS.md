@@ -649,7 +649,31 @@ enforced at the one place that writes it.
 16. **`lightIntensity` on wall monitors/EXIT** → floating point lamps on the face. Floors (lava) only.
 17. **Whole-face tinted `_e`** → primary shows raw `_e` as solid cyan/yellow. Tight BM / luma masks only.
 18. **Yellow key GI looks red** → albedo carving is brown; use luma mask + yellow tint.
-19. **SMON anim flat↔bump** → clone `_n`/`_orm`/`_h` to ANIMDEFS sibling frames.
+19. **ANIMDEFS sibling frames flat<->bump** (SMON, CTEL, SPORT, STRAK, GTEL, C307B,
+    CFACE, HTEL). RTGL1 resolves `_n`/`_h`/`_orm` **per texture NAME**, and an
+    animation is a run of separate names -- so maps on frame 1 only make the
+    surface parallax-relieved on that frame and flat on the rest. It reads as
+    the texture **moving up and down**, not as a missing map, and sends you
+    looking at scrollers, lifts and sector specials. `GTEL1` was relieved 4 tics
+    in 32; `HTELB`+`HTELC` are 16 of 24.
+
+    **`tools/sync_anim_relief_maps.py --report` sweeps the whole game for it**
+    -- it walks ANIMDEFS itself, so nothing has to be guessed or typed. Then
+    `sync_anim_relief_maps.py <base...>` clones frame 1's maps across the run
+    into all **four** material dirs.
+
+    **The pixel gate alone is not sufficient, and that is the 2026-08-24
+    lesson.** A frame may share relief when it differs on <=5% of the tile OR
+    when its colour-REGION LAYOUT is byte-identical -- same geometry under some
+    recolour. STRAK differs on **19.0%** and is still the same surface: the
+    animation is a brightness PULSE of the stripe, nothing moves. And because
+    `STRAKY1_h` is luminance-derived, regenerating `_h` per frame would make the
+    stripe rise and fall with the pulse -- it would author in the very artefact.
+    **Copy; do not regenerate, and do not raise the gate.** A frame that fails
+    both gates has different art and needs its own maps via `gen_ai_pbr.py`
+    (settings are recorded per texture in `tools/_gallery/ai_pbr_report.json`)
+    plus a **scoped** `bake_material_labels_orm.py` run -- that tool has no name
+    filter, so handing it `map01.json` re-bakes all 900 labels.
 20. **Liquid falls / `*GLOW`** → not auto-emitters.
 21. **Post-clamp wash on MAP01** → authored wall mults (4.2) suddenly fully scaled GI; dial walls ~1.0.
 22. **Missing spawn blink lamps** → need `RT_UploadGzDoomDynamicLights` for 9802; also disable stock per-sector lights (`rt_sector_lights 0`).

@@ -122,7 +122,7 @@ Keep stock `rt_emis_mapboost` (~200). On-screen glow is raw `_e` × `rt_emis_max
 | `OUTTEX*` / `SWX*` | Skip — classic BM + stock mult ≈ full-bright walls. |
 | `*GLOW` by name | Not auto-authored (glow-for-glow). |
 | No green keycard | Retribution only has `SKEYFLRD` / `YL` / `BL`. |
-| SMON anim flat↔bump | Clone donor `_n`/`_orm`/`_h` onto ANIMDEFS sibling frames. |
+| ANIMDEFS sibling frames flat<->bump | Maps resolve per NAME, so frame-1-only relief cycles in and out and reads as the texture MOVING. Sweep with `sync_anim_relief_maps.py --report`; clone with the same tool. It shares frame 1's maps when a frame differs on <=5% of the tile **or** has a byte-identical colour-region layout (same geometry, some recolour -- STRAK is a 19% brightness pulse). Frames failing both need their own maps. |
 | `rt_emis_maxscrcolor 12` | Bleaches saturated EXIT/keys white — launchers use **3**. |
 | `rt_mod_compat` bit 2 | Auto brightmap→emis — keep gallery/play at **mod_compat 1**. |
 

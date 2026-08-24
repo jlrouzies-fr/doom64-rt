@@ -1,0 +1,31 @@
+{
+  "CFACEB": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "CFACEC": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "HTELB": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "HTELC": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "STRAKO": {
+    "metallicDefault": 1,
+    "roughnessDefault": 0.8,
+    "surface": "metal"
+  },
+  "__meta": {
+    "note": "Scoped subset of map01.json: the ANIMDEFS sibling frames authored by gen_ai_pbr.py on 2026-08-24. Baking the full 900-label file would re-flatten every other texture's roughness variation.",
+    "source": "tools/_material_labels/map01.json"
+  }
+}

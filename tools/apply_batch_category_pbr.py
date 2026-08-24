@@ -6,12 +6,11 @@ import json
 import sys
 from pathlib import Path
 
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[1]
 ROOT = PROJ_ROOT
 sys.path.insert(0, str(ROOT / "tools"))
 from apply_all_category_pbr import OVERLAY, SCENE, classify  # noqa: E402
-
-# Repo root, derived from this file so a clone can live anywhere.
-PROJ_ROOT = Path(__file__).resolve().parents[1]
 
 BOOTHS = ROOT / r"tools\_gallery\booths.json"
 
