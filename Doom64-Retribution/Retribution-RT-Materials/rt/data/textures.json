@@ -8098,25 +8098,25 @@
     {
       "textureName": "D64W2_01",
       "isWater": true,
-      "roughnessDefault": 0.8,
+      "roughnessDefault": 0.1,
       "metallicDefault": 0.0
     },
     {
       "textureName": "D64W1_01",
       "isWater": true,
-      "roughnessDefault": 0.8,
+      "roughnessDefault": 0.1,
       "metallicDefault": 0.0
     },
     {
       "textureName": "D64WATR1",
       "isWater": true,
-      "roughnessDefault": 0.8,
+      "roughnessDefault": 0.1,
       "metallicDefault": 0.0
     },
     {
       "textureName": "D64WATR2",
       "isWater": true,
-      "roughnessDefault": 0.8,
+      "roughnessDefault": 0.1,
       "metallicDefault": 0.0
     },
     {
@@ -8886,7 +8886,7 @@
     {
       "textureName": "D64N1_01",
       "isWater": true,
-      "roughnessDefault": 0.8,
+      "roughnessDefault": 0.1,
       "metallicDefault": 0.0
     },
     {
@@ -9270,7 +9270,7 @@
     {
       "textureName": "D64N2_01",
       "isWater": true,
-      "roughnessDefault": 0.8,
+      "roughnessDefault": 0.1,
       "metallicDefault": 0.0
     },
     {
@@ -9654,7 +9654,7 @@
     {
       "textureName": "D64S1_01",
       "isWater": true,
-      "roughnessDefault": 0.8,
+      "roughnessDefault": 0.1,
       "metallicDefault": 0.0
     },
     {
@@ -10038,7 +10038,7 @@
     {
       "textureName": "D64S2_01",
       "isWater": true,
-      "roughnessDefault": 0.8,
+      "roughnessDefault": 0.1,
       "metallicDefault": 0.0
     },
     {
@@ -10422,7 +10422,7 @@
     {
       "textureName": "D64B1_01",
       "isWater": true,
-      "roughnessDefault": 0.8,
+      "roughnessDefault": 0.1,
       "metallicDefault": 0.0
     },
     {
@@ -10806,7 +10806,7 @@
     {
       "textureName": "D64B2_01",
       "isWater": true,
-      "roughnessDefault": 0.8,
+      "roughnessDefault": 0.1,
       "metallicDefault": 0.0
     },
     {
@@ -11190,37 +11190,37 @@
     {
       "textureName": "D64NUKG1",
       "isWater": true,
-      "roughnessDefault": 0.8,
+      "roughnessDefault": 0.1,
       "metallicDefault": 0.0
     },
     {
       "textureName": "D64NUKG2",
       "isWater": true,
-      "roughnessDefault": 0.8,
+      "roughnessDefault": 0.1,
       "metallicDefault": 0.0
     },
     {
       "textureName": "D64SLDG1",
       "isWater": true,
-      "roughnessDefault": 0.8,
+      "roughnessDefault": 0.1,
       "metallicDefault": 0.0
     },
     {
       "textureName": "D64SLDG2",
       "isWater": true,
-      "roughnessDefault": 0.8,
+      "roughnessDefault": 0.1,
       "metallicDefault": 0.0
     },
     {
       "textureName": "D64BLOD1",
       "isWater": true,
-      "roughnessDefault": 0.8,
+      "roughnessDefault": 0.1,
       "metallicDefault": 0.0
     },
     {
       "textureName": "D64BLOD2",
       "isWater": true,
-      "roughnessDefault": 0.8,
+      "roughnessDefault": 0.1,
       "metallicDefault": 0.0
     },
     {

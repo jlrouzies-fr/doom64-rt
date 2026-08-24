@@ -2073,3 +2073,47 @@ cast light was already exposed. Now divides by the 1x1 RrExposure, which became
 an EMA (0.08/frame; also NVIDIA's recommendation for the DLSS exposure
 texture): steady-state exact at the old calibration everywhere, input still
 pulse-free through adaptation. rt_rr_glowscale = plain multiplier, default 1.
+
+### GI bounce depth: the second bounce was unlit and ~2π too bright (2026-08-24)
+
+Report: "the game lights don't seem to bounce". RTGL1's indirect path was **two
+bounces, hardcoded and unrolled** in `RtRaygenIndirect.inl`, with the API flag
+meant to gate the second (`enableSecondBounceForIndirect`) behind a commented-out
+`if` — uploaded, read by nothing. Two separate defects on top of that:
+
+- **`rt_shadowrays` gates which bounce vertices may sample analytic lights**
+  (`isDirectIlluminationValid`). The live ini held 2, so vertex 2 returned
+  emissives and sky only. Only indices 0/1/2 existed, so 4 and 8 were identical
+  to 3.
+- **Bounce 2 multiplied by `1/pdf` alone** (`π/z`), with no BRDF and no cosine.
+  For a cosine-sampled Lambertian the throughput is exactly 1; the stock term was
+  `E[π/z] = 2π` too large with a `1/z` tail — bright, saturated ("diffuse very
+  red"), firefly-prone, and because the RIS target pdf is luminance, those
+  samples won and held the reservoir.
+
+**RTGL1:** `processIndirect` now loops `b = 2..indirectBounces` (uniform recycled
+from the dead `indirSecondBounce` slot; `indirectLegacyWeight` from `_padf2`,
+float→uint, zero std140 delta), folding deeper vertices into vertex 1's radiance
+— the stored `SampleIndirect` stays the first hit, so the spatial-reuse Jacobian
+and `shade()` are untouched. `bounceSeed()` keeps the stock seed for `b ≤ 2`
+(depth 2 bit-identical by construction) and derives a virtual-frame seed deeper,
+since `RANDOM_SALT_DIFF_BOUNCE` has one free index and light selection reused
+the same salts at every vertex. Clamp [1,4]. `debugRestirM` is a uint: `2` paints
+the **indirect** reservoir's M (stock `1` only ever showed the direct one). Dev
+slider "Shadow rays max depth" 0..8; "Indirect bounces" + legacy checkbox added.
+API: `enableSecondBounceForIndirect` → `indirectBounces` + `indirectLegacyBounceWeight`.
+
+**gzdoom-rt:** `rt_gi_bounces` (2) and `rt_gi_bounce_legacy` (1), archived and
+in Options → Quality ("Bounces per path", "Bounce energy", both menus);
+`rt_gi_bounce_shadows` (1), `RT_CVAR_NOARCH`. Not in the preset table yet — see
+the doc. When depth > 2 and the last is
+on, the **param** `maxBounceShadows` is floored to depth+1 for the frame —
+`rt_shadowrays` itself is never written (archived, unpinned on purpose). No-op at
+depth 2. `rt_debug_restir_m` is an int (0/1/2).
+
+**Shipped image unchanged** — depth 2, legacy weight on. Ladder and gates in
+`docs/rt-gi-bounces.md`; arms `tools/arms/gi-*.cfg`. Stage 4 (flip the legacy
+default) and Stage 5 (promote to archived + Quality menu + preset table) wait on
+the A/B. The A035/A036 poles that prompted this are lit fine — GLDEFS dynlight
+plus a 300-intensity analytic sphere from `RT_UploadHangingTechLamps`.
+

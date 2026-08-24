@@ -35,6 +35,15 @@ Water (stylized surface + projected caustics, all cvars, four traps):
 
 → **`docs/rt-water.md`**
 
+Coagulated blood pools and the poison art — new flats from reference images,
+authored relief on a liquid (which the water wave used to overwrite), and a
+FLOW MAP so liquid visibly moves along the veins (the phase-pulse version was
+rejected as flicker; the doc says why). Also why blood and nukage project no
+caustics, and the frame-01 `textures.json` bug this uncovered in all eight
+liquid families:
+
+→ **`docs/rt-blood-pools.md`**
+
 The moon, and the sky leaks it exposed (`rt_sun_*`, `rt_moon_*`, per-map aim,
 `rt_sun_require_sky`, the red/green leak debug, four wrong answers):
 
@@ -79,6 +88,14 @@ Console noise (`rt_verbose`, why quiet is the default, and where a new `Printf`
 belongs) — read before adding any print to the RT path:
 
 → **`docs/rt-verbose.md`**
+
+GI bounce depth (`rt_gi_bounces`, `rt_gi_bounce_legacy`, `rt_gi_bounce_shadows`) —
+RTGL1 shipped **two bounces, hardcoded and unrolled**, the second of which sampled
+**no analytic lights** under the live `rt_shadowrays 2` and was **~2π too bright**
+(radiance × 1/pdf with no BRDF or cosine — the "diffuse very red" TODO). Read
+before touching anything indirect, and before believing "lights don't bounce":
+
+→ **`docs/rt-gi-bounces.md`** — the finding, the loop, and the `gi-*` ladder
 
 Anything DLSS Ray Reconstruction:
 
@@ -516,6 +533,8 @@ declaration cannot drift from its definition. Put nothing in that file except an
 | `tools/ab.cmd leak-<arm>` | **A lamp shaft read through a wall** (MAP01, 2026-08-15, open). All arms hold the report's conditions: moon off (`rt_sun 0` + `rt_sun_intensity 0` + **`rt_moon_presets 0`**, which is load-bearing — presets restore the sun on every level load) and `rt_volume_shaft_mult 200`. **FIXED** by `rt_volume_depthgate` (ships on): the volume is a prefix sum read trilinearly, so a wall collected the froxel *behind* it. `leak-gatehard` (**run first**, the absurd arm — feather 0.01 + taps 1 should paint the grid and stair-step every silhouette) / `leak-gateoff` (before) / `leak-gate` (after). Diagnostic ladder kept: `leak-base` (reference), `leak-noshaft`, `leak-noamb`, `leak-near`, `leak-fat`, `leak-fine`, `leak-nofilter`. **Not** a visibility bug and **not** geometry — both measured out. See `docs/plan-light-shafts.md` §4d. |
 | `tools/ab.cmd dust-<arm>` | Dust motes in the air. `dust-fat` (**run first** — a mote is small enough that "I can't see any" has two causes that look identical), `dust-off`/`on`/`heavy`/`still`/`honest`/`noshaft`. Real traced geometry lit by the scene: **never** emissive (fireflies) and **never** rasterized (fullbright). Ships **on**. See `docs/plan-light-shafts.md` §4c. |
 | `tools/ab.cmd spark-<arm>` | Impact spark A/B: `spark-fat` (**run first** — the absurd arm that separates plumbing from values), `spark-on`/`off`, `nolight` (how much is the traced flash), `nogrid` (the before for the pixel look — judge while moving), `nocollide`, `still` (bounce with the fall taken out), `debug`. Ships **off**; judge in the smoke lab (MAP97 dark, MAP96 bright) before a real level. See `docs/plan-impact-fx.md`. |
+| `tools/ab.cmd gi-<arm>` | GI bounce depth ladder, in order: `gi-shadow2`/`3`/**`4`** (zero shader involvement — `rt_shadowrays` is which bounce *vertices* may sample lights, and `shadow4` is the control that must equal `shadow3`), `gi-depth1` (plumbing liveness), `gi-fix` (the ~2π energy fix at depth 2 — expect **dimmer, less saturated**), `gi-fix3`/`gi-fix4` vs `gi-fix3-unlit` (real depth, only meaningful with the fix on), `gi-restirm` (the reuse-contract check). Judge on `rt_debug_show 16`/`128`, never the final image. Ships unchanged: depth 2, legacy weight on. See `docs/rt-gi-bounces.md`. |
+| `tools/ab-bloodpool.cmd` | Blood POOL A/B (the flats, not the splats): `on`/`off`/`norelief`/`noflow`/`fast`/`slow`/`hard`/`soft`/`coarse`/`fine`/`phase`/`flagcheck`/`flat`/`caustics`, default MAP17. Every arm sets `rt_blood_autogoto 1`, which puts the player ON a pool — a pool is a puddle in a corner and MAP08's nine sit at z −256 in pits. Three layers fail identically: the ART (`d64r-liquid-art.wad`, no cvar), the RELIEF (`rt_blood_relief`) and the FLOW (`rt_blood_flow*`, a flow map -- texture advected along the baked vein direction, not a brightness pulse); `phase` and `flagcheck` are tests, not looks. See `docs/rt-blood-pools.md`. |
 | `tools/ab-blood.cmd` | Persistent blood A/B: `off`/`on`/`uncapped`/`tight`/`plain`/`wild`/`roll`; explosion splash `boom`/`noboom`/`bigboom`; per-monster colour `color`/`nocolor` (try MAP03 or MAP14), default MAP01. The lifetime is DECORATE in the WAD, not a renderer setting; explosive kills leave no blood in stock GZDoom because `P_RadiusAttack` never calls `P_SpawnBlood`; and blood colour needs `rt_tex_translations` (pitfall 30). See `docs/blood-persist.md`. |
 
 Important cvars on Retribution launch (do not crank blindly):

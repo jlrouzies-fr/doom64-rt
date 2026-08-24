@@ -43,6 +43,14 @@ rem inside three broken bulbs. See README "Art changes" and
 rem docs\lamp-panes-broken-bulbs.md.
 set "PANEBRK=%PROJ%\Doom64-Retribution\d64r-sflatas-broken.wad"
 set "CTELFIX=%PROJ%\Doom64-Retribution\d64r-ctel-fix.wad"
+rem Blood and poison pools from reference art. TX_ patches plus a TEXTURES lump
+rem that redefines all 256 D64B1_/D64B2_/D64N1_/D64N2_ frames as ONE unshifted
+rem copy each -- GZDoom takes the LAST definition for a texture, so this MUST
+rem load after %MOD%. Freezing the frames is what makes the blood's authored
+rem relief legal: the stock definition shifts two composited layers one unit per
+rem frame, so a static _n/_h could only ever match one of them. Built by
+rem tools/gen_liquid_art.py; see docs\rt-blood-pools.md.
+set "LIQUIDART=%PROJ%\Doom64-Retribution\d64r-liquid-art.wad"
 rem SMONF's indicator blink, re-timed 25%% faster (31 -> 25 tics). One ANIMDEFS
 rem lump; GZDoom takes the LAST definition for a texture and this loads after
 rem the mod, so it replaces the run without editing Retribution's own lump.
@@ -409,6 +417,12 @@ if not exist "%CTELFIX%" (
   exit /b 1
 )
 
+if not exist "%LIQUIDART%" (
+  echo ERROR: missing %LIQUIDART% — run:
+  echo   tools\.venv-ai\Scripts\python.exe tools\gen_liquid_art.py --apply
+  exit /b 1
+)
+
 if not exist "%BULBTEX%" (
   echo ERROR: missing %BULBTEX% — run with Python 3.13 ^(needs Pillow^):
   echo   C:\Users\Winter\AppData\Local\Programs\Python\Python313\python.exe tools\make_bulb_textures.py
@@ -667,7 +681,7 @@ rem
 rem Order matters and is preserved: the pins (including god/notarget) run BEFORE
 rem +map, exactly as they did inline, and %EXTRA% runs LAST so an arm still wins.
 start "" gzdoom.exe ^
-  -iwad "%IWAD%" -file "%MOD%" "%BM%" "%SKUL%" "%FLSH%" "%MUS%" "%SEQL%" "%BULBTEX%" "%PANEBRK%" "%CTELFIX%" "%SMONFBLINK%" "%SMONFLIT%" "%SKY%" -file "%LAVAFX%" "%POISONFX%" "%BLOODFX%" "%WIDEGFX%" "%MUGSHOT%" "%TITLOGO%" -rtnolauncher -width 1280 -height 720 %RTDEBUG% ^
+  -iwad "%IWAD%" -file "%MOD%" "%BM%" "%SKUL%" "%FLSH%" "%MUS%" "%SEQL%" "%BULBTEX%" "%PANEBRK%" "%CTELFIX%" "%LIQUIDART%" "%SMONFBLINK%" "%SMONFLIT%" "%SKY%" -file "%LAVAFX%" "%POISONFX%" "%BLOODFX%" "%WIDEGFX%" "%MUGSHOT%" "%TITLOGO%" -rtnolauncher -width 1280 -height 720 %RTDEBUG% ^
   +logfile "%LOGF%" ^
   +win_y %WINY% ^
   +exec "%PINS%" ^

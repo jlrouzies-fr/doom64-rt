@@ -233,6 +233,15 @@ header is not enough — check the implementation.** Uploading one crashes the g
 Spherical lights with a wide radius and tight spacing are the working substitute for a
 strip.
 
+**And the bounce that collects emission was, until 2026-08-24, both unlit and ~2π
+too bright.** The indirect path was two bounces hardcoded and unrolled; under the
+live `rt_shadowrays 2` its second vertex sampled no analytic lights at all, and it
+multiplied by `1/pdf` with no BRDF or cosine — `E[π/z] = 2π` over — which is why
+emissive fill read as saturated, dotted and "very red". Depth is now `rt_gi_bounces`
+and the overweight is behind `rt_gi_bounce_legacy` (ships **on**, so nothing moved
+yet). Before tuning any `_e` or `rt_emis_mapboost` against how GI *looks*, read
+`docs/rt-gi-bounces.md` — the number you are tuning against may be the 2π.
+
 ## 13. Never derive a direction from a winding convention you have not verified
 
 Wall strip lights were offset 2 units off the surface to avoid being coplanar with it.
