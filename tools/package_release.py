@@ -61,17 +61,55 @@ RT_WAD_DROP = {"filter", "sounds"}
 # would drag in the galleries, the smoke lab and the A/B probes.
 # D64RTR_BRIGHTMAPS.PK3 is deliberately NOT here: it is Retribution's file, so
 # the user brings it with the rest of the mod.
+#
+# KEEP THIS IN STEP WITH launch-doom64-rt.cmd. check_mods_match_launcher()
+# below enforces it, and that check exists because three files went missing
+# from releases without a word: d64r-liquid-art.wad (the blood/poison/sludge
+# art -- the game silently fell back to Retribution's stock flats) and the two
+# d64r-smonf-*.wad. This list lives in three hand-maintained copies (here, the
+# shipped launcher, and tools/launch-retribution-rt.cmd) and nothing compared
+# them.
 MODS = [
     "d64r-lostsoul-rt.pk3", "d64r-rt-flashlight.pk3",
     "d64r-seqlight-fix.wad",
     "d64r-bulb-textures.wad", "d64r-sflatas-broken.wad", "d64r-ctel-fix.wad",
-    
+    "d64r-liquid-art.wad",
+    "d64r-smonf-blink.wad", "d64r-smonf-lights.wad",
     "d64r-rt-sky.pk3", "d64r-lava-fx.pk3", "d64r-poison-fx.pk3",
     "d64r-blood-persist.pk3",
     "d64r-widescreen-gfx.pk3", "d64r-mugshot.pk3", "d64r-rt-titlelogo.pk3",
 ]
 
 DOCS = ["README.md", "CREDITS.md", "AI-DECLARATION.md", "DEVELOPERS.md"]
+
+
+def check_mods_match_launcher() -> None:
+    """MODS must be exactly what launch-doom64-rt.cmd passes to -file.
+
+    A file that is packaged but never loaded is dead weight; a file the
+    launcher names but nobody packages is a missing feature that looks like a
+    bug in the feature itself. The second is what happened to the liquid art:
+    the release shipped its material overlays AND its textures.json tags, so
+    everything looked wired, and only the wad carrying the art was absent.
+    """
+    text = (PROJ_ROOT / "launch-doom64-rt.cmd").read_text(
+        encoding="utf-8", errors="ignore")
+    marker = "%MODS%" + chr(92)
+    named = set()
+    for piece in text.split(marker)[1:]:
+        name = piece.split('"')[0].strip()
+        if name.lower().endswith((".wad", ".pk3")):
+            named.add(name)
+
+    listed = set(MODS)
+    missing = sorted(named - listed)
+    extra = sorted(listed - named)
+    if missing or extra:
+        lines = ["MODS and launch-doom64-rt.cmd disagree:"]
+        lines += ["  launcher loads it, MODS does not copy it: " + m for m in missing]
+        lines += ["  MODS copies it, launcher never loads it: " + e for e in extra]
+        lines.append("Fix both lists, then run again.")
+        raise SystemExit(chr(10).join(lines))
 
 
 def copy_tree(src: Path, dst: Path, skip=None):
@@ -95,6 +133,10 @@ def main():
     ap.add_argument("--zip", action="store_true", help="also write a .zip")
     ap.add_argument("--name", default="Doom64-RT", help="package folder name")
     args = ap.parse_args()
+
+    # Before anything is copied: a mismatch here is a silently incomplete
+    # release, and the whole point is to find it now rather than in play.
+    check_mods_match_launcher()
 
     build = Path(args.build)
     if not (build / "gzdoom.exe").exists():

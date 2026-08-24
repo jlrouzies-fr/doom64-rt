@@ -268,7 +268,10 @@ start "" "%ENGINE%\gzdoom.exe" -iwad "%IWAD%" ^
   "%MODS%\d64r-lostsoul-rt.pk3" "%MODS%\d64r-rt-flashlight.pk3" ^
   "%MODS%\d64r-seqlight-fix.wad" ^
   "%MODS%\d64r-bulb-textures.wad" "%MODS%\d64r-sflatas-broken.wad" ^
-  "%MODS%\d64r-ctel-fix.wad" "%MODS%\d64r-rt-sky.pk3" ^
+  "%MODS%\d64r-ctel-fix.wad" ^
+  "%MODS%\d64r-liquid-art.wad" ^
+  "%MODS%\d64r-smonf-blink.wad" "%MODS%\d64r-smonf-lights.wad" ^
+  "%MODS%\d64r-rt-sky.pk3" ^
   -file "%MODS%\d64r-lava-fx.pk3" "%MODS%\d64r-poison-fx.pk3" ^
   "%MODS%\d64r-blood-persist.pk3" ^
   "%MODS%\d64r-widescreen-gfx.pk3" "%MODS%\d64r-mugshot.pk3" "%MODS%\d64r-rt-titlelogo.pk3" ^
