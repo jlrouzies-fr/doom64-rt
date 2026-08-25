@@ -1,8 +1,16 @@
 # Volumetric clouds
 
-**Status:** implemented (`rt_vclouds.cpp`, `rt_vclouds_*` pins). Written 2026-08-23 after the shell deck
+**Status:** implemented and **SHIPPING ON EVERY CLOUD MAP** since 2026-08-25
+(`rt_vclouds.cpp`, `rt_vclouds_*` pins). Written 2026-08-23 after the shell deck
 was pushed as far as compositing tricks can take it (see
 [`plan-fire-skies.md`](plan-fire-skies.md) §3d).
+
+**Route A is the cloud path now, not an experiment.** `rt_clouds_volumetric`
+defaults to `1` and `tools/d64rt-pins.cfg` restates it, so the march is what
+draws wherever a cloud preset turns `rt_clouds` on — the 13 deck maps as well as
+the five fire ones. The deck is the fallback and is one console line away
+(`rt_clouds_volumetric 0`). §5's "default to the deck" gate is superseded; see
+the note there for what actually settled it, which was not a tuning pass.
 
 **The question this answers:** the cloud deck is eight flat discs with one
 colour each. It can be tinted, gradient-tinted, backlit and flashed, and it
@@ -193,6 +201,25 @@ is the honest version of `rt_clouds_litfrom`.
 - **Keep Route C runnable.** A cvar that switches between the shell deck and the
   march, defaulting to the deck until the march is judged better on every one of
   the twelve maps that currently use a deck — not just on the two fire families.
+
+  **SUPERSEDED 2026-08-25, and the way it was settled is the point.** The march
+  now defaults ON everywhere. Nobody ran that twelve-map comparison — the switch
+  had already been thrown by accident and gone unnoticed for two releases.
+  `rt_clouds_volumetric` is `CVAR_ARCHIVE` and `rt_firesky.cpp` writes it `true`
+  on the five hell maps, so quitting on one archived a `1` into
+  `gzdoom-rt2.ini` that no pin ever reset. Every developer machine here had
+  visited MAP23, so every developer machine had been rendering the march on
+  MAP12 for weeks and calling it the deck; a viewer with a clean ini got the
+  deck, and *that* is what "the volumetric clouds are not enabled for him" meant
+  in a v0.1.15 video.
+
+  So the judgement was made, just not deliberately: the march is what this
+  project has actually been looking at and tuning against on every cloud map. It
+  is now stated in both the compiled default and the pin, and
+  `tools/check_pins.py` fails on any other archived cvar the engine writes and
+  the pins file does not restate. **The general lesson is bigger than clouds: an
+  archived cvar that engine code assigns is not a setting, it is a diary — and
+  the last session you happened to quit in becomes everyone's configuration.**
 
 ## 6. Scope, honestly
 

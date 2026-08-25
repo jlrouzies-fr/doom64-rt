@@ -9,6 +9,16 @@ all three. `docs/blood-explosion-burst.md` is the design record for the second
 one — why it is built the way it is, kept separate because the reasoning is long
 and settled.
 
+## A hitscan on a monster shows blood ONLY
+
+It did not always. The fork carried `+PUFFONACTORS` on `BulletPuff`
+(`wadsrc/.../doommisc.zs`, from the vendor drop) so that a bullet into flesh would
+also light the hit; `MF3_PUFFONACTORS` is the first term of the stock puff/blood
+decision at `p_map.cpp:4952`, and blood runs unconditionally below it -- so the flag
+**added** the vanilla `PUFF` sprite on top of every splat, with the 250-intensity light
+`gen_fx_emissives.py` gives that sprite. Removed 2026-08-25; the full account, including
+why the `XDeath: TNT1` alternative buys nothing, is in `compat-patches.md`.
+
 ## The one-second lifetime was never a renderer setting
 
 BLUD splats vanished about a second after they landed. Nothing in RTGL1 or in

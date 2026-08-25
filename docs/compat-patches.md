@@ -2117,6 +2117,80 @@ default) and Stage 5 (promote to archived + Quality menu + preset table) wait on
 the A/B. The A035/A036 poles that prompted this are lit fine — GLDEFS dynlight
 plus a 300-intensity analytic sphere from `RT_UploadHangingTechLamps`.
 
+
+---
+
+## Shooting a monster showed the PUFF sprite (2026-08-25) -- REMOVED `+PUFFONACTORS`
+
+Reported from play: a hitscan into an **enemy** drew the vanilla `PUFF` bullet-puff
+sprite, the thing that should only appear on a wall or a floor. Blood spawned too; the
+puff was drawn on top of it.
+
+**The cause was one flag in the fork's own ZScript, not the mod and not the materials.**
+`wadsrc/static/zscript/actors/doom/doommisc.zs` carried, since the vendor drop
+(`30b3ae133` "Init from local"):
+
+```zscript
+// HAVE_RT begin: add light when bullet hits an actor
+        +PUFFONACTORS
+// HAVE_RT end
+```
+
+`MF3_PUFFONACTORS` is the **first term** of the stock puff/blood decision in
+`p_map.cpp:4952`, and that branch is otherwise pure upstream (blame carries no local
+hash):
+
+```cpp
+if (nointeract || (puffDefaults && puffDefaults->flags3 & MF3_PUFFONACTORS) ||
+    (trace.Actor->flags & MF_NOBLOOD) ||
+    (trace.Actor->flags2 & (MF2_INVULNERABLE | MF2_DORMANT)))
+```
+
+Blood runs unconditionally *below* it (`p_map.cpp:5009`, the `SpawnLineAttackBlood`
+virtual), so the flag does not replace blood -- it **adds** a puff to it.
+
+**The flag reaches the game through the mod's subclass, which is why it does not look
+like an engine setting.** `puffDefaults` is resolved through the replacement
+(`p_map.cpp:4646`, `pufftype->GetReplacement(...)`), so the class actually tested is
+Retribution's `ACTOR 64BulletPuff : BulletPuff REPLACES BulletPuff` -- which inherits
+`+PUFFONACTORS`, sets `RenderStyle Normal` (discarding the parent's `Alpha 0.5`) and draws
+`PUFF A/B` **BRIGHT**.
+
+**Why it read as loud rather than subtle.** `gen_fx_emissives.py:254` gives `PUFF` a real
+light -- `("PUFF", 0.6, 250, "ffd0a0")` -- plus `noShadow: true`. That is the generator's
+own pitfall 4 for the third time (`lightIntensity` + `noShadow` on one sprite): a
+250-intensity light at ~zero distance from the surface it lights. Every bullet into a
+monster fired one.
+
+**Fix: the three local lines are gone**, with a `HAVE_RT` marker left in their place so a
+future merge from Doom II RT does not silently restore them. Flesh hits are blood only;
+wall, floor and ceiling hits are unchanged.
+
+**Not chosen, and recorded so it is not re-litigated:** keeping the flag and hiding the
+sprite with an `XDeath: TNT1` state -- the idiom the fork's own `GibBulletPuff`
+(`doommisc.zs:88`) uses. It would also lose the light, because the light *rides the PUFF
+sprite's material* and TNT1 draws no material, so it buys nothing over removing the flag.
+
+`GibBulletPuff` re-declares the flag explicitly and was left alone: it is invisible on
+bleeding actors and Retribution's weapons never name it (every `A_FireBullets` in the WAD
+passes `"BulletPuff"`). The Heretic/Hexen puffs that carry `+PUFFONACTORS` are stock.
+
+**Ruled out by measurement, not by argument:** the enemy-sprite PBR labelling. Monster
+sprites did get `_orm`/`_e` companions, but **0 of 757** monster entries carry
+`metallicDefault`/`roughnessDefault` in either `textures.json` tree, `spark_surfaces.txt`
+holds no sprite prefixes, and the RT impact-spark hook (`p_map.cpp:4900`) sits inside the
+non-actor branch and never ran on an enemy.
+
+**Verify it is live before judging the screen** -- `doommisc.zs` is packed into
+`gzdoom.pk3` at build time, so a stale pk3 keeps the old flag with nothing to warn you:
+
+    python -c "import zipfile,re;print(len(re.findall(r'^\s*\+PUFFONACTORS', zipfile.ZipFile(r'sourcecode/gzdoom-rt/build/RelWithDebInfo/gzdoom.pk3').read('zscript/actors/doom/doommisc.zs').decode(), re.M)))"
+
+Expect **1** (`GibBulletPuff`), not 2. Then: a zombie bleeds with no puff and no flash; a
+wall still puffs (the control); a **Lost Soul** still puffs, since `+NOBLOOD` is the next
+term in the same condition and Retribution's only `+NOBLOOD` actor -- that is what
+separates "the flag is gone" from "the puff path is broken".
+
 ---
 
 ## The water wave on blood / poison / sludge in a release (2026-08-25) -- the liquid look is now NOARCH
@@ -2246,3 +2320,124 @@ and sludge use" (sludge has shipped at 1 since 72ac4c9); `docs/rt-blood-pools.md
 poison and sludge "keep the stylized wave shimmer" and documented `rt_sludge_rough` as
 `0.85` against an actual `0.8`.
 
+
+---
+
+## A hitscan into a liquid: no puff, a coloured splash (2026-08-25)
+
+Reported together: the vanilla `PUFF` sprite shows on water / poison / sludge / blood, and
+the `fluid` splash `docs/rt-impact-fx.md` describes is nowhere in game.
+
+**The splash was never reached.** `P_LineAttack`'s impact hook refused any surface the
+TERRAIN lump calls liquid:
+
+```cpp
+if (Terrains[trace.Sector->GetTerrain(plane)].IsLiquid) { sparkOK = false; }
+```
+
+`D64RTR_v15.WAD` ships a `TERRAIN` lump marking every liquid flat `liquid`, so
+`RT_SpawnImpactSparks` was never called on a pool -- **not even the surface probe**, which
+lives inside the spawn function. So `rt_spark_surface_debug` printed nothing on water
+either, and the feature was indistinguishable from a broken one in every diagnostic. The
+gate also short-circuits on `TRACE_HitWall`, which is why the three FALL sheets were the
+only place the `fluid` class had ever run.
+
+**The gate was NARROWED, not deleted.** The four liquids go through, classified by texture
+NAME; everything else that lump calls liquid still does not -- lava, and `F_SKY1`, which it
+also marks `liquid`. Only a name can tell water from lava, which is why the terrain flag
+alone could never have been the answer.
+
+**Why the TERRAIN route was not taken.** It looks like the cheap fix and is not: every
+`splash "..."` line in that lump is **commented out**, so `Terrains[n].Splash == -1` and
+`P_HitWater` bails at `p_mobj.cpp:6452` having spawned nothing -- and Retribution defines
+none of the actors those lines name (`WaterSplash`, `BloodSplash`, `SlimeChunk`,
+`SludgeChunk`). That route needs new actors AND new sprite art. The impact-debris path
+needs neither: the `fluid` profile was already written, tuned and unused.
+
+**Also ruled out: the RTGL1 fluid sim.** `RT_SpawnFluid` takes no colour -- it is
+frame-global (`RgStartFrameFluidParams::color`) -- and `rt_fluid` is pinned false.
+`blood-persist.md` already says do not re-investigate.
+
+### The changes
+
+| file | what |
+|---|---|
+| `rt_internal.h` | `RT_LiquidIdOfName` / `RT_LiquidFallIdOfName` -- the name->family table, lifted out of a static local inside `l_waterflag` |
+| `rt_draw.cpp` | `l_waterflag` calls the lifted lookup. Its own gates and its fall exclusion stay |
+| `rt_spark_surfaces.cpp` | `RT_LiquidSplashId(FTextureID)`, the playsim-facing answer |
+| `p_map.cpp` | `RT_HitTextureOf()` hoisted out of the hook; puff suppressed on liquid; gate narrowed; liquid id passed through |
+| `rt_sparks.cpp` | force `SurfKind::Fluid`; `LiquidCrestRgb()`; fluid tally; probe bug |
+| `rt_spark_draw.cpp` | `litRgb` skips the sat expansion and the luminance pin |
+| `rt_cvars.inc` | `rt_liquid_nopuff`, `rt_spark_fluid`, `rt_spark_fluid_color`, `rt_spark_fluid_albedo` |
+
+**Only the LOOKUP was lifted, not `l_waterflag` itself.** Tagging a fall
+`RG_MESH_PRIMITIVE_WATER` makes the instance refractive and `ASManager` then drops every
+`INSTANCE_MASK_WORLD_*` bit, so the wall stops blocking shadow rays -- that exclusion is
+structural and had to survive the refactor. A splash sets no primitive flag, so the splash
+path uses the falls freely.
+
+**The colour is the CREST cvar, not the flat's average.** The stylized shader repaints the
+surface from `rt_*_tint_*` to `rt_*_crest_*`, so the source art is not what the player sees
+and a droplet sampled from it would not match the pool it came out of. Water 140,204,255;
+nukage 50,150,50; sludge 120,78,38; blood 255,115,102 -- the same values, in the same 0..3
+order, that `rt_main.cpp` packs into `stylizedLiquidCrest`.
+
+**A literal colour has to escape the debris colour path.** `rt_spark_debris_sat` (3.0) and
+the `rt_spark_debris_albedo` luminance pin exist to rescue a whole-texture MEAN; applied to
+an exact colour they push water's pale crest to raw cyan and then drag it to a mid grey-blue.
+`Spark::litRgb` skips both. **It is cleared in `AllocSpark`**, not by each spawn site: a pool
+slot is reused, and a barrel shard or fire-sky ember inheriting a droplet's `true` would
+silently skip both corrections.
+
+**`rt_liquid_nopuff` lives in `rt_cvars.inc`, not in `p_map.cpp`.** It started as a `CVARD`
+beside `rt_blood_repl` and `check_pins.py` immediately reported the pin as
+**"PINNED BUT NO SUCH CVAR (silently does nothing)"** -- that tool reads the X-macro list
+only. It is reached with a local `EXTERN_CVAR` the way `p_mobj.cpp` reaches `rt_fluid`.
+
+**Two diagnostics were lying about fluid**, both fixed here: the probe computed `pDebris` as
+`pSurf == SurfKind::Concrete` while the real decision uses `SurfThrowsDebris()`, so it
+printed "sparks" for every debris class except concrete; and fluid fell into `s_dbgOther`,
+so a splash appeared in no count anywhere.
+
+### Verified live
+
+`.\tools\launch-retribution-rt.cmd 34 -- +rt_water_debug 1 +rt_sludge_autogoto 1`:
+
+    RT water: tagging "D64S2_64" as RG_MESH_PRIMITIVE_WATER, liquid 2 (sludge)
+
+Frame **64**, not `_01` -- which is the proof the prefix match survived the lift. An exact
+table would have missed it, and that is the trap the original comment block was written for.
+
+### Liquid-only shape knobs (same day)
+
+Asked straight after: *"how can I customize the liquid sparks? size, lifetime etc ONLY for
+those liquids?"* -- and the answer was that you could not. Size, life, count, speed, gravity
+and bounce were all `rt_spark_debris_* x the class row`, and both halves are shared: the
+cvar moves every debris class together and the row needs a rebuild.
+
+Seven multipliers added, `rt_spark_fluid_count/size/life/speed/gravity/bounce/spread`, all
+defaulting to **1.0** so the shipped look did not move. Applied through `FluidK()` at each
+point of use rather than by returning a doctored `DebrisProfile`, because gravity and bounce
+are read in the simulation every tic -- a mutable static standing in for the `constexpr`
+table would have left the printed row disagreeing with what the sim used.
+
+`_spread` is the one with no class row behind it: `rt_spark_spread` is read raw and shared
+by sparks and every debris class, so the fluid row's own "thrown wide" comment described
+something nothing implemented.
+
+`spark-fluidfat` was retargeted onto these. It had been fattening `rt_spark_debris_*`, i.e.
+every class at once -- **an arm that fattens the thing you are not looking at cannot isolate
+the thing you are.**
+
+Retuned the same day, from play: **`rt_spark_fluid_size` 1.0 -> 0.5** and
+**`rt_spark_fluid_life` 1.0 -> 0.1**, i.e. 0.0125 m droplets living 0.6 s against 0.025 m and
+6 s. At 1.0 a droplet was chip-sized and lay around for six seconds, which reads as debris
+that happens to be blue rather than as spray. Both halves moved together -- the `RT_CVAR`
+default and the pin -- because a pin overrides the compiled default and the two disagreeing
+is the failure `check_pins.py` exists to catch. The shipping-value arms (`spark-fluid`,
+`spark-fluidtex`, `spark-nofluid`, `spark-puff`) restate the new numbers; `spark-fluidfat`
+keeps its own deliberate overrides.
+
+This is also the first thing the new knobs bought that was not previously possible: the same
+retune through `rt_spark_debris_size` / `_life` would have taken every concrete chip, wood
+splinter and dirt crumb in the game with it.

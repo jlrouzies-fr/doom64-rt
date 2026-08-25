@@ -229,3 +229,6 @@ docs/img/preview/*.png
 # Flashlight sound source (external MP3, not our asset). The generated
 # DFL*.wav clips and D64FLK*.wav are committed as game assets.
 music/fluorescentflicker.mp3
+
+dist-test/*
+dist-patch/*

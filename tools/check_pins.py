@@ -28,6 +28,24 @@ It also flags two quieter mistakes:
                    baked into the play launcher. A pinned one is on for
                    everybody, every session.
 
+  UNPINNED WRITE -- an ARCHIVED cvar that ENGINE CODE assigns at runtime and
+                   this file does not restate. That combination means the
+                   engine's own value gets archived into gzdoom-rt2.ini on quit
+                   and nothing ever puts it back, so the player's LAST SESSION
+                   silently becomes the configuration of every session after it.
+                   ALWAYS an error.
+
+                   This is what rt_clouds_volumetric was. rt_firesky.cpp writes
+                   it true on the five hell maps; quitting there archived a 1
+                   that no pin reset, so whether a player got the ray-marched
+                   clouds or the painted shell deck on MAP12 came down to
+                   whether they had ever visited MAP23 -- same build, same
+                   launcher, two different renderers. It took a viewer's video
+                   of v0.1.15 to spot, and neither this checker nor the CI pin
+                   gate could see it. Fix by pinning the cvar to its compiled
+                   default, or by adding it to RUNTIME_WRITE_OK below with a
+                   reason if it is genuinely per-frame or player-owned.
+
 WHAT IS AND IS NOT AN ERROR. A pin differing from its default is usually
 CORRECT -- that is what the launcher is for (rt_sun_intensity 90 against a
 compiled 1000, rt_upscale_dlss 2 against 0). So a bare run REPORTS differences
@@ -70,6 +88,34 @@ PINS = ROOT / r"tools\d64rt-pins.cfg"
 # calls all nine of them orphans and exits 1 on a healthy tree, which is the
 # crying-wolf failure the comment above is about.
 PK3_DIR = ROOT / "Doom64-Retribution"
+
+# Where the engine assigns cvars back. rt_cvars.cpp is excluded on purpose --
+# it is the declaration site, not a writer. hw_skyportal.cpp is in here because
+# the cloud deck lives outside the rt/ directory and is exactly the file the
+# rt_clouds_volumetric episode ran through.
+WRITE_DIRS = [ROOT / "sourcecode/gzdoom-rt/src/common/rendering/rt"]
+WRITE_FILES = [ROOT / "sourcecode/gzdoom-rt/src/rendering/hwrenderer/scene/hw_skyportal.cpp"]
+WRITE_SKIP = {"rt_cvars.cpp"}
+
+# `cvar::name =` but not `cvar::name ==`.
+WRITE = re.compile(r"cvar::(?P<name>rt_\w+)\s*=(?!=)")
+
+# Archived cvars the engine writes on purpose, where an archived copy cannot
+# decide anything. Each needs a reason, because the default answer is "pin it".
+RUNTIME_WRITE_OK = {
+    # Re-derived from playsim or hardware state every frame, so a stale ini
+    # value is overwritten before the first tic is drawn.
+    "rt_flsh_charge": "flashlight battery level, rewritten every frame",
+    "rt_flsh_battstate": "flashlight battery state, rewritten every frame",
+    "rt_flsh_flicker": "flashlight flicker phase, rewritten every frame",
+    "rt_pw_lightamp": "light-amp powerup, rewritten every frame from the player",
+    # Player-owned settings that the first-start GPU probe seeds ONCE
+    # (rt_main.cpp, RT_Init). A pin would overwrite the player's choice on every
+    # later launch -- the same mistake rt_quality.cpp's header describes.
+    "rt_vsync": "player setting; first-start probe seeds it once",
+    "rt_ef_vintage": "player setting; first-start probe seeds it once",
+    "rt_remix_taa": "player setting; first-start probe seeds it once",
+}
 
 # The X-macro list. Every entry is RT_CVAR( name, default, "help" ) or one of the
 # NOARCH / COLOR / STRING variants, and the default may be 12, 12.f, true, or
@@ -119,6 +165,26 @@ def parse_defaults() -> dict[str, tuple[str, str]]:
     # same cvar, the engine's is the one the pin is really talking to.
     for name, decl in parse_pk3_defaults().items():
         out.setdefault(name, decl)
+    return out
+
+
+def parse_runtime_writes() -> set[str]:
+    """Cvars the ENGINE assigns back at runtime, `cvar::name = ...`.
+
+    Deliberately a text scan and not a real parse: a false positive here costs
+    one allowlist line with a reason on it, and a false negative costs what
+    rt_clouds_volumetric cost.
+    """
+    srcs = list(WRITE_FILES)
+    for d in WRITE_DIRS:
+        if d.exists():
+            srcs += [f for f in sorted(d.glob("*.cpp")) if f.name not in WRITE_SKIP]
+    out: set[str] = set()
+    for f in srcs:
+        if not f.exists():
+            continue
+        for m in WRITE.finditer(f.read_text(encoding="utf-8", errors="replace")):
+            out.add(m.group("name"))
     return out
 
 
@@ -189,7 +255,27 @@ def main() -> int:
 
     preset_pinned = sorted(n for n in pins if n in owned)
 
-    if not (disagree or orphan or noarch or preset_pinned):
+    # ARCHIVED, WRITTEN BY THE ENGINE, NOT PINNED -- the class that cost the
+    # v0.1.15 cloud path. Skipped under a prefix run: that mode is a lockstep
+    # check on one family, not a survey of the tree.
+    written_unpinned = []
+    if not prefix:
+        for name in sorted(parse_runtime_writes()):
+            if name in pins or name in RUNTIME_WRITE_OK:
+                continue
+            # Not declared by RT_CVAR at all -- the capability flags
+            # (rt_available_*, rt_hdr_available) are plain CVARs elsewhere and
+            # are pure hardware readback, never a configuration.
+            if name not in defaults:
+                continue
+            # NOARCH is the other valid fix: the engine can still write it, but
+            # nothing archives it, so it cannot come BACK from a later session.
+            if defaults[name][1] == "_NOARCH":
+                continue
+            written_unpinned.append(name)
+
+
+    if not (disagree or orphan or noarch or preset_pinned or written_unpinned):
         n = sum(1 for k in pins if not prefix or k.startswith(prefix))
         print(f"check_pins: OK -- {n} pins agree with their compiled defaults")
         return 0
@@ -211,6 +297,9 @@ def main() -> int:
     for name, value, pinned in noarch:
         print(f"   {name:32} NOARCH pinned ON: default={value} pinned={pinned}"
               f" -- a diagnostic left on for every session")
+    for name in written_unpinned:
+        print(f"   {name:32} ARCHIVED, WRITTEN AT RUNTIME, NOT PINNED"
+              f" -- last session becomes the configuration")
     print()
     if prefix or orphan:
         print("Fix BOTH halves: the RT_CVAR default in rt_cvars.inc and the line in")
@@ -220,7 +309,12 @@ def main() -> int:
     if preset_pinned:
         print("Remove those lines from tools/d64rt-pins.cfg. The preset's High level")
         print("restates every shipped value, so nothing is lost by unpinning them.")
-    return 1 if (orphan or preset_pinned or (prefix and disagree)) else 0
+    if written_unpinned:
+        print("Each of those is archived into gzdoom-rt2.ini on quit and never put")
+        print("back, so whatever the engine last wrote decides every later session.")
+        print("Pin it to its compiled default in tools/d64rt-pins.cfg, or make it")
+        print("RT_CVAR_NOARCH, or add it to RUNTIME_WRITE_OK with a reason.")
+    return 1 if (orphan or preset_pinned or written_unpinned or (prefix and disagree)) else 0
 
 
 if __name__ == "__main__":

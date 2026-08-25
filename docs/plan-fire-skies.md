@@ -16,6 +16,19 @@ Since **v0.1.14 it is §3a that ships**, and §2 is what you get with it off.
   This doc said "ships off" over a pin of 1, and a v0.1.14 release note was
   drafted from it before the pin was checked.
 
+  **What `rt_firesky_vclouds` does changed on 2026-08-25.** It used to be the
+  only thing that ever set `rt_clouds_volumetric`, which made these five maps the
+  only ones with a ray-marched sky. `rt_clouds_volumetric` now defaults to 1 and
+  is pinned, so the march is the cloud path on every map whose preset turns
+  `rt_clouds` on; this cvar's write at `rt_firesky.cpp:559` is redundant and kept
+  only so the fire maps still engage with the pin removed. What still belongs to
+  the fire maps alone are the FIRE terms — `rt_vclouds_fire*`, `_back`,
+  `_cascade*` and the second deck — gated inside `rt_vclouds.cpp` on
+  `RT_FireSkyMap() || RT_FireSkyActive()`, so a storm map gets a plain lit slab
+  out of the same pinned numbers. See
+  [`plan-volumetric-clouds.md`](plan-volumetric-clouds.md) §5 for why that was
+  not a decision anybody made on purpose.
+
 §1 is measured. §4 onward remain proposals; §5 in particular is untouched by
 either of the above and is now the biggest single win left for the default sky.
 

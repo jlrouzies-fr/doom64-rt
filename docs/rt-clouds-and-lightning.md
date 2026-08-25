@@ -5,6 +5,19 @@ authored as a storm in three separate places, and under RT exactly one of those
 three still worked. This is the write-up of finding the other two and putting
 them back.
 
+> **READ THIS FIRST — THE SHELL DECK IS NO LONGER WHAT DRAWS.** Since 2026-08-25
+> `rt_clouds_volumetric` defaults to 1 and is pinned, so on every map whose
+> preset turns `rt_clouds` on — MAP11 included — `RT_DrawCloudDeck` returns
+> early and the ray-marched slab draws instead
+> ([`plan-volumetric-clouds.md`](plan-volumetric-clouds.md)). Everything below
+> about the deck's shells, its bake and its per-map tuning is still accurate and
+> still reachable with `rt_clouds_volumetric 0`, but it is the fallback now.
+>
+> The one thing to carry across when reading this page against the running game:
+> the deck's lightning term is `rt_clouds_flash` (`hw_skyportal.cpp`) and the
+> march's is `rt_vclouds_flash` (`rt_vclouds.cpp`). They are different cvars with
+> different tunings, and only one of them is live at a time.
+
 ---
 
 ## 1. What the map actually does

@@ -547,6 +547,18 @@ surface at an R:G:B of 1 : 0.61 : 0.29 — brown rather than sand. The crest
 dominates wherever the mask is high, so the tint is mostly what sets how dark
 and how warm the *hollows* go.
 
+## The crest colours also colour the impact splash (2026-08-25)
+
+`rt_water_crest`, `rt_nukage_crest`, `rt_sludge_crest` and `rt_blood_crest` are no longer
+only a surface colour: a hitscan into a pool now throws droplets in the same value
+(`docs/rt-impact-fx.md` 2.4). Taking the CREST rather than the flat's own average is
+deliberate -- the shader repaints the surface from tint to crest, so the source art is not
+what the player sees, and a droplet sampled from it would not match the pool it came out of.
+
+Consequence worth knowing before the next retune: **moving a crest now moves two things.**
+That is the intent -- they should never disagree -- but a crest chosen purely for how a pool
+reads at a distance is also choosing how its splash reads at arm's length.
+
 ## Not done
 
 - **Nukage — a decision, not an oversight (2026-08-25).** Poison is the only
