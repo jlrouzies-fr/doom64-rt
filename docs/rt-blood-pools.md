@@ -175,7 +175,7 @@ version, kept to show why), and `coarse`/`fine` bracket the streak length.
 | `rt_sludge_relief` | `1.0` | as `rt_blood_relief`, but the height comes from the art's full luminance range, not the vein mask |
 | `rt_sludge_refl` | `0.0` | how much of the stylized water MIRROR sludge keeps. 1 = the mirror water gets. **0 = no mirror and no checkerboard split**: full-res surface, glossy specular sheen |
 | `rt_liquid_checkerboard` | `1` | **Console only**, not in the Quality menu. 0 forces the no-split path for all four liquids. Archived, unpinned |
-| `rt_sludge_rough` | `0.85` | sludge surface roughness. `<= 0` = use `rt_water_rough` (0.1) |
+| `rt_sludge_rough` | `0.8` | sludge surface roughness. `<= 0` = use `rt_water_rough` (0.1) |
 | `rt_sludge_autogoto` | `0` | `NOARCH`. As `rt_blood_autogoto`; CCMD is `rt_sludge_goto` |
 | `rt_blood_caustics` | `0.0` | how much of `rt_water_caustics` blood projects onto the geometry around it. 0 because it is opaque — see below |
 | `rt_blood_flow_debug` | `0` | `NOARCH`. Paint the decoded phase instead of the surface |
@@ -189,6 +189,78 @@ mysterious, and hands the animation to the flow:
 ```glsl
 caustic = veins * ( 1 + causticGain * shimmer * (1 - relief) + flowAmt * (2*detail - 1) )
 ```
+
+## Why none of these persist — and why that is the fix (2026-08-25)
+
+Every cvar in the table above is `RT_CVAR_NOARCH`. It is **never written to
+`gzdoom-rt2.ini`** and comes back at its compiled default on every launch. That
+is deliberate, and it came out of a player report of the animated water wave on
+the blood, poison and sludge flats in a released build.
+
+**The wave is global; the relief is the only thing that removes it.**
+`getNormal()` swaps `getWaterNormal()` in for *any* water-flagged primitive —
+the `hasNormalMap` flag is hardcoded false at the primary hit — and
+`stylizedLiquidRelief[liquidId]` mixes it back out afterwards. So on a blood or
+sludge bed, `rt_blood_relief` / `rt_sludge_relief` are not a look knob among
+others: they are the entire difference between a coagulated pool and water with
+red paint on it.
+
+Before this, that difference was held up by one thing — `+exec d64rt-pins.cfg`
+on the launcher line. Three ways it came off, all silent:
+
+| how | what the player sees |
+|---|---|
+| a `0` archived in their `gzdoom-rt2.ini` from any earlier build or session | the ripple, and the pin never gets a chance |
+| launching `gzdoom.exe` without the launcher | the ripple, and no pins at all |
+| a release built from a **stale exe** — the pin names a cvar it predates | one `"Unknown command"` in the boot spam, then the ripple |
+
+### NOARCH alone was not enough, and that is the load-bearing part
+
+Taking a cvar off the ini stops it being **written**. It does not stop it being
+**read**. `FGameConfigFile::ReadCVars` walks every key in the section and applies
+it by name — it never looks at `CVAR_ARCHIVE` — so a line left by an older build
+kept setting the cvar, and because nothing rewrites that key any more, the stale
+line survived every clean exit that would otherwise have refreshed it. A NOARCH
+conversion on its own would have protected only fresh installs.
+
+That was not hypothetical: `rt_clouds_volumetric` has been `RT_CVAR_NOARCH` for a
+while and a stale archived line for it was **still in this machine's config and
+still being applied**. Nobody had noticed.
+
+So `gameconfigfile.cpp` now skips a key whose cvar is not archived. It is safe by
+construction — a key can only be in the config because some build archived it,
+and auto-created cvars take the branch above it and are given `CVAR_ARCHIVE` —
+and it is self-cleaning: `ClearCurrentSection()` + `C_ArchiveCVars()` drop the
+orphaned line on the next clean exit. Measured: poisoning the ini with
+`rt_blood_relief=0`, `rt_sludge_relief=0`, `rt_water_wavestren=3` and launching
+**with no pins at all** still logs `relief …/1.00/1.00` and `wave=0.40@0.20`, and
+one clean exit removes all 58 stale keys.
+
+With that in place NOARCH closes every route above. The pins stay, as a
+**restatement** of the shipped values rather than an override — `check_pins.py` blesses a NOARCH pinned
+to its own default and errors on one pinned to anything else, so the pins file is
+now a guard instead of a second source of truth. Keep them in step:
+
+    python tools/check_pins.py rt_blood      # and rt_sludge / rt_water / rt_nukage / rt_liquid
+
+The third is a packaging problem, and `tools/package_release.py` now refuses it:
+`check_engine_fresh()` (binaries not older than their own source tree),
+`check_pins_lockstep()` (no drift, no orphan pins) and `check_liquid_relief()`
+(64 `_n`/`_h`/`_orm` per liquid family actually present in `rt/mat_dev`, which is
+the one path the art reaches a release by). They run before anything is copied,
+alongside `check_mods_match_launcher()`.
+
+**And every player's log now says what the shader got.** `RT_ReportLiquidConfig()`
+prints one line per level load at `RT_DiagPrintLevel()`, so it is in
+`rt-console.log` — which the release launcher already writes — without painting
+over the game:
+
+    RT liquid: style=1 liquids=1 split=1 wave=0.40@0.20 | relief w/n/s/b 0.00/0.00/1.00/1.00  refl 1.00/1.00/0.00/1.00  flow(blood) 1.00
+
+`relief …/1.00/1.00` is the confirmation. Anything else on the sludge or blood
+slot is the bug, and the same line tells you whether it is the cvar or the art.
+Note the first two slots are always `0.00`: water and nukage take the wave, and
+nukage does so on purpose (see **Not done**).
 
 ## Getting to a pool
 
@@ -447,10 +519,15 @@ relief".
 `screen/poison_texture.png` replaces `D64N1_*` / `D64N2_*` and
 `screen/sludge_texture.png` replaces `D64S1_*` / `D64S2_*`, both through the
 same wad and the same pipeline — crop, min-cut tile, resample, expose — and
-**nothing else**: no relief, no flow. They keep the stylized wave shimmer the
-other liquids have, and lose their projected caustics for the same reason blood
-did. No overlays are written for either, so `set_water_meta.py`'s frame-01
-quarantine still applies to the nukage and sludge families and must.
+**nothing else at the time**: no relief, no flow, and both lost their projected
+caustics for the same reason blood did.
+
+That sentence is now only true of **poison**. Sludge acquired its own relief in
+the same pass that made the mud beds (`rt_sludge_relief`, 64 `_n`/`_h`/`_orm`
+per family), which is why `set_water_meta.py`'s frame-01 quarantine exempts
+`D64S1_`/`D64S2_` alongside the blood families — for a liquid whose look IS the
+relief, losing frame 01's `_n` puts the water ripple back for two tics a cycle.
+Poison is not exempt, because poison has no relief to lose.
 
 Both references are far brighter than the flats they replace (poison lum p50
 0.18, sludge 0.15, against a mask reference of 0.1), so the exposure step
@@ -472,8 +549,17 @@ and how warm the *hollows* go.
 
 ## Not done
 
-- **Nukage.** Poison is the only liquid still taking the water wave, the full
-  water reflection and no relief. Roughness and Fresnel now exist per liquid
-  (`stylizedLiquidRough` / `stylizedLiquidRefl`) and the relief array is
-  already shaped for it; only the wave itself is still global.
+- **Nukage — a decision, not an oversight (2026-08-25).** Poison is the only
+  liquid still taking the water wave, the full water reflection and no relief,
+  and it ships that way on purpose. `stylizedLiquidRelief[1]` is a hardcoded
+  `0.f` in `rt_main.cpp`, there is **no `rt_nukage_relief` cvar**, and
+  `rt/mat` holds **0** `_n` for `D64N*` against 64 each for `D64B1/B2/S1/S2`.
+  Closing it is not a cvar: it needs 128 authored relief maps from
+  `gen_liquid_art.py`, a wired index 1, a pin, and a `D64N1_`/`D64N2_` entry in
+  `set_water_meta.py`'s `_RELIEF_FAMILIES`. Roughness and Fresnel already exist
+  per liquid (`stylizedLiquidRough` / `stylizedLiquidRefl`) and the relief array
+  is already shaped for it, so the wave is the only piece left.
+
+  Until then: **a report of "the wave is on the poison" is the shipped
+  behaviour**, and only the same report about BLOOD or SLUDGE is a bug.
 - Bubbles or clots breaking the plane — the poison-spawner retarget.

@@ -41,7 +41,21 @@ and a FLOW MAP so liquid visibly moves along the veins (the phase-pulse version
 was rejected as flicker; the doc says why). Also why WATER IS NOW THE ONLY
 LIQUID THAT PROJECTS CAUSTICS, why the new art needs the crest colours retuned
 down, and the frame-01 `textures.json` bug this uncovered in all eight liquid
-families:
+families. **The whole liquid look family is `RT_CVAR_NOARCH` as of 2026-08-25** —
+the wave is GLOBAL and the per-liquid relief is the only thing that removes it,
+so `rt_blood_relief` / `rt_sludge_relief` were the entire difference between a
+coagulated pool and water with red paint on it, held up by one `+exec` of the
+pins. **NOARCH alone was not enough** — `FGameConfigFile::ReadCVars` applies every
+key in the ini by name and never looks at `CVAR_ARCHIVE`, so un-archiving a cvar
+stopped it being written but not being read, and the stale line then survived
+every clean exit; `gameconfigfile.cpp` now skips a key whose cvar is not archived
+(self-cleaning, and it removed a live stale `rt_clouds_volumetric` nobody knew
+about). The look can no longer be carried by a stale `gzdoom-rt2.ini` or lost by
+a launch that skips the launcher; the pins are now a restatement, not a source of
+truth. `package_release.py` refuses to ship a stale exe, a drifted or orphaned
+liquid pin, or an `rt/mat_dev` missing the relief maps, and every level load
+prints one `RT liquid:` line into `rt-console.log` naming what the shader got.
+**Poison keeps the wave on purpose** — no `rt_nukage_relief`, no `D64N*` `_n`:
 
 → **`docs/rt-blood-pools.md`**
 

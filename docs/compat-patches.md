@@ -2117,3 +2117,132 @@ default) and Stage 5 (promote to archived + Quality menu + preset table) wait on
 the A/B. The A035/A036 poles that prompted this are lit fine — GLDEFS dynlight
 plus a 300-intensity analytic sphere from `RT_UploadHangingTechLamps`.
 
+---
+
+## The water wave on blood / poison / sludge in a release (2026-08-25) -- the liquid look is now NOARCH
+
+Reported from a released build: the animated **water wave** on the blood, poison and
+sludge flats, on a machine where it is off here and kept for real water only.
+
+**The wave is GLOBAL and the relief is the only thing that removes it.** `getNormal()`
+(`RaygenPrimary.inl:576`) substitutes `getWaterNormal()` for *any* water-flagged
+primitive -- at the primary hit `hasNormalMap` is hardcoded false, so an `_n` on a liquid
+is sampled, written to the G-buffer and thrown away. What takes the wave back off is the
+per-liquid mix at `RaygenPrimary.inl:1045`, fed by `rt_main.cpp`:
+
+    .stylizedLiquidRelief = { 0.f, 0.f, cvar::rt_sludge_relief, cvar::rt_blood_relief };
+    //                        water  nukage  sludge              blood
+
+So `rt_blood_relief` / `rt_sludge_relief` are not one look knob among many: they are the
+whole difference between a coagulated pool and water with red paint on it. Both were
+`RT_CVAR` -- `CVAR_GLOBALCONFIG | CVAR_ARCHIVE` -- and the shipped value was held up by
+exactly one thing, `+exec d64rt-pins.cfg` on the launcher line.
+
+**Three ways that came off, none of which say anything:**
+
+- a `0` archived in the player's `gzdoom-rt2.ini` from any earlier build or session;
+- launching `gzdoom.exe` without the launcher, so no pins run at all;
+- a release built from a **stale exe**, where the pin names a cvar the binary predates.
+  GZDoom prints one `"Unknown command"` into hundreds of boot lines and the uniform keeps
+  whatever RTGL1 left in it -- the same class as `generated-header-leaves-stale-objects`.
+
+### What changed
+
+**`gameconfigfile.cpp`: a cvar that is not archived is no longer restored from the
+archive.** This is the load-bearing half and it is an engine patch.
+`FGameConfigFile::ReadCVars` walks every key in the section and applies it by name
+-- it never looks at `CVAR_ARCHIVE`. So taking a cvar off the ini stops it being
+WRITTEN but not being READ, and because nothing rewrites that key any more, a line
+left by an older build survives every clean exit that would have refreshed it.
+Without this, the NOARCH conversion below would have protected only fresh installs.
+
+Not hypothetical: `rt_clouds_volumetric` has been `RT_CVAR_NOARCH` for some time and
+a stale archived line for it was **still in this machine's config and still being
+applied**. It came out with the liquid keys and nobody had ever noticed.
+
+Safe by construction -- a key can only be in the config because some build archived
+it; auto-created cvars take the `cvar == NULL` branch above and are given
+`CVAR_ARCHIVE`. And self-cleaning: `ClearCurrentSection()` + `C_ArchiveCVars()`
+drop the orphaned line on the next clean exit, so it is a migration, not a
+permanent filter.
+
+**57 liquid cvars `RT_CVAR` -> `RT_CVAR_NOARCH`** in `rt_cvars.inc` -- the relief, flow,
+reflection, roughness, caustics, tint/crest, wave and split families for all four liquids.
+Every default is byte-identical; only the archive flag moved, so there is **no look
+change**. Verified by diffing name+value pairs across the whole file before and after.
+
+Safe because nothing in `rt_quality.cpp`'s `g_quality[]` and nothing in `menudef.txt`
+names any of them, so no persisted player choice is lost. `rt_liquid_checkerboard` is
+console-only by design and says so at `menudef.txt:516`.
+
+`rt_lava_*` was deliberately **not** converted: lava is tagged `RG_MESH_PRIMITIVE_LAVA`,
+never `RG_MESH_PRIMITIVE_WATER` (`RT_IsLavaFlat`, `rt_internal.h:133`), so it never
+receives the wave normal and is not this bug.
+
+**Four archived-and-unpinned liquid cvars closed** in `tools/d64rt-pins.cfg`:
+`rt_liquid_checkerboard`, `rt_water_r/_g/_b`. The pins are now a *restatement* of the
+compiled defaults rather than an override -- `check_pins.py` blesses a NOARCH pinned to
+its own default and errors on one pinned to anything else, which turns the pins file into
+a guard instead of a second source of truth. `check_pins.py rt_water|rt_blood|rt_sludge|
+rt_nukage|rt_liquid` all report OK.
+
+**Three preflight checks in `tools/package_release.py`**, run before anything is copied,
+next to the existing `check_mods_match_launcher()`:
+
+| check | what it refuses |
+|---|---|
+| `check_liquid_relief()` | an `rt/mat_dev` without 64 `_n`/`_h`/`_orm` per liquid family. That directory is the ONE path the relief art reaches a release by (the packager drops `rt/mat`, and `RTGL1.json` ships `developerMode: true`) |
+| `check_pins_lockstep()` | a liquid pin that drifted from its compiled default, or an orphan pin naming a cvar the engine does not have |
+| `check_engine_fresh()` | a binary older than its own source tree. Each binary is compared to ITS OWN tree, and `Source/Generated/` is excluded -- the header generator runs after the link, so those files are always newer than the DLL |
+
+Confirmed against the stale `dist/Doom64-RT` tree in the repo, which fails
+`check_liquid_relief()` on all twelve counts (0 of 64, every family) and
+`check_engine_fresh()` on both binaries.
+
+**One line per level load in every player's log.** `RT_ReportLiquidConfig()`
+(`rt_main.cpp`, declared in `rt_internal.h`, called beside `RT_ReportPrecache()`) prints
+at `RT_DiagPrintLevel()`, so it lands in the console buffer and `rt-console.log` -- which
+the release launcher already writes with `+logfile` -- without painting over the game at
+the release default `rt_verbose 0`:
+
+    RT liquid: style=1 liquids=1 split=1 wave=0.40@0.20 | relief w/n/s/b 0.00/0.00/1.00/1.00  refl 1.00/1.00/0.00/1.00  flow(blood) 1.00
+
+It reads the same cvars `RT_DrawFrame` uploads, so it cannot drift from them. Keyed on
+`RT_GetMapName()`, so it is once per level rather than once per frame.
+
+### Poison keeps the wave, and that is the shipped behaviour
+
+`stylizedLiquidRelief[1]` is a hardcoded `0.f`, there is no `rt_nukage_relief`, and
+`rt/mat` holds **0** `_n` for `D64N*` against 64 each for `D64B1/B2/S1/S2`. A report of
+the wave on POISON is correct behaviour; the same report about BLOOD or SLUDGE is a bug.
+Closing it needs 128 authored relief maps from `gen_liquid_art.py`, a wired index 1, a
+pin, and `D64N1_`/`D64N2_` in `set_water_meta.py`'s `_RELIEF_FAMILIES`.
+
+### Measured, not argued
+
+The claim is "a stale `gzdoom-rt2.ini` cannot bring the wave back", so it was
+tested as one. The config at
+`Documents/My Games/GZDoom/gzdoom-rt2.ini` was poisoned by hand with
+`rt_blood_relief=0`, `rt_sludge_relief=0`, `rt_water_wavestren=3`, and gzdoom was
+launched **directly, with no `+exec` of the pins at all** -- the one case pins can
+never cover. The log line:
+
+    RT liquid: style=1 liquids=1 split=1 wave=0.40@0.20 | relief w/n/s/b 0.00/0.00/1.00/1.00  refl 1.00/1.00/0.00/1.00  flow(blood) 1.00
+
+Shipped values, poisoned ini ignored. One clean exit then removed **58** stale
+keys from the config -- the 57 liquid ones plus `rt_clouds_volumetric` -- and
+nothing else was touched.
+
+### Fixed on the way
+
+`rt_vclouds.cpp:393` and the new `rt_main.cpp` Printf both had a **literal newline inside
+a format string** where `
+` was meant -- `error C2001: newline in constant`. The
+`rt_vclouds.cpp` one was pre-existing uncommitted work and was breaking the build before
+this change started.
+
+Stale statements corrected: `RaygenPrimary.inl:1041` said relief 0 "is what water, nukage
+and sludge use" (sludge has shipped at 1 since 72ac4c9); `docs/rt-blood-pools.md` said
+poison and sludge "keep the stylized wave shimmer" and documented `rt_sludge_rough` as
+`0.85` against an actual `0.8`.
+
