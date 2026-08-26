@@ -134,10 +134,53 @@ Getting here took two wrong answers, both worth keeping:
    black nukage casting **nothing**. The "glow" signed off earlier was the ceiling
    grid lighting their albedo. That is the "no light on MAP07" report exactly.
 
-`LF_DONTLIGHTSELF` is what makes both work at once: the bubble lights the room
-and not its own billboard. And it is attached from ZScript rather than declared
-in GLDEFS because a GLDEFS light is fixed at parse time — this one has to be
-tunable, which is what `d64_poison_light` is for.
+3. **Both at full strength.** The fix for (2) raised `lightIntensity` ~4.5× and
+   `emissiveMult` ~2×, *and* added the ZScript light — and nobody saw the result,
+   because `patch_texjson` wrote only the gitignored build tree and the next
+   build wiped it every time. The first run with both halves actually alive read
+   as far too bright, and the numbers say why: at `emissiveMult` 0.60–1.05 and
+   250–650 lm the bubbles were calibrated like a **lava spark** (`LSPK*`:
+   0.30–0.70, 100–760 lm) — a white-hot molten droplet — and sat in the top ~15%
+   of all 956 emissive sprites in the game, whose median is 0.35–0.40.
+
+**Two things, and conflating them is what made the knob feel dead.** The report
+was *"`d64_poison_light` doesn't do anything any more and the bubbles are too
+bright"*, and both halves of that were true at once:
+
+| | what it sets | tunable? |
+|---|---|---|
+| `emissiveMult` | how bright the billboard **looks**. Screen glow; casts nothing. | no — material meta, rebuild with `--emis` |
+| `lightIntensity` | light the sprite **throws**. Also meta, also untunable, *and* co-located with the billboard with no `LF_DONTLIGHTSELF` — the white-pill mechanism from (1). | no |
+| `d64_poison_light` | scales the ZScript `A_AttachLight` only. | yes |
+
+So the cvar governed the one term that was not carrying the picture.
+`lightIntensity` is now **0 on every frame** and the cast light is entirely
+`AttachPoisonLight()`'s — tunable, and unable to light its own sprite. That is
+not an invention here: it is exactly what the game's **84 flame sprites** do,
+`lightIntensity: 0` in the meta and lit by `RT_UploadFlameLights` in C++
+instead, for the same reason — meta cannot express a tunable light.
+
+`d64_poison_light` therefore now governs **all** the light a bubble throws, and
+its default is back to **1.0**, the value that was actually in play through the
+whole period the meta was missing. Every arm pins it, so the arms moved with it.
+
+`emissiveMult` lands at **0.22–0.42** — below the set's median, an order of
+magnitude under a torch, and the brief unchanged: a thing you notice on the
+surface, not a lamp. It is the one number for how bright a bubble *looks*, and
+it is a **rebuild** knob, not a cvar, because material meta cannot be scaled at
+runtime — a tinted sprite is a different RTGL1 material with no `textures.json`
+entry, the same wall `d64_poison_sat`'s baked rungs exist to get round. It is on
+the command line so a level costs one command rather than an edit:
+
+```
+tools/.venv-ai/Scripts/python.exe tools/gen_poison_fx.py --apply --emis 0.6
+```
+
+`lightColor` is still written even though the intensity is 0, so bringing the
+sprite light back is one number and not a re-derivation.
+
+And the light is attached from ZScript rather than declared in GLDEFS because a
+GLDEFS light is fixed at parse time — this one has to be tunable.
 
 **Judge it in the dark.** A lit room proves the sprite draws and proves nothing
 about whether it emits. `poison-lab.cmd chandark` is the room; `nolight` is the
@@ -275,7 +318,7 @@ result gets blamed on the change instead of on the leftover value.
 | `d64_poison_size` | `0.35` | **absolute** scale on the per-bubble spread (0.7–1.25), where `1` draws the sprite at its authored 20 px. It multiplies the whole spread, so raising it makes a bigger lake, not a uniform one. Clamped at 0.05 — a zero-scale bubble is invisible but still ticks and still lights, which reads as a broken effect; `d64_poison_fx` is the off switch |
 | `d64_poison_z` | `1.0` | where the bubble's **foot is drawn**, relative to the fluid plane. **Negative sinks it into the surface** — the useful direction, since a bubble that breaks the plane reads better than one resting on it |
 | `d64_poison_sat` | `1.0` | colour saturation **relative to shipping**. Five baked rungs — `0` grey, `1` matched to the pool, `2` roughly the original art. See below |
-| `d64_poison_light` | `0.1` | scales the bubble's **dynamic light**. `0` turns it off. This is the light that lands on walls |
+| `d64_poison_light` | `1.0` | scales the bubble's **dynamic light**, which since 2026-08-26 is the *only* light a bubble throws (`lightIntensity` in the meta is 0). `0` turns it off. This is the light that lands on walls — it does **not** change how bright the sprite looks; that is `emissiveMult`, a rebuild knob |
 | `d64_poison_lsize` | `16` | that light's radius, clamped to 20. **Size is not brightness** — above `rt_dynlight_rsoft` (pinned at 20) a larger radius is *dimmer*. Brightness is `d64_poison_light` |
 | `d64_poison_debug` | `0` | log the sector count, the first three spawn positions, the sample hit rate and the roofed count |
 | `d64_poison_roofgate` | `1` | suppress bubbles under a solid 3D floor. `0` is the before-picture — see [Under a 3D floor](#under-a-3d-floor) |

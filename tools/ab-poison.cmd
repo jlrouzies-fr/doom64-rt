@@ -19,12 +19,25 @@ rem      keeps the samples that land on a D64N floor, and spawns a bubble there.
 rem      If the log has no "D64PoisonFx: N poison sector(s)" line at level load,
 rem      NOTHING below this point can work: either the pk3 is not loaded or
 rem      MAPINFO did not register the handler, and no amount of rate will help.
-rem   2. the LIGHT   -- lightIntensity on the SPRITE, from rt/data/textures.json.
-rem      That is the whole of it. A GLDEFS pointlight per frame was tried and
-rem      removed: a point light inside a 20-unit billboard is at zero distance
-rem      from it, so every bubble rendered as a white pill with the art gone.
-rem      The sprite meta was already throwing the green, which is what
-rem      rt_dynlight 0 proved -- see the "nodyn" arm.
+rem   2. the LIGHT   -- a ZScript A_AttachLight with LF_DONTLIGHTSELF, scaled by
+rem      d64_poison_light. Since 2026-08-26 that is the ONLY light a bubble
+rem      throws: lightIntensity in rt/data/textures.json is 0 on every frame,
+rem      the same thing the game's 84 flame sprites do. A meta light sits inside
+rem      a 20-unit billboard at zero distance from it, so it lights the sprite
+rem      into a white pill AND cannot be tuned; LF_DONTLIGHTSELF fixes the first
+rem      and being a cvar fixes the second.
+rem
+rem      DO NOT CONFUSE IT WITH HOW BRIGHT THE SPRITE LOOKS. That is
+rem      emissiveMult in the meta -- screen glow, casts nothing, and NOT a cvar,
+rem      because a tinted sprite is a different RTGL1 material with no
+rem      textures.json entry. It is a rebuild:
+rem
+rem        tools/.venv-ai/Scripts/python.exe tools/gen_poison_fx.py --apply --emis 0.6
+rem
+rem      "d64_poison_light does nothing and the bubbles are too bright" was both
+rem      of those at once: the cvar moved the minor term while the meta, which
+rem      had been silently wiped from textures.json for weeks, came back
+rem      calibrated like a LAVA SPARK.
 rem
 rem   on      the default: rate 2, so 6 bubbles every 9 tics inside 1100
 rem           units.
@@ -126,16 +139,16 @@ rem the evidence from one run is destroyed by the next unrelated launch before i
 rem can be read. +logfile comes after the launcher's own, so it wins.
 set "LOG=+logfile %~dp0\..\rt-poison.log"
 
-if /i "%ARM%"=="on"     set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 0 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
-if /i "%ARM%"=="off"    set "ARGS=+d64_poison_fx 0 +d64_poison_rate 2    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 0 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
-if /i "%ARM%"=="dense"  set "ARGS=+d64_poison_fx 1 +d64_poison_rate 8    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 0 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
-if /i "%ARM%"=="sparse" set "ARGS=+d64_poison_fx 1 +d64_poison_rate 0.5  +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 0 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
-if /i "%ARM%"=="near"   set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2    +d64_poison_dist 400  +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 0 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
-if /i "%ARM%"=="far"    set "ARGS=+d64_poison_fx 1 +d64_poison_rate 8    +d64_poison_dist 2200 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 0 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
-if /i "%ARM%"=="nodyn"  set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 0 +d64_poison_roofgate 1 +d64_poison_bubbles 1 +rt_dynlight 0"
-if /i "%ARM%"=="debug"  set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 1 +d64_poison_roofgate 1 +d64_poison_bubbles 1 +rt_verbose 1"
-if /i "%ARM%"=="roof"   set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 1 +d64_poison_bubbles 1 +rt_verbose 1 +d64_poison_roofgate 1"
-if /i "%ARM%"=="noroof" set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 1 +d64_poison_bubbles 1 +rt_verbose 1 +d64_poison_roofgate 0"
+if /i "%ARM%"=="on"     set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 1 +d64_poison_lsize 16 +d64_poison_debug 0 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
+if /i "%ARM%"=="off"    set "ARGS=+d64_poison_fx 0 +d64_poison_rate 2    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 1 +d64_poison_lsize 16 +d64_poison_debug 0 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
+if /i "%ARM%"=="dense"  set "ARGS=+d64_poison_fx 1 +d64_poison_rate 8    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 1 +d64_poison_lsize 16 +d64_poison_debug 0 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
+if /i "%ARM%"=="sparse" set "ARGS=+d64_poison_fx 1 +d64_poison_rate 0.5  +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 1 +d64_poison_lsize 16 +d64_poison_debug 0 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
+if /i "%ARM%"=="near"   set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2    +d64_poison_dist 400  +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 1 +d64_poison_lsize 16 +d64_poison_debug 0 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
+if /i "%ARM%"=="far"    set "ARGS=+d64_poison_fx 1 +d64_poison_rate 8    +d64_poison_dist 2200 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 1 +d64_poison_lsize 16 +d64_poison_debug 0 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
+if /i "%ARM%"=="nodyn"  set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 1 +d64_poison_lsize 16 +d64_poison_debug 0 +d64_poison_roofgate 1 +d64_poison_bubbles 1 +rt_dynlight 0"
+if /i "%ARM%"=="debug"  set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 1 +d64_poison_lsize 16 +d64_poison_debug 1 +d64_poison_roofgate 1 +d64_poison_bubbles 1 +rt_verbose 1"
+if /i "%ARM%"=="roof"   set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 1 +d64_poison_lsize 16 +d64_poison_debug 1 +d64_poison_bubbles 1 +rt_verbose 1 +d64_poison_roofgate 1"
+if /i "%ARM%"=="noroof" set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 1 +d64_poison_lsize 16 +d64_poison_debug 1 +d64_poison_bubbles 1 +rt_verbose 1 +d64_poison_roofgate 0"
 
 if not defined ARGS (
   echo Usage: %~nx0 ^<on^|off^|dense^|sparse^|near^|far^|nodyn^|debug^|roof^|noroof^> [1-34]

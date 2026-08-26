@@ -90,10 +90,16 @@ rem   vivid   green. The control for "where is the green coming from". vivid is
 rem           sat 2, roughly the original art, which read as too saturated
 rem           against the poison; shipping (1) is matched to the rendered pool.
 rem   nodyn   rt_dynlight 0 in the dark room. GLOBAL, so it kills every dynamic
-rem           light in the game. This is the arm that found the white-pill
-rem           blowout: the bubbles kept glowing and kept tinting the pool with
-rem           it off, which proved the sprite meta was carrying the light and
-rem           the per-frame GLDEFS lights were pure loss. They are gone now.
+rem           light in the game -- and since 2026-08-26 the bubbles' ONLY cast
+rem           light is a dynamic one (meta lightIntensity is 0 on every frame),
+rem           so this arm now leaves them throwing nothing at all. What is left
+rem           on screen is emissiveMult, the billboard's own glow, which casts
+rem           nothing and is a REBUILD knob rather than a cvar:
+rem
+rem             tools/.venv-ai/Scripts/python.exe tools/gen_poison_fx.py --apply --emis 0.6
+rem
+rem           Which makes nodyn the clean separator: whatever you can still see
+rem           with it on is glow, and everything that vanished was the light.
 rem
 rem Anything after "--" is appended verbatim and wins, for one-off overrides.
 rem
@@ -118,22 +124,22 @@ set "D64=%PROJ%\Doom64-Retribution"
 
 set "MAP=MAP91"
 set "ARGS="
-if /i "%ARM%"=="dark"    set "MAP=MAP90" & set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2 +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 1 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
-if /i "%ARM%"=="lit"     set "MAP=MAP91" & set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2 +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 1 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
-if /i "%ARM%"=="nowater" set "MAP=MAP91" & set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2 +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 1 +d64_poison_roofgate 1 +d64_poison_bubbles 1 +rt_water_liquids 0"
-if /i "%ARM%"=="dense"   set "MAP=MAP91" & set "ARGS=+d64_poison_fx 1 +d64_poison_rate 8 +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 1 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
-if /i "%ARM%"=="still"   set "MAP=MAP91" & set "ARGS=+d64_poison_fx 0 +d64_poison_rate 2 +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 0 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
-if /i "%ARM%"=="nodyn"   set "MAP=MAP90" & set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2 +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 1 +d64_poison_roofgate 1 +d64_poison_bubbles 1 +rt_dynlight 0"
-if /i "%ARM%"=="big"     set "MAP=MAP91" & set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2 +d64_poison_dist 1100 +d64_poison_size 0.7 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 1 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
-if /i "%ARM%"=="small"   set "MAP=MAP91" & set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2 +d64_poison_dist 1100 +d64_poison_size 0.25 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 1 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
-if /i "%ARM%"=="sunk"    set "MAP=MAP91" & set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2 +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z -6 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 1 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
-if /i "%ARM%"=="channel" set "MAP=MAP92" & set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2 +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 1 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
-if /i "%ARM%"=="chandark" set "MAP=MAP93" & set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2 +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 1 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
+if /i "%ARM%"=="dark"    set "MAP=MAP90" & set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2 +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 1 +d64_poison_lsize 16 +d64_poison_debug 1 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
+if /i "%ARM%"=="lit"     set "MAP=MAP91" & set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2 +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 1 +d64_poison_lsize 16 +d64_poison_debug 1 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
+if /i "%ARM%"=="nowater" set "MAP=MAP91" & set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2 +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 1 +d64_poison_lsize 16 +d64_poison_debug 1 +d64_poison_roofgate 1 +d64_poison_bubbles 1 +rt_water_liquids 0"
+if /i "%ARM%"=="dense"   set "MAP=MAP91" & set "ARGS=+d64_poison_fx 1 +d64_poison_rate 8 +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 1 +d64_poison_lsize 16 +d64_poison_debug 1 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
+if /i "%ARM%"=="still"   set "MAP=MAP91" & set "ARGS=+d64_poison_fx 0 +d64_poison_rate 2 +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 1 +d64_poison_lsize 16 +d64_poison_debug 0 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
+if /i "%ARM%"=="nodyn"   set "MAP=MAP90" & set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2 +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 1 +d64_poison_lsize 16 +d64_poison_debug 1 +d64_poison_roofgate 1 +d64_poison_bubbles 1 +rt_dynlight 0"
+if /i "%ARM%"=="big"     set "MAP=MAP91" & set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2 +d64_poison_dist 1100 +d64_poison_size 0.7 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 1 +d64_poison_lsize 16 +d64_poison_debug 1 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
+if /i "%ARM%"=="small"   set "MAP=MAP91" & set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2 +d64_poison_dist 1100 +d64_poison_size 0.25 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 1 +d64_poison_lsize 16 +d64_poison_debug 1 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
+if /i "%ARM%"=="sunk"    set "MAP=MAP91" & set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2 +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z -6 +d64_poison_sat 1 +d64_poison_light 1 +d64_poison_lsize 16 +d64_poison_debug 1 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
+if /i "%ARM%"=="channel" set "MAP=MAP92" & set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2 +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 1 +d64_poison_lsize 16 +d64_poison_debug 1 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
+if /i "%ARM%"=="chandark" set "MAP=MAP93" & set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2 +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 1 +d64_poison_lsize 16 +d64_poison_debug 1 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
 if /i "%ARM%"=="nolight" set "MAP=MAP93" & set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2 +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0 +d64_poison_lsize 16 +d64_poison_debug 1 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
-if /i "%ARM%"=="grey"    set "MAP=MAP91" & set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2 +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 0 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 1 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
-if /i "%ARM%"=="vivid"   set "MAP=MAP91" & set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2 +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 2 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 1 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
-if /i "%ARM%"=="bridge"  set "MAP=MAP94" & set "ARGS=+d64_poison_fx 1 +d64_poison_rate 4 +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 1 +d64_poison_bubbles 1 +d64_poison_roofgate 1"
-if /i "%ARM%"=="nobridge" set "MAP=MAP94" & set "ARGS=+d64_poison_fx 1 +d64_poison_rate 4 +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 1 +d64_poison_bubbles 1 +d64_poison_roofgate 0"
+if /i "%ARM%"=="grey"    set "MAP=MAP91" & set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2 +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 0 +d64_poison_light 1 +d64_poison_lsize 16 +d64_poison_debug 1 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
+if /i "%ARM%"=="vivid"   set "MAP=MAP91" & set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2 +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 2 +d64_poison_light 1 +d64_poison_lsize 16 +d64_poison_debug 1 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
+if /i "%ARM%"=="bridge"  set "MAP=MAP94" & set "ARGS=+d64_poison_fx 1 +d64_poison_rate 4 +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 1 +d64_poison_lsize 16 +d64_poison_debug 1 +d64_poison_bubbles 1 +d64_poison_roofgate 1"
+if /i "%ARM%"=="nobridge" set "MAP=MAP94" & set "ARGS=+d64_poison_fx 1 +d64_poison_rate 4 +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 1 +d64_poison_lsize 16 +d64_poison_debug 1 +d64_poison_bubbles 1 +d64_poison_roofgate 0"
 
 if not defined ARGS (
   echo Usage: %~nx0 ^[dark^|lit^|channel^|chandark^|bridge^|nobridge^|nolight^|nowater^|dense^|still^|big^|small^|sunk^|grey^|vivid^|nodyn^] ^[-- +cvar val ...^]

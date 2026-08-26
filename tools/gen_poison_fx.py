@@ -696,7 +696,7 @@ server nosave float d64_poison_dist  = 1100.0;
 server nosave float d64_poison_size  = 0.35;
 server nosave float d64_poison_z     = 1.0;
 server nosave float d64_poison_sat   = 1.0;
-server nosave float d64_poison_light = 0.1;
+server nosave float d64_poison_light = 1.0;
 server nosave float d64_poison_lsize = 16.0;
 server nosave bool  d64_poison_debug = false;
 server nosave bool  d64_poison_roofgate = true;
@@ -796,17 +796,60 @@ MAPINFO = """GameInfo
 # sprite area to emit from; and the retint pulled chroma to 0.575 to match the
 # pool. Both are wanted -- neither is free.
 #
-# So lightIntensity goes up ~4.5x and emissiveMult ~2x. Still an order of
-# magnitude under a torch (900 lm) at the top of the ramp, which keeps "slight":
-# the bubble should be a thing you notice on the surface, not a lamp.
+# THEN CORRECTED, 2026-08-26, once the entries were live for the first time.
+#
+# The 4.5x raise above was tuned against "the bubbles cast nothing in the dark"
+# -- and it was never actually seen in play, because patch_texjson wrote only
+# the gitignored build tree and every build wiped it (see TEXJSON_PATHS). The
+# first run with both halves alive read as far too bright, and the numbers say
+# why: at emissiveMult 0.60-1.05 and 250-650 lm the bubbles were calibrated like
+# a LAVA SPARK (LSPK*: 0.30-0.70, 100-760 lm) -- a white-hot molten droplet --
+# and sat in the top ~15% of all 956 emissive sprites in the game, whose median
+# is 0.35-0.40. A cold nukage bubble is not a lava spark.
+#
+# TWO SEPARATE THINGS, and conflating them is what made the knob feel dead:
+#
+#   emissiveMult    how bright the BILLBOARD LOOKS. Screen glow; casts nothing.
+#                   Material meta, so NOT tunable at runtime -- rebuild with
+#                   --emis to move it (see below).
+#   lightIntensity  light the sprite THROWS on the world. Also material meta,
+#                   also untunable, AND co-located with the billboard with no
+#                   LF_DONTLIGHTSELF -- the white-pill mechanism.
+#
+# lightIntensity is now 0 on every frame and the cast light is entirely
+# AttachPoisonLight()'s, which is tunable (d64_poison_light) and cannot light
+# its own sprite. That is not a new idea here: it is exactly what the game's 84
+# flame sprites do -- lightIntensity 0 in the meta, lit by RT_UploadFlameLights
+# in C++ instead, and for the same reason (meta cannot express a tunable light).
+#
+# So d64_poison_light now governs ALL the light a bubble throws, and its default
+# goes back to 1.0 -- the value that was actually in play while the meta was
+# missing. Every arm pins it, so the arms moved with it.
+#
+# emissiveMult lands at 0.22-0.42: below the set's median, an order of magnitude
+# under a torch, and the brief -- "a thing you notice on the surface, not a
+# lamp" -- unchanged. It is the ONE number for how bright a bubble looks.
 BUBBLE_BASE_META = [
-    (250, [110, 235, 60], 0.60),
-    (300, [110, 235, 60], 0.66),
-    (360, [112, 238, 62], 0.72),
-    (430, [114, 240, 64], 0.78),
-    (520, [116, 242, 66], 0.85),
-    (650, [130, 250, 80], 1.05),
+    (0, [110, 235, 60], 0.22),
+    (0, [110, 235, 60], 0.25),
+    (0, [112, 238, 62], 0.28),
+    (0, [114, 240, 64], 0.31),
+    (0, [116, 242, 66], 0.35),
+    (0, [130, 250, 80], 0.42),
 ]
+
+# Scales the emissiveMult ramp above; --emis on the command line sets it. It is
+# a REBUILD knob and not a cvar, because material meta cannot be scaled at
+# runtime: a tinted sprite is a different RTGL1 material with no textures.json
+# entry, which is the same wall d64_poison_sat's baked rungs exist to get round.
+# Having it on the command line means a level can be tried in one command
+# instead of an edit:
+#
+#     tools/.venv-ai/Scripts/python.exe tools/gen_poison_fx.py --apply --emis 0.6
+#
+# lightColor is kept written even though lightIntensity is 0, so that raising
+# the intensity again is one number and not a re-derivation.
+EMIS_SCALE = 1.0
 
 
 def rung_meta(prefix: str, sat_rung: float) -> dict:
@@ -819,13 +862,20 @@ def rung_meta(prefix: str, sat_rung: float) -> dict:
         ss = min(1.0, ss * BASE_SAT * sat_rung)
         vv = min(1.0, vv * VAL_LIFT)
         rgb = [int(round(min(255.0, c * 255.0))) for c in colorsys.hsv_to_rgb(hh, ss, vv)]
-        out[f"{prefix}{letter}0"] = (lm, rgb, em)
+        out[f"{prefix}{letter}0"] = (lm, rgb, round(em * EMIS_SCALE, 3))
     return out
 
 
-BUBBLE_META = {}
-for _pfx, _rung in SAT_SETS:
-    BUBBLE_META.update(rung_meta(_pfx, _rung))
+# Built on demand rather than at import, so --emis can be applied before it is
+# read. The module-level name stays for anything that imports this file.
+def bubble_meta() -> dict:
+    out = {}
+    for pfx, rung in SAT_SETS:
+        out.update(rung_meta(pfx, rung))
+    return out
+
+
+BUBBLE_META = bubble_meta()
 
 # BOTH COPIES, and the second one is not optional.
 #
@@ -848,6 +898,7 @@ TEXJSON_PATHS = [
 def patch_texjson() -> int:
     import json
 
+    meta = bubble_meta()
     total = 0
     for path in TEXJSON_PATHS:
         if not path.exists():
@@ -857,12 +908,12 @@ def patch_texjson() -> int:
         seen, n = set(), 0
         for e in data["array"]:
             nm = e.get("textureName")
-            if nm in BUBBLE_META and nm not in seen:
+            if nm in meta and nm not in seen:
                 seen.add(nm)
-                i, c, em = BUBBLE_META[nm]
+                i, c, em = meta[nm]
                 e["lightIntensity"], e["lightColor"], e["emissiveMult"] = i, c, em
                 n += 1
-        for nm, (i, c, em) in BUBBLE_META.items():
+        for nm, (i, c, em) in meta.items():
             if nm not in seen:
                 data["array"].append(
                     {"textureName": nm, "lightIntensity": i, "lightColor": c,
@@ -979,7 +1030,11 @@ def build(dry: bool) -> int:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--apply", action="store_true")
+    ap.add_argument("--emis", type=float, default=1.0,
+                    help="scale the sprite glow ramp (emissiveMult); 1.0 ships")
     args = ap.parse_args()
+    global EMIS_SCALE
+    EMIS_SCALE = args.emis
     return build(dry=not args.apply)
 
 
