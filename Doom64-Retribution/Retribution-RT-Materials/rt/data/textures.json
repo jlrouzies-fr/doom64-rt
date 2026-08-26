@@ -15280,9 +15280,9 @@
       "textureName": "PBUAA0",
       "lightIntensity": 0,
       "lightColor": [
-        249,
-        249,
-        249
+        147,
+        147,
+        147
       ],
       "emissiveMult": 0.22,
       "metallicDefault": 0
@@ -15291,9 +15291,9 @@
       "textureName": "PBUAB0",
       "lightIntensity": 0,
       "lightColor": [
-        249,
-        249,
-        249
+        147,
+        147,
+        147
       ],
       "emissiveMult": 0.25,
       "metallicDefault": 0
@@ -15302,9 +15302,9 @@
       "textureName": "PBUAC0",
       "lightIntensity": 0,
       "lightColor": [
-        252,
-        252,
-        252
+        148,
+        148,
+        148
       ],
       "emissiveMult": 0.28,
       "metallicDefault": 0
@@ -15313,9 +15313,9 @@
       "textureName": "PBUAD0",
       "lightIntensity": 0,
       "lightColor": [
-        254,
-        254,
-        254
+        150,
+        150,
+        150
       ],
       "emissiveMult": 0.31,
       "metallicDefault": 0
@@ -15324,9 +15324,9 @@
       "textureName": "PBUAE0",
       "lightIntensity": 0,
       "lightColor": [
-        255,
-        255,
-        255
+        151,
+        151,
+        151
       ],
       "emissiveMult": 0.35,
       "metallicDefault": 0
@@ -15335,9 +15335,9 @@
       "textureName": "PBUAF0",
       "lightIntensity": 0,
       "lightColor": [
-        255,
-        255,
-        255
+        156,
+        156,
+        156
       ],
       "emissiveMult": 0.42,
       "metallicDefault": 0
@@ -15346,9 +15346,9 @@
       "textureName": "PBUCA0",
       "lightIntensity": 0,
       "lightColor": [
-        205,
-        249,
-        196
+        108,
+        147,
+        111
       ],
       "emissiveMult": 0.22,
       "metallicDefault": 0
@@ -15357,9 +15357,9 @@
       "textureName": "PBUCB0",
       "lightIntensity": 0,
       "lightColor": [
-        205,
-        249,
-        196
+        108,
+        147,
+        111
       ],
       "emissiveMult": 0.25,
       "metallicDefault": 0
@@ -15368,9 +15368,9 @@
       "textureName": "PBUCC0",
       "lightIntensity": 0,
       "lightColor": [
-        208,
-        252,
-        199
+        110,
+        148,
+        113
       ],
       "emissiveMult": 0.28,
       "metallicDefault": 0
@@ -15379,9 +15379,9 @@
       "textureName": "PBUCD0",
       "lightIntensity": 0,
       "lightColor": [
-        210,
-        254,
-        201
+        111,
+        150,
+        114
       ],
       "emissiveMult": 0.31,
       "metallicDefault": 0
@@ -15390,9 +15390,9 @@
       "textureName": "PBUCE0",
       "lightIntensity": 0,
       "lightColor": [
-        211,
-        255,
-        202
+        113,
+        151,
+        116
       ],
       "emissiveMult": 0.35,
       "metallicDefault": 0
@@ -15401,9 +15401,9 @@
       "textureName": "PBUCF0",
       "lightIntensity": 0,
       "lightColor": [
-        214,
-        255,
-        205
+        119,
+        156,
+        122
       ],
       "emissiveMult": 0.42,
       "metallicDefault": 0
@@ -15412,9 +15412,9 @@
       "textureName": "PBUBA0",
       "lightIntensity": 0,
       "lightColor": [
-        161,
-        249,
-        142
+        70,
+        147,
+        76
       ],
       "emissiveMult": 0.22,
       "metallicDefault": 0
@@ -15423,9 +15423,9 @@
       "textureName": "PBUBB0",
       "lightIntensity": 0,
       "lightColor": [
-        161,
-        249,
-        142
+        70,
+        147,
+        76
       ],
       "emissiveMult": 0.25,
       "metallicDefault": 0
@@ -15434,9 +15434,9 @@
       "textureName": "PBUBC0",
       "lightIntensity": 0,
       "lightColor": [
-        163,
-        252,
-        145
+        72,
+        148,
+        78
       ],
       "emissiveMult": 0.28,
       "metallicDefault": 0
@@ -15445,9 +15445,9 @@
       "textureName": "PBUBD0",
       "lightIntensity": 0,
       "lightColor": [
-        165,
-        254,
-        147
+        73,
+        150,
+        79
       ],
       "emissiveMult": 0.31,
       "metallicDefault": 0
@@ -15456,9 +15456,9 @@
       "textureName": "PBUBE0",
       "lightIntensity": 0,
       "lightColor": [
-        166,
-        255,
-        148
+        74,
+        151,
+        80
       ],
       "emissiveMult": 0.35,
       "metallicDefault": 0
@@ -15467,9 +15467,9 @@
       "textureName": "PBUBF0",
       "lightIntensity": 0,
       "lightColor": [
-        173,
-        255,
-        155
+        82,
+        156,
+        87
       ],
       "emissiveMult": 0.42,
       "metallicDefault": 0
@@ -15478,9 +15478,9 @@
       "textureName": "PBUDA0",
       "lightIntensity": 0,
       "lightColor": [
-        116,
-        249,
-        89
+        32,
+        147,
+        41
       ],
       "emissiveMult": 0.22,
       "metallicDefault": 0
@@ -15489,9 +15489,9 @@
       "textureName": "PBUDB0",
       "lightIntensity": 0,
       "lightColor": [
-        116,
-        249,
-        89
+        32,
+        147,
+        41
       ],
       "emissiveMult": 0.25,
       "metallicDefault": 0
@@ -15500,9 +15500,9 @@
       "textureName": "PBUDC0",
       "lightIntensity": 0,
       "lightColor": [
-        119,
-        252,
-        91
+        33,
+        148,
+        43
       ],
       "emissiveMult": 0.28,
       "metallicDefault": 0
@@ -15511,9 +15511,9 @@
       "textureName": "PBUDD0",
       "lightIntensity": 0,
       "lightColor": [
-        121,
-        254,
-        93
+        35,
+        150,
+        44
       ],
       "emissiveMult": 0.31,
       "metallicDefault": 0
@@ -15522,9 +15522,9 @@
       "textureName": "PBUDE0",
       "lightIntensity": 0,
       "lightColor": [
-        122,
-        255,
-        95
+        36,
+        151,
+        45
       ],
       "emissiveMult": 0.35,
       "metallicDefault": 0
@@ -15533,9 +15533,9 @@
       "textureName": "PBUDF0",
       "lightIntensity": 0,
       "lightColor": [
-        132,
-        255,
-        105
+        45,
+        156,
+        53
       ],
       "emissiveMult": 0.42,
       "metallicDefault": 0
@@ -15544,9 +15544,9 @@
       "textureName": "PBUEA0",
       "lightIntensity": 0,
       "lightColor": [
-        72,
-        249,
-        36
+        0,
+        147,
+        12
       ],
       "emissiveMult": 0.22,
       "metallicDefault": 0
@@ -15555,9 +15555,9 @@
       "textureName": "PBUEB0",
       "lightIntensity": 0,
       "lightColor": [
-        72,
-        249,
-        36
+        0,
+        147,
+        12
       ],
       "emissiveMult": 0.25,
       "metallicDefault": 0
@@ -15566,9 +15566,9 @@
       "textureName": "PBUEC0",
       "lightIntensity": 0,
       "lightColor": [
-        74,
-        252,
-        38
+        0,
+        148,
+        12
       ],
       "emissiveMult": 0.28,
       "metallicDefault": 0
@@ -15577,9 +15577,9 @@
       "textureName": "PBUED0",
       "lightIntensity": 0,
       "lightColor": [
-        76,
-        254,
-        40
+        0,
+        150,
+        12
       ],
       "emissiveMult": 0.31,
       "metallicDefault": 0
@@ -15588,9 +15588,9 @@
       "textureName": "PBUEE0",
       "lightIntensity": 0,
       "lightColor": [
-        78,
-        255,
-        42
+        0,
+        151,
+        12
       ],
       "emissiveMult": 0.35,
       "metallicDefault": 0
@@ -15599,9 +15599,9 @@
       "textureName": "PBUEF0",
       "lightIntensity": 0,
       "lightColor": [
-        91,
-        255,
-        56
+        8,
+        156,
+        18
       ],
       "emissiveMult": 0.42,
       "metallicDefault": 0

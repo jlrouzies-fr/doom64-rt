@@ -110,11 +110,80 @@ ALPHA_CUT = 128  # the alpha-test threshold the RT path uses
 # They stay brighter than the pool by a wide margin -- val 0.60 against 0.25 --
 # which is the "just a bit brighter" half of the brief, and it comes from the
 # art plus the emissive rather than from a value push.
-POOL_HUE_DEG = 105.0
 BUBBLE_HUE_DEG = 98.1
+
+# DERIVED FROM THE POOL, NOT WRITTEN DOWN AGAINST IT -- 2026-08-26.
+#
+# These were three literals matched to a rendered frame: hue 105, chroma x0.575,
+# value x1.06. Then 72ac4c9 retuned the nukage and nobody re-measured, so the
+# bubbles stayed matched to a pool that no longer existed:
+#
+#   crest BEFORE  (153,255,115)   hue 103.7  sat 0.549  val 1.000
+#   crest NOW     ( 50,150, 50)   hue 120.0  sat 0.667  val 0.588
+#   delta         hue +16.3 deg,  chroma x1.214,  value x0.588
+#
+# -- which is "the nukage went darker green" exactly, and POOL_HUE_DEG 105 was
+# just the old crest's 103.7 with the rounding still on it.
+#
+# WHY THE CREST AND NOT THE FLAT. D64NCOAG, the new painted poison patch, has
+# mean RGB (13,14,1) and a top-decile value of 0.10 -- it is nearly black, like
+# the stock flat before it. Almost all the green you see is the stylized-liquid
+# shader on top, so the albedo tells you nothing and the reference has to be the
+# shader's own colour. rt_nukage_crest_* IS that colour, as a number, which
+# beats measuring a screenshot.
+#
+# So the three constants are now RATIOS against the crest the original match was
+# measured on, applied to whatever the crest is today, read out of the pins --
+# the file that wins over the compiled defaults. Retuning the pool now retunes
+# the bubbles with it, and the pair cannot silently drift apart again.
+TUNED_AGAINST_CREST = ( 153, 255, 115 )   # the pool 0.575 / 1.06 were measured on
+TUNED_SAT = 0.575
+TUNED_VAL = 1.06
+
+
+def _nukage_crest() -> tuple:
+    """rt_nukage_crest_r/g/b out of tools/d64rt-pins.cfg.
+
+    The PINS, not rt_cvars.inc: a pin beats a compiled default, so the pin is
+    what the game actually renders. Falls back to the tuned-against crest with a
+    warning rather than guessing, because silently matching the wrong pool is
+    the failure this whole block exists to stop.
+    """
+    pins = ROOT / "tools/d64rt-pins.cfg"
+    want = { "rt_nukage_crest_r": None, "rt_nukage_crest_g": None,
+             "rt_nukage_crest_b": None }
+    try:
+        for line in pins.read_text(encoding="utf-8", errors="replace").splitlines():
+            bits = line.strip().split()
+            if len(bits) >= 2 and bits[0] in want:
+                want[bits[0]] = float(bits[1])
+    except OSError:
+        pass
+    got = tuple(want[f"rt_nukage_crest_{c}"] for c in "rgb")
+    if any(v is None for v in got):
+        print(f"  WARNING: rt_nukage_crest_* not found in {pins.name}; "
+              f"falling back to {TUNED_AGAINST_CREST}")
+        return TUNED_AGAINST_CREST
+    return got
+
+
+def _hsv(rgb) -> tuple:
+    import colorsys
+    h, s, v = colorsys.rgb_to_hsv(*[ c / 255.0 for c in rgb ])
+    return h * 360.0, s, v
+
+
+NUKAGE_CREST = _nukage_crest()
+_ch, _cs, _cv = _hsv(NUKAGE_CREST)
+_rh, _rs, _rv = _hsv(TUNED_AGAINST_CREST)
+
+POOL_HUE_DEG = _ch
 HUE_SHIFT = ( POOL_HUE_DEG - BUBBLE_HUE_DEG ) / 360.0
-BASE_SAT = 0.575          # 0.404 / 0.733, measured
-VAL_LIFT = 1.06           # a touch, so desaturating does not read as dulling
+# Ratios, so the RELATIONSHIP the original match established survives: chroma a
+# little under the pool's, and a value lift that keeps the bubbles reading a bit
+# brighter than what they sit in rather than a fixed absolute brightness.
+BASE_SAT = TUNED_SAT * ( _cs / _rs ) if _rs > 0 else TUNED_SAT
+VAL_LIFT = TUNED_VAL * ( _cv / _rv ) if _rv > 0 else TUNED_VAL
 
 # The rungs are RELATIVE TO SHIPPING: d64_poison_sat 1 is the matched look, 2 is
 # roughly the art as drawn, 0 is grey. That is the scale the cvar should be read
@@ -1058,6 +1127,8 @@ def build(dry: bool) -> int:
     if TINT_GAIN != (1.0, 1.0, 1.0):
         print(f"   --tint {TINT_GAIN[0]:g},{TINT_GAIN[1]:g},{TINT_GAIN[2]:g} on the sprite art "
               f"AND its lightColor")
+    print(f"   matched to rt_nukage_crest {tuple(int(c) for c in NUKAGE_CREST)} "
+          f"(from d64rt-pins.cfg)")
     print(f"   hue {BUBBLE_HUE_DEG:.1f} -> {POOL_HUE_DEG:.1f} deg, chroma x{BASE_SAT:.3f} "
           f"at rung 1.0, value x{VAL_LIFT:.2f}  (matched to the rendered pool)")
     for prefix, rung, frames in sets:

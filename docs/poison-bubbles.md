@@ -460,10 +460,54 @@ run yellower than the body — and scales chroma by 0.575 onto the pool's. Value
 gets a 1.06 nudge so desaturating doesn't read as dulling; the bubbles still sit
 around 2× the pool's brightness, which is the "just a bit brighter" half.
 
-**Do not sample the flat for this.** `D64NUKG1`, the patch `D64N1_01` is built
-from, is nearly black — mean RGB `4,12,1`, value never above 0.22. Almost all
-the green you see is the RT water shader on top of it, so the albedo tells you
-nothing and the reference has to be a rendered frame.
+**Do not sample the flat for this.** `D64NUKG1`, the patch `D64N1_01` was built
+from, is nearly black — mean RGB `4,12,1`, value never above 0.22 — and the new
+painted patch that replaced it, `D64NCOAG`, is no better: mean RGB `13,14,1`,
+top-decile value `0.10`. Almost all the green you see is the stylized-liquid
+shader on top, so the albedo tells you nothing.
+
+### Matched to the crest, not to a screenshot (2026-08-26)
+
+The three numbers above were literals measured off a rendered frame, and then
+`72ac4c9` retuned the nukage and nobody re-measured. The bubbles stayed matched
+to a pool that no longer existed — reported as *"I just want their colour to
+match the new nukage darker green"*:
+
+| | hue | sat | val |
+|---|---|---|---|
+| `rt_nukage_crest` **before** | 103.7° | 0.549 | 1.000 |
+| `rt_nukage_crest` **now** `(50,150,50)` | 120.0° | 0.667 | 0.588 |
+| delta | **+16.3°** | **×1.214** | **×0.588** |
+
+That last column *is* "darker green", as a number. And `POOL_HUE_DEG = 105` was
+never an independent measurement at all — it was the old crest's 103.7° with the
+rounding still on it.
+
+So the reference is now the shader's own colour rather than a screenshot of it.
+`rt_nukage_crest_r/g/b` is read out of **`tools/d64rt-pins.cfg`** at build time —
+the pins, not `rt_cvars.inc`, because a pin beats a compiled default and the pin
+is what the game actually renders — and the three constants became **ratios**
+against the crest the original match was measured on:
+
+```
+POOL_HUE_DEG = hue(crest)
+BASE_SAT     = 0.575 × sat(crest)/sat(153,255,115)
+VAL_LIFT     = 1.06  × val(crest)/val(153,255,115)
+```
+
+which lands at hue 120°, chroma ×0.698, value ×0.62. The *relationship* the
+original match established survives — chroma a little under the pool's, and a
+value lift that keeps the bubbles reading a bit brighter than what they sit in
+rather than at a fixed absolute brightness. Retuning the pool now retunes the
+bubbles with it, and the two cannot silently drift apart again. The build prints
+which crest it matched, so a wrong one is visible rather than inferred:
+
+```
+   matched to rt_nukage_crest (50, 150, 50) (from d64rt-pins.cfg)
+   hue 98.1 -> 120.0 deg, chroma x0.698 at rung 1.0, value x0.62
+```
+
+Before/after swatches against both crests: `screen/poison-bubble-recolour.png`.
 
 **Why five baked rungs instead of a dial.** Tinting a sprite at runtime means a
 GZDoom translation, and `RTHardwareTexture` appends a per-translation **suffix**
