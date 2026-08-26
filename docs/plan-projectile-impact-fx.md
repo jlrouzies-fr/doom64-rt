@@ -760,12 +760,17 @@ All pinned; `python tools/check_pins.py rt_fire_` gates them.
   its permanent one. This is also the first mark with a finite scorch, which is why
   `SpawnArcMark` now floors `m.life` at `m.emberLife` — every earlier ember mark burned forever
   and could not possibly undercut its own spots.
-- **One light per MARK, never one per flame.** `rt_arc_glow_max` is pinned at **10** across the
-  whole game. Seven flames x three imps into ten slots means whichever mark you stand on takes
-  every one and the rest of the room goes dark — the failure the Unmaker had to be cut from 26
-  candidates to 1 to fix. Note the projectile is already lighting the wall for its first third
-  of a second: all four carry six GLDEFS `flickerlight` entries ramping down across their death
-  frames, so this should read as continuing that decay rather than stacking on it.
+- **One light per MARK, never one per flame — and it must carry ALL SEVEN FLAMES' WORTH.**
+  A fire is one light source, and an imp is the commonest enemy in the game, so seven
+  candidates per mark down a corridor of imps is the density arithmetic of
+  `rt-lighting-practices` §20 — the Unmaker was cut from 26 candidates to 1 for exactly that.
+  **The second half of that sentence is the one that shipped wrong**: see §9.4b. Note the
+  projectile is already lighting the wall for its first third of a second — all five carry six
+  GLDEFS `flickerlight` entries ramping down across their death frames — so this should read
+  as continuing that decay rather than stacking on it.
+- **`rt_fire_glow_radius` (0.22) is the EMITTER'S SIZE, not its reach.** Bigger than a coal's
+  0.10 because a fire is bigger than a coal: it is the sphere the light is cast from, so it
+  decides how soft the shadows it throws are.
 - **`rt_fire_smoke_delay` is 0.15, not the rocket's 0.65.** That delay exists to dodge the
   rocket's own death smoke burst, and a fireball has none to dodge — none of the four is in
   `RT_PROJECTILE_SMOKE`.
@@ -792,6 +797,38 @@ far the light reaches are different questions, and the second one is `rt_fire_gl
 **The general shape: when a value provably arrives and provably does nothing, look at what it
 is being combined WITH before you look at the value.** Same family as pitfall 32, one clamp
 further along.
+
+### 9.4b The fire cast no light, and it was the same mistake one feature later
+
+Reported from play: *"I don't see any light cast by the fire impact, similar to how embers
+does."* Accurate, and the cause is pure arithmetic rather than plumbing — the light was being
+built, uploaded and traced correctly the whole time.
+
+`rt_ember_glow_intensity` is **55, and it is tuned for ONE COAL OF TEN**. A rocket's mark puts
+out roughly 550 in total, spread across its bed. Cutting the fireball to a single emitter for
+the density reason above and then setting it to **90** — barely over the per-coal figure —
+leaves it about six times too dim, which on a wall is nothing you can see.
+
+**`rt_laser_glow` had already written the fix down.** It went 55 to 220 the moment the Unmaker
+became a single spot, and its cvar help says why in almost these words. This repeated the
+mistake one feature later, which is why the arithmetic now lives in the code beside the
+candidate rather than only in a cvar's help text.
+
+`rt_fire_glow` is **420** — between the laser's single-spot 220 and the rocket's aggregate 550,
+which is where a seven-flame fire belongs.
+
+Two smaller things came out of the same look:
+
+- **The justification cited a number that was wrong.** The comment claimed `rt_arc_glow_max` is
+  "pinned at 10". It is not pinned at all — it is **owned by `rt_quality_preset`**
+  (`rt_quality.cpp`: 100 / 100 / 64 / 24 by preset), which the pins file says in a comment
+  where the pin used to be. The one-light-per-mark decision still stands on the density
+  argument, but it was being defended with a stale figure. **A cap that moved out from under a
+  pin is exactly the "a count knob can go inert under you" trap this project already has a
+  §34b about.**
+- **The emitter radius was still a coal's.** `rt_ember_glow_radius` 0.10 for something a
+  quarter of a metre across throws a harder shadow edge than it should; `rt_fire_glow_radius`
+  is 0.22.
 
 ### 9.5 The table hazard, which is new
 
