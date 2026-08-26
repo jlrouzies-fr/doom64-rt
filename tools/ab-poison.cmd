@@ -89,6 +89,12 @@ rem                    spawned below floorz is clamped back up onto it on its
 rem                    first tic, which is why negative values did nothing at
 rem                    first. Try "-- +d64_poison_z -4" for bubbles that break
 rem                    the plane rather than rest on it.
+rem   d64_poison_tint_r/g/b  the colour of the light a bubble THROWS, before
+rem                    d64_poison_light scales it. NOT the billboard's colour --
+rem                    a traced sprite's colour has no runtime path at all, so
+rem                    that one is a rebuild (gen_poison_fx.py --tint R,G,B).
+rem                    Prove this one is live, rather than too small to see, with
+rem                    +rt_dynlight_debug 1: it prints owner + rgb per light.
 rem   d64_poison_sat   colour saturation, RELATIVE TO SHIPPING. 1 is the default
 rem                    and is matched to the RENDERED pool (hue 105, sat 0.40 --
 rem                    measured off a lab frame, not off the flat, whose albedo
@@ -139,16 +145,16 @@ rem the evidence from one run is destroyed by the next unrelated launch before i
 rem can be read. +logfile comes after the launcher's own, so it wins.
 set "LOG=+logfile %~dp0\..\rt-poison.log"
 
-if /i "%ARM%"=="on"     set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 1 +d64_poison_lsize 16 +d64_poison_debug 0 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
-if /i "%ARM%"=="off"    set "ARGS=+d64_poison_fx 0 +d64_poison_rate 2    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 1 +d64_poison_lsize 16 +d64_poison_debug 0 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
-if /i "%ARM%"=="dense"  set "ARGS=+d64_poison_fx 1 +d64_poison_rate 8    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 1 +d64_poison_lsize 16 +d64_poison_debug 0 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
-if /i "%ARM%"=="sparse" set "ARGS=+d64_poison_fx 1 +d64_poison_rate 0.5  +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 1 +d64_poison_lsize 16 +d64_poison_debug 0 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
-if /i "%ARM%"=="near"   set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2    +d64_poison_dist 400  +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 1 +d64_poison_lsize 16 +d64_poison_debug 0 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
-if /i "%ARM%"=="far"    set "ARGS=+d64_poison_fx 1 +d64_poison_rate 8    +d64_poison_dist 2200 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 1 +d64_poison_lsize 16 +d64_poison_debug 0 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
-if /i "%ARM%"=="nodyn"  set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 1 +d64_poison_lsize 16 +d64_poison_debug 0 +d64_poison_roofgate 1 +d64_poison_bubbles 1 +rt_dynlight 0"
-if /i "%ARM%"=="debug"  set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 1 +d64_poison_lsize 16 +d64_poison_debug 1 +d64_poison_roofgate 1 +d64_poison_bubbles 1 +rt_verbose 1"
-if /i "%ARM%"=="roof"   set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 1 +d64_poison_lsize 16 +d64_poison_debug 1 +d64_poison_bubbles 1 +rt_verbose 1 +d64_poison_roofgate 1"
-if /i "%ARM%"=="noroof" set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 1 +d64_poison_lsize 16 +d64_poison_debug 1 +d64_poison_bubbles 1 +rt_verbose 1 +d64_poison_roofgate 0"
+if /i "%ARM%"=="on"     set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 1 +d64_poison_lsize 16 +d64_poison_tint_r 40 +d64_poison_tint_g 170 +d64_poison_tint_b 35 +d64_poison_debug 0 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
+if /i "%ARM%"=="off"    set "ARGS=+d64_poison_fx 0 +d64_poison_rate 2    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 1 +d64_poison_lsize 16 +d64_poison_tint_r 40 +d64_poison_tint_g 170 +d64_poison_tint_b 35 +d64_poison_debug 0 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
+if /i "%ARM%"=="dense"  set "ARGS=+d64_poison_fx 1 +d64_poison_rate 8    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 1 +d64_poison_lsize 16 +d64_poison_tint_r 40 +d64_poison_tint_g 170 +d64_poison_tint_b 35 +d64_poison_debug 0 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
+if /i "%ARM%"=="sparse" set "ARGS=+d64_poison_fx 1 +d64_poison_rate 0.5  +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 1 +d64_poison_lsize 16 +d64_poison_tint_r 40 +d64_poison_tint_g 170 +d64_poison_tint_b 35 +d64_poison_debug 0 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
+if /i "%ARM%"=="near"   set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2    +d64_poison_dist 400  +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 1 +d64_poison_lsize 16 +d64_poison_tint_r 40 +d64_poison_tint_g 170 +d64_poison_tint_b 35 +d64_poison_debug 0 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
+if /i "%ARM%"=="far"    set "ARGS=+d64_poison_fx 1 +d64_poison_rate 8    +d64_poison_dist 2200 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 1 +d64_poison_lsize 16 +d64_poison_tint_r 40 +d64_poison_tint_g 170 +d64_poison_tint_b 35 +d64_poison_debug 0 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
+if /i "%ARM%"=="nodyn"  set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 1 +d64_poison_lsize 16 +d64_poison_tint_r 40 +d64_poison_tint_g 170 +d64_poison_tint_b 35 +d64_poison_debug 0 +d64_poison_roofgate 1 +d64_poison_bubbles 1 +rt_dynlight 0"
+if /i "%ARM%"=="debug"  set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 1 +d64_poison_lsize 16 +d64_poison_tint_r 40 +d64_poison_tint_g 170 +d64_poison_tint_b 35 +d64_poison_debug 1 +d64_poison_roofgate 1 +d64_poison_bubbles 1 +rt_verbose 1"
+if /i "%ARM%"=="roof"   set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 1 +d64_poison_lsize 16 +d64_poison_tint_r 40 +d64_poison_tint_g 170 +d64_poison_tint_b 35 +d64_poison_debug 1 +d64_poison_bubbles 1 +rt_verbose 1 +d64_poison_roofgate 1"
+if /i "%ARM%"=="noroof" set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 1 +d64_poison_lsize 16 +d64_poison_tint_r 40 +d64_poison_tint_g 170 +d64_poison_tint_b 35 +d64_poison_debug 1 +d64_poison_bubbles 1 +rt_verbose 1 +d64_poison_roofgate 0"
 
 if not defined ARGS (
   echo Usage: %~nx0 ^<on^|off^|dense^|sparse^|near^|far^|nodyn^|debug^|roof^|noroof^> [1-34]

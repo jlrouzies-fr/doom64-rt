@@ -304,6 +304,54 @@ config commands at the bottom.
 It is the first `MENUDEF` in the project, so it is also the shape the next
 effect toggle should copy.
 
+## Two tints, and why only one of them is a cvar
+
+The bubbles have two colours and they are set in different places, because only
+one of them *can* be moved at runtime.
+
+| | what | how |
+|---|---|---|
+| the light it **throws** | `d64_poison_tint_r/g/b`, scaled by `d64_poison_light` | **cvars.** Live. |
+| the **billboard** itself | `--tint R,G,B` on the generator, applied per channel after the hue rotation | **rebuild.** |
+
+The light is a cvar because it is *built* in `AttachPoisonLight()` rather than
+declared in data, so ZScript can put whatever it likes in it. Confirm it is
+reaching the light rather than being too small to see — the mistake this project
+keeps paying for — with the game's own instrument:
+
+```
+.\tools\poison-lab.cmd dense -- +rt_dynlight_debug 1 +d64_poison_tint_r 250 +d64_poison_tint_g 10 +d64_poison_tint_b 200
+  near[0] dist=163 owner='D64PoisonBubble' rgb=(250,10,200) r=16 type=0
+```
+
+**The sprite's colour has no runtime path at all**, and all three candidates were
+checked in the source rather than assumed:
+
+- **Vertex colour.** RTGL1 writes `ShTriangle.vertexColors` (`VertexData.inl:296`)
+  and **no shader ever reads it**. Only the *rasterized* path uses a vertex
+  colour (`RsWorld.inl:54`), and these bubbles are opaque alpha-tested, i.e.
+  traced. A cvar on this would have been inert, and inert looks exactly like a
+  value that is too small.
+- **`RG_MESH_PRIMITIVE_EMISSIVE_OVERRIDE`.** Carries a *scalar* (`prim.emissive`),
+  so it can move how strongly a primitive glows but not what colour it glows.
+- **A GZDoom translation.** `RTHardwareTexture` appends a per-translation suffix
+  to the RTGL1 material name — it has to, or every translation of a sprite
+  collides on one name — so a tinted bubble is a **different material** with no
+  `textures.json` entry: it would change colour and stop glowing. Per-actor
+  `SetShade` fails from the other end; the RT path never reads it.
+
+That is the same wall `d64_poison_sat`'s baked rungs exist to get round, and the
+answer is the same one: repaint the art.
+
+```
+tools/.venv-ai/Scripts/python.exe tools/gen_poison_fx.py --apply --tint 1.4,0.8,0.8
+```
+
+`--tint` carries into `lightColor` as well as the pixels, so the meta cannot
+drift from the art it is supposed to be the light of. It does **not** touch
+`d64_poison_tint_*`: those stay the live knob, and at their defaults they are the
+green this shipped with.
+
 ## Knobs
 
 Declared in the pk3's `CVARINFO`, all **`nosave`** — an A/B knob that persists
@@ -320,6 +368,9 @@ result gets blamed on the change instead of on the leftover value.
 | `d64_poison_sat` | `1.0` | colour saturation **relative to shipping**. Five baked rungs — `0` grey, `1` matched to the pool, `2` roughly the original art. See below |
 | `d64_poison_light` | `1.0` | scales the bubble's **dynamic light**, which since 2026-08-26 is the *only* light a bubble throws (`lightIntensity` in the meta is 0). `0` turns it off. This is the light that lands on walls — it does **not** change how bright the sprite looks; that is `emissiveMult`, a rebuild knob |
 | `d64_poison_lsize` | `16` | that light's radius, clamped to 20. **Size is not brightness** — above `rt_dynlight_rsoft` (pinned at 20) a larger radius is *dimmer*. Brightness is `d64_poison_light` |
+| `d64_poison_tint_r` | `40` | the colour of the light the bubble **throws**, before `d64_poison_light` scales it. See [Two tints](#two-tints-and-why-only-one-of-them-is-a-cvar) — this is **not** the billboard's colour |
+| `d64_poison_tint_g` | `170` | |
+| `d64_poison_tint_b` | `35` | |
 | `d64_poison_debug` | `0` | log the sector count, the first three spawn positions, the sample hit rate and the roofed count |
 | `d64_poison_roofgate` | `1` | suppress bubbles under a solid 3D floor. `0` is the before-picture — see [Under a 3D floor](#under-a-3d-floor) |
 | `d64_poison_bubbles` | `1` | **the only archived one.** The player's switch, Options > Effects. `d64_poison_fx` stays the nosave A/B master and both must be on |

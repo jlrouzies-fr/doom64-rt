@@ -130,8 +130,35 @@ SAT_SETS = [
 SAT_DEFAULT_INDEX = 2
 
 
+# THE SPRITE'S TINT, and it is a REBUILD knob rather than a cvar. That is not a
+# shortcut -- there is no runtime path to a traced sprite's colour at all, and
+# all three candidates were checked rather than assumed:
+#
+#   vertex colour   RTGL1 writes ShTriangle.vertexColors (VertexData.inl:296)
+#                   and NO SHADER EVER READS IT. Only the rasterized path uses a
+#                   vertex colour (RsWorld.inl:54), and these bubbles are opaque
+#                   alpha-tested, i.e. TRACED. A cvar on this would have been
+#                   inert and looked exactly like a value that was too small.
+#   emissive override  RG_MESH_PRIMITIVE_EMISSIVE_OVERRIDE carries a SCALAR
+#                   (prim.emissive), so it can move how strongly a primitive
+#                   glows but not what colour it glows.
+#   translation     RTHardwareTexture appends a per-translation SUFFIX to the
+#                   RTGL1 material name, so a tinted bubble is a DIFFERENT
+#                   material with no textures.json entry: it would change colour
+#                   and stop glowing. This is the same wall d64_poison_sat's
+#                   baked rungs exist to get round, and per-actor SetShade fails
+#                   from the other end -- the RT path never reads it.
+#
+# So the art is repainted at build time, --tint R,G,B, applied per channel after
+# the hue rotation and carried into lightColor so the light cannot drift from
+# the sprite it comes off. The colour that IS live at runtime is the light the
+# bubble throws: d64_poison_tint_r/g/b, in the pk3's CVARINFO.
+TINT_GAIN = (1.0, 1.0, 1.0)
+
+
 def retint(img: Image.Image, sat_rung: float) -> Image.Image:
-    """Rotate hue onto the pool's, scale chroma by BASE_SAT * rung, lift value.
+    """Rotate hue onto the pool's, scale chroma by BASE_SAT * rung, lift value,
+    then apply TINT_GAIN per channel.
 
     Per-pixel through colorsys rather than a vectorised transform: the largest
     frame is 23x23, so it costs nothing, and hand-rolling an HSV round trip in
@@ -150,7 +177,9 @@ def retint(img: Image.Image, sat_rung: float) -> Image.Image:
             ss = min(1.0, ss * BASE_SAT * sat_rung)
             vv = min(1.0, vv * VAL_LIFT)
             r, g, b = colorsys.hsv_to_rgb(hh, ss, vv)
-            a[y, x, 0], a[y, x, 1], a[y, x, 2] = r * 255.0, g * 255.0, b * 255.0
+            a[y, x, 0] = r * 255.0 * TINT_GAIN[0]
+            a[y, x, 1] = g * 255.0 * TINT_GAIN[1]
+            a[y, x, 2] = b * 255.0 * TINT_GAIN[2]
     return Image.fromarray(a.round().clip(0, 255).astype(np.uint8), "RGBA")
 
 
@@ -327,11 +356,36 @@ __SATPICK__
         let cvSz = CVar.FindCVar( "d64_poison_lsize" );
         int lsz = int( clamp( cvSz ? cvSz.GetFloat() : 16.0, 1, 20 ) );
 
-        // A green a little cooler than the sprite, so the light reads as the
-        // poison's rather than as a lamp someone left in the sludge.
-        int r = int( clamp(  40 * li, 0, 255 ) );
-        int g = int( clamp( 170 * li, 0, 255 ) );
-        int b = int( clamp(  35 * li, 0, 255 ) );
+        // THE ONE COLOUR THAT IS LIVE. d64_poison_tint_r/g/b is the light the
+        // bubble throws on the walls, and it is a cvar because this light is
+        // built here rather than declared in data.
+        //
+        // It is NOT the billboard's colour, and that distinction is the whole
+        // reason these are named apart from the sprite's --tint: a traced
+        // sprite's colour has no runtime path at all. RTGL1 writes
+        // ShTriangle.vertexColors and no shader reads it, EMISSIVE_OVERRIDE
+        // carries a scalar and not a colour, and a GZDoom translation makes a
+        // different RTGL1 material that loses its textures.json entry. See the
+        // note above TINT_GAIN in gen_poison_fx.py.
+        //
+        // Defaults are the green this shipped with -- a little cooler than the
+        // sprite, so the light reads as the poison's rather than as a lamp
+        // someone left in the sludge.
+        let cvR = CVar.FindCVar( "d64_poison_tint_r" );
+        let cvG = CVar.FindCVar( "d64_poison_tint_g" );
+        let cvB = CVar.FindCVar( "d64_poison_tint_b" );
+        double tr = cvR ? cvR.GetFloat() :  40.0;
+        double tg = cvG ? cvG.GetFloat() : 170.0;
+        double tb = cvB ? cvB.GetFloat() :  35.0;
+
+        int r = int( clamp( tr * li, 0, 255 ) );
+        int g = int( clamp( tg * li, 0, 255 ) );
+        int b = int( clamp( tb * li, 0, 255 ) );
+
+        // Every channel zero is not "no tint", it is a black light -- which
+        // GZDoom will happily attach and which reads as the effect being
+        // broken. d64_poison_light 0 is the off switch, so say so and bail.
+        if( r + g + b <= 0 ) { return; }
 
         A_AttachLight( 'pbub', DynamicLight.PointLight, Color( 255, r, g, b ),
                        lsz, 0, DynamicLight.LF_DONTLIGHTSELF );
@@ -698,6 +752,9 @@ server nosave float d64_poison_z     = 1.0;
 server nosave float d64_poison_sat   = 1.0;
 server nosave float d64_poison_light = 1.0;
 server nosave float d64_poison_lsize = 16.0;
+server nosave float d64_poison_tint_r = 40.0;
+server nosave float d64_poison_tint_g = 170.0;
+server nosave float d64_poison_tint_b = 35.0;
 server nosave bool  d64_poison_debug = false;
 server nosave bool  d64_poison_roofgate = true;
 server        bool  d64_poison_bubbles = true;
@@ -861,7 +918,11 @@ def rung_meta(prefix: str, sat_rung: float) -> dict:
         hh = (hh + HUE_SHIFT) % 1.0
         ss = min(1.0, ss * BASE_SAT * sat_rung)
         vv = min(1.0, vv * VAL_LIFT)
-        rgb = [int(round(min(255.0, c * 255.0))) for c in colorsys.hsv_to_rgb(hh, ss, vv)]
+        # The SAME TINT_GAIN the pixels get, so lightColor cannot drift from the
+        # art it is supposed to be the light of -- the one combination that
+        # cannot happen in the world is a bubble throwing a colour it is not.
+        rgb = [int(round(min(255.0, c * 255.0 * g)))
+               for c, g in zip(colorsys.hsv_to_rgb(hh, ss, vv), TINT_GAIN)]
         out[f"{prefix}{letter}0"] = (lm, rgb, round(em * EMIS_SCALE, 3))
     return out
 
@@ -994,6 +1055,9 @@ def build(dry: bool) -> int:
     total = sum(len(f) for _, _, f in sets)
     print(f"{OUT.name}: {total} sprite(s) -- {len(FRAMES)} frames x {len(SAT_SETS)} "
           f"saturation rung(s) -- sliced from {SHEET.name}")
+    if TINT_GAIN != (1.0, 1.0, 1.0):
+        print(f"   --tint {TINT_GAIN[0]:g},{TINT_GAIN[1]:g},{TINT_GAIN[2]:g} on the sprite art "
+              f"AND its lightColor")
     print(f"   hue {BUBBLE_HUE_DEG:.1f} -> {POOL_HUE_DEG:.1f} deg, chroma x{BASE_SAT:.3f} "
           f"at rung 1.0, value x{VAL_LIFT:.2f}  (matched to the rendered pool)")
     for prefix, rung, frames in sets:
@@ -1032,9 +1096,21 @@ def main() -> int:
     ap.add_argument("--apply", action="store_true")
     ap.add_argument("--emis", type=float, default=1.0,
                     help="scale the sprite glow ramp (emissiveMult); 1.0 ships")
+    ap.add_argument("--tint", default="1,1,1",
+                    help="per-channel gain R,G,B on the SPRITE art and its "
+                         "lightColor; 1,1,1 ships. The light the bubble "
+                         "throws is the d64_poison_tint_* cvars instead")
     args = ap.parse_args()
-    global EMIS_SCALE
+    global EMIS_SCALE, TINT_GAIN
     EMIS_SCALE = args.emis
+    try:
+        gains = tuple(float(v) for v in args.tint.split(","))
+    except ValueError:
+        gains = ()
+    if len(gains) != 3 or any(g < 0 for g in gains):
+        print(f"--tint wants three non-negative numbers R,G,B (got {args.tint!r})")
+        return 2
+    TINT_GAIN = gains
     return build(dry=not args.apply)
 
 
