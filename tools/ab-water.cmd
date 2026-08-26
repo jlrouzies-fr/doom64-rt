@@ -37,6 +37,14 @@ rem   nocaus   styl with the PROJECTED caustics off (rt_water_caustics 0), to
 rem            separate the pattern on the water itself from the light it
 rem            casts on the walls. Also the perf A/B: with it 0, no probe ray.
 rem
+rem   nukemirror POISON at the FULL water mirror (rt_nukage_refl 1), i.e. what
+rem            nukage shipped with before 2026-08-26. The before-picture for
+rem            the 0.5 default -- poison is the only non-water liquid that
+rem            KEEPS THE WAVE (no authored _n for D64N*), so half a mirror on
+rem            a moving surface is the read it is tuned for.
+rem   nukeflat   POISON at rt_nukage_refl 0 -- no mirror AND no checkerboard
+rem            split, the full-res path. The far end of the same ladder.
+rem            Judge both MOVING: a settled screenshot cannot show a split.
 rem   wateronly  rt_water_liquids 0 -- only D64W* gets the shader; nukage,
 rem            sludge and blood go back to near-black flats. The A/B for
 rem            "should the other three liquids be stylized at all".
@@ -48,7 +56,7 @@ rem
 rem Sludge is MAP12 (D64S1_01) and MAP34; nukage D64N1_01 is all over the game;
 rem blood D64B2_01 is the widest of the four after water.
 rem
-rem Usage: ab-water.cmd <stock|styl|flat|mirror|noglow|nocaus|wateronly|debug> [1-34]
+rem Usage: ab-water.cmd <stock|styl|flat|mirror|noglow|nocaus|wateronly|nukemirror|nukeflat|debug> [1-34]
 rem ---------------------------------------------------------------------------
 
 set "ARM=%~1"
@@ -67,20 +75,27 @@ set "TINT=%TINT% +rt_sludge_tint_r 15 +rt_sludge_tint_g 9 +rt_sludge_tint_b 2"
 set "TINT=%TINT% +rt_sludge_crest_r 255 +rt_sludge_crest_g 204 +rt_sludge_crest_b 115"
 set "TINT=%TINT% +rt_blood_tint_r 15 +rt_blood_tint_g 2 +rt_blood_tint_b 2"
 set "TINT=%TINT% +rt_blood_crest_r 255 +rt_blood_crest_g 115 +rt_blood_crest_b 102"
+rem Per-liquid MIRROR strength, stated for the same reason the tints are: the
+rem four palettes share one shader. Water keeps the full stylized Fresnel curve;
+rem the other three pull it down. RESTATES THE COMPILED DEFAULTS -- keep in
+rem lockstep with rt_cvars.inc (python tools\check_pins.py rt_nukage).
+set "REFL=+rt_nukage_refl 0.5 +rt_sludge_refl 0 +rt_blood_refl 0.3"
 set "BASE=+rt_water_caustic 1.5 +rt_water_rough 0.1 +rt_water_veinref 0.1"
 set "CAUS=+rt_water_caustics 1.2 +rt_water_caustic_scale 0.8 +rt_water_caustic_speed 0.35 +rt_water_caustic_dist 512 +rt_water_caustic_rise 64 +rt_water_caustic_slant 0.6 +rt_water_caustic_wall 4.0"
 set "WAVE=+rt_water_wavestren 0.4 +rt_water_wavespeed 0.2 +rt_water_areascale 0.35"
 
-if /i "%ARM%"=="stock"  set "ARGS=+rt_water_style 0 %TINT% %BASE% %WAVE% %CAUS% +rt_water_reflmin 0.1 +rt_water_reflmax 0.75 +rt_water_glow 0.15"
-if /i "%ARM%"=="styl"   set "ARGS=+rt_water_style 1 %TINT% %BASE% %WAVE% %CAUS% +rt_water_reflmin 0.1 +rt_water_reflmax 0.75 +rt_water_glow 0.15"
-if /i "%ARM%"=="flat"   set "ARGS=+rt_water_style 1 %TINT% %BASE% %WAVE% %CAUS% +rt_water_reflmin 0.0 +rt_water_reflmax 0.05 +rt_water_glow 0.15"
-if /i "%ARM%"=="mirror" set "ARGS=+rt_water_style 1 %TINT% %BASE% %WAVE% %CAUS% +rt_water_reflmin 0.8 +rt_water_reflmax 1.0 +rt_water_glow 0.15 +rt_water_wavestren 0.4"
-if /i "%ARM%"=="nocaus" set "ARGS=+rt_water_style 1 %TINT% %BASE% %WAVE% %CAUS% +rt_water_reflmin 0.1 +rt_water_reflmax 0.75 +rt_water_glow 0.15 +rt_water_caustics 0"
-if /i "%ARM%"=="noglow" set "ARGS=+rt_water_style 1 %TINT% %BASE% %WAVE% %CAUS% +rt_water_reflmin 0.1 +rt_water_reflmax 0.75 +rt_water_glow 0"
-if /i "%ARM%"=="debug"  set "ARGS=+rt_water_style 1 %TINT% %BASE% %WAVE% %CAUS% +rt_water_reflmax 0.75 +rt_water_glow 0.15 +rt_water_debug 1 +rt_prim_debug 1"
+if /i "%ARM%"=="stock"  set "ARGS=+rt_water_style 0 %TINT% %REFL% %BASE% %WAVE% %CAUS% +rt_water_reflmin 0.1 +rt_water_reflmax 0.75 +rt_water_glow 0.15"
+if /i "%ARM%"=="styl"   set "ARGS=+rt_water_style 1 %TINT% %REFL% %BASE% %WAVE% %CAUS% +rt_water_reflmin 0.1 +rt_water_reflmax 0.75 +rt_water_glow 0.15"
+if /i "%ARM%"=="flat"   set "ARGS=+rt_water_style 1 %TINT% %REFL% %BASE% %WAVE% %CAUS% +rt_water_reflmin 0.0 +rt_water_reflmax 0.05 +rt_water_glow 0.15"
+if /i "%ARM%"=="mirror" set "ARGS=+rt_water_style 1 %TINT% %REFL% %BASE% %WAVE% %CAUS% +rt_water_reflmin 0.8 +rt_water_reflmax 1.0 +rt_water_glow 0.15 +rt_water_wavestren 0.4"
+if /i "%ARM%"=="nocaus" set "ARGS=+rt_water_style 1 %TINT% %REFL% %BASE% %WAVE% %CAUS% +rt_water_reflmin 0.1 +rt_water_reflmax 0.75 +rt_water_glow 0.15 +rt_water_caustics 0"
+if /i "%ARM%"=="noglow" set "ARGS=+rt_water_style 1 %TINT% %REFL% %BASE% %WAVE% %CAUS% +rt_water_reflmin 0.1 +rt_water_reflmax 0.75 +rt_water_glow 0"
+if /i "%ARM%"=="debug"  set "ARGS=+rt_water_style 1 %TINT% %REFL% %BASE% %WAVE% %CAUS% +rt_water_reflmax 0.75 +rt_water_glow 0.15 +rt_water_debug 1 +rt_prim_debug 1"
+if /i "%ARM%"=="nukemirror" set "ARGS=+rt_water_style 1 %TINT% +rt_nukage_refl 1.0 +rt_sludge_refl 0 +rt_blood_refl 0.3 %BASE% %WAVE% %CAUS% +rt_water_reflmin 0.1 +rt_water_reflmax 0.75 +rt_water_glow 0.15"
+if /i "%ARM%"=="nukeflat"   set "ARGS=+rt_water_style 1 %TINT% +rt_nukage_refl 0.0 +rt_sludge_refl 0 +rt_blood_refl 0.3 %BASE% %WAVE% %CAUS% +rt_water_reflmin 0.1 +rt_water_reflmax 0.75 +rt_water_glow 0.15"
 
 rem Water only: the one back-out switch left, as an arm.
-if /i "%ARM%"=="wateronly" set "ARGS=+rt_water_style 1 %TINT% %BASE% %WAVE% %CAUS% +rt_water_reflmin 0.1 +rt_water_reflmax 0.75 +rt_water_glow 0.15 +rt_water_liquids 0"
+if /i "%ARM%"=="wateronly" set "ARGS=+rt_water_style 1 %TINT% %REFL% %BASE% %WAVE% %CAUS% +rt_water_reflmin 0.1 +rt_water_reflmax 0.75 +rt_water_glow 0.15 +rt_water_liquids 0"
 
 if not defined ARGS (
   echo Usage: %~nx0 ^<stock^|styl^|flat^|mirror^|noglow^|nocaus^|wateronly^|debug^> [1-34]

@@ -65,6 +65,22 @@ rem             nothing else here can. NOTE this also paints every other surface
 rem             blue -- that is the same diagnostic's caustic probe, not a bug.
 rem   flat      rt_heightmap_stren 0 -- relief on, PARALLAX off. Separates "the
 rem             normal map is doing the work" from "the height map is".
+rem   nomirror  rt_blood_refl 0 + rt_blood_rough 0.8 -- the SLUDGE treatment,
+rem             applied to blood. Two things at once: no mirror reflection of
+rem             the room, and NO CHECKERBOARD SPLIT, so every pixel shades the
+rem             pool at full resolution. The split is why sludge went to 0: it
+rem             rebuilds half the screen columns from their neighbours, and on
+rem             a high-contrast authored normal -- which blood has, at relief
+rem             1 -- that pattern CRAWLS with the camera under a moving light
+rem             and freezes at rest. JUDGE THIS ONE MOVING, with the
+rem             flashlight on; a settled screenshot cannot show it.
+rem   mirror    rt_blood_refl 1 + rough 0.1 -- the FULL water mirror, i.e.
+rem             what blood shipped with before 2026-08-26. The
+rem             before-picture for the 0.3 default, not the default.
+rem   wet       refl 0.6, rough 0.5 -- twice the shipping mirror. The ladder
+rem             is 0 (nomirror) / 0.03 (dry) / 0.3 (default) / 0.6 / 1.0
+rem             (mirror). Everything above 0 keeps the split.
+rem   dry       refl 0.03, rough 1.0 -- a matte clot. The far end.
 rem   caustics  rt_blood_caustics 1 -- puts the PROJECTED caustics back. Blood
 rem             ships with them OFF: a caustic is light refracted through a
 rem             fluid and focused on what lies beyond it, so an opaque one casts
@@ -89,6 +105,12 @@ set "HEIGHT=1"
 set "WDEBUG=0"
 set "PDEBUG=0"
 set "CAUST=0"
+rem Shipping blood reflection: 0.3 of the stylized mirror (was 1.0 until
+rem 2026-08-26 -- a pool of congealing blood is not a window into the room),
+rem roughness 0 meaning "fall back to rt_water_rough" (0.1). NOTE 0.3 is above
+rem zero, so the checkerboard split is still on; only "nomirror" removes it.
+set "REFL=0.3"
+set "ROUGH=0.0"
 
 if /i "%ARM%"=="on"        goto :ok
 if /i "%ARM%"=="off"       ( set "RELIEF=0.0" & set "FLOW=0.0" & goto :ok )
@@ -105,9 +127,13 @@ if /i "%ARM%"=="phase"     ( set "PDEBUG=1" & goto :ok )
 if /i "%ARM%"=="flagcheck" ( set "WDEBUG=1" & goto :ok )
 if /i "%ARM%"=="flat"      ( set "HEIGHT=0" & goto :ok )
 if /i "%ARM%"=="caustics"  ( set "CAUST=1" & goto :ok )
+if /i "%ARM%"=="nomirror"  ( set "REFL=0.0" & set "ROUGH=0.8" & goto :ok )
+if /i "%ARM%"=="mirror"    ( set "REFL=1.0" & set "ROUGH=0.1" & goto :ok )
+if /i "%ARM%"=="wet"       ( set "REFL=0.6" & set "ROUGH=0.5" & goto :ok )
+if /i "%ARM%"=="dry"       ( set "REFL=0.03" & set "ROUGH=1.0" & goto :ok )
 
 echo Unknown arm "%ARM%".
-echo   usage: tools\ab-bloodpool.cmd ^<on^|off^|norelief^|noflow^|fast^|slow^|hard^|soft^|coarse^|fine^|blobs^|phase^|flagcheck^|flat^|caustics^> [map]
+echo   usage: tools\ab-bloodpool.cmd ^<on^|off^|norelief^|noflow^|fast^|slow^|hard^|soft^|coarse^|fine^|blobs^|phase^|flagcheck^|flat^|caustics^|nomirror^|mirror^|wet^|dry^> [map]
 echo   maps with blood: 17 (39 pools, default) 32 (12) 08 (9, in pits) 18 21 23 24 34
 exit /b 1
 
@@ -115,6 +141,7 @@ exit /b 1
 echo === blood pools: arm "%ARM%" on map %MAP% ===
 echo     relief %RELIEF%  flow %FLOW% speed %SPEED% scale %SCALE% aspect %ASPECT%
 echo     heightmap %HEIGHT%  caustics %CAUST%  water_debug %WDEBUG%  flow_debug %PDEBUG%
+echo     refl %REFL%  rough %ROUGH%   (rough 0 = use rt_water_rough 0.1)
 echo     the player is placed on a pool by rt_blood_autogoto.
 
 call "%~dp0launch-retribution-rt.cmd" %MAP% -- ^
@@ -127,4 +154,6 @@ call "%~dp0launch-retribution-rt.cmd" %MAP% -- ^
   +rt_heightmap_stren %HEIGHT% ^
   +rt_water_debug %WDEBUG% ^
   +rt_blood_caustics %CAUST% ^
+  +rt_blood_refl %REFL% ^
+  +rt_blood_rough %ROUGH% ^
   +rt_blood_flow_debug %PDEBUG%

@@ -174,6 +174,9 @@ version, kept to show why), and `coarse`/`fine` bracket the streak length.
 | `rt_sludge_caustics` | `0.0` | same as `rt_blood_caustics`, for sludge |
 | `rt_sludge_relief` | `1.0` | as `rt_blood_relief`, but the height comes from the art's full luminance range, not the vein mask |
 | `rt_sludge_refl` | `0.0` | how much of the stylized water MIRROR sludge keeps. 1 = the mirror water gets. **0 = no mirror and no checkerboard split**: full-res surface, glossy specular sheen |
+| `rt_blood_refl` | `0.3` | the same knob for BLOOD, added 2026-08-26. **Was 1.0 (the full water mirror) for as long as blood pools existed.** 0 = no mirror and **no checkerboard split** — which matters more on blood than on sludge, because blood carries an authored `_n` at `rt_blood_relief 1` and the split is what makes a high-contrast normal crawl under a moving light. 0.3 is above zero, so the split is still on |
+| `rt_nukage_refl` | `0.5` | the same knob for POISON, added 2026-08-26 (was 1.0). The highest of the three on purpose: nukage is the one liquid meant to look thin and chemical rather than congealed, and the only one that still **keeps the water wave** — there is no `rt_nukage_relief` and no authored `_n` for `D64N*`. Half a mirror on a moving surface is the read it is tuned for. No `rt_nukage_rough`: with no authored normal there is nothing for a separate roughness to scatter |
+| `rt_blood_rough` | `0.0` | blood surface roughness. `<= 0` = use `rt_water_rough` (0.1, a near-mirror), which is what blood gets today. Raise it alongside `rt_blood_refl 0` — a no-mirror pool at 0.1 is still a wet plastic sheet |
 | `rt_liquid_checkerboard` | `1` | **Console only**, not in the Quality menu. 0 forces the no-split path for all four liquids. Archived, unpinned |
 | `rt_sludge_rough` | `0.8` | sludge surface roughness. `<= 0` = use `rt_water_rough` (0.1) |
 | `rt_sludge_autogoto` | `0` | `NOARCH`. As `rt_blood_autogoto`; CCMD is `rt_sludge_goto` |
