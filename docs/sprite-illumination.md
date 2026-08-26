@@ -230,7 +230,7 @@ vanish and reappear each tick.
 | cvar | default | note |
 | --- | --- | --- |
 | `rt_hand_light_on` | `true` | master switch |
-| `rt_hand_light_intensity` | `45` | **per fist** — two per knight, so perceived total ~double |
+| `rt_hand_light_intensity` | `65` | **per fist** — two per knight, so perceived total ~double |
 | `rt_hand_light_radius` | `0.06` | small; a wide source washes the body flat |
 | `rt_hand_light_maxdist` | `2048` | map units |
 | `rt_hand_light_max` | `48` | 2 per knight → 24 simultaneous knights |
