@@ -17,10 +17,11 @@ worth reading before trusting the section text below:
 
 Impacts that leave a mark today: the player's rocket and plasma, the BFG, and — added after
 a play note that they were missing — the cyberdemon's rocket, the revenant's tracer (`TRCR`),
-the Mother Demon's ball (`RBAL`) and the mancubus's `MANF`, all at rocket scale. Still
-unmarked: imp fireballs (`64DoomImpBall`, `64NightmareImpBall`) and `64MotherFire`. Those are
-a judgement call about how marked-up a normal firefight should get, not a technical gap — one
-table row each.
+the Mother Demon's ball (`RBAL`) and the mancubus's `MANF`, all at rocket scale. **The four
+monster FIREBALLS were added on 2026-08-26** and have their own section, §9: `BAL1` (imp),
+`BAL3` (nightmare imp), `BAL7` (hell knight) and `BAL8` (baron of hell) now burn actual
+flames on the surface in their own colours. Still unmarked: `64MotherFire`, which shares a
+sprite with the static world bonfire and so needs more care than a table row.
 
 Scope decided in play review:
 
@@ -48,10 +49,9 @@ cannot move another — a rule this system had to learn three times:
 | Unmaker laser | small red crackle + churn + one smoke thread, 10 s | `rt_laser*` |
 | exploding barrel | floor scorch, ~50 coals, 60 pieces of hand-cut plate, permanent | `rt_barrel*` |
 | hitscan | sparks and material debris | `rt_spark*`, now shipping **on** |
+| imp / nightmare imp / hell knight / baron fireball | animated flames in the projectile's own colour + a FADING scorch + smoke | `rt_fire*` |
 
-Still unmarked by choice: imp fireballs (`64DoomImpBall`, `64NightmareImpBall`) and
-`64MotherFire` — a judgement about how marked-up a normal firefight should get, one table
-row each if that changes.
+Still unmarked by choice: `64MotherFire` only — see §9.
 
 **The lesson worth carrying out of this plan** is not in any section. The Unmaker mark was
 tuned for an afternoon in the impact lab and produced *nothing at all* in game, because
@@ -621,3 +621,230 @@ fires the weapon.
 - Does `Decal "PlasmaScorchLower"` actually appear in the path tracer today? See §0 — the
   answer decides whether §4 and the scorch decals are new work or a ramp on existing work,
   and it is a ten-second check in play.
+
+---
+
+## 9. Fireball impacts — `rt_fire*` (2026-08-26)
+
+**Status: BUILT and shipping on.** The four monster fireballs leave a small fire actually
+burning on the surface, in that projectile's own colour, breathing a thread of smoke over a
+scorch that **fades** — the only impact in the game that does not mark a wall permanently.
+
+| sprite | actor | fired by | colour | ramp source |
+|---|---|---|---|---|
+| BAL1 | `64DoomImpBall` | `64DoomImp` | orange | `BAL1 D0-I0` |
+| BAL3 | `64NightmareImpBall` | `64NightmareImp` | violet | `BAL3 D0-I0` |
+| BAL7 | `64BaronBall` | **`64HellKnight`** | green | `BAL7 C0-H0` |
+| BAL8 | `64BaronBall2` | **`64BaronOfHell`** | red | `BAL8 C0-H0` |
+| BAL2 | `64CacodemonBall` | `64Cacodemon` | red | **BAL8's** -- see below |
+
+**The hell knight throws the GREEN one and the baron throws the RED one.** That inversion is
+Doom 64's, the class names actively invite getting it backwards, and this project has already
+shipped BAL8 pinned baron-*green* once for exactly that reason
+(`docs/sprite-illumination.md`).
+
+**BAL2 shares BAL8's ramp, and that is the one deliberate exception to the "read the
+projectile's own death sprite" rule.** Its own palette was measured -- `F8F8F8 F8D0A0 D07038
+C85820 ...` -- and it opens WHITE, passes through peach and orange, and only reaches red
+halfway down. That is a hot fireball bursting, faithfully drawn, and it is not a *red* flame.
+The game settles it: `CACOBALL` and `BARONBALL2` carry the **same GLDEFS colour, 1.0 0.0
+0.0**, so two projectiles Doom 64 itself lights identically red share one red ramp. Giving one
+of them a white-to-orange flame while its own dynamic light is pure red would have been the
+thing that looked wrong. Recorded here the way `RT_ARC_PLASMA_RAMP`'s hue shift is: the rule
+is still the default, this is a considered exception, and the numbers to go back to are above.
+
+Mechanically it is a fifth `ImpactFx` sharing the ember mark: same `ArcMark`, same surface
+probe, same scorch decal, same wisp emitter. Four `ArcFlavor` rows carry the four ramps, and
+**every other axis is one cvar for all four** — what separates an imp's fire from a baron's is
+colour, and colour is what a flavour is.
+
+### 9.1 The construction, and it was wrong twice before it was right
+
+This is the third time this file's opening rule has been paid for. The two failures are worth
+more than the working version:
+
+**Traced was wrong, and it failed in two ways at once.** The obvious move was to reuse the
+barrel's textured-coal path — authored art on an opaque, alpha-tested, emissive traced quad —
+because that path already existed and already stood its billboards up on the surface. It
+produced a **black blob**. The `FIRE` sprite has a near-black outline; as alpha-tested traced
+geometry that outline is a solid dark occluder sitting in front of the wall. And the small,
+very bright emissive core is a textbook firefly, which A-SVGF answers by **smearing it into a
+soft glow with no silhouette** — and a flame's silhouette is the entire effect. Neither is a
+value that can be tuned.
+
+**Additive is the answer, and it needs the pixels PROVIDED.** A flame is light, not a surface:
+a dark texel must add nothing, a transparent one must add nothing, and it must never reach the
+denoiser. But an additive primitive is TRANSLUCENT, hence rasterized, and *the rasterized path
+samples the texture that was provided, never the `rt/mat` override* — the trap already written
+up on `s_batchSpotArt`. So `RegisterTextureFromFile` (`rt_barrel.cpp`) **decodes the sheet with
+`stbi_load` and hands RTGL1 the real pixels**, instead of the 1x1 placeholder the traced art
+uses. That is the whole unlock, and `stbi_load` was already in this directory
+(`remix_launcher.cpp`) with `HAVE_RT` compiling stb's stdio half in.
+
+Consequences that follow for free, and are the reason this is the *better* construction rather
+than a workaround:
+
+- **The tint is PER VERTEX.** `RsWorld.inl` multiplies the texel by the vertex colour, so one
+  white sheet serves all four colours *out of a single primitive for the whole world*. The
+  traced path could not do that — its albedo is per-**primitive** (`HitInfo.inl`), which is why
+  the coals upload one primitive per mark.
+- **No second winding.** The rasterized overlay does not cull, so the extra triangles the
+  traced coals need are pure waste here.
+- **No alpha test.** A transparent texel adds zero, which is the same answer for free.
+
+The cost is the one sparks already pay: an additive overlay is out of the acceleration
+structure, so a flame appears in no reflection and casts no GI. The cast light is the analytic
+one, exactly as a spark's is.
+
+### 9.2 The art
+
+`tools/gen_fire_impact_art.py` lifts the game's **own five-frame `FIRE` animation**
+(64BigFire's bonfire, 32x50) out of `D64RTR_v15.WAD`, converts it to a **white-hot luminance
+sheet with alpha preserved**, and lays it out as a strip at `rt/mat{,_dev}/d64rt/fire/fire.png`
+in **all four material trees**. Authored art rather than procedural, for the reason the barrel
+plate records; and the WAD itself proves the tint idea by shipping the same flame shape
+recoloured four times already (`GFLM`, `RFLM`, `BFLM`, `YFLM`).
+
+**The cells are SQUARE, and that is load-bearing.** The renderer recovers the frame count as
+`round(width / height)` rather than being told twice, which only works if a cell is as wide as
+it is tall. The first strip was packed at the art's own 32x52, so five frames measured
+160/52 = 3.08 and the game confidently animated **three**, stepping through fragments of their
+neighbours. On screen that reads as bad art, not as a mismatch. `ScanShardArt` now warns when
+`w % h != 0`.
+
+The flipbook itself is a UV sub-rect with a per-flame phase — `RgMeshPrimitiveInfo::textureFrame`
+exists in the RTGL1 header and **nothing in this fork reads it**, so UVs are the only route.
+Ten flames stepping through the same drawing on the same tic is one flame drawn ten times, and
+the eye catches it instantly; the same reasoning as the embers' breathing phase.
+
+### 9.3 Two things that cost a session each
+
+**`rt_fire_size` is a MULTIPLE OF `rt_ember_size`, not metres.** It shipped for one session
+documented as metres and set to `0.09`, which multiplied out to **0.9 millimetres** — a couple
+of bright pixels. It read exactly like a texture that was not loading, and an absurd-value run
+at `0.6` "confirmed" that by barely changing, because 0.6 is still under a centimetre. **When
+an absurd value fails to move something, check the UNIT before the plumbing.** It is `12` now.
+
+**A lab that holds an effect still can hold it at the wrong moment.** `impact-lab.ps1` takes
+about eight seconds to reach the shutter, and the first fire captures came back as a bare
+scorch — the flames had already burned out, which looks identical to flames that are not being
+drawn. Forcing `rt_fire_life 90` fixed that and introduced the opposite error: every flavour
+froze at ramp entry 0, which for all four fireballs is the near-white flash frame, so a
+**colour** A/B came back showing four identical white flames. The lab now sets `16`, landing
+the shutter near mid-ramp. A capture that cannot show the thing being judged is worse than no
+capture.
+
+### 9.4 The knobs
+
+`rt_fire` (master, independent of `rt_ember` on purpose), `_count`, `_life`, `_size`,
+`_scatter`, `_bright`, `_rate` (flipbook fps), `_sway`, `_tex`, `_tint`, `_glow`, `_far`,
+`_burn_scale`, `_burn_life`, `_smoke`, `_smoke_delay`, `_smoke_scale`, `_debug` (NOARCH).
+All pinned; `python tools/check_pins.py rt_fire_` gates them.
+
+- **`rt_fire_flicker` / `rt_fire_flicker_rate` are the GUTTER, and they drive the flame quads
+  and the cast light from the SAME term** -- so the glow on the wall guttering and the flame
+  guttering are one event. Two rigs would drift apart and read as a lamp standing near a fire
+  rather than as the fire's own light. It is `RT_UploadFlameLights`' three-harmonic torch rig,
+  not the coal's `rt_ember_flicker` curve: the coal's is deliberately weighted so the BRIGHT
+  end is narrow, which is right for something that mostly smoulders and wrong for fire, which
+  is lit the whole time and jitters about that. A flame given the coal's curve reads as a lamp
+  with a fault. Per-flame phase, so seven on a mark do not gutter in unison. `fire-steady` is 0.
+- **`rt_fire_bright` is the only brightness lever and it is the vertex ALPHA.** There is no
+  emissive knob, because an emissive knob belongs to traced geometry — the construction this
+  was moved off. Above 1 it widens rather than raises, same arithmetic as `rt_spark_bright`.
+- **`rt_fire_burn_life` is non-zero (25 s) and it is the point of the whole scorch story.**
+  `rt_arc_burn_life 0` means FOREVER, which is right for a rocket crater and wrong for the
+  most common enemy in the game: every stray fireball leaving a permanent burn would char whole
+  corridors and churn the 192-entry mark pool until rockets and plasma started disappearing
+  too. Carried **per mark** (`ArcMark::burnLife`), so a rocket burning on the same wall keeps
+  its permanent one. This is also the first mark with a finite scorch, which is why
+  `SpawnArcMark` now floors `m.life` at `m.emberLife` — every earlier ember mark burned forever
+  and could not possibly undercut its own spots.
+- **One light per MARK, never one per flame.** `rt_arc_glow_max` is pinned at **10** across the
+  whole game. Seven flames x three imps into ten slots means whichever mark you stand on takes
+  every one and the rest of the room goes dark — the failure the Unmaker had to be cut from 26
+  candidates to 1 to fix. Note the projectile is already lighting the wall for its first third
+  of a second: all four carry six GLDEFS `flickerlight` entries ramping down across their death
+  frames, so this should read as continuing that decay rather than stacking on it.
+- **`rt_fire_smoke_delay` is 0.15, not the rocket's 0.65.** That delay exists to dodge the
+  rocket's own death smoke burst, and a fireball has none to dodge — none of the four is in
+  `RT_PROJECTILE_SMOKE`.
+
+### 9.4a A flicker can arrive at the shader and still be invisible
+
+Worth its own heading because the bug is entirely in an ORDER OF OPERATIONS and nothing
+anywhere reports it.
+
+Brightness here is the vertex alpha, alpha is 8-bit, and a multiplier above 1 therefore cannot
+raise the peak -- it WIDENS the plateau. That is the documented `rt_spark_bright` arithmetic
+and it is exactly what a coal wants at `rt_ember_bright` 2.0.
+
+A flame's works out at `2.0 x 1.6 = 3.2`. Folding the pulse in *before* the clamp --
+`clamp( bright * fade * pulse )` -- then pins the result at 1 for the first half of the mark's
+life. The flicker is computed, it is correct, it reaches the shader, and it does nothing
+precisely while the fire is being looked at. The light term had the identical problem from the
+identical multiplier.
+
+So for fire the plateau is clamped FIRST and the pulse modulates what comes out, and the
+light's term drops the brightness multiplier altogether -- how bright the quad draws and how
+far the light reaches are different questions, and the second one is `rt_fire_glow`.
+
+**The general shape: when a value provably arrives and provably does nothing, look at what it
+is being combined WITH before you look at the value.** Same family as pitfall 32, one clamp
+further along.
+
+### 9.5 The table hazard, which is new
+
+`RT_ARC_SOURCES` matches by substring and returns the **first** hit, and `"BaronBall"` is a
+substring of `"64BaronBall2"`. The `BaronBall2` row **must** come first, or every Baron of Hell
+shot burns a Hell Knight's green mark on a table that otherwise reads as correct. No other pair
+in that table overlaps; `"DoomImpBall"` and `"NightmareImpBall"` are not substrings of each
+other, and the monsters themselves fail the `MF_MISSILE` test.
+
+### 9.6 How to judge it
+
+`.\tools\ab.cmd fire-<arm>` — `fire-fat` **first** (the absurd arm), then `fire-on`/`off`,
+`fire-notint` (white flames — the colour A/B), `fire-noart` (flat coloured quads, i.e. the
+"coloured embers" fallback), `fire-still` (flipbook and lean off — how much of the read is the
+animation), `fire-flare`/`fire-slow` (the lifetime taste call), `fire-nosmoke`, `fire-noburn`,
+`fire-glowmax` (cost probe — judge it MOVING), `fire-debug`. `fire-fat` also gutters at 0.9
+so the flicker is unmissable, and `fire-steady` turns it off entirely — that pair is how much
+of the read is movement rather than shape and colour.
+
+**The flicker cannot be judged from a still**, and neither can the light it drives.
+`fire-steady` against `fire-on` in play is the comparison; a screenshot shows them as the same
+frame.
+
+Stills: `.\tools\impact-lab.ps1 -Kind fire-orange|fire-violet|fire-green|fire-red`, which
+defaults these to **MAP97 dark** rather than MAP96 — a flame ADDS light where a scorch removes
+albedo, so the bright room that makes a scorch legible is the one that hides a flame.
+
+**And the lab cannot test the trigger.** All four are MONSTER projectiles, so
+`impact-lab.ps1 -Weapon` — which fires a *player* weapon — cannot reach them. Summon the
+monster (`64DoomImp`, `64NightmareImp`, `64HellKnight`, `64BaronOfHell`) and let it shoot; the
+`sparks` ladder then separates the two failures, since 0 tracked is a class-match failure and
+tracked-with-no-marks is a probe failure. Verified live: all four classify correctly, and a
+shot that detonates on the player produces **no mark**, which is the designed outcome for an
+impact with no surface.
+
+### 9.7 Known limits
+
+- **The cast light does not WOBBLE, only gutter.** `RT_UploadFlameLights` also drifts a
+  torch's light off the sprite on three more harmonics, and that was left out here on purpose:
+  these lights sit against a wall, and a positional wobble has nowhere safe to go without
+  risking putting the emitter inside the geometry it is meant to be lighting. Intensity only.
+- **`64MotherFire` is still unmarked**, and deliberately: it shares a sprite with `64BigFire`,
+  a *static world* flame, so a class match there needs care the other four do not.
+- **A fire mark does not spread and is not extinguished by a liquid.** The `fluid` surface class
+  is available and a fireball into a pool should probably hiss and leave nothing; not built.
+- **Fire on a ceiling grows downward.** The billboard stands along world +Z from the surface
+  point, which is right for a flame hanging and arguable for one burning. Not yet judged.
+- **The `embers:` wisp counter in the `sparks` ladder is not trustworthy, and the smoke is
+  fine.** It reported `0 wisp(s) spawned this second` for a live fire mark -- and reported the
+  same for a ROCKET mark planted as the control, which is what stopped that becoming a bug
+  hunt in this flavour. The threads themselves were then confirmed by eye
+  (`impact-lab.ps1 -Kind fire-orange -Smoke`, at an exaggerated
+  `rt_fire_smoke_scale`): a plume rises off the flames exactly as intended. So the counter is
+  the thing that is wrong, in a diagnostic this page did not add and has not fixed.
+  **Two failures that look identical on a counter are separated by a control, not by
+  reasoning** -- the same move that retired the traced-flame theory a section earlier.

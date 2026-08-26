@@ -9,6 +9,12 @@ Cvars: `rt_spark_*` (85 of them). **Ships ON** — `rt_spark` is `true` both com
 pinned. (This page said "ships off" for months after that stopped being true, and so did
 `tools/d64rt-pins.cfg`. Corrected 2026-08-25.)
 
+Projectile impacts are a DIFFERENT DOOR and live in
+[`plan-projectile-impact-fx.md`](plan-projectile-impact-fx.md) -- their own walk in
+`rt_impacts.cpp`, sharing only the particle pool with this page. That is where the
+plasma filigree, the rocket embers, the Unmaker burn, the barrel plate and the monster
+fireballs (`rt_fire*`, section 9) are written up.
+
 Still planned, not built: scorch decals — [`plan-impact-fx.md`](plan-impact-fx.md).
 
 Related: [`rt-smoke.md`](rt-smoke.md) (the puff this fires alongside, and why sparks are

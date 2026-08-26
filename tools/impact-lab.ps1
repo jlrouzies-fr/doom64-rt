@@ -31,7 +31,19 @@ param(
   # into the air off the floor rather than burnt onto a wall, so there is
   # nothing to walk up to, and the two things worth looking at -- the plate in
   # flight and the plate at rest -- are seconds apart. That run captures both.
-  [ValidateSet('plasma','bfg','arach','ember','laser','barrel','barrel-shards','barrel-scorch')]
+  # THE FOUR FIREBALLS are fire-orange / -violet / -green / -red: the imp's,
+  # the nightmare imp's, the HELL KNIGHT's and the BARON OF HELL's. They plant
+  # through `arc_here` like everything else here, and they default the map to
+  # MAP97 rather than MAP96 -- see -Map.
+  #
+  # A PLANTED FLAME PROVES THE RENDERER AND NOTHING ELSE, and for these that
+  # gap is wider than usual: all four are MONSTER projectiles, so -Weapon
+  # cannot fire one. The trigger is only exercised by summoning the monster
+  # (64DoomImp, 64NightmareImp, 64HellKnight, 64BaronOfHell) and letting it
+  # shoot. See the -Weapon note below for why that distinction shipped a
+  # feature broken once already.
+  [ValidateSet('plasma','bfg','arach','ember','laser','barrel','barrel-shards','barrel-scorch',
+               'fire-orange','fire-violet','fire-green','fire-red')]
   [string]$Kind = 'plasma',
   # Free-text label for the capture filename -- put the thing you changed in it.
   [string]$Tag = '',
@@ -41,7 +53,11 @@ param(
   # take away and looks like it is barely working -- the same trap that shipped
   # rt_sprite_ao_strength a third too low. MAP97 is the dark twin if the EMBERS
   # (which add light rather than removing it) are what is being looked at.
-  [string]$Map = 'map96',
+  #
+  # THE FIREBALLS DEFAULT TO MAP97 INSTEAD, resolved below. A flame ADDS light;
+  # it is not a decal removing albedo, so the bright beige room that makes a
+  # scorch legible is the one that hides it. Pass -Map explicitly to override.
+  [string]$Map = '',
   # Tics to settle AFTER planting the mark. The path tracer needs time to
   # accumulate or the capture is noise rather than the effect; 120 is ~3.4 s.
   [int]$Settle = 120,
@@ -134,11 +150,30 @@ $lab = @(
   # IS the question.
   "rt_smoke $(if ($Smoke) {1} else {0})",
   "rt_ember_smoke $(if ($Smoke) {1} else {0})",
+  "rt_fire_smoke $(if ($Smoke) {1} else {0})",
   'rt_spark 0',                 # no hitscan shower in the same frame
   'rt_arc 1',
   'rt_arc_burn 1',
   'rt_ember 1',
   'rt_laser 1',
+  'rt_fire 1',
+  # THE FLAME IS HELD ALIVE FOR THE CAPTURE, and this is not cheating --
+  # it is the only way the lab can photograph it at all. Everything else
+  # here outlives the settle by a wide margin (a rocket coal burns 20 s, a
+  # laser burn 10), but a fireball's flames ship at a few seconds and the
+  # settle is ~3 -- so the first capture came back as a bare scorch with a
+  # smudge on it, and it looked exactly like flames that were not being
+  # drawn. What is being judged here is the LOOK of a flame; how long it
+  # should last is a play question and belongs to `ab.cmd fire-flare` and
+  # `fire-slow`, not to a still.
+  #
+  # SIXTEEN SECONDS, NOT NINETY, and the number is chosen so the shutter lands
+  # NEAR THE MIDDLE OF THE RAMP. The sequence takes roughly eight seconds to
+  # reach the screenshot, so 90 froze every flavour at ramp entry 0 -- which for
+  # all four fireballs is the near-white flash frame, and the capture came back
+  # showing four identical white flames. A colour A/B that cannot show a colour
+  # is worse than no capture: it looks like the tint is dead.
+  'rt_fire_life 16',
   'rt_barrel 1'
   # NO `freeze` HERE, and it cost a run. It looks like exactly the right thing
   # for a still capture -- nothing moves, nothing wanders into frame -- but
@@ -155,6 +190,14 @@ $lab = @(
 $tag = if ($Tag) { "$Kind-$Tag" } else { $Kind }
 
 $isBarrel = $Kind -like 'barrel*'
+$isFire   = $Kind -like 'fire*'
+
+# THE DEFAULT ROOM DEPENDS ON WHAT THE MARK DOES TO LIGHT, not on taste.
+# A scorch removes albedo and needs a bright surface to remove it from
+# (MAP96); a flame emits and needs a dark one to be seen against (MAP97).
+# Resolved here rather than in the parameter default so an explicit -Map
+# still wins for either.
+if (-not $Map) { $Map = if ($isFire) { 'map97' } else { 'map96' } }
 
 if ($Weapon) {
   # THE FIRING RUN. Cheats come from ab-cheats.cfg's rule: `give` is silently
