@@ -147,6 +147,120 @@ A/B that separates the two halves.
 radius is *dimmer*, so `d64_poison_lsize` is clamped under it and brightness
 comes from the colour scale instead.
 
+## Under a 3D floor
+
+Since the 3D floors came back (2026-08-23) MAP07's nukage rooms have their
+authored bridge decks again, and the bubbles drew **on the metal** —
+`screen/poison3Dfloor.png`, the deck by the EXIT signs. The deck hides the
+poison, so it has to hide the bubbles.
+
+**It is not a spawn-height bug, and that is worth keeping** because the obvious
+reading is that the bubble got clamped up onto the deck. It does not. Out of the
+UDMF:
+
+| rover | control sector | slab | target | fluid |
+|---|---|---|---|---|
+| line 1712, tag 23 | 282, untagged | −30 … 42 | sec 164 | `D64N1_01` at −174 |
+| line 837, tag 26 | 169, untagged | −30 … 102 | sec 202 | `D64N1_01` at −174 |
+
+Both `type 1` (plain `FF_SOLID`), `alpha 255`, and these two are the **only**
+nukage sectors in the game with a rover over them — MAP11/14/23 are water,
+MAP20 is lava, ABS05 is blood. So:
+
+- **144 units of clearance** between fluid and deck top.
+- `Actor.Spawn` calls `P_FindFloorCeiling(FFCF_ONLYSPAWNPOS)`, which sets
+  `FFCF_3DRESTRICT` and disables the step-up branch of `NextLowestFloorAt`, so
+  `floorz` stays on the poison and `ceilingz` becomes the rover's underside.
+- The rise is 0.06–0.20 damped ×0.94 a tic — about **3 units** total.
+
+The bubble is exactly where it belongs and is drawn through solid geometry. That
+is the same 3D-floor blindness `docs/rt-impact-fx.md` records for every RT
+particle system: the renderer contains **no `F3DFloor` iteration at all**, and
+every subsystem reads `sec->floorplane.ZatPoint` and nothing else.
+
+So the fix is the game sim's half, which is where this whole effect lives
+anyway. `RoofedByRover()` rejects a sample that a solid, plane-rendering rover
+stands over, and `d64_poison_roofgate` is the switch. It is correct whether or
+not the renderer's half is ever closed, and it takes the tick and the dynamic
+light with the sprite.
+
+**`FF_SOLID` *and* `FF_RENDERPLANES`**, both deliberate. An invisible
+collision-only rover is not a lid, and neither is a see-through decorative slab
+— ABS05's floating blood is `type 7`, and you can see the fluid through it, so a
+bubble under one is right. `FF_SOLID` is also the predicate the engine's own
+`NextLowestFloorAt` uses for "is this a floor".
+
+**Rejected as a SAMPLE, not as a spawn.** The `continue` sends the ten-try loop
+looking for another point, so a partly-decked pool keeps its full density over
+the part you can see instead of losing one bubble per covered draw. `hits++`
+still fires first, and that is right — the sampler *did* find poison there. The
+two numbers stay apart in the instrument, because "the lake is roofed" and "the
+sampler cannot find the lake" are different faults:
+
+```
+D64PoisonFx: 515 spawned, 1026/1112 samples hit poison (92%), 511 roofed by a 3D floor
+```
+
+`spawned == hits - roofed`, always. If that stops holding, something else is
+dropping bubbles.
+
+The same gate is in `gen_lava_fx.py`. It changes nothing today — the one rover
+over lava is MAP20's, `type 7`, not solid — and it is there so the two liquid FX
+cannot drift apart.
+
+### MAP94, and the Stalagtite
+
+MAP07 cannot test this, for the same reason it cannot test anything else here.
+`.\tools\poison-lab.cmd bridge` is MAP94: one pool cut in half, a solid rover over
+the south half with its top **flush with the walkway** so you walk straight out
+over it from the spawn, the north half uncovered as the control, and MAP07's
+144-unit clearance reproduced exactly. `nobridge` is the before-picture.
+
+**The Stalagtite under the deck is the point of the map, not scenery.** It
+stands on the poison with a light of its own, so it cannot fail to be visible
+for a lighting reason, and it is a stock prop rather than a second bubble
+because a green dot down there could not be told from a spawned one. It answers
+the question this gate deliberately does not:
+
+- hidden → RT occludes ordinary actors under a rover, and whatever loses the
+  bubbles is specific to how they are submitted.
+- **still visible through the deck** → RT occludes *nothing* under a rover.
+  That is 209 rovers in Retribution and 22 water sectors under bridges on MAP11
+  alone, and it is a separate, bigger bug to write up — not something this gate
+  should be stretched to cover.
+
+## Options > Effects
+
+`d64_poison_bubbles` is the player's switch, and it is the **one archived cvar**
+in this family. Everything else here is `nosave` so an A/B arm cannot leak into
+the next run; a setting that forgets itself on quit is simply broken, so the
+switch is split in two:
+
+| cvar | | |
+|---|---|---|
+| `d64_poison_bubbles` | archived | what the **player** chose. The menu writes it. |
+| `d64_poison_fx` | nosave | the **A/B master**. Arms and labs write it. |
+
+The handler needs both. Merging them would archive the A/B master, and then one
+`ab-poison.cmd off` would turn the effect off for good on a machine that never
+asked — the exact fault the rest of the family is `nosave` to avoid. The other
+half of the same coin: because it is archived, **every arm and every lab launch
+pins it to 1**, or a player who turned the effect off in the menu silently kills
+every future A/B run.
+
+The page is a `MENUDEF` in the pk3, not in the engine's `menudef.txt`, because
+the cvar it drives is declared in the pk3's `CVARINFO` — an engine menu item
+bound to a cvar that does not exist when the pk3 is absent is a menu that cannot
+draw itself. It appends with `AddOptionMenu ... AFTER "HUDOptions"`:
+`OptionsMenu` is declared `protected`, which blocks *replacing* it but not
+extending it (`menudef.cpp:703` guards the replace path; `ParseAddOptionMenu`
+never checks `mProtected`), and `AFTER` matches on an item's **action**, so the
+new page lands with the other option pages rather than below the console and
+config commands at the bottom.
+
+It is the first `MENUDEF` in the project, so it is also the shape the next
+effect toggle should copy.
+
 ## Knobs
 
 Declared in the pk3's `CVARINFO`, all **`nosave`** — an A/B knob that persists
@@ -163,11 +277,13 @@ result gets blamed on the change instead of on the leftover value.
 | `d64_poison_sat` | `1.0` | colour saturation **relative to shipping**. Five baked rungs — `0` grey, `1` matched to the pool, `2` roughly the original art. See below |
 | `d64_poison_light` | `0.1` | scales the bubble's **dynamic light**. `0` turns it off. This is the light that lands on walls |
 | `d64_poison_lsize` | `16` | that light's radius, clamped to 20. **Size is not brightness** — above `rt_dynlight_rsoft` (pinned at 20) a larger radius is *dimmer*. Brightness is `d64_poison_light` |
-| `d64_poison_debug` | `0` | log the sector count, the first three spawn positions, and the sample hit rate |
+| `d64_poison_debug` | `0` | log the sector count, the first three spawn positions, the sample hit rate and the roofed count |
+| `d64_poison_roofgate` | `1` | suppress bubbles under a solid 3D floor. `0` is the before-picture — see [Under a 3D floor](#under-a-3d-floor) |
+| `d64_poison_bubbles` | `1` | **the only archived one.** The player's switch, Options > Effects. `d64_poison_fx` stays the nosave A/B master and both must be on |
 
 ## Arms
 
-`tools\ab-poison.cmd <on|off|dense|sparse|near|far|nodyn|debug> [1-34]`,
+`tools\ab-poison.cmd <on|off|dense|sparse|near|far|nodyn|debug|roof|noroof> [1-34]`,
 defaulting to MAP07. Each writes `rt-poison.log` rather than `rt-console.log`,
 so an unrelated launch cannot destroy the evidence before it is read.
 
@@ -210,6 +326,7 @@ of the spawn, and nothing else in it:
 | **MAP90** | dark — lightlevel 0 and **not one light thing**. Whatever green lands on the wall came from a bubble. |
 | **MAP91** | lit — lightlevel 160 and a ceiling grid. Read the sprite as a shape: size, growth, whether the burst reads as a burst. |
 | **MAP92** | channel — the same room with the poison as a 192-unit **corridor** instead of a lake, which is the shape the real maps have. The lake is a comfortable test and hides sampler bugs; this one does not. |
+| **MAP94** | bridge — a solid 3D floor over half the pool, deck flush with the walkway, MAP07's 144-unit clearance, plus the Stalagtite control underneath. See [Under a 3D floor](#under-a-3d-floor). |
 
 **The probe row is the first thing to read.** Six static bubbles, one locked to
 each frame, stand down the west walkway (`D64PoisonProbe`, DoomEdNum 9910,
@@ -263,6 +380,17 @@ a *different material*, with no `textures.json` entry: it would change colour an
 never reads it. So each rung is its own sprite set with its own meta, baked at
 build time, and `d64_poison_sat` picks the nearest. To land between two rungs,
 move one in `SAT_SETS` and rebuild.
+
+**Both copies of `textures.json`, and the second is not optional.** The
+generator wrote only `build/RelWithDebInfo/rt/data/textures.json` until
+2026-08-26, and that is why every machine had **zero** `PBU*` entries: `build/`
+is gitignored and every build re-stages the *tracked* copy over it, so a
+build-dir-only meta edit is reverted by the next build and a fresh clone never
+had it at all. Nothing errors — the meta simply has fewer entries and the
+bubbles quietly stop glowing, which is the "emissive only, looked fine in the
+lit lab" failure above happening a second time by a different route. After any
+run, `git status Doom64-Retribution/Retribution-RT-Materials/` must not be
+empty.
 
 `lightColor` is retinted with the art, per rung. A grey bubble throwing saturated
 green light is the one combination that can't happen in the world, and the grey

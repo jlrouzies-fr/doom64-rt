@@ -75,6 +75,18 @@ POOL_Z = -32        # a step down, not a pit: the surface stays near eye level
 T_POINTLIGHT = 9800
 T_PROBE = 9910      # one frame, held forever; args[0] picks which
 T_PROBE_ANIM = 9911 # the whole six-frame cycle on a loop
+T_STALAGTITE = 47   # MAP94's control prop -- see build_bridge_textmap
+
+# MAP94, the BRIDGE lab. The numbers are MAP07's, measured out of its UDMF:
+# sec164 and sec202 are the only two nukage sectors in the game with a solid
+# rover over them, their fluid is at z -174 and the slabs run -30..42 and
+# -30..102, so the clearance from fluid to deck top is 144 UNITS. Reproducing
+# that number matters -- the whole question is whether something 144 units under
+# an opaque deck is drawn through it.
+BRIDGE_POOL_Z = -144    # the fluid, a pit like MAP07's
+BRIDGE_DECK_TOP = 0     # flush with the walkway, so you WALK onto the deck
+BRIDGE_DECK_BOT = -40   # slab thickness 40; MAP07's are 72 and 132
+BRIDGE_TAG = 94
 
 
 def write_wad(items) -> bytes:
@@ -353,6 +365,135 @@ def build_channel_textmap(lit: bool = True) -> str:
     return "\n".join(parts)
 
 
+def build_bridge_textmap() -> str:
+    """MAP94 -- a solid 3D FLOOR over half the poison. The map for the bug in
+    screen/poison3Dfloor.png: bubbles drawn ON a deck they sit 144 units under.
+
+    MAP07 cannot be the test, for the same reason it could not test anything
+    else here: its nukage is in pits, and "the gate works" and "you cannot see
+    the bubbles from up there anyway" give the identical screenshot. So this is
+    one room, one pool, and the pool is cut in half:
+
+        SOUTH half   DECKED -- a solid rover, top flush with the walkway, so
+                     you walk straight out over it from the spawn and look
+                     down at your own feet. Nothing green may appear here.
+        NORTH half   OPEN   -- the control. Bubbles here must be untouched, or
+                     the gate is rejecting more than it should.
+
+    Both halves are the same flat at the same height in the same light, so the
+    only difference between them is the rover. That is the whole design.
+
+    THE STALAGTITE IS THE POINT OF THE MAP, not scenery. It stands on the poison
+    UNDER the deck, with a light of its own next to it so it cannot fail to be
+    visible for a lighting reason. It is what tells us whether RT fails to
+    occlude EVERY actor under a rover -- which would matter for all 209 of
+    Retribution's rovers and the 22 water sectors under bridges on MAP11 -- or
+    only these bubbles. An ordinary stock prop on purpose: a second green bubble
+    down there could not be told from a spawned one, and 47/Stalagtite carries
+    no GLDEFS light, so it cannot light the room it is being judged in.
+    """
+    parts = ['namespace = "zdoom";']
+
+    MID = (POOL_Y0 + POOL_Y1) // 2
+
+    #  0-3  room, clockwise (see build_textmap for why the winding matters)
+    #  4-9  pool, split at MID into a decked south half and an open north half
+    # 10-13 the control closet, off the play area
+    room_v = [(0, 0), (0, ROOM_D), (ROOM_W, ROOM_D), (ROOM_W, 0)]
+    pool_v = [(POOL_X0, POOL_Y0), (POOL_X0, MID), (POOL_X0, POOL_Y1),
+              (POOL_X1, POOL_Y1), (POOL_X1, MID), (POOL_X1, POOL_Y0)]
+    ctrl_v = [(ROOM_W + 128, 0), (ROOM_W + 128, 128),
+              (ROOM_W + 256, 128), (ROOM_W + 256, 0)]
+    for x, y in room_v + pool_v + ctrl_v:
+        parts.append(blk("vertex", x=float(x), y=float(y)))
+
+    LIGHT = 160
+    # 0 walkway | 1 pool DECKED (tagged) | 2 pool OPEN | 3 the rover's control
+    parts.append(blk("sector", heightfloor=0, heightceiling=CEIL_H,
+                     texturefloor=FLOOR, textureceiling=CEIL, lightlevel=LIGHT))
+    parts.append(blk("sector", heightfloor=BRIDGE_POOL_Z, heightceiling=CEIL_H,
+                     texturefloor=POOL, textureceiling=CEIL, lightlevel=LIGHT,
+                     id=BRIDGE_TAG))
+    parts.append(blk("sector", heightfloor=BRIDGE_POOL_Z, heightceiling=CEIL_H,
+                     texturefloor=POOL, textureceiling=CEIL, lightlevel=LIGHT))
+    # THE CONTROL SECTOR IS THE ROVER. P_Add3DFloor takes the slab's BOTTOM from
+    # this sector's FLOOR and its TOP from this sector's CEILING -- verified
+    # against MAP07, where ctrl sec282 runs -30..42 and produces a deck whose
+    # top is 42. Its flats become the rover's underside and walking surface.
+    parts.append(blk("sector", heightfloor=BRIDGE_DECK_BOT,
+                     heightceiling=BRIDGE_DECK_TOP,
+                     texturefloor=FLOOR, textureceiling=FLOOR, lightlevel=LIGHT))
+
+    # Room walls: one-sided, front = the walkway.
+    for _ in range(4):
+        parts.append(blk("sidedef", sector=0, texturemiddle=WALL))
+    for i in range(4):
+        parts.append(blk("linedef", v1=i, v2=(i + 1) % 4, sidefront=i,
+                         blocking=True))
+
+    # Pool border. Front is the right of v1->v2 and every edge below is wound so
+    # that the right-hand side is the pool; the split line (5->8) is the one
+    # whose back is the OTHER pool half rather than the walkway.
+    #   4=(X0,Y0) 5=(X0,MID) 6=(X0,Y1) 7=(X1,Y1) 8=(X1,MID) 9=(X1,Y0)
+    edges = [
+        (4, 5, 1, 0),   # decked, west
+        (5, 8, 1, 2),   # THE SPLIT -- decked in front, open behind
+        (8, 9, 1, 0),   # decked, east
+        (9, 4, 1, 0),   # decked, south
+        (5, 6, 2, 0),   # open, west
+        (6, 7, 2, 0),   # open, north
+        (7, 8, 2, 0),   # open, east
+    ]
+    side = 4
+    for v1, v2, front, back in edges:
+        parts.append(blk("sidedef", sector=front, texturebottom=WALL))
+        parts.append(blk("sidedef", sector=back, texturebottom=WALL))
+        parts.append(blk("linedef", v1=v1, v2=v2, sidefront=side,
+                         sideback=side + 1, twosided=True))
+        side += 2
+
+    # The control closet: four one-sided walls, and ONE of them carries
+    # Sector_Set3DFloor. arg1 = 1 is plain FF_SOLID and arg3 = 255 opaque --
+    # both copied from MAP07's two rovers, which are exactly type 1 alpha 255.
+    for _ in range(4):
+        parts.append(blk("sidedef", sector=3, texturemiddle=WALL))
+    for i in range(4):
+        parts.append(blk("linedef", v1=10 + i, v2=10 + (i + 1) % 4,
+                         sidefront=side + i, blocking=True,
+                         **({"special": 160, "arg0": BRIDGE_TAG, "arg1": 1,
+                             "arg2": 0, "arg3": 255} if i == 0 else {})))
+
+    # The player, on the south walkway facing +y -- straight at the deck. The
+    # deck top is flush with this floor, so walking forward puts him standing
+    # over the covered poison with no stair, lift or noclip in the way.
+    parts.append(thing(x=float(ROOM_W // 2), y=128.0, angle=90, type=1))
+
+    # THE CONTROL, under the deck, with its own light so "invisible" can only
+    # mean occluded. Placed mid-way into the decked half, on the fluid.
+    probe_y = float((POOL_Y0 + MID) // 2)
+    parts.append(thing(x=float(ROOM_W // 2), y=probe_y, angle=90,
+                       type=T_STALAGTITE))
+    # height is RELATIVE TO THE SECTOR FLOOR in UDMF (the ceiling grid below
+    # reads CEIL_H - 16 for the same reason), so 48 is 48 above the fluid, not
+    # 48 in world z. Written absolute first, which put the light 96 units under
+    # the floor and lit nothing.
+    parts.append(thing(x=float(ROOM_W // 2 + 96), y=probe_y,
+                       height=48.0, angle=0,
+                       type=T_POINTLIGHT, arg0=255, arg1=250, arg2=240, arg3=20))
+
+    # Ceiling grid, as MAP91. It lights the open half and the walkway; under the
+    # deck it deliberately does not reach, which is what the light above is for.
+    for gx in range(3):
+        for gy in range(4):
+            parts.append(thing(x=float(ROOM_W * (gx + 0.5) / 3.0),
+                               y=float(ROOM_D * (gy + 0.5) / 4.0),
+                               height=float(CEIL_H - 16), angle=0,
+                               type=T_POINTLIGHT,
+                               arg0=255, arg1=250, arg2=240, arg3=20))
+
+    return "\n".join(parts)
+
+
 MAPINFO = """map MAP90 "RT Poison Lab (dark)"
 {
     sky1 = "SKY1"
@@ -391,6 +532,15 @@ map MAP93 "RT Poison Lab (channel, dark)"
     secretnext = "MAP93"
 }
 
+map MAP94 "RT Poison Lab (bridge)"
+{
+    sky1 = "SKY1"
+    music = ""
+    cluster = 1
+    next = "MAP94"
+    secretnext = "MAP94"
+}
+
 DoomEdNums
 {
     9910 = D64PoisonProbe
@@ -413,6 +563,9 @@ def main() -> None:
         ("MAP93", b""),
         ("TEXTMAP", build_channel_textmap(False).encode("ascii")),
         ("ENDMAP", b""),
+        ("MAP94", b""),
+        ("TEXTMAP", build_bridge_textmap().encode("ascii")),
+        ("ENDMAP", b""),
     ])
     OUT_WAD.write_bytes(wad)
     with zipfile.ZipFile(OUT_MAPINFO, "w", zipfile.ZIP_DEFLATED) as z:
@@ -430,6 +583,11 @@ def main() -> None:
     print( "  MAP91   lit:  lightlevel 160 + ceiling grid -- judge the SPRITE")
     print( "  MAP92   channel: a 192-unit corridor of poison -- the shape the game has")
     print( "  MAP93   channel, DARK: the same corridor at lightlevel 0, no lights at all")
+    print(f"  MAP94   bridge: a solid 3D floor over the SOUTH half of the pool,")
+    print(f"          deck top {BRIDGE_DECK_TOP} flush with the walkway, fluid at "
+          f"{BRIDGE_POOL_Z} -- {BRIDGE_DECK_TOP - BRIDGE_POOL_Z} units of clearance, MAP07's number.")
+    print( "          North half is the untouched control; the Stalagtite under the")
+    print( "          deck says whether RT occludes ORDINARY actors under a rover.")
 
 
 if __name__ == "__main__":

@@ -371,6 +371,12 @@ class D64PoisonFx : EventHandler
     int hits;
     int report;
 
+    // Sampled points that DID land on poison and were then thrown away because
+    // a solid 3D floor stands over them (RoofedByRover). Counted apart from
+    // `hits` on purpose: the sampler found the fluid, so a low hit rate and a
+    // roofed lake are different faults and must not average into one number.
+    int roofed;
+
     // Rate is what the PLAYER sees, not what the lake covers. MAP07 has 50
     // poison sectors; spawning uniformly over their area puts nearly every
     // bubble out of frame while the log cheerfully reports them thrown. The
@@ -398,6 +404,51 @@ class D64PoisonFx : EventHandler
         return fl.MakeUpper().IndexOf( "D64N" ) == 0;
     }
 
+    // A SOLID ROVER OVER THE POISON IS A LID.
+    //
+    // MAP07's nukage rooms have their authored bridge decks back (the 3D-floor
+    // strip wad was retired 2026-08-23). The deck hides the fluid, so it has to
+    // hide the bubbles -- and it did not: they drew ON the metal,
+    // screen/poison3Dfloor.png.
+    //
+    // THIS IS NOT A SPAWN-HEIGHT BUG, and it is worth writing down because the
+    // obvious reading is that the bubble got clamped up onto the deck. It does
+    // not. Measured out of the UDMF: sec164 and sec202 are the only two nukage
+    // sectors in the game with a rover over them; the fluid is at z -174 and
+    // the slabs run -30..42 and -30..102, so there is 144 UNITS of clearance.
+    // Actor.Spawn calls P_FindFloorCeiling with FFCF_ONLYSPAWNPOS, which sets
+    // FFCF_3DRESTRICT and disables the step-up branch of NextLowestFloorAt, so
+    // floorz stays on the poison; and the rise (0.06-0.20 damped x0.94) totals
+    // about 3 units. The bubble is where it belongs and is drawn through solid
+    // geometry -- the same 3D-floor blindness docs/rt-impact-fx.md records for
+    // every RT particle system. Suppressing the bubble is the game sim's half,
+    // it is correct whether or not the renderer's half is ever closed, and it
+    // takes the tick and the dynamic light with it.
+    //
+    // FF_SOLID *and* FF_RENDERPLANES on purpose. An invisible collision-only
+    // rover is not a lid, and neither is a see-through decorative slab
+    // (ABS05's floating blood, type 7) -- you can see the fluid through it, so
+    // a bubble there is right. FF_SOLID is also the predicate the engine's own
+    // NextLowestFloorAt uses for "is this a floor".
+    static bool RoofedByRover( Sector sec, Vector2 p, double fz )
+    {
+        int n = sec.Get3DFloorCount();      // 0 for almost every sector in the game
+        for( int i = 0; i < n; i++ )
+        {
+            let ff = sec.Get3DFloor( i );
+            if( !ff ) { continue; }
+
+            int need = F3DFloor.FF_EXISTS | F3DFloor.FF_SOLID | F3DFloor.FF_RENDERPLANES;
+            if( ( ff.flags & need ) != need ) { continue; }
+
+            // Above the fluid, not merely present: a rover flush with the plane
+            // or below it covers nothing. The 1-unit slack matches the epsilon
+            // the fluid's own plane comparisons use elsewhere.
+            if( ff.top.ZatPoint( p ) > fz + 1 ) { return true; }
+        }
+        return false;
+    }
+
     override void WorldLoaded( WorldEvent e )
     {
         poisonSectors = 0;
@@ -405,6 +456,7 @@ class D64PoisonFx : EventHandler
         tick = 0;
         samples = 0;
         hits = 0;
+        roofed = 0;
         report = 0;
 
         secIdx.Clear(); minx.Clear(); miny.Clear(); maxx.Clear(); maxy.Clear();
@@ -454,8 +506,14 @@ class D64PoisonFx : EventHandler
     {
         if( poisonSectors == 0 ) { return; }
 
+        // TWO switches, on purpose -- see the note above CVARINFO. The player's
+        // choice (Options > Effects) is archived; the A/B master is not. Either
+        // one off means no bubbles.
         let cvOn = CVar.FindCVar( "d64_poison_fx" );
         if( cvOn && !cvOn.GetBool() ) { return; }
+
+        let cvUser = CVar.FindCVar( "d64_poison_bubbles" );
+        if( cvUser && !cvUser.GetBool() ) { return; }
 
         let pmo = players[ consoleplayer ].mo;
         if( !pmo ) { return; }
@@ -475,6 +533,12 @@ class D64PoisonFx : EventHandler
         // switch and it is the only one.
         double szMul = cvSize ? max( 0.05, cvSize.GetFloat() ) : 1.0;
         double zOff  = cvZ ? cvZ.GetFloat() : 1.0;
+
+        // The gate is a cvar so the before and the after are one arm rather
+        // than two builds. Without it "no bubbles on the deck" and "the code
+        // never ran" produce the same screenshot.
+        let cvRoof  = CVar.FindCVar( "d64_poison_roofgate" );
+        bool roofGate = cvRoof ? cvRoof.GetBool() : true;
         if( far <= NEAR_MIN ) { return; }
 
         // Fractional rates still work: the remainder is the probability of one
@@ -484,8 +548,8 @@ class D64PoisonFx : EventHandler
         if( cvDbg2 && cvDbg2.GetBool() && ++report >= 4 )
         {
             report = 0;
-            Console.PrintfEx( DiagLevel(), "D64PoisonFx: %d spawned, %d/%d samples hit poison (%d%%)",
-                            spawned, hits, samples, samples > 0 ? ( 100 * hits ) / samples : 0 );
+            Console.PrintfEx( DiagLevel(), "D64PoisonFx: %d spawned, %d/%d samples hit poison (%d%%), %d roofed by a 3D floor",
+                            spawned, hits, samples, samples > 0 ? ( 100 * hits ) / samples : 0, roofed );
         }
 
         // The sectors in range, rebuilt each burst because the player moves.
@@ -559,6 +623,14 @@ class D64PoisonFx : EventHandler
                 // into the poison, which is the useful direction -- a bubble
                 // that breaks the plane reads better than one resting on it.
                 double fz = sec.floorplane.ZatPoint( (px, py) );
+
+                // Rejected as a SAMPLE, not as a spawn: `continue` sends the
+                // 10-try loop looking for another point, so the open half of a
+                // partly-decked pool keeps its full density instead of losing
+                // one bubble per covered draw. hits++ above already fired, and
+                // that is right -- the sampler did find poison here.
+                if( roofGate && RoofedByRover( sec, (px, py), fz ) ) { roofed++; continue; }
+
                 let b = D64PoisonBubble( Actor.Spawn( "D64PoisonBubble", (px, py, fz) ) );
                 if( b )
                 {
@@ -604,6 +676,20 @@ class D64PoisonFx : EventHandler
 # NOSAVE, and that is not incidental. An A/B knob that persists means the next
 # run silently inherits whichever arm was tried last, and a null result gets
 # blamed on the change instead of on the leftover value.
+#
+# d64_poison_bubbles IS THE ONE EXCEPTION, and it is a different kind of thing.
+# It is the player's setting, driven by Options > Effects, and a setting that
+# forgets itself on quit is broken. So the switch is split in two:
+#
+#   d64_poison_bubbles  archived   what the PLAYER chose. The menu writes it.
+#   d64_poison_fx       nosave     the A/B master. Arms and labs write it.
+#
+# The handler needs both. Merging them would archive the A/B master, and then
+# one `ab-poison.cmd off` would turn the effect off for good on a machine that
+# never asked -- the exact fault the rest of this file is nosave to avoid.
+# Because it is archived, every arm and every lab launch must pin
+# d64_poison_bubbles explicitly, or a player who turned the effect off in the
+# menu silently kills every future A/B run.
 CVARINFO = """server nosave bool  d64_poison_fx    = true;
 server nosave float d64_poison_rate  = 2.0;
 server nosave float d64_poison_dist  = 1100.0;
@@ -613,6 +699,8 @@ server nosave float d64_poison_sat   = 1.0;
 server nosave float d64_poison_light = 0.1;
 server nosave float d64_poison_lsize = 16.0;
 server nosave bool  d64_poison_debug = false;
+server nosave bool  d64_poison_roofgate = true;
+server        bool  d64_poison_bubbles = true;
 """
 
 
@@ -639,6 +727,38 @@ server nosave bool  d64_poison_debug = false;
 # named in MAPINFO. Without this the class compiles, loads and never runs, which
 # is exactly what happened to the lava sprays for a whole round. AddEventHandlers
 # appends rather than replaces, so this coexists with d64r-lava-fx.pk3's line.
+# OPTIONS > EFFECTS. The first MENUDEF in the project, so it is also the shape
+# the next effect toggle should copy.
+#
+# AddOptionMenu rather than a replacement: OptionsMenu is declared `protected`
+# in the engine's menudef.txt, which blocks REPLACING it but not extending it
+# (menudef.cpp:703 guards the replace path; ParseAddOptionMenu does not check
+# mProtected at all). AFTER matches on an item's ACTION, so "HUDOptions" is the
+# HUD submenu, and the new page lands with the other option pages instead of
+# below the console/config commands at the bottom.
+#
+# It lives in this pk3 rather than in the engine's menudef.txt because the cvar
+# it drives is declared in this pk3's CVARINFO. An engine menu item bound to a
+# cvar that does not exist when the pk3 is not loaded is a menu that cannot draw
+# itself; this way the page appears exactly when the effect is present.
+MENUDEF = """AddOptionMenu "OptionsMenu" AFTER "HUDOptions"
+{
+	Submenu "Effects", "D64EffectsOptions"
+}
+
+OptionMenu "D64EffectsOptions"
+{
+	Title "EFFECTS"
+	StaticText "Doom 64 RT", 1
+	StaticText " "
+	Option "Poison bubbles", "d64_poison_bubbles", "OnOff"
+	StaticText " "
+	StaticText "Bubbles that swell out of a nukage"
+	StaticText "lake and burst. Poison floors only."
+}
+"""
+
+
 MAPINFO = """GameInfo
 {
 \tAddEventHandlers = "D64PoisonFx"
@@ -707,33 +827,52 @@ BUBBLE_META = {}
 for _pfx, _rung in SAT_SETS:
     BUBBLE_META.update(rung_meta(_pfx, _rung))
 
-TEXJSON = ROOT / "sourcecode/gzdoom-rt/build/RelWithDebInfo/rt/data/textures.json"
+# BOTH COPIES, and the second one is not optional.
+#
+# This wrote only the build tree until 2026-08-26, and that is why the PBU*
+# entries were missing from every machine: build/ is GITIGNORED and every build
+# re-stages the TRACKED copy over it, so a build-dir-only meta edit is reverted
+# by the next build and a fresh clone never had it at all. Nothing errors -- the
+# meta simply has fewer entries and the bubbles silently stop glowing, which is
+# the "emissive only, looked fine in the lit lab" failure written up in
+# docs/poison-bubbles.md read a second time.
+#
+# Same rule as the rest of the RT materials: after any generator run,
+# `git status Doom64-Retribution/Retribution-RT-Materials/` must not be empty.
+TEXJSON_PATHS = [
+    ROOT / "sourcecode/gzdoom-rt/build/RelWithDebInfo/rt/data/textures.json",
+    ROOT / "Doom64-Retribution/Retribution-RT-Materials/rt/data/textures.json",
+]
 
 
 def patch_texjson() -> int:
     import json
 
-    if not TEXJSON.exists():
-        print(f"  (skipped {TEXJSON.name}: not found -- build gzdoom first)")
-        return 0
-    data = json.loads(TEXJSON.read_text(encoding="utf-8"))
-    seen, n = set(), 0
-    for e in data["array"]:
-        nm = e.get("textureName")
-        if nm in BUBBLE_META and nm not in seen:
-            seen.add(nm)
-            i, c, em = BUBBLE_META[nm]
-            e["lightIntensity"], e["lightColor"], e["emissiveMult"] = i, c, em
-            n += 1
-    for nm, (i, c, em) in BUBBLE_META.items():
-        if nm not in seen:
-            data["array"].append(
-                {"textureName": nm, "lightIntensity": i, "lightColor": c,
-                 "emissiveMult": em, "metallicDefault": 0}
-            )
-            n += 1
-    TEXJSON.write_text(json.dumps(data, indent=2), encoding="utf-8")
-    return n
+    total = 0
+    for path in TEXJSON_PATHS:
+        if not path.exists():
+            print(f"  (skipped {path}: not found -- build gzdoom first)")
+            continue
+        data = json.loads(path.read_text(encoding="utf-8"))
+        seen, n = set(), 0
+        for e in data["array"]:
+            nm = e.get("textureName")
+            if nm in BUBBLE_META and nm not in seen:
+                seen.add(nm)
+                i, c, em = BUBBLE_META[nm]
+                e["lightIntensity"], e["lightColor"], e["emissiveMult"] = i, c, em
+                n += 1
+        for nm, (i, c, em) in BUBBLE_META.items():
+            if nm not in seen:
+                data["array"].append(
+                    {"textureName": nm, "lightIntensity": i, "lightColor": c,
+                     "emissiveMult": em, "metallicDefault": 0}
+                )
+                n += 1
+        path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        print(f"  {path.relative_to(ROOT).as_posix()}  {n} PBU* entries")
+        total += n
+    return total
 
 
 # The six-frame sequence, once, with the sprite name left open so it can be
@@ -809,8 +948,14 @@ def build(dry: bool) -> int:
     for prefix, rung, frames in sets:
         star = "  <- default (d64_poison_sat 1)" if rung == SAT_SETS[SAT_DEFAULT_INDEX][1] else ""
         print(f"   {prefix}  sat x{rung:.2f}  {len(frames)} frame(s){star}")
+    # Counted, not written down. The hardcoded "7 nosave knobs" this replaced had
+    # been wrong for three cvars.
+    cv = [l for l in CVARINFO.splitlines() if l.strip()]
+    n_nosave = sum(1 for l in cv if "nosave" in l)
     print(f"   ZSCRIPT {len(zscript)} bytes, MAPINFO registers D64PoisonFx, "
-          f"CVARINFO adds 7 nosave knobs; NO GLDEFS -- see the note above BUBBLE_BASE_META")
+          f"CVARINFO adds {n_nosave} nosave knob(s) + {len(cv) - n_nosave} archived "
+          f"setting(s), MENUDEF adds Options > Effects; "
+          f"NO GLDEFS -- see the note above BUBBLE_BASE_META")
     for name, img, ox, oy, blob in sets[SAT_DEFAULT_INDEX][2]:
         print(f"   sprites/{name}.png  {img.width}x{img.height}  offset ({ox},{oy})  {len(blob)} bytes")
     if dry:
@@ -821,6 +966,7 @@ def build(dry: bool) -> int:
     with zipfile.ZipFile(OUT, "w", zipfile.ZIP_DEFLATED) as z:
         z.writestr("MAPINFO", MAPINFO)
         z.writestr("CVARINFO", CVARINFO)
+        z.writestr("MENUDEF", MENUDEF)
         z.writestr("ZSCRIPT", zscript)
         for _prefix, _rung, frames in sets:
             for name, img, ox, oy, blob in frames:

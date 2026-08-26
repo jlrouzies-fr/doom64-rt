@@ -44,6 +44,25 @@ rem           the bubbles kept glowing and kept tinting the pool with it off,
 rem           which proved the sprite meta was carrying the light on its own.
 rem   debug   d64_poison_debug 1 + rt_verbose 1 -- prints the sector count and
 rem           the first three spawn positions on screen and to the log.
+rem   roof    the 3D-FLOOR GATE on (shipping), debug on so the log names how many
+rem           samples were thrown away as roofed.
+rem   noroof  d64_poison_roofgate 0 -- the BEFORE picture, screen/poison3Dfloor.png.
+rem
+rem BUBBLES ON TOP OF A BRIDGE (screen/poison3Dfloor.png, MAP07 by the exit). Two
+rem nukage sectors in the whole game have a solid 3D floor over them, sec164 and
+rem sec202, and both fluids sit at z -174 under slabs whose tops are at 42 and
+rem 102 -- 144 UNITS of clearance. The bubble was never lifted onto the deck
+rem (Actor.Spawn sets FFCF_3DRESTRICT, which disables the step-up branch, and the
+rem rise totals about 3 units); it was drawn THROUGH it. The spawner now refuses
+rem a sample that a solid rover stands over. Judge it standing ON the deck by the
+rem EXIT signs:
+rem
+rem   .\tools\ab-poison.cmd noroof 7     green dots on the metal
+rem   .\tools\ab-poison.cmd roof   7     a clean deck
+rem
+rem and MAP34 is the regression control -- its 16 rovers are not over liquid, so
+rem "roofed" must read 0 there. The isolated version of the same test, with an
+rem ordinary prop under the deck as a control, is .\tools\poison-lab.cmd bridge.
 rem
 rem SIZE AND HEIGHT are cvars too, and every arm pins them at the shipping
 rem values so a tuning session cannot leak into a rate comparison:
@@ -74,11 +93,17 @@ rem So the rungs are baked at build time, one sprite set each, and the cvar
 rem picks the nearest. To land between two rungs, move one in
 rem tools\gen_poison_fx.py (SAT_SETS) and rebuild.
 rem
-rem The seven d64_poison_* cvars are declared NOSAVE in the pk3's CVARINFO, so an
+rem The d64_poison_* A/B cvars are declared NOSAVE in the pk3's CVARINFO, so an
 rem arm cannot leak into the next run through the ini. Every arm still sets all
-rem seven explicitly.
+rem of them explicitly.
 rem
-rem Usage: ab-poison.cmd <on|off|dense|sparse|near|far|nodyn|debug> [1-34]
+rem d64_poison_bubbles IS THE EXCEPTION, and it is ARCHIVED: it is the player's
+rem setting, driven by Options > Effects, and a setting that forgets itself on
+rem quit is broken. Which is exactly why every arm here pins it to 1 -- otherwise
+rem a machine where someone turned the effect off in the menu runs every A/B
+rem below against no bubbles at all, and blames the arm.
+rem
+rem Usage: ab-poison.cmd <on|off|dense|sparse|near|far|nodyn|debug|roof|noroof> [1-34]
 rem ---------------------------------------------------------------------------
 
 set "ARM=%~1"
@@ -101,17 +126,19 @@ rem the evidence from one run is destroyed by the next unrelated launch before i
 rem can be read. +logfile comes after the launcher's own, so it wins.
 set "LOG=+logfile %~dp0\..\rt-poison.log"
 
-if /i "%ARM%"=="on"     set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 0"
-if /i "%ARM%"=="off"    set "ARGS=+d64_poison_fx 0 +d64_poison_rate 2    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 0"
-if /i "%ARM%"=="dense"  set "ARGS=+d64_poison_fx 1 +d64_poison_rate 8    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 0"
-if /i "%ARM%"=="sparse" set "ARGS=+d64_poison_fx 1 +d64_poison_rate 0.5  +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 0"
-if /i "%ARM%"=="near"   set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2    +d64_poison_dist 400  +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 0"
-if /i "%ARM%"=="far"    set "ARGS=+d64_poison_fx 1 +d64_poison_rate 8    +d64_poison_dist 2200 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 0"
-if /i "%ARM%"=="nodyn"  set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 0 +rt_dynlight 0"
-if /i "%ARM%"=="debug"  set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 1 +rt_verbose 1"
+if /i "%ARM%"=="on"     set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 0 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
+if /i "%ARM%"=="off"    set "ARGS=+d64_poison_fx 0 +d64_poison_rate 2    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 0 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
+if /i "%ARM%"=="dense"  set "ARGS=+d64_poison_fx 1 +d64_poison_rate 8    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 0 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
+if /i "%ARM%"=="sparse" set "ARGS=+d64_poison_fx 1 +d64_poison_rate 0.5  +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 0 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
+if /i "%ARM%"=="near"   set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2    +d64_poison_dist 400  +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 0 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
+if /i "%ARM%"=="far"    set "ARGS=+d64_poison_fx 1 +d64_poison_rate 8    +d64_poison_dist 2200 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 0 +d64_poison_roofgate 1 +d64_poison_bubbles 1"
+if /i "%ARM%"=="nodyn"  set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 0 +d64_poison_roofgate 1 +d64_poison_bubbles 1 +rt_dynlight 0"
+if /i "%ARM%"=="debug"  set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 1 +d64_poison_roofgate 1 +d64_poison_bubbles 1 +rt_verbose 1"
+if /i "%ARM%"=="roof"   set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 1 +d64_poison_bubbles 1 +rt_verbose 1 +d64_poison_roofgate 1"
+if /i "%ARM%"=="noroof" set "ARGS=+d64_poison_fx 1 +d64_poison_rate 2    +d64_poison_dist 1100 +d64_poison_size 0.35 +d64_poison_z 1 +d64_poison_sat 1 +d64_poison_light 0.1 +d64_poison_lsize 16 +d64_poison_debug 1 +d64_poison_bubbles 1 +rt_verbose 1 +d64_poison_roofgate 0"
 
 if not defined ARGS (
-  echo Usage: %~nx0 ^<on^|off^|dense^|sparse^|near^|far^|nodyn^|debug^> [1-34]
+  echo Usage: %~nx0 ^<on^|off^|dense^|sparse^|near^|far^|nodyn^|debug^|roof^|noroof^> [1-34]
   exit /b 1
 )
 
