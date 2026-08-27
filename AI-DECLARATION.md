@@ -16,17 +16,15 @@ components:
 
 This format is based on [AI-DECLARATION.md](https://ai-declaration.md/en/0.1.2).
 
-## Notes
+## Notes from myself
 
-This project is AI-written under human direction, and it would be misleading to
-present it any other way.
+This Doom 64 RT project is AI-written under human direction, and it would be misleading to present it any other way.
 
-The author is a software engineer by trade — .NET, not games. No graphics
-programming, no renderer background, no experience with the Doom engine or with
-path tracing before this project started. The path-traced renderer features, the
-lighting-repair tooling, the material pipeline and every document in `docs/` were
-written by Claude (via Claude Code), prompted, steered, corrected and accepted or
-rejected by the author.
+I am a software engineer and IT administrator, but not a game developer. No graphics programming, no renderer background, no experience with the Doom engine or with path tracing before this project started. 
+
+I take no credit in the ray traced engine and the modified GzDoom-RT. Only credit is the time taken to get the implementation done (already at around 50-60h, even with AI), and the ideas of additional visual, sound and HUD implemented.  
+
+## AI Notes
 
 What that split looks like in practice:
 
@@ -75,8 +73,8 @@ arrangement for the changes made *here*:
 [`RTGL`](https://github.com/jlrouzies-fr/RTGL). Everything they inherit from
 upstream is the work of their original authors — see [CREDITS.md](CREDITS.md).
 
-Nothing in the game's art, maps, music or sound is AI-generated. The base game is
-Doom 64 by Midway and id Software, the total conversion is Doom 64: Retribution
+The only AI generated element is the modified mugshot to look more like Doom 64 them, and the poison bubbles. 
+The base game is Doom 64 by Midway and id Software, the total conversion is Doom 64: Retribution
 by Nevander, and the renderer is RTGL1 by Sultim Tsyrendashiev and Vasilii
 Shirokii. Where this project generates assets — emissive masks, ORM and normal
 maps, the mugshot frames — they are derived programmatically from that existing

@@ -37,7 +37,7 @@ Every light in the game is a real emitter, and every surface answers to it.
 - [**Building it yourself**](#building) — [what you need](#requirements) · [dependencies](#dependencies) · [build](#build) · [first run](#first-run)
 - [**Launchers**](#launchers) — how the game and the A/B arms are started
 - [**For developers**](#developers) — the doc index, in [DEVELOPERS.md](DEVELOPERS.md)
-- [**Art changes**](#art) — the one texture this project edits, and the one optional add-on
+- [**Art changes**](#art) — the textures this project redraws, and the one optional add-on
 - [**Credits**](#credits) — RTGL1, gzdoom-rt, Retribution, Doom 64
 - [**AI declaration**](AI-DECLARATION.md) — what was written by AI, and what wasn't
 
@@ -55,19 +55,21 @@ Every one of them is documented in full elsewhere — this table is the index, n
 | Category | Feature | Summary | Doc |
 |---|---|---|---|
 | **Lighting** | Painted light → real fixtures | Nine repair families across the wad — sequence chains, blinks, ACS light calls, painted shafts/tints, sector lamps, panel lamps — replacing baked-in fake glow with real emitters. | [`sequence-light-chains`](docs/sequence-light-chains.md) |
-| | Finding them | `scan_light_specials.py`, `scan_fake_lightshafts.py`, `scan_painted_light.py` (1128 candidates), plus in-game `whatsthat`, `rt_tex_probe`, `rt_lightlevel_watch`. | [`rt-lighting-practices`](docs/rt-lighting-practices.md) |
 | | Wall monitors | 48 flicker lights across 8 maps, placed at the emissive mask's lit centroid. | [`AGENTS.md`](AGENTS.md) |
 | | Inferred fixtures | Ceiling insets, wall strips, hanging tech, solo bulbs, spin panels — derived from the texture, not hand-placed. | [`solo-bulb-lamps`](docs/solo-bulb-lamps.md) · [`faux-lamp-panels`](docs/faux-lamp-panels.md) |
 | | Flame lighting | All 84 torch/fire/candle sprites lit engine-side (offset onto the flame, flicker) rather than by texture meta. | [`flame-lighting`](docs/flame-lighting.md) |
 | | World emissives | Lava, monitors, keys, EXIT signs, teleporters as masked emitters feeding GI. | [`material-authoring-spec`](docs/material-authoring-spec.md) |
 | **Atmosphere** | The moon | Sky disc + real directional light, aimed alike; shadow rays must prove they reached sky (`rt_sun_require_sky`) or it washes sealed rooms. `moon` CCMD. | [`moon-and-sky-leaks`](docs/moon-and-sky-leaks.md) |
-| | Clouds + lightning | 6–8 baked sky-dome slices (`rt_clouds_*`); tints and attenuates moonlight, flashes with MAP11's storm. `thunder` CCMD. | [`rt-clouds-and-lightning`](docs/rt-clouds-and-lightning.md) |
+| | Clouds & Lightning | (`rt_clouds_*`); tints and attenuates moonlight, flashes with MAP11's storm. `thunder` CCMD. | [`rt-clouds-and-lightning`](docs/rt-clouds-and-lightning.md) |
+| | Volumetric clouds | Raymarched cloud volume in the sky cubemap itself, not a painted shell — real interior density/self-shadowing that lights the level through GI for free (`rt_vclouds_*`). | [`plan-volumetric-clouds`](docs/plan-volumetric-clouds.md) |
+| | Fire sky | Alternative sky for the five hell maps: dark backdrop, cloud deck, falling meteors, coloured lightning strikes aimed at the player (`rt_fireskies_new`, `rt_firesky_*`). | [`plan-fire-skies`](docs/plan-fire-skies.md) |
 | | Per-map fog | Froxel volume, near/far ramp tuned per level (`rt_fog_*`, `fog` CCMD). | [`rt-fog`](docs/rt-fog.md) · [implementation](docs/rt-fog-implementation.md) |
 | | Volumetric smoke | Muzzle/impact smoke as a participating medium inside the fog froxel, colour-lit by the room. Six sources; CPU sim. `smoke` CCMD. | [`rt-smoke`](docs/rt-smoke.md) |
 | | Light shafts from lamps | Ordinary ceiling lamps, bulb lattices and solo bulbs cast shafts too, not just the sun (`rt_volume_shafts`). | [`plan-light-shafts`](docs/plan-light-shafts.md) |
 | | Dust motes | Hashed-grid quads lit only where a shaft reaches (`rt_dust_*`). | — |
 | | Water | Stylized surface with projected caustics, tagged engine-side. | [`rt-water`](docs/rt-water.md) |
 | | Lava | Drifting quantized heat field as the emitter, slow whole-surface breath (`rt_lava_flow*`). | — |
+| | Poison bubbles | Bubbles swell out of the nukage, burst into a ring of droplets and throw a little green while they do. Sliced from one painted sheet into six frames; colour matched to the *rendered* pool, since the flat's own albedo is nearly black. They keep off a bridge deck standing over the poison, and switch off under **Options › Effects**. A row of `d64_poison_*` knobs (rate, distance, size, height, saturation) and a lab map to tune them in. | [`poison-bubbles`](docs/poison-bubbles.md) |
 | **Materials** | Limited PBR, on purpose | 898 wall/flat textures + 132 sprite codes (1,087 frames) hand-classified into roughness/metalness — but both mix dials ship at **0.35**, not 1, because full PBR breaks flat-normal sprites, exposes dithered art, and adds noise. `rt_sprite_pbr_mix`, `rt_tex_pbr_mix`. | [`plan-sprite-materials`](docs/plan-sprite-materials.md) |
 | **Sprites & gore** | Enemy eyes | Brightmap-only emissive masks — glow without lighting the room or killing the shadow. | — |
 | | Lost Souls | Light rides the fire frames (A–F) only, so a corpse stays dark. | — |
@@ -124,34 +126,10 @@ In-engine captures, uncropped, no post-processing beyond what the game itself do
 
 Things that are wrong and known to be wrong.
 
-
-### Recently fixed
-
-Kept here because they were listed as known issues for a
-long time, and because the reasoning is worth reading if you hit something like them.
-
-**Volumetric trails behind sprites and edges.** *Fixed.* Firing into smoke used to leave a
-weapon-shaped stamp in it; the ejected shell left its own trail; and during MAP12's storm,
-every monster and every geometry edge smeared through the moon shafts as the camera moved.
-All of it was one mechanism: the medium was accumulated in **screen space**, where its
-history has to be validated against surface depth — so every silhouette threw that history
-away and restarted from a single noisy sample, which against a lightning flash differs from
-its neighbours by most of the flash. The medium is now accumulated **in the froxel grid, in
-world space** (`rt_volume_taccum`), where no surface is involved and there is nothing to
-reject. Sprites also no longer cast shadows into the medium (`rt_volume_spriteshadow 0`) —
-a camera-facing cutout's shadow sheet swings with the view, and its stand-in shadow proxies
-are solid rectangles. See
-[`docs/rt-volumetric-weapon-trails.md`](docs/rt-volumetric-weapon-trails.md).
-
-**Black outlines behind volumetrics.** *Fixed*, by the same change. This was the README's
-first known issue for a long time: a one-pixel dark line wherever a medium met a geometric
-edge, drawn by the **temporal upscaler** — gone with DLSS and FSR both off, worst under
-DLAA — after six volumetric settings had been ruled out by measurement. `rt_volume_edgesoft`
-removed the sprite and geometry half of it by softening the medium across a silhouette;
-in-grid accumulation removed the rest, because a medium that is temporally smooth in world
-space no longer presents the upscaler with the step it was ringing on. The full
-investigation, including four approaches that were built and measured negative, is in
-[`docs/rt-volumetric-edge-outlines.md`](docs/rt-volumetric-edge-outlines.md).
+- MAP05: when at the outdoor area, the moon can get occluded by an invisible wall. It is like a form of "unculling", no fix found yet.
+- You can notice textures that look too bright / sticking out. It can happen if their emissive is not well updated, those get fixed over time as I do a real play through the whole game
+- Loading a save made on an older version will fail with a clear "save is from an older version" message. This is expected: each update can change map data, which invalidates old saves for that level. Start that level fresh from the console (`map mapXX`) or load a save from an earlier level instead.
+- If you played Doom 2 RT before, make sure you set `rt_fluid false` is your `GZdoom_RT2.ini` (Documents > My Games > GzDoom) or type it in the console
 
 <br>
 
@@ -180,6 +158,7 @@ folder is GZDoom's config, at `Documents\My Games\GZDoom\gzdoom-rt2.ini`.
 |---|---|
 | [Doom 64: Retribution v1.5](https://www.moddb.com/mods/doom-64-retribution) | Extract the **whole** download into `game\`, not just the WAD — the brightmaps, the soundfont and the fluidsynth DLLs are all used. |
 | [OGG music pack v1.3](https://www.moddb.com/mods/doom-64-retribution/addons/doom-64-retribution-ogg-music-pack-v13) | `D64MUS.ZIP` on the same page. Unzip it into `game\` too. |
+| *Optional* — [D64ClassicRecolored](https://www.moddb.com/games/doom-64/addons/d64classicrecolored) | Classic-hued Cacodemon and Pain Elemental. Off by default; drop the wad in `Addons\` (and tick it in the startup window on step 4.). |
 
 **3. Have DOOM II installed**
 
@@ -414,10 +393,10 @@ Three that matter more than the rest:
 <a id="art"></a>
 ## ⛧ &nbsp;Art changes
 
-This project changes lighting, not artwork — with one exception, and it is here so it
-is not a quiet one. It **ships enabled**: `d64r-sflatas-broken.wad` is in the launcher's
-own file list, so this is what the game looks like out of the box. A second change is
-opt-in and ships disabled; it is at the end of this section.
+This project is mostly a lighting mod, but it does redraw a handful of textures — every
+one of them recorded here so none is a quiet change. All ship **enabled**, in the
+launcher's own file list, so this is what the game looks like out of the box. (There is
+also an optional, off-by-default recolour add-on — see [Install and play](#install).)
 
 ### SFLATAS — the ceiling lamp pane
 
@@ -473,49 +452,70 @@ emissive mask and clears the other three, and restores the authored `_n`/`_h`/`_
 engine's `SoloBulbTextures` then puts one light on the survivor — at world **(16, 16)**
 for a bulb the image draws at (16, 48), because a ceiling flat's world Y is `64 − imageY`.
 
-### Optional — classic recoloured Cacodemon and Pain Elemental
+### Blood, poison and sludge — new art, and real depth on two of them
 
-**Off by default. Not shipped, and not in this repo** — it is someone else's art, so you
-download it yourself. [**D64ClassicRecolored**](https://www.moddb.com/games/doom-64/addons/d64classicrecolored)
-repaints Doom 64's Cacodemon and Pain Elemental in classic Doom hues. Underneath it is
-Retribution's own artwork — all 69 frames are the same drawing, pixel for pixel, 100%
-silhouette match — so it drops straight in.
+Doom 64's three non-water liquids (`D64B*` blood, `D64N*` poison, `D64S*` sludge) are the
+same flat 64-frame animated design in three palettes: a marbled cellular pattern with no
+depth, drawn to be lit by the classic renderer's flat ambient rather than a path tracer.
+Under RT lighting a liquid with no relief and no wet/dry contrast reads as a plastic
+colour swap of water, whatever body colour it is tinted.
 
-Put the wad in `Addons\` and the startup window grows a **Classic recoloured Cacodemon /
-Pain Elemental** checkbox. It is loaded exactly as downloaded; nothing here modifies or
-redistributes it.
+<table>
+<tr>
+  <th align="center">Before (stock)</th>
+  <th align="center">After</th>
+</tr>
+<tr>
+  <td align="center"><img src="docs/img/features/blood-before.png" alt="stock blood flat" width="220"></td>
+  <td align="center"><img src="docs/img/features/blood-after.png" alt="coagulated blood, veins in relief" width="220"></td>
+</tr>
+<tr>
+  <td align="center"><sub>D64B1_/D64B2_ — flat cellular pattern, no depth</sub></td>
+  <td align="center"><sub>coagulated plates with real relief; the veins have a flow map running along them</sub></td>
+</tr>
+<tr>
+  <td align="center"><img src="docs/img/features/poison-before.png" alt="stock nukage flat" width="220"></td>
+  <td align="center"><img src="docs/img/features/poison-after.png" alt="marbled toxic swirl" width="220"></td>
+</tr>
+<tr>
+  <td align="center"><sub>D64N1_/D64N2_ — flat cellular pattern</sub></td>
+  <td align="center"><sub>marbled toxic swirl; art only, no relief</sub></td>
+</tr>
+<tr>
+  <td align="center"><img src="docs/img/features/sludge-before.png" alt="stock sludge flat" width="220"></td>
+  <td align="center"><img src="docs/img/features/sludge-after.png" alt="mud bed with lumps, rims and pits" width="220"></td>
+</tr>
+<tr>
+  <td align="center"><sub>D64S1_/D64S2_ — flat cellular pattern</sub></td>
+  <td align="center"><sub>a mud bed: lumps, rims and pits in relief, reflection turned off</sub></td>
+</tr>
+</table>
 
-**Which of the two files.** The download offers a plain wad and an `_OffsetFix` one, with
-identical art and different sprite offsets. Both were cut for Doom 64 CE, whose offsets
-are not Retribution's, so neither is exactly right here:
+All three get new reference art, tiled and colour-matched to the game's stylized liquid
+shader (`d64r-liquid-art.wad`, one `TEXTURES` lump redefining every frame as a single
+unshifted image — the stock definition composites two copies of the patch offset one unit
+apart per frame purely to fake churn, and on a crisp tile that reads as a ghosted double
+image instead). Depth is not automatic from there: the primary pass overwrites any normal
+map on a liquid with the animated water wave, so it takes an engine-side liquid id and a
+per-liquid relief weight (`rt_blood_relief`, `rt_sludge_relief`) to give it back.
 
-| | Cacodemon | Pain Elemental |
-|---|---|---|
-| `D64ClassicRecolored.wad` | **exact** on all 36 live frames; 4 death frames up to 13 px high | floats 15–30 px high |
-| `D64ClassicRecolored_OffsetFix.wad` | whole animation sits 5 px low | within 10 px |
+**Blood** additionally gets a flow map — a detail texture advected along the vein network's
+own baked direction, so liquid visibly runs down the channels rather than the whole surface
+pulsing brighter. **Sludge** additionally gets its water *reflection* switched off
+(`rt_sludge_refl 0`): a mirror is the single loudest thing saying "this is water with brown
+paint on it", and turning it off also took a stability bug with it — the checkerboard split
+that reflection relies on rebuilds half the screen's columns from their neighbours, which
+crawls under a moving light on a high-contrast authored normal and was mistaken for a
+denoiser problem for a while. **Poison** gets the art change only: no relief, no flow.
 
-**Take the plain wad** unless the Pain Elemental's hover height bothers you. The
-Cacodemon is the one you spend the game looking at and it comes out pixel-exact, while
-both monsters fly — there is no ground contact to give a vertical offset away, and the
-Pain Elemental dies in a mid-air explosion.
+All three also stop projecting caustics onto nearby walls — a caustic is light refracted
+*through* a fluid and focused on what lies beyond it, and all three are painted opaque, so
+the rippling pool-light they used to throw (identical to water's) was the loudest single
+thing undercutting the new art. Only water still does it.
 
-**Why there is no patch pk3 for the offsets.** Two routes exist and both are dead ends,
-recorded here so nobody spends an afternoon on them:
-
-- GZDoom's own sprite-offset lump, `SPROFS`, only adjusts sprites that come from the
-  **same file as the lump** (`wadno == ofslumpno`, `texturemanager.cpp`). A companion pk3
-  cannot reach into their wad.
-- Redeclaring the sprites in `TEXTURES` with the right `Offset` looks like it works, and
-  silently does not. The patch reference is self-referencing, and gzdoom resolves that by
-  scanning the texture list from the **oldest** end — which is Retribution's original
-  sprite, not the add-on's. The recolour would simply never appear, with nothing in the
-  log to say so.
-
-Correcting the offsets properly would mean recutting their frames onto Retribution's
-canvas, which puts their pixels in our files — so it is not done here. One RT-side detail
-comes with the same trade: their frames are trimmed 1–7 px narrower than the `_orm`
-material maps in `Retribution-RT-Materials`, and RTGL1 samples `_orm` with the albedo's
-UVs, so the roughness/metal map is squeezed by a few per cent across those sprites.
+**Why.** `docs/rt-blood-pools.md` — the fullest post-mortem in this repo, including two
+motion-effect designs that were tried, judged not to read as flow, and thrown out before
+the current flow map, and the checkerboard bug above start to finish.
 
 <br>
 

@@ -88,6 +88,80 @@ FORCE: dict[str, dict] = {
         "lightIntensity": 150,
         "lightColorHEX": "2ecc40",
     },
+    # Green and blue armor. Here rather than in PREFIX_RULES because the light has to
+    # differ PER FRAME, which a prefix cannot express -- the same reason the barrel
+    # above is here. Being in FORCE also means the entry ships exactly as written, so
+    # these never pick up the `noShadow` that main() adds to prefix-matched FX (see
+    # the note at the end of this block).
+    #
+    # WHY THE LIGHT BLINKS, AND WHY A IS THE BRIGHT ONE. Asked for in play: the
+    # sprites blink, so should the light. It costs nothing -- the attached light is a
+    # property of the TEXTURE, so tying it to the frame syncs it by construction, with
+    # no thinker and no phase to keep.
+    #
+    # The phase is the part worth checking rather than assuming, because vanilla marks
+    # the B frame `bright` (ARM1 A 6 / ARM1 B 7 bright; ARM2 A 6 / ARM2 B 6 bright) and
+    # that is the OPPOSITE of what RT shows. Measured, per pixel, A against B:
+    #
+    #     alpha masks identical, ZERO pixels brighter in B
+    #     per-pixel B/A luminance   ARM1 median 0.424   ARM2 median 0.478
+    #     whole-sprite output       ARM1 A = 2.29x B    ARM2 A = 2.13x B
+    #
+    # So B is a flat ~0.44x darkening of the same art -- the classic palette-shift
+    # blink, a whole-sprite brightness pulse with no moving highlight anywhere in it.
+    # Vanilla pairs that darker paint with fullbright so it reads as a twinkle under
+    # sector light. Under RT there is no such pairing: forceSpriteUnlitAlbedo
+    # (rt_draw.cpp) drops lightlevel from sprite vertex colour and the path tracer
+    # lights the billboard, so the `bright` flag does nothing and what the player sees
+    # is the paint. A is therefore the bright frame ON SCREEN, and the light follows
+    # the screen, not the flag.
+    #
+    # The ratios are the art's own: 160/2.29 = 70, 200/2.13 = 94. The HUE does not
+    # change between frames (sampled 145.7 vs 147.1 deg for ARM1, 214.3 vs 213.7 for
+    # ARM2) and must not be made to -- a hue that moves with the blink reads as colour
+    # flicker rather than a pulse. Only intensity carries it.
+    #
+    # emissiveMult stays flat at 0.6 on both frames on purpose: the sprite's own glow
+    # is baseColor * emissiveMult, and baseColor already carries the 2.29x, so the
+    # GLOW blinks in time for free. The attached light was the only part that was a
+    # fixed number and therefore the only part that needed the second value.
+    #
+    # Rate is the sprite's own: 13 tics for green (0.371 s, 2.7 Hz), 12 for blue
+    # (0.343 s, 2.9 Hz). That is fast for a light, and the SMONBA monitors are the
+    # warning next door -- but they were 199 fixtures pulsing in phase across a wall,
+    # and this is 39 pickups over 34 maps, about one per level. If it reads as too
+    # busy, raise the B values toward A (a 1.5x swing is 105 and 133); do not slow it,
+    # because the sprite's rhythm is not ours to change.
+    #
+    # NO `noShadow` ON ANY OF THESE. It was on the first version, copied from the key
+    # profile, and was reported straight back as the armors no longer casting a
+    # flashlight shadow. The flag is not scoped to the sprite's own light: TextureMeta
+    # turns it into RG_MESH_PRIMITIVE_NO_SHADOW, the primitive lands in PV_WORLD_1,
+    # and rayCullMaskWorld_Shadow is WORLD_0|RESERVED_0 -- invisible to EVERY shadow
+    # ray in the scene. The other pickups keep it because their attached light sits at
+    # the quad's centre, in the billboard's own plane, so an occluding billboard can
+    # shadow its own light; the armors are the case where the missing shadow is the
+    # worse artefact. See docs/sprite-illumination.md Case 11.
+    "ARM1A0": {
+        "emissiveMult": 0.6,
+        "lightIntensity": 160,
+        "lightColorHEX": "44ff88",
+    },
+    "ARM1B0": {
+        "emissiveMult": 0.6,
+        "lightIntensity": 70,
+        "lightColorHEX": "44ff88",
+    },
+    "ARM2A0": {
+        "emissiveMult": 0.6,
+        "lightIntensity": 200,
+        "lightColorHEX": "4488ff",
+    },
+    "ARM2B0": {
+        "emissiveMult": 0.6,
+        "lightIntensity": 94,
+        "lightColorHEX": "4488ff",
+    },
 }
 
 # Unmaker laser — beam, muzzle flash and impact puff all share one hex.
@@ -268,6 +342,7 @@ PREFIX_RULES: list[tuple[str, float, float, str | None]] = [
     ("RSKU", 0.6, 160, "ff4444"),
     ("YSKU", 0.6, 160, "ffcc33"),
 ]
+
 
 # Monster fire frames only (…F). Aim frames (…E) must stay dark.
 # Color matches player rt_mzlflsh_color (0xFF8C52). No noShadow — that kills enemy shadows.
@@ -519,8 +594,18 @@ def patch_global_inline(path: Path, entries: dict[str, dict]) -> None:
             text = pat.sub(repl_line, text, count=1)
         else:
             # Pretty-printed multiline object — replace whole first block.
+            #
+            # The comma after the name is OPTIONAL, and that is not a nicety: an
+            # entry carrying no other fields is written `{ "textureName": "X" }`
+            # across three lines with nothing after the name. ARM1A0 and ARM2A0 were
+            # exactly that, so neither this pattern nor the single-line one above
+            # matched them, and the armor pickups fell through to the append branch
+            # (which bug 2 below then ate). Net effect: the generator reported
+            # success and wrote nothing at all — four entries missing with no error
+            # anywhere. Any bare entry hits this; the armors were just the first to
+            # be given fields.
             pat_multi = re.compile(
-                rf'(\{{\s*\n\s*"textureName"\s*:\s*"{re.escape(name)}"\s*,)(.*?)(\n\s*\}})',
+                rf'(\{{\s*\n\s*"textureName"\s*:\s*"{re.escape(name)}"\s*,?)(.*?)(\n\s*\}})',
                 re.S,
             )
             mm = pat_multi.search(text)
@@ -544,13 +629,26 @@ def patch_global_inline(path: Path, entries: dict[str, dict]) -> None:
             else:
                 line = f"    ,   {{ {body} }}"
                 text = re.sub(r"\n(\s*\]\s*\}\s*)$", "\n" + line + r"\n\1", text, count=1)
-        # Drop any later single-line duplicates for this name
-        text = re.sub(
-            rf'^\s*,\s*\{{[ \t]*"textureName"[ \t]*:[ \t]*"{re.escape(name)}"[^}}\n]*\}}\s*$\n?',
-            "",
-            text,
-            flags=re.M,
+        # Drop any LATER single-line duplicates for this name.
+        #
+        # "Later" has to be measured against the first occurrence in the file, and
+        # this used to drop every match unconditionally — including the one the
+        # append branch had just written three lines above, when that was the only
+        # entry for the name. Appending and then immediately deleting reads as a
+        # clean run: the generator prints the entry in its summary, the file never
+        # gets it. RTGL keeps the FIRST hit, so the rule is drop-after-the-first,
+        # not drop-all.
+        first = re.search(
+            rf'"textureName"\s*:\s*"{re.escape(name)}"', text
         )
+        if first:
+            dup = re.compile(
+                rf'^\s*,\s*\{{[ \t]*"textureName"[ \t]*:[ \t]*"{re.escape(name)}"[^}}\n]*\}}\s*$\n?',
+                re.M,
+            )
+            text = dup.sub(
+                lambda m: "" if m.start() > first.start() else m.group(0), text
+            )
     path.write_text(text, encoding="utf-8")
 
 

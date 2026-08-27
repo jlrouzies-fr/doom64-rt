@@ -21,6 +21,8 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageOps
 
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[1]
 ROOT = PROJ_ROOT
 sys.path.insert(0, str(ROOT / "tools"))
 from gen_detail_orm import (  # noqa: E402
@@ -28,14 +30,12 @@ from gen_detail_orm import (  # noqa: E402
     MAT,
     MAT_DEV,
     OMAT,
+    OMAT_DEV,
     category_base,
     make_orm,
     solid_orm_image,
     wad_png,
 )
-
-# Repo root, derived from this file so a clone can live anywhere.
-PROJ_ROOT = Path(__file__).resolve().parents[1]
 
 DEFAULT_NORMALS = "prs-eth/marigold-normals-v1-1"
 DEFAULT_IID = "prs-eth/marigold-iid-appearance-v1-1"
@@ -265,7 +265,7 @@ def write_maps(
     normal: Image.Image | None,
     height: Image.Image | None = None,
 ) -> None:
-    for mat in (MAT_DEV, OMAT, MAT):
+    for mat in (MAT_DEV, OMAT, MAT, OMAT_DEV):
         mat.mkdir(parents=True, exist_ok=True)
         orm.save(mat / f"{name}_orm.png")
         npath = mat / f"{name}_n.png"
@@ -478,10 +478,23 @@ def main() -> None:
                 extra = f" metal_frac={mf}" if mf is not None else ""
                 print(f"{n}: ai-{args.orm} normal_var={var:.1f}{extra} height={args.height_crazy}")
 
+    # MERGE, never rewrite. This file is the tracked provenance record of how
+    # every authored map was generated -- 738 rows at the time of writing, and
+    # the only written-down source of the strength/height settings behind the
+    # shipped materials. A 4-name run used to replace the lot.
     out = ROOT / r"tools\_gallery\ai_pbr_report.json"
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
-    print("wrote", out)
+    merged = []
+    if out.exists():
+        try:
+            merged = json.loads(out.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:
+            sys.exit(f"{out} exists but could not be read ({exc}); refusing to "
+                     f"overwrite it. Move it aside if it is genuinely corrupt.")
+    fresh = {row["texture"] for row in report}
+    merged = [row for row in merged if row.get("texture") not in fresh] + report
+    out.write_text(json.dumps(merged, indent=2) + "\n", encoding="utf-8")
+    print(f"wrote {out} ({len(report)} row(s) updated, {len(merged)} total)")
 
 
 if __name__ == "__main__":

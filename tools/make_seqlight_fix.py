@@ -35,8 +35,11 @@ one looks like in game and why it is or is not on. A blink with a real fixture
 in the room -- a hanging lamp, a monitor with its own light thing -- is kept:
 the complaint is sourceless light, not animation as such.
 
-Any map that also appears in d64r-3dfloor-rtfix.wad gets its Sector_Set3dFloor
-linedefs re-stripped here, because this wad loads later and therefore wins.
+Every map this wad emits goes through make_map_3dfloor_rtfix.rewrite_3dfloor,
+because a map in this (later-loading) wad wins over any other overlay and so
+decides on its own whether its Sector_Set3dFloor linedefs exist. The shared
+policy is "keep" since 2026-08-23 (the freeze was an engine bug, now fixed);
+the per-map line reports the 160 count either way so a change shows in the log.
 
   python tools/make_seqlight_fix.py           # build the wad
   python tools/make_seqlight_fix.py --list    # show the table, build nothing
@@ -67,8 +70,9 @@ from make_map_3dfloor_rtfix import (
     WAD,
     decode_textmap,
     map_lump_range,
+    count_3dfloor,
     read_wad_lumps,
-    strip_3dfloor,
+    rewrite_3dfloor,
     write_wad,
 )
 
@@ -339,6 +343,45 @@ SHAFTS = [
         from_light=255, to_light=160,
         enabled=True,
         note="The main hall, 27 sectors over 992x808u, painted 255 throughout with an ACS chase on top (see the ScriptedComputed for script 12, which must be stripped WITH this or the hall pins at a constant 255). Host 160 is the corridors it opens onto. Nearest light-bearing actor 268u.",
+    ),
+
+    # ---- MAP01 BLUE ARMOR ALCOVE ------------------------------------------------
+    # Reported from the game (rt-console.log on the release build, MAP01):
+    #
+    #   whatsthat: sector 98  lightlevel 255  tag 41  middle texture 'SPACEAM'
+    #              threshold 200 -> ABOVE: this surface SELF-EMITS
+    #              colormap tint 50,50,255  saturation 0.804
+    #                     (rt_sector_emis_saturation 0.58 -> PASSES the colour gate)
+    #              brightest neighbour: sector 99 at 140  (delta +115)
+    #
+    # BOTH halves of the painted-light problem on one 144x64u closet, which is why
+    # this entry has a TINTS twin -- see the MAP01 blue armor alcove there. Either
+    # one alone would leave the other symptom standing: dropping the lightlevel stops
+    # the emission but leaves three walls painted saturated blue at
+    # rt_sector_tint_albedo 1.0, and retinting alone leaves a sector at 255 that
+    # emits again the moment rt_sector_emis_saturation moves.
+    #
+    # Nothing in the alcove casts anything. Its four textures -- SPACEAM walls,
+    # SPACEAL upper, SFLATAJ floor, SDFLTAB ceiling -- are plain metal/floor/ceiling
+    # stock with no authored _e between them, and the only two things inside are the
+    # blue armor (2019) and a 64Barrel (1001). tag 41 drives no light ACS.
+    #
+    # AND IT IS NOT THE MAP02 BLUE ARMOR ROOM MOTIF, which is the trap this entry had
+    # to clear before it could ship -- that room is where rt_sector_tint_albedo 1.0
+    # was tuned (docs/blue-room-rt-lighting.md) and it must not move. Frame test over
+    # all 26 blue-armor pickups in the game, each against its own sector's colormap:
+    # the hues are scattered warm creams and pastels, median saturation 0.41, and
+    # MAP01 is the ONLY one both above its map's threshold and past the colour gate
+    # (MAP23's is 0xFFDC5A gold, a different colour entirely). So a blue nook is not
+    # how this pickup is dressed anywhere else -- the same whole-game test that
+    # vindicated the SFLATAR plate above, run to the opposite verdict.
+    #
+    # to_light 140 is sector 99, the hidden room the alcove opens onto through its one
+    # twosided line, and the same sector the TINTS twin donates its colour from.
+    Shaft(
+        "MAP01", [98], from_light=255, to_light=140,
+        enabled=True,
+        note="The blue armor alcove, one 144x64u closet at (-1808..-1664, -976..-912) painted 255 inside sector 99 at 140, with no fixture: all four of its textures are plain stock with no authored _e. Paired with the MAP01 Tint that takes the 0x3232FF off the same sector -- this half stops the self-emission, that half stops the blue.",
     ),
 
     # ---- PANEL SWEEP -----------------------------------------------------------
@@ -2273,6 +2316,81 @@ TINTS = [
              "Donor 66 is the host room and the cluster's only non-blue neighbour, "
              "and it shares the SFLATAJ floor across the seam being repaired.",
     ),
+    Tint(
+        "MAP07",
+        [156, 157, 161, 162, 362, 363], donor=164, from_lightcolor=0x8DFB3C,
+        enabled=True,
+        note="THE REPORTED ONE (`whatsthat` on the SPACEAM wall): sector 157, "
+             "lightlevel 255, below MAP07's threshold of 260, not self-emitting -- "
+             "purely the colour half. A small D64N1_01 nukage alcove at "
+             "(1664..1792, -288..-96), six sectors, painted saturated green "
+             "rgb(141,251,60) top to bottom -- floor, ceiling AND walls, not just "
+             "one element against a neutral room. That is the author drawing the "
+             "poison gas itself onto every surface, and it is exactly the effect "
+             "d64r-poison-fx.pk3 (see docs/poison-bubbles.md) now renders for "
+             "real, so the flat paint is double-counted the same way MAP13's "
+             "torchlit floor was.\n"
+             "\n"
+             "The alcove is not an isolated colour -- 9304892 (0x8DFB3C) recurs on "
+             "75 sectors across MAP07, but adjacency shows only these six actually "
+             "touch each other; the rest are unrelated reuses of the same hue "
+             "elsewhere on the map and must not be touched (see AGENTS.md, cluster "
+             "a colormap by adjacency).\n"
+             "\n"
+             "Donor 164 is the OTHER nukage room immediately north (1440..1792, "
+             "-96..272), sharing the identical D64N1_01 floor and, on its SDFLTC "
+             "sub-sectors, the identical texture the alcove's non-floor sectors "
+             "(157/161/362/363) wear too -- so this is the same room finish "
+             "continued, not a foreign colour borrowed from a different area. 164 "
+             "and its own SDFLTC neighbour 366 already carry the SAME six colour "
+             "fields byte for byte, so one donor recolours the whole alcove "
+             "consistently. Lightlevel is left at 255 -- only the paint is fake, "
+             "not the brightness.",
+    ),
+    Tint(
+        "MAP01", [98], donor=99, from_lightcolor=0x3232FF,
+        enabled=True,
+        note="THE REPORTED ONE, from the game (rt-console.log on the release "
+             "build, MAP01): 'a texture level 1 that is brightmapped to blue, need "
+             "to make it back to normal colour / not self-emit'.\n"
+             "\n"
+             "  whatsthat: sector 98  lightlevel 255  tag 41  middle texture "
+             "'SPACEAM'\n"
+             "             threshold 200 -> ABOVE: this surface SELF-EMITS\n"
+             "             colormap tint 50,50,255  saturation 0.804  "
+             "(rt_sector_emis_saturation 0.58 -> PASSES the colour gate)\n"
+             "             brightest neighbour: sector 99 at 140  (delta +115)\n"
+             "\n"
+             "'Brightmapped' is the symptom, not the mechanism -- SPACEAM has no _e "
+             "anywhere in rt/mat, and neither do the alcove's other three textures. "
+             "Both halves are the sector: rgb(50,50,255) reaches albedo at "
+             "rt_sector_tint_albedo 1.0, which is the blue, and 255 over a threshold "
+             "of 200 with a saturation the colour gate lets straight through is the "
+             "self-emission. This entry is the colour half; the SHAFTS twin (MAP01 "
+             "sector 98, 255 -> 140) is the brightness half, and they ship together.\n"
+             "\n"
+             "One 144x64u closet at (-1808..-1664, -976..-912), all four lines "
+             "dontdraw, holding the blue armor (thing 2019) and a 64Barrel. 0x3232FF "
+             "appears on exactly ONE sector in MAP01 -- there is no cluster to reason "
+             "about, which is the easy case of the adjacency rule the MAP07 entry "
+             "above needed.\n"
+             "\n"
+             "IT IS NOT THE MAP02 BLUE ARMOR ROOM, and that had to be settled before "
+             "this could ship: same pickup, same idea, and that room is where "
+             "rt_sector_tint_albedo 1.0 was tuned (docs/blue-room-rt-lighting.md). "
+             "Frame test over all 26 blue-armor pickups in the game against their own "
+             "sectors' colormaps -- the hues are scattered warm creams and pastels "
+             "(0xDCB48C, 0xFEDC94, 0xFEFCA9, 0xFFC082...), median saturation 0.41, and "
+             "MAP01 is the ONLY one both above its map's threshold and past the colour "
+             "gate. A blue nook is not how the game dresses this pickup; MAP02's is a "
+             "13-sector ROOM and this is a closet. That is the same whole-game frame "
+             "test that vindicated MAP02's SFLATAR plate in SHAFTS, run to the "
+             "opposite verdict.\n"
+             "\n"
+             "Donor 99 is the host the alcove's one twosided line opens onto, shares "
+             "its SFLATAJ floor across that seam, and carries the warm 0xDCB48C the "
+             "rest of the area wears -- so the closet stops being a blue hole in it.",
+    ),
 ]
 
 
@@ -3318,16 +3436,15 @@ def main() -> None:
         )
         nacs += ncomp
 
-        # Carry the 3D-floor strip forward on any map that needs it.
+        # Apply the shared 3D-floor policy (make_map_3dfloor_rtfix.MODE3D).
         #
-        # This wad loads AFTER d64r-3dfloor-rtfix.wad, so for a map present in
-        # both, ours is the one GZDoom uses and ours alone decides what the map
-        # contains. MAP03 was safe by accident -- it has no special-160 linedefs
-        # and is absent from the combined wad. MAP05 has one and IS in it, so
-        # replacing the map without re-stripping would silently hand back the 3D
-        # floor that hangs RT live upload, undoing a fix from another tool
-        # entirely. Re-derived here rather than assumed.
-        fixed, n3d = strip_3dfloor(fixed)
+        # This wad loads late, so for any map it carries, ours is the one GZDoom
+        # uses and ours alone decides what the map contains. While the policy was
+        # "strip" (2026-08-02..23) forgetting this would have silently handed a
+        # map its 3D floors back; now that it is "keep" the same call makes sure
+        # no builder strips them on its own. Re-derived here rather than assumed.
+        n160 = count_3dfloor(fixed)
+        fixed, n3d = rewrite_3dfloor(fixed)
 
         items.append((mapname, b""))
         for nm, blob in lumps[start + 1 : end]:
@@ -3346,6 +3463,7 @@ def main() -> None:
               f"recoloured {ntint} sector(s), added {nlamp} light thing(s), "
               f"{npanel} panel light(s), "
               f"{nacs} acs call(s) ({', '.join(labels[mapname])})"
+              f"{f', 3D floors: {n160} kept' if n160 and not n3d else ''}"
               f"{f', re-stripped {n3d} 3D-floor linedef(s)' if n3d else ''}")
 
     if activeAnims:

@@ -1,7 +1,8 @@
 """Pack d64r-rt-flashlight.pk3 (battery HUD EventHandler + battery sound cues).
 
-The D64FLK*.wav cues come from tools/gen_flashlight_sounds.py -- run that first
-if they are missing.
+The D64FLK* / DFL*.wav cues come from tools/gen_flashlight_sounds.py or
+tools/gen_flashlight_real_sounds.py -- run one of those first if they are
+missing.
 """
 from __future__ import annotations
 
@@ -22,23 +23,25 @@ NAMES = (
     "KEYCONF",
     "SNDINFO",
     "CVARINFO",
-    "D64FLKO.wav",
-    "D64FLKR.wav",
-    "D64FLKN.wav",
 )
 
 
 def main() -> None:
-    missing = [n for n in NAMES if not (SRC / n).is_file()]
+    # Auto-discover all WAVs in the source directory
+    wav_names = sorted(f.name for f in SRC.glob("*.wav"))
+    all_names = list(NAMES) + wav_names
+    missing = [n for n in all_names if not (SRC / n).is_file()]
     if missing:
         raise SystemExit(
             f"missing under {SRC}: {', '.join(missing)}\n"
-            "(WAVs: python tools/gen_flashlight_sounds.py)"
+            "(WAVs: python tools/gen_flashlight_sounds.py or "
+            "tools/gen_flashlight_real_sounds.py)"
         )
     OUT.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(OUT, "w", compression=zipfile.ZIP_DEFLATED) as zf:
-        for name in NAMES:
-            zf.write(SRC / name, name)
+        for name in all_names:
+            arcname = f"sounds/{name}" if name.endswith(".wav") else name
+            zf.write(SRC / name, arcname)
     print(f"wrote {OUT} ({OUT.stat().st_size} bytes)")
 
 

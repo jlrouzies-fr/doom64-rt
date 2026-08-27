@@ -236,8 +236,18 @@ jobs:
           # The launcher reads mods\d64rt-pins.cfg and its +cvar pins OVERRIDE the
           # compiled-in defaults. A stale pins file therefore ships a build whose
           # defaults the release quietly ignores.
+          #
+          # rt_clouds_volumetric is in here for the opposite reason to the other
+          # three: its pin AGREES with the compiled default and exists to stop a
+          # player's gzdoom-rt2.ini deciding the cloud path. rt_firesky.cpp writes
+          # that cvar on the hell maps and it is CVAR_ARCHIVE, so before it was
+          # pinned, whether a release rendered the ray-marched clouds or the
+          # painted shell deck on MAP12 depended on whether that player had ever
+          # quit on MAP23. Strip the line -- a DEV-ONLY block that grows past it,
+          # say -- and the bug ships again silently. tools/check_pins.py guards
+          # the source tree; this guards the package.
           $pins = Get-Content "$p\mods\d64rt-pins.cfg" -Raw
-          foreach ($c in 'rt_sprite_pbr_mix','rt_tex_pbr_mix','rt_metallic') {
+          foreach ($c in 'rt_sprite_pbr_mix','rt_tex_pbr_mix','rt_metallic','rt_clouds_volumetric') {
             if ($pins -notmatch [regex]::Escape($c)) { throw "d64rt-pins.cfg does not pin $c" }
           }
           # developerMode must be ON (the material loader is KTX2-only without it)

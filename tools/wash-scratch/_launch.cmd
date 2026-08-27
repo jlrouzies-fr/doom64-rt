@@ -20,7 +20,6 @@ set "BM=%ROOT%\Doom64-Retribution\D64RTR_BRIGHTMAPS.PK3"
 set "SKY=%ROOT%\Doom64-Retribution\d64r-rt-sky.pk3"
 set "SPAWN=%ROOT%\Doom64-Retribution\d64r-gallery-spawn-wallturned.pk3"
 set "PY=C:\Users\Winter\AppData\Local\Programs\Python\Python313\python.exe"
-set "FIX=%ROOT%\Doom64-Retribution\d64r-3dfloor-rtfix.wad"
 set "SKUL=%ROOT%\Doom64-Retribution\d64r-lostsoul-rt.pk3"
 set "MUS=%ROOT%\Doom64-Retribution\D64MUS.PK3"
 
@@ -131,7 +130,7 @@ echo ============================================================
 echo.
 start "" gzdoom.exe ^
   -iwad "%IWAD%" ^
-  -file "%MOD%" "%BM%" "%SKUL%" "%MUS%" "%FIX%" "%SKY%" ^
+  -file "%MOD%" "%BM%" "%SKUL%" "%MUS%" "%SKY%" ^
   -rtnolauncher -width 1280 -height 720 ^
   +vid_fullscreen 0 +queryiwad false +sv_cheats 1 +map map01 ^
   +god ^

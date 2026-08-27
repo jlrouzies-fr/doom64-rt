@@ -5,8 +5,15 @@ nothing else; it now throws **sparks** off metal and **debris** off everything p
 labelled as something softer, with the material class coming from the same hand-labelling
 pass that authors the PBR metallic/roughness values.
 
-Cvars: `rt_spark_*` (45 of them). Ships with the master **off** (`rt_spark 0`) pending a
-play verdict; everything else is on and tuned.
+Cvars: `rt_spark_*` (85 of them). **Ships ON** — `rt_spark` is `true` both compiled and
+pinned. (This page said "ships off" for months after that stopped being true, and so did
+`tools/d64rt-pins.cfg`. Corrected 2026-08-25.)
+
+Projectile impacts are a DIFFERENT DOOR and live in
+[`plan-projectile-impact-fx.md`](plan-projectile-impact-fx.md) -- their own walk in
+`rt_impacts.cpp`, sharing only the particle pool with this page. That is where the
+plasma filigree, the rocket embers, the Unmaker burn, the barrel plate and the monster
+fireballs (`rt_fire*`, section 9) are written up.
 
 Still planned, not built: scorch decals — [`plan-impact-fx.md`](plan-impact-fx.md).
 
@@ -43,7 +50,8 @@ Gates, all free at that site:
 |---|---|
 | `PF_HITTHING` — flesh actor | nothing; blood owns it |
 | `PF_HITSKY` / `TRACE_HasHitSky` | nothing |
-| liquid flat (`Terrains[…].IsLiquid`) | nothing — a bullet into nukage is a splash |
+| water / poison / sludge / blood | a coloured **splash**, and no vanilla PUFF — §2.4 |
+| any other liquid terrain — **lava**, and `F_SKY1` | nothing, and the puff stays |
 | beyond `rt_spark_far` | nothing (a **spawn** cull, §5) |
 | everything else | sparks or debris by class |
 
@@ -136,7 +144,7 @@ Reload in-game with **`spark_surfaces`** — no restart, no rebuild.
 | `wood` | long thin splinters, light and tumbling |
 | `dirt` | small crumbs that do not bounce |
 | `flesh` | blood droplets that splat |
-| `fluid` | a wide fast splash in the liquid's own colour |
+| `fluid` | a wide fast splash in the liquid's own colour — §2.4 |
 | unknown class | parsed as `other` → sparks |
 | unlisted | sparks, probe says `[UNLISTED]` |
 
@@ -147,7 +155,159 @@ one unlabelled map would have turned every surface in it to chips. Opt-in means 
 texture can only ever look un-upgraded, never wrong — and that is what makes
 `rt_spark_debris` safe to ship **on**.
 
-### 2.4 Two lessons from the seeding
+### 2.4 Liquids — the splash, and why there was not one (2026-08-25)
+
+Reported from play: *"when shooting enemies the PUFF sprite appears"* and, separately,
+*"I thought there were specific effects for fluid textures but I don't see them in game."*
+Both were true, and the second had nothing to do with the `fluid` class being wrong.
+
+**The class was never reached.** `P_LineAttack`'s gate refused the impact hook on any
+surface the TERRAIN lump calls liquid:
+
+```cpp
+if (Terrains[trace.Sector->GetTerrain(plane)].IsLiquid) { sparkOK = false; }
+```
+
+`D64RTR_v15.WAD` ships a `TERRAIN` lump marking every liquid flat `liquid`, so
+`RT_SpawnImpactSparks` was never called on a pool — **not even the surface probe**, which
+lives inside the spawn function, so `rt_spark_surface_debug` printed nothing either and the
+feature looked identically dead from every diagnostic. The gate also short-circuits on
+`TRACE_HitWall`, which is why the three **fall** sheets (`WFALL01` / `SFALL01` / `BFALL01`,
+all labelled `fluid`) were the only place the class had ever run.
+
+**And gzdoom's own splash is dead for a separate reason.** Every `splash "…"` line in that
+same lump is **commented out**, so `Terrains[n].Splash == -1` and `P_HitWater` returns at
+`p_mobj.cpp:6452` having spawned nothing. Retribution also defines none of the splash actors
+those lines name. So the TERRAIN route needs new actors *and* new sprite art; the debris
+path needs neither, which is why it was taken.
+
+#### The classifier
+
+`RT_LiquidSplashId()` (`rt_spark_surfaces.cpp`) answers **0 water / 1 nukage / 2 sludge /
+3 blood**, or −1. It is called from playsim, and **the same call answers both halves** — the
+puff suppression and the gate — because two tests that could disagree is how a surface ends
+up losing its puff and getting nothing back.
+
+The name→family table was a **static local inside `l_waterflag`** (`rt_draw.cpp`), i.e. the
+only answer to "what liquid is this" lived inside the function that sets a *primitive flag*
+and nothing else could ask. It is now `RT_LiquidIdOfName()` in `rt_internal.h`. **Only the
+lookup moved.** `l_waterflag` keeps its `rt_water_style` / `rt_water_liquids` gates and keeps
+excluding the falls — tagging a fall `RG_MESH_PRIMITIVE_WATER` makes it refractive, and
+`ASManager` then drops every `INSTANCE_MASK_WORLD_*` bit so the wall stops blocking shadow
+rays. A splash sets no primitive flag, so the splash path is free to use the falls and does.
+
+Three things that are load-bearing:
+
+- **PREFIX, not exact.** `D64B2_01` is frame 1 of 64. Verified live: the first tagging line
+  off MAP34 is `D64S2_64`, not `_01`.
+- **The class is FORCED, not looked up.** `spark_surfaces.txt` labels only frame `_01` of
+  each sequence, and any liquid the labeller has not reached — every Unseen Evil pool —
+  would fall through to `Other` and throw **sparks off water**.
+- **Lava is deliberately excluded**, by decision, not by omission. It matches neither table,
+  so the terrain gate still stops it and it keeps the puff it shipped with.
+
+#### The colour is the CREST, not the flat
+
+| id | family | `rt_*_crest_*` | reads as |
+|---|---|---|---|
+| 0 | water | 140, 204, 255 | pale blue |
+| 1 | nukage | 50, 150, 50 | green |
+| 2 | sludge | 120, 78, 38 | brown |
+| 3 | blood | 255, 115, 102 | red |
+
+**The flat's own average would be the wrong colour**, and not by a little. The stylized
+liquid shader repaints the surface from `rt_*_tint_*` to `rt_*_crest_*`, so the source art
+is not what the player is looking at — a droplet sampled from it would not match the pool it
+just came out of. Taking the crest makes the two agree **by construction** and follows any
+retune of the liquid look for free. Same reasoning as §3.1: the spark ramp is PUFF's own
+palette rather than a hand-picked orange. `rt_spark_fluid_color 0` (arm `spark-fluidtex`) is
+the before-picture.
+
+**A literal colour must escape the debris colour path**, and this is the subtle half.
+`rt_spark_debris_sat` (3.0) expands chroma and then the luminance is pinned to
+`rt_spark_debris_albedo × profile.albedo` — both correct for a *whole-texture mean*, which is
+dull and sits at an arbitrary brightness, and both **wrong** for an exact colour. Water's
+pale 140,204,255 would be pushed to raw cyan and then dragged down to a mid grey-blue. So
+`Spark::litRgb` skips both and takes one honest scale, `rt_spark_fluid_albedo`; the age curve
+still applies, so a droplet fades like everything else. **The flag is cleared in
+`AllocSpark`**, not by each caller — a pool slot is reused, and a barrel shard or a fire-sky
+ember inheriting a droplet's `true` would silently skip both corrections.
+
+#### Tuning a splash without moving everything else
+
+Every axis of a debris particle is `rt_spark_debris_* x the class row`, and **both halves
+are shared**: the cvar moves concrete, wood, dirt, flesh and fluid together, and the row can
+only be changed by editing `RT_DEBRIS_PROFILES` and rebuilding. Liquids are the one class
+still being iterated on, so they get a third multiplier of their own:
+
+| cvar | default | on top of |
+|---|---|---|
+| `rt_spark_fluid_count` | 1.0 | `rt_spark_debris_count` x 2.4 = ~14 droplets |
+| `rt_spark_fluid_size` | **0.5** | `rt_spark_debris_size` x 0.5 -> **0.0125 m** |
+| `rt_spark_fluid_life` | **0.1** | `rt_spark_debris_life` x 0.3 -> **0.6 s** |
+| `rt_spark_fluid_speed` | 1.0 | `rt_spark_debris_speed` x 1.35 = 4.6 m/s |
+| `rt_spark_fluid_gravity` | 1.0 | `rt_spark_debris_gravity` x 1.0 |
+| `rt_spark_fluid_bounce` | 1.0 | `rt_spark_debris_bounce` x 0.08 |
+| `rt_spark_fluid_spread` | 1.0 | `rt_spark_spread` — **no class row behind it**, see below |
+
+Five ship at 1.0. **Size and life do not**, and that is the first thing these knobs bought:
+judged in play the same day they were added, a droplet at 1.0 was chip-sized and lay around
+for six seconds, which reads as *debris that happens to be blue*. At 0.0125 m and 0.6 s it
+reads as spray. Nothing else moved -- and nothing else *could* move, which is the point: the
+same retune through `rt_spark_debris_size` would have taken every concrete chip in the game
+with it.
+
+Note life also sets the cost. Live count is spawn rate x lifetime, so 0.1 makes the splash
+ten times cheaper as well as ten times briefer.
+
+Three things they are:
+
+- **Applied at the point of use, not by doctoring the profile.** Two of the seven — gravity
+  and bounce — are read in the SIMULATION every tic from `ProfileFor(sp.surf)`, not at
+  spawn, so returning an adjusted profile would have meant a mutable static standing in for
+  a `constexpr` table, and a printed row that no longer matched what the sim used. The row
+  stays the honest statement of what the class *is*; the cvar states what you changed.
+- **Keyed on `SurfKind::Fluid`, not on "was this a liquid hit."** So the three wall falls and
+  anything else labelled `fluid` move with them. The knob's name is the class.
+- **`_spread` is the odd one and the reason it is in the list.** `rt_spark_spread` is read
+  raw at `rt_sparks.cpp:596` and shared by sparks and every debris class alike — there is no
+  profile field for it. So the fluid row's own comment, *"thrown wide"*, described something
+  **nothing implemented**. This is what makes it true.
+
+`rt_spark_max` is worth a thought alongside `_life`: live count is spawn rate x lifetime, so
+a large rise in one wants the pool raised with it (§5).
+
+#### The puff
+
+`rt_liquid_nopuff` (on, pinned) skips `P_SpawnPuff` for the world-hit branch when the surface
+is one of the four. `nointeract` is excluded — that path *guarantees* a puff and returns it to
+the caller; it is an aiming probe, not a visible impact. Leaving `puff` null is already safe
+downstream: `puff->radius` is inside the skipped block, and the `P_HitWater` and decal
+branches null-check.
+
+Note this cvar lives in **`rt_cvars.inc`**, not beside `rt_blood_repl` in `p_map.cpp`, and is
+reached with a local `EXTERN_CVAR` the way `p_mobj.cpp` reaches `rt_fluid`. `check_pins.py`
+only knows the cvars in that file, and it reports a pin naming anything else as
+**"PINNED BUT NO SUCH CVAR (silently does nothing)"** — which is exactly the class of silent
+failure the pins file exists to prevent.
+
+#### Two diagnostics that were lying about fluid
+
+Both fixed in the same pass, because either one would have cost a round trip here:
+
+- The probe computed `pDebris` as `pSurf == SurfKind::Concrete`, while the real decision has
+  always used `SurfThrowsDebris()`. So it printed **"sparks"** for wood, dirt, flesh and
+  fluid — every other class that does in fact throw debris.
+- Fluid fell into `s_dbgOther` in the per-second tally, so a splash appeared in **no count
+  anywhere**. It now has its own column.
+
+#### Ruled out: the RTGL1 fluid sim
+
+`RT_SpawnFluid` takes **no colour** — the fluid colour is frame-global
+(`RgStartFrameFluidParams::color`), so every particle in flight would recolour at once — and
+`rt_fluid` is pinned **false**. `blood-persist.md` already says do not re-investigate.
+
+### 2.5 Two lessons from the seeding
 
 The first table was seeded from `metallicDefault >= 0.5` and produced 56 "metal" textures.
 The authored labels disagree **in both directions** — `SFLATAC` and `SFLATAF` carry a high
@@ -402,7 +562,9 @@ No filtering work was needed: `rt_smoothtextures` defaults false so the game is 
 
 ### 3.5 The per-class profile table
 
-`RT_DEBRIS_PROFILES` in `rt_sparks.cpp`, indexed by class. Same shape and the same reason as
+`RT_DEBRIS_PROFILES` in **`rt_spark_surfaces.cpp`** (it moved out of `rt_sparks.cpp` when
+that file passed 4000 lines; this page said `rt_sparks.cpp` until 2026-08-25), indexed by
+class. Same shape and the same reason as
 `RT_SMOKE_PROFILES`: rows are **multipliers** on the `rt_spark_debris_*` cvars, so tuning a
 cvar still moves every class together and a row states only how that class differs. Concrete
 is the reference row of all 1s.
@@ -573,8 +735,9 @@ rt_spark 1s: A/hit 22 impacts (0 rejected: far)  B/spawn 130 sparks, 412 live of
 The trailing note appears whenever `rt_spark_debris` is off — the other way this reads as
 broken, where the classification is correct and everything sparks by configuration.
 
-**3. Per impact under `rt_spark_surface_debug 1`** — `'SDFLTAB' -> concrete (debris)`. **On by
-default in the pins** while labelling is in progress, and it runs **even with `rt_spark`
+**3. Per impact under `rt_spark_surface_debug 1`** — `'SDFLTAB' -> concrete (debris)`.
+**Pinned 0**, and turned on by the arms that want it (this page claimed it was pinned on;
+it is not). It runs **even with `rt_spark`
 off**: it is a surface *identification* tool in the same family as `whatsthat` and
 `rt_tex_probe`, and gating it on an effect that ships off would have made the pin print
 nothing, ever.
@@ -607,6 +770,10 @@ screen**, and this project has lost sessions to not being able to tell them apar
 | `spark-debris` / `spark-nodebris` | classification on with the probe, and off |
 | `spark-debrisheavy` | more/bigger/longer chips, to confirm they darken **instantly** |
 | `spark-debrisdark` | albedo 0.02 — the **absurd arm** that proved the traced albedo was per-primitive |
+| `spark-fluidfat` | **run first for liquids.** 10x droplets, 4x size, no gravity |
+| `spark-fluid` / `spark-nofluid` | the liquid splash, and the before |
+| `spark-fluidtex` | droplets take the flat's average instead of its crest — the colour A/B |
+| `spark-puff` | splash AND the vanilla puff, to see what `rt_liquid_nopuff` removes |
 | `spark-debug` | the staged ladder |
 
 **Where:** the smoke lab, not a real level first — `python tools/build_smoke_lab.py`, then
@@ -614,6 +781,11 @@ screen**, and this project has lost sessions to not being able to tell them apar
 **MAP96 bright beige** for whether an additive spark is visible against a *lit* wall. That
 second case is the one smoke went several rounds without reproducing: a bright particle on a
 dark wall is the easy one.
+
+For LIQUIDS: **MAP34, the fluid sampler** — the one map with all four. `rt_blood_goto`,
+`rt_sludge_goto` and the matching `*_autogoto` cvars put the player on a pool without
+hunting for one. Water splashes pale blue, poison green, sludge brown, blood red, and
+**lava is the control**: it must still show a puff and throw nothing.
 
 Then in play: a wall, a floor, a ceiling; a monster (**no** particles — blood owns flesh
 actors); the sky (none); a shotgun blast to watch the cap hold. For collision — a wall above a
@@ -632,12 +804,17 @@ without taking effect.
 - **Sparks appear in no reflection and cast no GI** — inherent to the additive raster overlay.
   Only the analytic lights are traced. Debris does not pay this; it is opaque and traced.
 - **3D floors are not handled.** Tier 1 reads only the sector's own planes, so a particle
-  falls through a 3D floor. Narrow, because `d64r-3dfloor-rtfix.wad` already strips them on
-  the play launcher — but real.
+  falls through a 3D floor. Real since 2026-08-23: the 3D floors (209 of them, mostly
+  bridges) are back in the game now that the engine freeze behind the old strip is fixed.
 - **Debris colour is the texture's flat average**, not a sample at the impact point. A wall
   that is half rust and half steel gives one blended chip colour.
 - **Scope is hitscans.** Projectile and explosion impacts produce nothing;
   [`plan-impact-fx.md`](plan-impact-fx.md) is that territory.
 - **`flesh` and `dirt` are untested** — zero entries in the labelling as of writing.
+- **Liquid splashes are hitscan only**, like everything else on this page. A rocket into a
+  pool still does nothing; that is `plan-projectile-impact-fx.md`.
+- **A splash does not disturb the surface.** No ripple, no ring, no displacement — the
+  droplets come off a flat that goes on animating exactly as it was.
+- **Lava throws nothing and keeps its puff**, by decision (2026-08-25), not by oversight.
 - **The classification is far from complete** (843 of 2331 textures), and the `[UNLISTED]`
   worklist is the way to advance it.

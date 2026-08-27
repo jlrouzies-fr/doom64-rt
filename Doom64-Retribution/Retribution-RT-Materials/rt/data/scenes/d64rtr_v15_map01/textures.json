@@ -5607,6 +5607,30 @@
     {
       "emissiveMult": 2.0,
       "textureName": "DARTA4A6"
+    },
+    {
+      "textureName": "ARM1A0",
+      "emissiveMult": 0.6,
+      "lightColorHEX": "44ff88",
+      "lightIntensity": 160
+    },
+    {
+      "textureName": "ARM1B0",
+      "emissiveMult": 0.6,
+      "lightColorHEX": "44ff88",
+      "lightIntensity": 70
+    },
+    {
+      "textureName": "ARM2A0",
+      "emissiveMult": 0.6,
+      "lightColorHEX": "4488ff",
+      "lightIntensity": 200
+    },
+    {
+      "textureName": "ARM2B0",
+      "emissiveMult": 0.6,
+      "lightColorHEX": "4488ff",
+      "lightIntensity": 94
     }
   ]
 }

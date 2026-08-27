@@ -299,6 +299,35 @@ class D64LavaFx : EventHandler
         }
     }
 
+    // A SOLID ROVER OVER THE LAVA IS A LID -- the poison bubbles' gate, ported
+    // so the two liquid FX cannot drift apart. See the long note in
+    // gen_poison_fx.py: a sprite spawned on a sector's own floor under an
+    // opaque 3D floor is drawn THROUGH it (screen/poison3Dfloor.png), and the
+    // spawn height is not the fault -- FFCF_3DRESTRICT keeps floorz on the
+    // fluid, correctly.
+    //
+    // It changes nothing in Retribution TODAY, and that is the point of
+    // porting it now rather than after the next report. The one rover over
+    // lava in the game is MAP20's, over sec284 (HLAVA1), and it is type 7 --
+    // FF_SHOOTTHROUGH|FF_SEETHROUGH, NOT FF_SOLID. You can see the lava
+    // through it, so sparks there are right and the predicate below leaves
+    // them alone. The next opaque deck over a lava pit is already handled.
+    static bool RoofedByRover( Sector sec, Vector2 p, double fz )
+    {
+        int n = sec.Get3DFloorCount();      // 0 for almost every sector in the game
+        for( int i = 0; i < n; i++ )
+        {
+            let ff = sec.Get3DFloor( i );
+            if( !ff ) { continue; }
+
+            int need = F3DFloor.FF_EXISTS | F3DFloor.FF_SOLID | F3DFloor.FF_RENDERPLANES;
+            if( ( ff.flags & need ) != need ) { continue; }
+
+            if( ff.top.ZatPoint( p ) > fz + 1 ) { return true; }
+        }
+        return false;
+    }
+
     override void WorldTick()
     {
         if( secIdx.Size() == 0 ) { return; }
@@ -333,6 +362,8 @@ class D64LavaFx : EventHandler
                 if( fl.IndexOf( "HLAVA" ) != 0 && fl.IndexOf( "D64LAVA" ) != 0 ) { continue; }
 
                 double fz = sec.floorplane.ZatPoint( (px, py) );
+                if( RoofedByRover( sec, (px, py), fz ) ) { continue; }
+
                 let sp = Actor.Spawn( "D64LavaSpark", (px, py, fz + 2) );
                 if( sp )
                 {

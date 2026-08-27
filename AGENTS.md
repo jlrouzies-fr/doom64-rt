@@ -35,10 +35,55 @@ Water (stylized surface + projected caustics, all cvars, four traps):
 
 → **`docs/rt-water.md`**
 
+Coagulated blood pools and the poison / sludge art — new flats from reference
+images, authored relief on a liquid (which the water wave used to overwrite),
+and a FLOW MAP so liquid visibly moves along the veins (the phase-pulse version
+was rejected as flicker; the doc says why). Also why WATER IS NOW THE ONLY
+LIQUID THAT PROJECTS CAUSTICS, why the new art needs the crest colours retuned
+down, and the frame-01 `textures.json` bug this uncovered in all eight liquid
+families. **The whole liquid look family is `RT_CVAR_NOARCH` as of 2026-08-25** —
+the wave is GLOBAL and the per-liquid relief is the only thing that removes it,
+so `rt_blood_relief` / `rt_sludge_relief` were the entire difference between a
+coagulated pool and water with red paint on it, held up by one `+exec` of the
+pins. **NOARCH alone was not enough** — `FGameConfigFile::ReadCVars` applies every
+key in the ini by name and never looks at `CVAR_ARCHIVE`, so un-archiving a cvar
+stopped it being written but not being read, and the stale line then survived
+every clean exit; `gameconfigfile.cpp` now skips a key whose cvar is not archived
+(self-cleaning, and it removed a live stale `rt_clouds_volumetric` nobody knew
+about). The look can no longer be carried by a stale `gzdoom-rt2.ini` or lost by
+a launch that skips the launcher; the pins are now a restatement, not a source of
+truth. `package_release.py` refuses to ship a stale exe, a drifted or orphaned
+liquid pin, or an `rt/mat_dev` missing the relief maps, and every level load
+prints one `RT liquid:` line into `rt-console.log` naming what the shader got.
+**Poison keeps the wave on purpose** — no `rt_nukage_relief`, no `D64N*` `_n`:
+
+→ **`docs/rt-blood-pools.md`**
+
 The moon, and the sky leaks it exposed (`rt_sun_*`, `rt_moon_*`, per-map aim,
 `rt_sun_require_sky`, the red/green leak debug, four wrong answers):
 
 → **`docs/moon-and-sky-leaks.md`**
+
+The sky's clouds — the painted shell deck and the storm it lights (`rt_clouds_*`),
+and the ray-marched slab that **replaced it as the shipping path** on every cloud
+map (`rt_clouds_volumetric`, `rt_vclouds_*`), plus the hell maps' fire sky built
+on top of it (`rt_fireskies_new`, `rt_firesky_*`):
+
+→ **`docs/plan-volumetric-clouds.md`** — the march: why it went in the sky
+  cubemap, what it reuses, and §5 for the bug that switched it on for everyone
+  without anyone deciding to
+
+→ **`docs/rt-clouds-and-lightning.md`** (the deck, now the fallback),
+  **`docs/plan-fire-skies.md`** (the five hell maps)
+
+**The lesson from that §5 is not about clouds.** `rt_clouds_volumetric` is
+`CVAR_ARCHIVE` and `rt_firesky.cpp` assigns it at runtime, so quitting on a hell
+map archived a value nothing ever reset — and for two releases every machine
+here rendered the march on MAP12 while a player with a clean ini got the deck.
+**An archived cvar that engine code writes is not a setting, it is a diary, and
+whichever session you last quit in becomes everyone's configuration.** Pin it to
+its compiled default, or make it `RT_CVAR_NOARCH`. `tools/check_pins.py` now
+fails on any that is neither.
 
 Per-map fog (`rt_fog_*`, `RT_FOG_PRESETS`, the two RTGL1 froxel changes it
 needed, the near/far ramp, the flashlight, and why MAP26's moon is off):
@@ -69,6 +114,22 @@ silently; `rt/data/` is not in the lump filesystem):
 
 → **`docs/rt-impact-fx.md`**
 
+What a PROJECTILE leaves behind (`rt_arc*` plasma filigree, `rt_ember*` rocket coals,
+`rt_laser*` Unmaker burn, `rt_barrel*` plate, `rt_fire*` monster fireballs) — a
+different door from the hitscan hook above: its own `MF_MISSILE`-cleared walk in
+`rt_impacts.cpp`, sharing only the particle pool. **A mark is not made of
+particles and that was got wrong three times**; if one of these ever looks
+wrong, check the CONSTRUCTION before the values. The 2026-08-26 fireballs (BAL1/BAL2/BAL3/BAL7/BAL8 — imp, cacodemon, nightmare imp, hell knight, baron) are
+the clearest case — authored flame art on a TRACED quad drew a black blob (the
+art's own dark outline is a solid occluder) and the denoiser smeared its core
+flat, and the fix was to move it to an ADDITIVE quad and **provide RTGL1 the
+real decoded pixels** rather than the 1×1 placeholder, because the rasterized
+path never consults the `rt/mat` override. Also: `rt_fire_size` is a multiple of
+`rt_ember_size`, **not metres** — mis-stating that unit made the flames 0.9 mm
+and survived an absurd-value run:
+
+→ **`docs/plan-projectile-impact-fx.md`** (§9 is the fireballs)
+
 Blood splats that stay on the floor (`rt_gore_*`, why the one-second lifetime
 was in the WAD's DECORATE and not in the renderer, the explosion burst, and
 per-monster blood colour + the RT material-naming bug that hid it):
@@ -79,6 +140,14 @@ Console noise (`rt_verbose`, why quiet is the default, and where a new `Printf`
 belongs) — read before adding any print to the RT path:
 
 → **`docs/rt-verbose.md`**
+
+GI bounce depth (`rt_gi_bounces`, `rt_gi_bounce_legacy`, `rt_gi_bounce_shadows`) —
+RTGL1 shipped **two bounces, hardcoded and unrolled**, the second of which sampled
+**no analytic lights** under the live `rt_shadowrays 2` and was **~2π too bright**
+(radiance × 1/pdf with no BRDF or cosine — the "diffuse very red" TODO). Read
+before touching anything indirect, and before believing "lights don't bounce":
+
+→ **`docs/rt-gi-bounces.md`** — the finding, the loop, and the `gi-*` ladder
 
 Anything DLSS Ray Reconstruction:
 
@@ -251,6 +320,8 @@ the sky texture (`tools/gen_moon_sky.py`) plus `rt_sun`, the directional light,
 aimed alike — the disc alone casts nothing usable, because RT's sky cubemap is
 not importance-sampled. Aim it with the **`moon`** CCMD, never by setting
 `rt_sun_a/b` directly; per-map aim lives in `RT_MOON_PRESETS` (MAP13 = 90).
+
+Per-map **self-emission colour gate**: `rt_sector_emis_saturation` (global 0.58) is overridden per map by `RT_EMIS_PRESETS` in `rt_presets.cpp` — **MAP08 = 0.80** today. Same shape and same trap as the other preset tables: it writes the cvar at level load, so on a listed map it beats the launcher pin, and `rt_sector_emis_presets 0` is what an A/B of the global value has to pass. Get a new row's number from `whatsthat`, which prints the sector's colormap tint and its saturation next to the threshold in force.
 
 Three things that will otherwise cost you a day:
 
@@ -460,7 +531,11 @@ feature code to `rt_main.cpp`.
 | `rt_light_shafts.cpp` | Which fixtures get visible air around them (`rt_volume_shaft_*`). Places no lights of its own: the fixture walks OFFER theirs and this culls/sorts/dedupes/caps the list handed to RTGL1 (`docs/plan-light-shafts.md`) |
 | `rt_dust.cpp` | Dust motes (`rt_dust_*`) — the sparkle half of a light shaft. Real traced geometry lit by the scene, on a hashed world lattice with no pool and no state (`docs/plan-light-shafts.md` §4c) |
 | `rt_smoke.cpp` | Puff simulation + all six smoke sources: weapons, monster guns (`RT_MONSTER_GUNS`), projectiles (`RT_PROJECTILE_SMOKE`), barrels, flames (`RT_AMBIENT_FLAMES`) + `smoke` CCMD (`docs/rt-smoke.md`) |
-| `rt_sparks.cpp` | Impact sparks (`rt_spark_*`): the pool, the 3-tier collision, the batched quads and the per-impact flash + `sparks` CCMD. **The one FX source with a real game hook** — `P_LineAttack` in `p_map.cpp` (`docs/plan-impact-fx.md`) |
+| `rt_sparks.cpp` | Impact sparks (`rt_spark_*`): the pool, the 3-tier collision and the per-impact flash + `sparks` CCMD. **The one FX source with a real game hook** — `P_LineAttack` in `p_map.cpp` (`docs/rt-impact-fx.md`) |
+| `rt_sparks_internal.h` | Everything the four files below share: the colour RAMPS (all read from the projectile's own death sprite, never invented), `ArcFlavor` / `ImpactFx`, `Spark`, `ArcMark`, the pool caps and the mesh-ID bases |
+| `rt_impacts.cpp` | What a PROJECTILE leaves behind: the `MF_MISSILE`-cleared walk, the surface probe, `SpawnArcMark`, `RT_ARC_SOURCES` (which actor gets which mark) + `arc_here` (`docs/plan-projectile-impact-fx.md`) |
+| `rt_spark_draw.cpp` | The geometry for all of it: spark quads, debris buckets, scorch decals, arc filigree, ember coals, fireball flames, and the light candidates the mark pass drains |
+| `rt_barrel.cpp` | Barrel destruction (`rt_barrel_*`) **and the art loader for the whole family** — `ScanShardArt` registers the plate, ember and flame sheets, and `RegisterTextureFromFile` is the one that provides real decoded pixels (required for anything ADDITIVE; see the note there) |
 | `rt_presets.cpp` | Per-map moon / cloud / tint / fog tables + `moon`, `clouds`, `fog` CCMDs |
 | `rt_weather.cpp` | The storm + `thunder` |
 | `rt_draw.cpp` | `RTRenderState::InternalDraw` — the funnel every primitive passes through |
@@ -482,6 +557,7 @@ declaration cannot drift from its definition. Put nothing in that file except an
 
 ## Hard rules
 
+- **The renderer never writes the player** — no pitch, position, velocity or flag edits from the RT side, not even for a capture. Camera placement for screenshots is done with playsim commands from the launch line or a console script (`noclip`, `fly`, `warp`, bound `+lookup`). Two `rt_autoshot_*` holds that did this shipped in v0.1.14 and broke play (`map map23` dropped the player from the ceiling, rockets flew 45° up).
 - Engine work is in `sourcecode/gzdoom-rt`. Prebuilt release is not mod-safe (Steam gates + `rt/scenes/map##` name collision).
 - Retribution loads as `-file` on DOOM2.WAD. Prefer `D64RTR_v15.WAD` in PowerShell (`[v1.5]` is a wildcard).
 - Prefer IWAD `D:\Games\GZDoom\doom2.wad` (Steam size 14604584). Avoid `D:\Games\Doom RT\DOOM2.WAD` (different size).
@@ -500,7 +576,7 @@ declaration cannot drift from its definition. Put nothing in that file except an
 
 | Script | Purpose |
 |---|---|
-| `tools/launch-retribution-rt.cmd` | Play — native RT + DLSS-RR. Optional arg `1`–`32` → `map01`…`map32` (default 1). Loads `d64r-lostsoul-rt.pk3` + `d64r-3dfloor-rtfix.wad` (all-map 3D-floor hang strip — **all** map lumps, including the `FUN`/`ABS`/`OUT`/`RDM`/`REC`/`RTR` campaigns). |
+| `tools/launch-retribution-rt.cmd` | Play — native RT + DLSS-RR. Optional arg `1`–`32` → `map01`…`map32` (default 1). Loads `d64r-lostsoul-rt.pk3` + the map overlays (`d64r-seqlight-fix.wad`, `d64r-smonf-lights.wad`, …). **3D floors are played as authored** — the old `d64r-3dfloor-rtfix.wad` strip is gone (2026-08-23): the freeze behind it was `P_GetPlaneLight` on an empty lightlist, fixed in `p_3dfloors.cpp`; every map-replacing overlay applies `make_map_3dfloor_rtfix.MODE3D = keep`. Never bring the strip back as a workaround; `--mode strip` exists only as an emergency arm. |
 | `tools/launch-enemy-gallery-rt.cmd` | MAP98 dark no-aggro enemy eye review hall. |
 | `tools/launch-texture-gallery-rt.cmd` | MAP99 texture PBR gallery (baseline mats). |
 | `tools/launch-emis-gallery.cmd` | MAP99 **world-emissives only** (`d64remis.wad` — monitors/EXIT/keys/CRT/lava). |
@@ -514,7 +590,11 @@ declaration cannot drift from its definition. Put nothing in that file except an
 | `tools/ab.cmd lampshaft-<arm>` | Light shafts from ordinary lamps. `lampshaft-fat` (**run first** — the absurd arm that separates plumbing from values), `lampshaft-off`/`on`; probes `probe` (uniform arriving), `lit`/`vis` (reach vs occlusion); families `inset`/`lattice`/`solo`; **reach** `noband`/`wide`/`listorder`/`phys`/`flat` — the two "doesn't reach far enough" reports, and neither cause was brightness (§4a/§4b); `nogap`, `nomoon`, `dense`/`bright` (medium vs light — judge separately), `iso`, `near0`. Ships **on**; judge in a dark interior, MAP07's clad corridors. See `docs/plan-light-shafts.md`. |
 | `tools/ab.cmd leak-<arm>` | **A lamp shaft read through a wall** (MAP01, 2026-08-15, open). All arms hold the report's conditions: moon off (`rt_sun 0` + `rt_sun_intensity 0` + **`rt_moon_presets 0`**, which is load-bearing — presets restore the sun on every level load) and `rt_volume_shaft_mult 200`. **FIXED** by `rt_volume_depthgate` (ships on): the volume is a prefix sum read trilinearly, so a wall collected the froxel *behind* it. `leak-gatehard` (**run first**, the absurd arm — feather 0.01 + taps 1 should paint the grid and stair-step every silhouette) / `leak-gateoff` (before) / `leak-gate` (after). Diagnostic ladder kept: `leak-base` (reference), `leak-noshaft`, `leak-noamb`, `leak-near`, `leak-fat`, `leak-fine`, `leak-nofilter`. **Not** a visibility bug and **not** geometry — both measured out. See `docs/plan-light-shafts.md` §4d. |
 | `tools/ab.cmd dust-<arm>` | Dust motes in the air. `dust-fat` (**run first** — a mote is small enough that "I can't see any" has two causes that look identical), `dust-off`/`on`/`heavy`/`still`/`honest`/`noshaft`. Real traced geometry lit by the scene: **never** emissive (fireflies) and **never** rasterized (fullbright). Ships **on**. See `docs/plan-light-shafts.md` §4c. |
-| `tools/ab.cmd spark-<arm>` | Impact spark A/B: `spark-fat` (**run first** — the absurd arm that separates plumbing from values), `spark-on`/`off`, `nolight` (how much is the traced flash), `nogrid` (the before for the pixel look — judge while moving), `nocollide`, `still` (bounce with the fall taken out), `debug`. Ships **off**; judge in the smoke lab (MAP97 dark, MAP96 bright) before a real level. See `docs/plan-impact-fx.md`. |
+| `tools/ab.cmd spark-<arm>` | Impact spark A/B: `spark-fat` (**run first** — the absurd arm that separates plumbing from values), `spark-on`/`off`, `nolight` (how much is the traced flash), `nogrid` (the before for the pixel look — judge while moving), `nocollide`, `still` (bounce with the fall taken out), `debug`. **LIQUIDS:** `spark-fluidfat` (**run first**), `spark-fluid`/`nofluid`, `spark-fluidtex` (crest colour vs the flat's average -- the colour A/B), `spark-puff` (splash AND the vanilla puff). Ships **on** (the old "ships off" note was stale). Judge sparks in the smoke lab (MAP97 dark, MAP96 bright) and liquids on **MAP34, the fluid sampler** -- lava is the control there, it must still puff and throw nothing. See `docs/rt-impact-fx.md`. |
+| `tools/ab.cmd fire-<arm>` | **Monster FIREBALL impacts** — flames burning on the wall in the projectile's own colour. `fire-fat` (**run first**, the absurd arm), `fire-on`/`off`, `fire-notint` (white flames — the colour A/B), `fire-noart` (flat coloured quads — the fallback look), `fire-steady` (no gutter) and `fire-still` (flipbook + lean off) — the two motion isolations, `fire-flare`/`fire-slow` (the lifetime taste call), `fire-nosmoke`, `fire-noburn`, `fire-glowmax` (cost probe — judge MOVING), `fire-debug`. **The flicker drives the flame AND the light it casts from one term**, so they gutter as one event; it cannot be judged from a still. Stills: `.\tools\impact-lab.ps1 -Kind fire-orange\|fire-violet\|fire-green\|fire-red`, which default to **MAP97 dark** (a flame ADDS light; the bright room that suits a scorch hides it). **The lab cannot test the trigger** — all five are MONSTER projectiles, so `-Weapon` cannot reach them; summon `64DoomImp` / `64Cacodemon` / `64NightmareImp` / `64HellKnight` / `64BaronOfHell`. Ships **on**. See `docs/plan-projectile-impact-fx.md` §9. |
+| `tools/ab.cmd gi-<arm>` | GI bounce depth ladder, in order: `gi-shadow2`/`3`/**`4`** (zero shader involvement — `rt_shadowrays` is which bounce *vertices* may sample lights, and `shadow4` is the control that must equal `shadow3`), `gi-depth1` (plumbing liveness), `gi-fix` (the ~2π energy fix at depth 2 — expect **dimmer, less saturated**), `gi-fix3`/`gi-fix4` vs `gi-fix3-unlit` (real depth, only meaningful with the fix on), `gi-restirm` (the reuse-contract check). Judge on `rt_debug_show 16`/`128`, never the final image. Ships unchanged: depth 2, legacy weight on. See `docs/rt-gi-bounces.md`. |
+| `tools/ab-bloodpool.cmd` | Blood POOL A/B (the flats, not the splats): `on`/`off`/`norelief`/`noflow`/`fast`/`slow`/`hard`/`soft`/`coarse`/`fine`/`phase`/`flagcheck`/`flat`/`caustics`, plus the REFLECTION arms `nomirror`/`mirror`/`wet`/`dry` (`rt_blood_refl`/`rt_blood_rough`, added 2026-08-26 as blood's counterpart of `rt_sludge_refl`). **Every non-water liquid now pulls the mirror down: sludge 0, blood 0.3, poison 0.5 (`rt_nukage_refl`, arms `nukemirror`/`nukeflat` on `tools/ab-water.cmd`) — all three were 1.0, the full water Fresnel, before that date.** Only an exact 0 also removes the checkerboard split, so `nomirror`/`nukeflat` are the arms to judge MOVING with the flashlight; a still cannot show a split. Default MAP17. Every arm sets `rt_blood_autogoto 1`, which puts the player ON a pool — a pool is a puddle in a corner and MAP08's nine sit at z −256 in pits. Three layers fail identically: the ART (`d64r-liquid-art.wad`, no cvar), the RELIEF (`rt_blood_relief`) and the FLOW (`rt_blood_flow*`, a flow map -- texture advected along the baked vein direction, not a brightness pulse); `phase` and `flagcheck` are tests, not looks. See `docs/rt-blood-pools.md`. |
+| `tools/ab-sludge.cmd` | Sludge / MUD bed A/B: `on`/`off`/`norelief`/`mirror`/`deep`/`flat`/`wet`/`dry`/`flagcheck`/`caustics`, default MAP12. **Only MAP12 (6 sectors) and MAP34 have sludge floors in the whole game**, so every arm sets `rt_sludge_autogoto 1`. Two things make mud out of a water surface and each alone still reads as liquid: the RELIEF (`rt_sludge_relief` — height from the art's full luminance range, NOT the vein mask blood uses, which sludge saturates) and the REFLECTION (`rt_sludge_refl`/`rt_sludge_rough` — a mirror is what sells water). `mirror` and `norelief` isolate the two. Also carries the BISECT arms (`nomaps`/`softnormal`/`normals`/`raw`/`denoised`/`nodlss`/`restir`) that found the "unstable shadows under a moving flashlight" bug: NOT parallax, NOT the upscaler, NOT the bake's frequency content — the CHECKERBOARD SPLIT. The stylized branch shades the lit liquid on odd screen columns and rebuilds the even ones from their neighbours; on a high-contrast authored normal that pattern crawls with the camera and freezes at rest. Fix: `rt_*_refl 0` = no mirror AND no split (full-res surface, glossy specular sheen); sludge ships so. `rt_liquid_checkerboard 0` forces it for all four liquids — console only, kept OUT of the Quality menu because what it trades away is the reflection that sells water. `split` is the before-picture. See `docs/rt-blood-pools.md`. |
 | `tools/ab-blood.cmd` | Persistent blood A/B: `off`/`on`/`uncapped`/`tight`/`plain`/`wild`/`roll`; explosion splash `boom`/`noboom`/`bigboom`; per-monster colour `color`/`nocolor` (try MAP03 or MAP14), default MAP01. The lifetime is DECORATE in the WAD, not a renderer setting; explosive kills leave no blood in stock GZDoom because `P_RadiusAttack` never calls `P_SpawnBlood`; and blood colour needs `rt_tex_translations` (pitfall 30). See `docs/blood-persist.md`. |
 
 Important cvars on Retribution launch (do not crank blindly):
@@ -648,7 +728,31 @@ enforced at the one place that writes it.
 16. **`lightIntensity` on wall monitors/EXIT** → floating point lamps on the face. Floors (lava) only.
 17. **Whole-face tinted `_e`** → primary shows raw `_e` as solid cyan/yellow. Tight BM / luma masks only.
 18. **Yellow key GI looks red** → albedo carving is brown; use luma mask + yellow tint.
-19. **SMON anim flat↔bump** → clone `_n`/`_orm`/`_h` to ANIMDEFS sibling frames.
+19. **ANIMDEFS sibling frames flat<->bump** (SMON, CTEL, SPORT, STRAK, GTEL, C307B,
+    CFACE, HTEL). RTGL1 resolves `_n`/`_h`/`_orm` **per texture NAME**, and an
+    animation is a run of separate names -- so maps on frame 1 only make the
+    surface parallax-relieved on that frame and flat on the rest. It reads as
+    the texture **moving up and down**, not as a missing map, and sends you
+    looking at scrollers, lifts and sector specials. `GTEL1` was relieved 4 tics
+    in 32; `HTELB`+`HTELC` are 16 of 24.
+
+    **`tools/sync_anim_relief_maps.py --report` sweeps the whole game for it**
+    -- it walks ANIMDEFS itself, so nothing has to be guessed or typed. Then
+    `sync_anim_relief_maps.py <base...>` clones frame 1's maps across the run
+    into all **four** material dirs.
+
+    **The pixel gate alone is not sufficient, and that is the 2026-08-24
+    lesson.** A frame may share relief when it differs on <=5% of the tile OR
+    when its colour-REGION LAYOUT is byte-identical -- same geometry under some
+    recolour. STRAK differs on **19.0%** and is still the same surface: the
+    animation is a brightness PULSE of the stripe, nothing moves. And because
+    `STRAKY1_h` is luminance-derived, regenerating `_h` per frame would make the
+    stripe rise and fall with the pulse -- it would author in the very artefact.
+    **Copy; do not regenerate, and do not raise the gate.** A frame that fails
+    both gates has different art and needs its own maps via `gen_ai_pbr.py`
+    (settings are recorded per texture in `tools/_gallery/ai_pbr_report.json`)
+    plus a **scoped** `bake_material_labels_orm.py` run -- that tool has no name
+    filter, so handing it `map01.json` re-bakes all 900 labels.
 20. **Liquid falls / `*GLOW`** → not auto-emitters.
 21. **Post-clamp wash on MAP01** → authored wall mults (4.2) suddenly fully scaled GI; dial walls ~1.0.
 22. **Missing spawn blink lamps** → need `RT_UploadGzDoomDynamicLights` for 9802; also disable stock per-sector lights (`rt_sector_lights 0`).
@@ -830,6 +934,29 @@ enforced at the one place that writes it.
     which wins.** Adding metadata of *any* kind to a texture opts it into the
     material's answer for **every** field the material can express, including the
     ones the new metadata is silent about.
+
+36. **A FLAG ON AN ENGINE ZSCRIPT BASE CLASS REACHES THE GAME THROUGH THE MOD'S
+    `REPLACES` SUBCLASS -- so a symptom that looks like mod or material data can
+    live in `wadsrc/`.** Shooting a monster drew the vanilla `PUFF` sprite *on top of*
+    the blood. The mod was clean (`+NOBLOOD` appears once in the whole Retribution
+    DECORATE, on `64LostSoul`; no `+PUFFONACTORS` anywhere) and `p_map.cpp`'s
+    puff/blood decision was pure upstream. The cause was `+PUFFONACTORS` on gzdoom's
+    own `BulletPuff` in `wadsrc/static/zscript/actors/doom/doommisc.zs`, a `HAVE_RT`
+    line from the vendor drop -- and `puffDefaults` is resolved through
+    `pufftype->GetReplacement()` (`p_map.cpp:4646`), so Retribution's
+    `64BulletPuff : BulletPuff REPLACES BulletPuff` **inherits** it. Removed
+    2026-08-25; `docs/compat-patches.md` has the full account.
+
+    Two things that made it look like something else. It **adds** rather than
+    replaces -- blood still spawns below at `p_map.cpp:5009` -- so "blood is broken"
+    was never true. And the report arrived after a materials commit, because
+    `gen_fx_emissives.py:254` had given `PUFF` `lightIntensity 250` + `noShadow`,
+    pitfall 4 a third time: a flag that had been live since the vendor drop only
+    became conspicuous when the sprite it spawns became a light.
+
+    **The enemy-sprite PBR labelling was ruled out by measurement, not argument** --
+    0 of 757 monster entries carry `metallicDefault`/`roughnessDefault` in either
+    `textures.json` tree. `_orm`/`_e` companions are shading data with no playsim reach.
 
 ## Suggested next work
 

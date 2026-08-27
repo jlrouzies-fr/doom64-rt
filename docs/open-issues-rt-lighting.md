@@ -11,6 +11,16 @@ Do not treat this as a progress cheer sheet — only unresolved / partially reso
 
 ## 1. Unfixed / incomplete
 
+### 1.0 Weapon silhouette trails over lingering lights — **FIXED 2026-08-23** (verified in play)
+
+`screen/smearingIssueOverLingeringLight.png`. The "lingering light" after a rocket was
+not a light: it was A-SVGF's **indirect** ghost (256-frame history, antilag suppressed
+on bright indirect), and the band was the gun's silhouette restarting that history — a
+hole in the ghost. Bisected by layer with the new `rt_debug_show`. Fix:
+`rt_svgf_indir_maxhist 16` + `rt_svgf_indir_antilag 1` (with `rt_svgf_fp` /
+`rt_svgf_fp_grad` kept for silhouette restarts). Cost: noisier indirect in bounce-lit
+dark areas — watch for it. Details: `docs/rt-volumetric-weapon-trails.md`.
+
 ### 1.2f Sourceless `Light_Fade` sweep on 14 maps — **FIXED 2026-08-10** (MAP13 confirmed in play)
 
 Reported on MAP13 as pillars and walls that "get illuminated regularly" — multiple
@@ -245,8 +255,8 @@ crack into a visible shaft. Run `nosun` first.
 |---|---|
 | **Symptom** | Window freezes (audio still plays) when entering the red-key door approach on MAP02. |
 | **Cause** | Same as MAP01: `Sector_Set3dFloor` (special **160**) — two linedefs, control sectors tag 1/2 with `F_SKY1`. RT live-upload hang when that geometry is in play. |
-| **Fix** | Combined `d64r-3dfloor-rtfix.wad` strips special 160 on **all 28 maps** that had it (161 linedefs). Keeps `BEHAVIOR`/`ZNODES`. Regen: `python tools/make_map_3dfloor_rtfix.py`. |
-| **Confirm** | `tools\launch-retribution-rt.cmd 2`, walk to red-key door room — should stay responsive. Outdoor 3D-floor prop may be missing until engine fix. |
+| **Fix (superseded 2026-08-23)** | Was: strip special 160 on every map (`d64r-3dfloor-rtfix.wad`, finally 44 maps / 209 linedefs). That removed the bridges the levels need. The real cause was `P_GetPlaneLight` reading an empty lightlist on the render worker thread — fixed in `p_3dfloors.cpp`; the strip wad is withdrawn and the 3D floors are played as authored. Full account: `docs/compat-patches.md` "Real root cause". |
+| **Confirm** | `tools\launch-retribution-rt.cmd 2`, walk to the red-key door room — responsive, and the two outdoor 3D-floor slabs are present. |
 
 ### 1.6e MAP02 fake mid-ceiling blink blobs — **ENGINE FIX 2026-08-05** (needs confirm)
 
@@ -352,6 +362,48 @@ Single overlay pk3 + clean install docs (Phase 5) still pending.
 
 Short status: debug match = unfiltered diffuse direct; ceiling lamps confirmed amplifier; soft fades landed; boiling **reverted**; `rt_rr_temporal` **failed** (ghost) then left a **black world** when Compose still sampled empty DiffTemporary after `AccumulateForRR` was removed — ComposeNoisy is now **raw unfiltered only**. Full-tree PBR suspected — **do not strip**. Detail → **`rayreconstruction/rr-noise-investigation.md`**.
 
+### 1.9 A sprite under a solid 3D floor is drawn through it — **OPEN, scope unmeasured (2026-08-26)**
+
+`screen/poison3Dfloor.png`: standing on MAP07's bridge deck by the EXIT signs,
+the poison bubbles appear as green dots lying **on the metal**, while the poison
+itself is correctly hidden under it.
+
+**The position is not the fault, and that has been measured out.** Out of the
+UDMF, sec164 and sec202 are the only nukage sectors in the game with a rover over
+them; the fluid is at z −174 and the slabs run −30…42 and −30…102, so the deck
+tops stand **144 units** above the bubbles. `Actor.Spawn` calls
+`P_FindFloorCeiling(FFCF_ONLYSPAWNPOS)`, which sets `FFCF_3DRESTRICT` and
+disables the step-up branch of `NextLowestFloorAt` (`p_sectors.cpp:1059`), so
+`floorz` stays on the poison; and the bubble's rise (0.06–0.20 damped ×0.94)
+totals about 3 units. The sprite is where it belongs and is drawn through solid
+geometry.
+
+Consistent with the renderer having **no `F3DFloor` iteration at all** — the only
+two hits for `ffloors|F3DFloor|XFloor` in `src/common/rendering/rt/` are
+comments, and every particle system reads `sec->floorplane.ZatPoint` and nothing
+else (`rt_sparks.cpp:1073`, `rt_smoke.cpp:1475`, `rt_dust.cpp:422`,
+`rt_barrel.cpp:517`; already written up in `docs/rt-impact-fx.md` §"3D floors are
+not handled").
+
+**Worked around, not fixed.** The poison spawner now refuses a sample that a
+solid rover stands over (`d64_poison_roofgate`, `docs/poison-bubbles.md`
+§"Under a 3D floor"), and the same gate is in `gen_lava_fx.py`. That is the game
+sim's half and is right either way, but it says nothing about the renderer's.
+
+**The open question is SCOPE, and there is an instrument for it.**
+`.\tools\poison-lab.cmd bridge` (MAP94) reproduces MAP07's 144-unit clearance in
+one room and stands an ordinary `Stalagtite` on the poison **under** the deck,
+with a light of its own so it cannot fail to be visible for a lighting reason:
+
+- hidden → RT occludes ordinary actors under a rover; whatever loses the bubbles
+  is specific to how they are submitted, and this entry is narrow.
+- **still visible through the deck** → RT occludes *nothing* under a rover. That
+  is 209 rovers across 44 maps, including 22 water sectors under bridges on MAP11
+  and 6 on MAP23, and this becomes a real renderer bug rather than a liquid-FX one.
+
+Not run for a visual verdict yet. Do not widen the gate to cover the answer —
+fix the renderer if it comes back the second way.
+
 ---
 
 ## 2. What was tested (high-signal)
@@ -381,7 +433,7 @@ Short status: debug match = unfiltered diffuse direct; ceiling lamps confirmed a
 - Enemy eyes: brightmap `_e`, `emissiveMult≈2`, red, **no** eye `lightIntensity`, **no** `noShadow` — regen: `gen_enemy_eye_emissives.py`.
 - World allowlist emis: SMON/EXIT/CRT/keys/lava/logo + switch ON frames (`SWX*B` / GLDEFS) muted green — `gen_world_emissives.py`.
 - Monster muzzle frames: `lightIntensity` via `gen_fx_emissives.py` (not Lost Soul).
-- MAP01 hangy 3D floor fix wad (TEXTMAP + **BEHAVIOR**); night `SPACE` sky pk3 + `rt_sky 25`.
+- 3D floors kept on every map (engine guard in `P_GetPlaneLight`; no strip wad); night `SPACE` sky pk3 + `rt_sky 25`.
 - Gallery halls: texture / emis / enemy / empty + wash-qa / WashScratch tooling.
 - RR path firefly clamp in `CmNoisyCompose` + muzzle soft fade (`rt_mzlflsh_fade`).
 

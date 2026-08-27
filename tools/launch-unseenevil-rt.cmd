@@ -122,7 +122,7 @@ rem       64PainElemental, 64SpiderMastermind. None of those actors exist here -
 rem       DOOM's blood is `Blood` -- so loading it is a startup script error, not
 rem       persistent blood. The nine unknown-command lines are the correct and
 rem       harmless result of sharing one pins file across two mods.
-rem   d64r-seqlight-fix.wad / d64r-3dfloor-rtfix.wad / d64r-ctel-fix.wad /
+rem   d64r-seqlight-fix.wad / d64r-ctel-fix.wad /
 rem   d64r-bulb-textures.wad  NO -- map and texture replacements for Retribution's
 rem       own MAP01-34. Nothing here has those maps.
 rem   d64r-widescreen-gfx.pk3 / d64r-rt-titlelogo.pk3  NO -- they override

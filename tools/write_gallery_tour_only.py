@@ -7,12 +7,11 @@ import os
 import sys
 from pathlib import Path
 
+# Repo root, derived from this file so a clone can live anywhere.
+PROJ_ROOT = Path(__file__).resolve().parents[1]
 ROOT = PROJ_ROOT
 sys.path.insert(0, str(ROOT / "tools"))
 from build_texture_gallery import write_tour_zscript  # noqa: E402
-
-# Repo root, derived from this file so a clone can live anywhere.
-PROJ_ROOT = Path(__file__).resolve().parents[1]
 
 BOOTHS = ROOT / r"tools\_gallery\booths.json"
 # Matches build_texture_gallery pillar / standoff (booth.y is south of pillar).

@@ -61,15 +61,201 @@ RT_WAD_DROP = {"filter", "sounds"}
 # would drag in the galleries, the smoke lab and the A/B probes.
 # D64RTR_BRIGHTMAPS.PK3 is deliberately NOT here: it is Retribution's file, so
 # the user brings it with the rest of the mod.
+#
+# KEEP THIS IN STEP WITH launch-doom64-rt.cmd. check_mods_match_launcher()
+# below enforces it, and that check exists because three files went missing
+# from releases without a word: d64r-liquid-art.wad (the blood/poison/sludge
+# art -- the game silently fell back to Retribution's stock flats) and the two
+# d64r-smonf-*.wad. This list lives in three hand-maintained copies (here, the
+# shipped launcher, and tools/launch-retribution-rt.cmd) and nothing compared
+# them.
 MODS = [
     "d64r-lostsoul-rt.pk3", "d64r-rt-flashlight.pk3",
-    "d64r-3dfloor-rtfix.wad", "d64r-seqlight-fix.wad",
+    "d64r-seqlight-fix.wad",
     "d64r-bulb-textures.wad", "d64r-sflatas-broken.wad", "d64r-ctel-fix.wad",
-    "d64r-rt-sky.pk3", "d64r-lava-fx.pk3", "d64r-blood-persist.pk3",
+    "d64r-liquid-art.wad",
+    "d64r-smonf-blink.wad", "d64r-smonf-lights.wad",
+    "d64r-rt-sky.pk3", "d64r-lava-fx.pk3", "d64r-poison-fx.pk3",
+    "d64r-blood-persist.pk3",
     "d64r-widescreen-gfx.pk3", "d64r-mugshot.pk3", "d64r-rt-titlelogo.pk3",
 ]
 
 DOCS = ["README.md", "CREDITS.md", "AI-DECLARATION.md", "DEVELOPERS.md"]
+
+
+def check_mods_match_launcher() -> None:
+    """MODS must be exactly what launch-doom64-rt.cmd passes to -file.
+
+    A file that is packaged but never loaded is dead weight; a file the
+    launcher names but nobody packages is a missing feature that looks like a
+    bug in the feature itself. The second is what happened to the liquid art:
+    the release shipped its material overlays AND its textures.json tags, so
+    everything looked wired, and only the wad carrying the art was absent.
+    """
+    text = (PROJ_ROOT / "launch-doom64-rt.cmd").read_text(
+        encoding="utf-8", errors="ignore")
+    marker = "%MODS%" + chr(92)
+    named = set()
+    for piece in text.split(marker)[1:]:
+        name = piece.split('"')[0].strip()
+        if name.lower().endswith((".wad", ".pk3")):
+            named.add(name)
+
+    listed = set(MODS)
+    missing = sorted(named - listed)
+    extra = sorted(listed - named)
+    if missing or extra:
+        lines = ["MODS and launch-doom64-rt.cmd disagree:"]
+        lines += ["  launcher loads it, MODS does not copy it: " + m for m in missing]
+        lines += ["  MODS copies it, launcher never loads it: " + e for e in extra]
+        lines.append("Fix both lists, then run again.")
+        raise SystemExit(chr(10).join(lines))
+
+
+# The liquid families whose look IS an authored relief map. Blood and sludge get
+# their still, ridged surface only because rt_blood_relief / rt_sludge_relief mix
+# the global animated water wave out in favour of the _n -- and that mix has
+# nothing to give back if the maps did not ship. 64 frames each, both halves of
+# each ANIMDEFS sequence.
+RELIEF_FAMILIES = ["D64B1_", "D64B2_", "D64S1_", "D64S2_"]
+RELIEF_FRAMES = 64
+RELIEF_SUFFIXES = ["_n", "_h", "_orm"]
+
+# The cvar families that carry the liquid look. Pinned as a restatement of their
+# compiled defaults, so any difference is drift, not an override.
+LIQUID_PIN_PREFIXES = ["rt_water", "rt_blood", "rt_sludge", "rt_nukage", "rt_liquid"]
+
+
+def check_liquid_relief(build: Path) -> None:
+    """The blood and sludge relief maps must be in the tree we are about to ship.
+
+    They reach a release through exactly ONE path -- rt/mat_dev, because the
+    packager drops rt/mat and RTGL1.json ships developerMode: true -- so this is
+    the single place the art can vanish without a word.
+
+    It matters more than a missing texture usually would. The animated water wave
+    is GLOBAL: getNormal() applies it to every water-flagged primitive, and the
+    per-liquid relief mix is the only thing that takes it off a blood or sludge
+    bed. Ship the pins without the maps and the relief has nothing to mix in --
+    the surface is wrong, nothing errors, and the report comes back as "the water
+    wave is on the blood", pointing at the renderer rather than the package.
+    """
+    mat = build / "rt" / "mat_dev"
+    if not mat.exists():
+        sys.exit("no rt/mat_dev in %s - nothing to check, and nothing to ship" % build)
+
+    bad = []
+    for fam in RELIEF_FAMILIES:
+        for suf in RELIEF_SUFFIXES:
+            n = len(list(mat.glob(fam + "*" + suf + ".png")))
+            if n != RELIEF_FRAMES:
+                bad.append("  %s*%s.png : %d, expected %d" % (fam, suf, n, RELIEF_FRAMES))
+    if bad:
+        lines = ["rt/mat_dev is missing liquid relief maps:"]
+        lines += bad
+        lines.append("Regenerate with tools/gen_liquid_art.py and rebuild, or the")
+        lines.append("release ships blood and sludge wearing the animated water wave.")
+        raise SystemExit(chr(10).join(lines))
+
+
+def check_pins_lockstep() -> None:
+    """The liquid pins must agree with the compiled defaults, and must exist.
+
+    Two failures this catches, both silent in play:
+
+      DRIFT   -- a pin and its RT_CVAR default disagree. The game uses the pin,
+                 the source says otherwise, and the next session re-derives the
+                 whole thing. That is the rocket-smoke episode check_pins.py was
+                 written for; the liquid family is now maintained the same way.
+
+      ORPHAN  -- a pin naming a cvar the shipped engine does not have, which is
+                 what a release built from a stale exe produces. GZDoom prints
+                 one "Unknown command" into hundreds of boot lines, the pin does
+                 nothing, and the uniform keeps whatever RTGL1 left in it.
+    """
+    sys.path.insert(0, str(PROJ_ROOT / "tools"))
+    try:
+        import check_pins
+    finally:
+        sys.path.pop(0)
+
+    defaults, pins = check_pins.parse_defaults(), check_pins.parse_pins()
+    drift, orphan = [], []
+    seen = 0
+    for name, pinned in sorted(pins.items()):
+        if not any(name.startswith(p) for p in LIQUID_PIN_PREFIXES):
+            continue
+        seen += 1
+        if name not in defaults:
+            orphan.append(name)
+            continue
+        value, _kind = defaults[name]
+        if not check_pins.same(value, pinned):
+            drift.append("  %-28s default=%-10s pinned=%s" % (name, value, pinned))
+
+    if not seen:
+        raise SystemExit(
+            "d64rt-pins.cfg has no liquid pins at all - the shipped look would be "
+            "whatever the player's gzdoom-rt2.ini happens to say")
+
+    if drift or orphan:
+        lines = ["the liquid pins disagree with the engine:"]
+        lines += drift
+        lines += ["  %-28s PINNED BUT NO SUCH CVAR (silently does nothing)" % n
+                  for n in orphan]
+        lines.append("Fix rt_cvars.inc and tools/d64rt-pins.cfg together, then rebuild.")
+        raise SystemExit(chr(10).join(lines))
+
+
+def check_engine_fresh(build: Path) -> None:
+    """Refuse to package a binary older than the source it is built from.
+
+    A stale exe is the quietest way to ship a broken feature: every pin naming a
+    cvar it predates becomes an orphan, the matching uniform reads whatever was
+    left in it, and both the pins file and the source read correctly the whole
+    time. Costs one rebuild to fix and a bug report to find.
+
+    Each binary is checked against ITS OWN source tree. Comparing both against
+    both flags RTGL1.dll every time an engine .cpp is touched, and a check that
+    cries wolf is a check nobody runs.
+    """
+    pairs = [
+        ("gzdoom.exe",
+         PROJ_ROOT / "sourcecode" / "gzdoom-rt" / "src" / "common" / "rendering" / "rt",
+         "tools/build-gzdoom-rt.cmd"),
+        ("rt/bin/RTGL1.dll",
+         PROJ_ROOT / "deps" / "RTGL" / "Source",
+         "tools/build-rtgl.cmd"),
+    ]
+    exts = (".cpp", ".h", ".inc", ".inl", ".hpp")
+
+    stale = []
+    for rel, src, how in pairs:
+        binary = build / rel
+        # deps/ is gitignored, so a docs-only checkout has no RTGL source to
+        # compare against. Nothing to say in that case.
+        if not binary.exists() or not src.exists():
+            continue
+        newest, newest_file = 0.0, None
+        for root, dirs, files in os.walk(src):
+            # Source/Generated/*.h are build OUTPUTS -- the header generator
+            # runs after the link, so they are always newer than the DLL and
+            # comparing against them fails every single time.
+            dirs[:] = [d for d in dirs if d != "Generated"]
+            for f in files:
+                if f.lower().endswith(exts):
+                    t = os.path.getmtime(os.path.join(root, f))
+                    if t > newest:
+                        newest, newest_file = t, os.path.join(root, f)
+        if newest_file and os.path.getmtime(binary) < newest:
+            stale.append("  %s is older than %s%s     rebuild with %s"
+                         % (rel, newest_file, chr(10), how))
+    if stale:
+        lines = ["the build tree is older than the source it came from:"]
+        lines += stale
+        lines.append("A stale engine turns new pins into orphans -- the pin is "
+                     "read, the cvar does not exist, and nothing says so.")
+        raise SystemExit(chr(10).join(lines))
 
 
 def copy_tree(src: Path, dst: Path, skip=None):
@@ -93,6 +279,13 @@ def main():
     ap.add_argument("--zip", action="store_true", help="also write a .zip")
     ap.add_argument("--name", default="Doom64-RT", help="package folder name")
     args = ap.parse_args()
+
+    # Before anything is copied: a mismatch here is a silently incomplete
+    # release, and the whole point is to find it now rather than in play.
+    check_mods_match_launcher()
+    check_pins_lockstep()
+    check_engine_fresh(Path(args.build))
+    check_liquid_relief(Path(args.build))
 
     build = Path(args.build)
     if not (build / "gzdoom.exe").exists():

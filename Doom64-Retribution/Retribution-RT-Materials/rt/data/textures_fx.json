@@ -148,6 +148,30 @@
       "noShadow": true
     },
     {
+      "textureName": "ARM1A0",
+      "emissiveMult": 0.6,
+      "lightIntensity": 160,
+      "lightColorHEX": "44ff88"
+    },
+    {
+      "textureName": "ARM1B0",
+      "emissiveMult": 0.6,
+      "lightIntensity": 70,
+      "lightColorHEX": "44ff88"
+    },
+    {
+      "textureName": "ARM2A0",
+      "emissiveMult": 0.6,
+      "lightIntensity": 200,
+      "lightColorHEX": "4488ff"
+    },
+    {
+      "textureName": "ARM2B0",
+      "emissiveMult": 0.6,
+      "lightIntensity": 94,
+      "lightColorHEX": "4488ff"
+    },
+    {
       "textureName": "ART1A0",
       "emissiveMult": 0.6,
       "lightColorHEX": "66ffaa",

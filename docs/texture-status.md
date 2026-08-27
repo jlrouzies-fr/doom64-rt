@@ -38,6 +38,13 @@ python tools\build_texture_gallery.py
 
 ## Tracker
 
+Animated textures are listed by their **first frame only** -- the tracker is
+generated, and a map's sidedef names frame 1. Sibling ANIMDEFS frames inherit
+frame 1's `_h`/`_n`/`_orm` via `tools/sync_anim_relief_maps.py`, or carry their
+own where the frames genuinely differ, and are not tracked as separate rows.
+Sweep coverage with `sync_anim_relief_maps.py --report`, not by reading this
+table.
+
 | texture | category | status | notes | uses | maps |
 |---|---|---|---|---|---|
 | `SPACEBE` | metal | done | gallery bulk (metal); ok mean=57.4 var=1925 | 12556 | MAP01,MAP02,MAP03,MAP04,MAP05,MAP06… |

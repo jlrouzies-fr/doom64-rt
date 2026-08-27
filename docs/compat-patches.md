@@ -271,15 +271,34 @@ Not ACS (script 12 terminate still froze). Real MAP01 `TEXTMAP` without `BEHAVIO
 | Disable only `Sector_Set3dFloor` (special 160) | OK |
 | Keep 3D floor, replace control sector 18 `F_SKY1` → `FLAT1` | Still freezes |
 
-**Fix pack:** `d64r-3dfloor-rtfix.wad` — every Retribution map that had `Sector_Set3dFloor` (special 160) stripped (**44 maps / 209 linedefs**, 2026-08-13; was 28/161 while the scan was `MAP\d\d`-only). Keeps `BEHAVIOR`/`ZNODES`. Loaded via `tools/launch-retribution-rt.cmd`. Regen: `python tools/make_map_3dfloor_rtfix.py`. Side effect: 3D-floor visuals won’t appear until an engine-side RT 3D-floor fix exists. Per-map copies `d64r-<mapname>-rtfix.wad` also written for debugging.
+**Fix pack (2026-08-02 → 2026-08-23, withdrawn):** `d64r-3dfloor-rtfix.wad` — every Retribution map that had `Sector_Set3dFloor` (special 160) stripped (**44 maps / 209 linedefs**, 2026-08-13; was 28/161 while the scan was `MAP\d\d`-only). Keeps `BEHAVIOR`/`ZNODES`. This was a bisect result, not a diagnosis, and it cost more than it saved — see the real root cause below.
+
+### Real root cause — ENGINE FIX 2026-08-23 (needs play confirm)
+
+The bisect blamed the map data; the map data was never at fault. **166 of the 209
+stripped floors are the bridges, catwalks and stair treads Nevander built the levels
+around** (MAP34 has a four-tread 3D-floor staircase, MAP31 has 24 slabs, MAP28 13), and
+stripping special 160 removes *collision*, not just visuals. Player report (Immorpher,
+2026-08-23): some levels could no longer be completed. The RT renderer was also never the
+problem — `common/rendering/rt/` contains no 3D-floor code at all.
+
+| | |
+|---|---|
+| **Where** | `sourcecode/gzdoom-rt/src/playsim/p_3dfloors.cpp`. The fork ends `P_Recalculate3DFloors` with `#if HAVE_RT lightlist.Clear()` ("force no light splitting"). Stock guarantees a sector with 3D floors has ≥1 lightlist entry; `P_GetPlaneLight` relies on it and returns `&lightlist[Size()-1]` — with an empty list that is `&Array[0xFFFFFFFF]`, dereferenced at once by `hw_flats.cpp` (`SetFrom3DFloor`, and the sector's *own* floor/ceiling whenever `ffloors.Size()`), `hw_walls.cpp`, `am_map.cpp`. |
+| **Why a hang, not a crash** | `HWFlat::ProcessSector` runs as a `FlatJob` on the render worker thread (`gl_multithread`, default on). `i_main.cpp` `CatchAllExceptions` parks a faulting secondary thread in `SleepForever` and queues an APC on the main thread — which was inside a non-alertable `future.wait()` in `hw_bsp.cpp`. The APC never ran, `TerminateJob` was never consumed, the window stopped pumping, the audio thread kept playing, nothing was logged. |
+| **Why it looked data-dependent** | It isn't. MAP01/MAP02/ABS01 (froze) and RDM01 ("worked") have byte-identical 3D floors (solid, alpha 255, `dontdraw`, one target sector with an `F_SKY1` ceiling). The fault fires when the sector enters the render set — at spawn on MAP01, "at the red-key approach" on MAP02. The `F_SKY1`→`FLAT1` arm above could never have helped; no Retribution control sector uses `F_SKY1` at all (the sky is on the *target* sectors). |
+| **Fix** | `P_GetPlaneLight`: under `HAVE_RT`, an empty list returns a `thread_local` entry equal to stock's element 0 (the sector's own light). Plus hardening: the worker wait now polls `wait_for` + `SleepEx(0, TRUE)` so a future worker fault becomes the crash dialog; `RT_Print` logs RTGL1 errors with `Printf` (was `DPrintf`, invisible at `developer 0`) and owns its MessageBox; `DrawIndexed` rejects negative indices and the vertex formatter clamps to the buffer (an `F3DFloor` is born with `vindex = -1`); the rover loop in `hw_flats.cpp` skips `skyflatnum` like the sector planes do. |
+| **Data** | `make_map_3dfloor_rtfix.py` now has `MODE3D = "keep"` (default) and `--mode strip` as an emergency arm; `make_seqlight_fix.py` and `add_smonf_lights.py` apply the same `rewrite_3dfloor` so no overlay can disagree. `d64r-3dfloor-rtfix.wad` is gone from every launcher, `package_release.py` and the tree. Note `add_smonf_lights.py` had been shipping ABS02/ABS03/OUT04 **with** their 3D floors (8 linedefs) since it was written — a latent freeze in every build until now, and a ready repro: `+map ABS02`. |
+| **Confirm** | `launch-retribution-rt.cmd 1`, `2` (walk to the red-key approach), `34` (climb the 3D-floor stairs), `31`, and New Game → the bonus campaigns: responsive, bridges present and walkable. `+gl_multithread 0` on an unfixed build turns the hang into a crash dialog naming `P_GetPlaneLight` — the proof the diagnosis is right. Known follow-up: particles/impacts fall through 3D floors (`docs/rt-impact-fx.md`), and a *moving* 3D floor would not update under RT (`rt_buffers.h` `Upload()` is a no-op) — Retribution's are all static. |
 
 **The extra campaigns were never covered (2026-08-13).** `list_map_names()` matched
 `MAP\d{2}`, so the five bonus episodes — whose lumps are `FUN00`, `ABS01`–`ABS06`,
-`OUT01`–`OUT10`, `RDM01`–`RDM08`, `REC01`–`REC09`, `RTR01`–`RTR10` — kept their 3D
-floors and froze on New Game exactly like MAP01 used to: black screen, "Not
-Responding", process alive. Reported as **Bonus Fun Maps and Absolution Levels crash
-while Outcast and Redemption work**; that split is content, not category — a map only
-freezes if its 3D floor is heavy enough, so OUT01/RDM01 have 160s and survive.
+`OUT01`–`OUT10`, `RDM01`–`RDM08` (there are no `REC*`/`RTR*` maps in v15, whatever an
+earlier revision of this note said) — kept their 3D floors and froze on New Game exactly
+like MAP01 used to: black screen, "Not Responding", process alive. Reported as **Bonus
+Fun Maps and Absolution Levels crash while Outcast and Redemption work**. The "heavy
+enough" explanation given at the time was wrong: OUT01/RDM01 simply were not played
+into the sector that carries the floor (see the root cause above).
 Map markers are now detected structurally (a zero-length lump followed by
 `TEXTMAP`/`THINGS`), which also picks up any future map whatever its name.
 
@@ -2215,3 +2234,371 @@ cast light was already exposed. Now divides by the 1x1 RrExposure, which became
 an EMA (0.08/frame; also NVIDIA's recommendation for the DLSS exposure
 texture): steady-state exact at the old calibration everywhere, input still
 pulse-free through adaptation. rt_rr_glowscale = plain multiplier, default 1.
+
+### GI bounce depth: the second bounce was unlit and ~2π too bright (2026-08-24)
+
+Report: "the game lights don't seem to bounce". RTGL1's indirect path was **two
+bounces, hardcoded and unrolled** in `RtRaygenIndirect.inl`, with the API flag
+meant to gate the second (`enableSecondBounceForIndirect`) behind a commented-out
+`if` — uploaded, read by nothing. Two separate defects on top of that:
+
+- **`rt_shadowrays` gates which bounce vertices may sample analytic lights**
+  (`isDirectIlluminationValid`). The live ini held 2, so vertex 2 returned
+  emissives and sky only. Only indices 0/1/2 existed, so 4 and 8 were identical
+  to 3.
+- **Bounce 2 multiplied by `1/pdf` alone** (`π/z`), with no BRDF and no cosine.
+  For a cosine-sampled Lambertian the throughput is exactly 1; the stock term was
+  `E[π/z] = 2π` too large with a `1/z` tail — bright, saturated ("diffuse very
+  red"), firefly-prone, and because the RIS target pdf is luminance, those
+  samples won and held the reservoir.
+
+**RTGL1:** `processIndirect` now loops `b = 2..indirectBounces` (uniform recycled
+from the dead `indirSecondBounce` slot; `indirectLegacyWeight` from `_padf2`,
+float→uint, zero std140 delta), folding deeper vertices into vertex 1's radiance
+— the stored `SampleIndirect` stays the first hit, so the spatial-reuse Jacobian
+and `shade()` are untouched. `bounceSeed()` keeps the stock seed for `b ≤ 2`
+(depth 2 bit-identical by construction) and derives a virtual-frame seed deeper,
+since `RANDOM_SALT_DIFF_BOUNCE` has one free index and light selection reused
+the same salts at every vertex. Clamp [1,4]. `debugRestirM` is a uint: `2` paints
+the **indirect** reservoir's M (stock `1` only ever showed the direct one). Dev
+slider "Shadow rays max depth" 0..8; "Indirect bounces" + legacy checkbox added.
+API: `enableSecondBounceForIndirect` → `indirectBounces` + `indirectLegacyBounceWeight`.
+
+**gzdoom-rt:** `rt_gi_bounces` (2) and `rt_gi_bounce_legacy` (1), archived and
+in Options → Quality ("Bounces per path", "Bounce energy", both menus);
+`rt_gi_bounce_shadows` (1), `RT_CVAR_NOARCH`. Not in the preset table yet — see
+the doc. When depth > 2 and the last is
+on, the **param** `maxBounceShadows` is floored to depth+1 for the frame —
+`rt_shadowrays` itself is never written (archived, unpinned on purpose). No-op at
+depth 2. `rt_debug_restir_m` is an int (0/1/2).
+
+**Shipped image unchanged** — depth 2, legacy weight on. Ladder and gates in
+`docs/rt-gi-bounces.md`; arms `tools/arms/gi-*.cfg`. Stage 4 (flip the legacy
+default) and Stage 5 (promote to archived + Quality menu + preset table) wait on
+the A/B. The A035/A036 poles that prompted this are lit fine — GLDEFS dynlight
+plus a 300-intensity analytic sphere from `RT_UploadHangingTechLamps`.
+
+
+---
+
+## Shooting a monster showed the PUFF sprite (2026-08-25) -- REMOVED `+PUFFONACTORS`
+
+Reported from play: a hitscan into an **enemy** drew the vanilla `PUFF` bullet-puff
+sprite, the thing that should only appear on a wall or a floor. Blood spawned too; the
+puff was drawn on top of it.
+
+**The cause was one flag in the fork's own ZScript, not the mod and not the materials.**
+`wadsrc/static/zscript/actors/doom/doommisc.zs` carried, since the vendor drop
+(`30b3ae133` "Init from local"):
+
+```zscript
+// HAVE_RT begin: add light when bullet hits an actor
+        +PUFFONACTORS
+// HAVE_RT end
+```
+
+`MF3_PUFFONACTORS` is the **first term** of the stock puff/blood decision in
+`p_map.cpp:4952`, and that branch is otherwise pure upstream (blame carries no local
+hash):
+
+```cpp
+if (nointeract || (puffDefaults && puffDefaults->flags3 & MF3_PUFFONACTORS) ||
+    (trace.Actor->flags & MF_NOBLOOD) ||
+    (trace.Actor->flags2 & (MF2_INVULNERABLE | MF2_DORMANT)))
+```
+
+Blood runs unconditionally *below* it (`p_map.cpp:5009`, the `SpawnLineAttackBlood`
+virtual), so the flag does not replace blood -- it **adds** a puff to it.
+
+**The flag reaches the game through the mod's subclass, which is why it does not look
+like an engine setting.** `puffDefaults` is resolved through the replacement
+(`p_map.cpp:4646`, `pufftype->GetReplacement(...)`), so the class actually tested is
+Retribution's `ACTOR 64BulletPuff : BulletPuff REPLACES BulletPuff` -- which inherits
+`+PUFFONACTORS`, sets `RenderStyle Normal` (discarding the parent's `Alpha 0.5`) and draws
+`PUFF A/B` **BRIGHT**.
+
+**Why it read as loud rather than subtle.** `gen_fx_emissives.py:254` gives `PUFF` a real
+light -- `("PUFF", 0.6, 250, "ffd0a0")` -- plus `noShadow: true`. That is the generator's
+own pitfall 4 for the third time (`lightIntensity` + `noShadow` on one sprite): a
+250-intensity light at ~zero distance from the surface it lights. Every bullet into a
+monster fired one.
+
+**Fix: the three local lines are gone**, with a `HAVE_RT` marker left in their place so a
+future merge from Doom II RT does not silently restore them. Flesh hits are blood only;
+wall, floor and ceiling hits are unchanged.
+
+**Not chosen, and recorded so it is not re-litigated:** keeping the flag and hiding the
+sprite with an `XDeath: TNT1` state -- the idiom the fork's own `GibBulletPuff`
+(`doommisc.zs:88`) uses. It would also lose the light, because the light *rides the PUFF
+sprite's material* and TNT1 draws no material, so it buys nothing over removing the flag.
+
+`GibBulletPuff` re-declares the flag explicitly and was left alone: it is invisible on
+bleeding actors and Retribution's weapons never name it (every `A_FireBullets` in the WAD
+passes `"BulletPuff"`). The Heretic/Hexen puffs that carry `+PUFFONACTORS` are stock.
+
+**Ruled out by measurement, not by argument:** the enemy-sprite PBR labelling. Monster
+sprites did get `_orm`/`_e` companions, but **0 of 757** monster entries carry
+`metallicDefault`/`roughnessDefault` in either `textures.json` tree, `spark_surfaces.txt`
+holds no sprite prefixes, and the RT impact-spark hook (`p_map.cpp:4900`) sits inside the
+non-actor branch and never ran on an enemy.
+
+**Verify it is live before judging the screen** -- `doommisc.zs` is packed into
+`gzdoom.pk3` at build time, so a stale pk3 keeps the old flag with nothing to warn you:
+
+    python -c "import zipfile,re;print(len(re.findall(r'^\s*\+PUFFONACTORS', zipfile.ZipFile(r'sourcecode/gzdoom-rt/build/RelWithDebInfo/gzdoom.pk3').read('zscript/actors/doom/doommisc.zs').decode(), re.M)))"
+
+Expect **1** (`GibBulletPuff`), not 2. Then: a zombie bleeds with no puff and no flash; a
+wall still puffs (the control); a **Lost Soul** still puffs, since `+NOBLOOD` is the next
+term in the same condition and Retribution's only `+NOBLOOD` actor -- that is what
+separates "the flag is gone" from "the puff path is broken".
+
+---
+
+## The water wave on blood / poison / sludge in a release (2026-08-25) -- the liquid look is now NOARCH
+
+Reported from a released build: the animated **water wave** on the blood, poison and
+sludge flats, on a machine where it is off here and kept for real water only.
+
+**The wave is GLOBAL and the relief is the only thing that removes it.** `getNormal()`
+(`RaygenPrimary.inl:576`) substitutes `getWaterNormal()` for *any* water-flagged
+primitive -- at the primary hit `hasNormalMap` is hardcoded false, so an `_n` on a liquid
+is sampled, written to the G-buffer and thrown away. What takes the wave back off is the
+per-liquid mix at `RaygenPrimary.inl:1045`, fed by `rt_main.cpp`:
+
+    .stylizedLiquidRelief = { 0.f, 0.f, cvar::rt_sludge_relief, cvar::rt_blood_relief };
+    //                        water  nukage  sludge              blood
+
+So `rt_blood_relief` / `rt_sludge_relief` are not one look knob among many: they are the
+whole difference between a coagulated pool and water with red paint on it. Both were
+`RT_CVAR` -- `CVAR_GLOBALCONFIG | CVAR_ARCHIVE` -- and the shipped value was held up by
+exactly one thing, `+exec d64rt-pins.cfg` on the launcher line.
+
+**Three ways that came off, none of which say anything:**
+
+- a `0` archived in the player's `gzdoom-rt2.ini` from any earlier build or session;
+- launching `gzdoom.exe` without the launcher, so no pins run at all;
+- a release built from a **stale exe**, where the pin names a cvar the binary predates.
+  GZDoom prints one `"Unknown command"` into hundreds of boot lines and the uniform keeps
+  whatever RTGL1 left in it -- the same class as `generated-header-leaves-stale-objects`.
+
+### What changed
+
+**`gameconfigfile.cpp`: a cvar that is not archived is no longer restored from the
+archive.** This is the load-bearing half and it is an engine patch.
+`FGameConfigFile::ReadCVars` walks every key in the section and applies it by name
+-- it never looks at `CVAR_ARCHIVE`. So taking a cvar off the ini stops it being
+WRITTEN but not being READ, and because nothing rewrites that key any more, a line
+left by an older build survives every clean exit that would have refreshed it.
+Without this, the NOARCH conversion below would have protected only fresh installs.
+
+Not hypothetical: `rt_clouds_volumetric` has been `RT_CVAR_NOARCH` for some time and
+a stale archived line for it was **still in this machine's config and still being
+applied**. It came out with the liquid keys and nobody had ever noticed.
+
+Safe by construction -- a key can only be in the config because some build archived
+it; auto-created cvars take the `cvar == NULL` branch above and are given
+`CVAR_ARCHIVE`. And self-cleaning: `ClearCurrentSection()` + `C_ArchiveCVars()`
+drop the orphaned line on the next clean exit, so it is a migration, not a
+permanent filter.
+
+**57 liquid cvars `RT_CVAR` -> `RT_CVAR_NOARCH`** in `rt_cvars.inc` -- the relief, flow,
+reflection, roughness, caustics, tint/crest, wave and split families for all four liquids.
+Every default is byte-identical; only the archive flag moved, so there is **no look
+change**. Verified by diffing name+value pairs across the whole file before and after.
+
+Safe because nothing in `rt_quality.cpp`'s `g_quality[]` and nothing in `menudef.txt`
+names any of them, so no persisted player choice is lost. `rt_liquid_checkerboard` is
+console-only by design and says so at `menudef.txt:516`.
+
+`rt_lava_*` was deliberately **not** converted: lava is tagged `RG_MESH_PRIMITIVE_LAVA`,
+never `RG_MESH_PRIMITIVE_WATER` (`RT_IsLavaFlat`, `rt_internal.h:133`), so it never
+receives the wave normal and is not this bug.
+
+**Four archived-and-unpinned liquid cvars closed** in `tools/d64rt-pins.cfg`:
+`rt_liquid_checkerboard`, `rt_water_r/_g/_b`. The pins are now a *restatement* of the
+compiled defaults rather than an override -- `check_pins.py` blesses a NOARCH pinned to
+its own default and errors on one pinned to anything else, which turns the pins file into
+a guard instead of a second source of truth. `check_pins.py rt_water|rt_blood|rt_sludge|
+rt_nukage|rt_liquid` all report OK.
+
+**Three preflight checks in `tools/package_release.py`**, run before anything is copied,
+next to the existing `check_mods_match_launcher()`:
+
+| check | what it refuses |
+|---|---|
+| `check_liquid_relief()` | an `rt/mat_dev` without 64 `_n`/`_h`/`_orm` per liquid family. That directory is the ONE path the relief art reaches a release by (the packager drops `rt/mat`, and `RTGL1.json` ships `developerMode: true`) |
+| `check_pins_lockstep()` | a liquid pin that drifted from its compiled default, or an orphan pin naming a cvar the engine does not have |
+| `check_engine_fresh()` | a binary older than its own source tree. Each binary is compared to ITS OWN tree, and `Source/Generated/` is excluded -- the header generator runs after the link, so those files are always newer than the DLL |
+
+Confirmed against the stale `dist/Doom64-RT` tree in the repo, which fails
+`check_liquid_relief()` on all twelve counts (0 of 64, every family) and
+`check_engine_fresh()` on both binaries.
+
+**One line per level load in every player's log.** `RT_ReportLiquidConfig()`
+(`rt_main.cpp`, declared in `rt_internal.h`, called beside `RT_ReportPrecache()`) prints
+at `RT_DiagPrintLevel()`, so it lands in the console buffer and `rt-console.log` -- which
+the release launcher already writes with `+logfile` -- without painting over the game at
+the release default `rt_verbose 0`:
+
+    RT liquid: style=1 liquids=1 split=1 wave=0.40@0.20 | relief w/n/s/b 0.00/0.00/1.00/1.00  refl 1.00/1.00/0.00/1.00  flow(blood) 1.00
+
+It reads the same cvars `RT_DrawFrame` uploads, so it cannot drift from them. Keyed on
+`RT_GetMapName()`, so it is once per level rather than once per frame.
+
+### Poison keeps the wave, and that is the shipped behaviour
+
+`stylizedLiquidRelief[1]` is a hardcoded `0.f`, there is no `rt_nukage_relief`, and
+`rt/mat` holds **0** `_n` for `D64N*` against 64 each for `D64B1/B2/S1/S2`. A report of
+the wave on POISON is correct behaviour; the same report about BLOOD or SLUDGE is a bug.
+Closing it needs 128 authored relief maps from `gen_liquid_art.py`, a wired index 1, a
+pin, and `D64N1_`/`D64N2_` in `set_water_meta.py`'s `_RELIEF_FAMILIES`.
+
+### Measured, not argued
+
+The claim is "a stale `gzdoom-rt2.ini` cannot bring the wave back", so it was
+tested as one. The config at
+`Documents/My Games/GZDoom/gzdoom-rt2.ini` was poisoned by hand with
+`rt_blood_relief=0`, `rt_sludge_relief=0`, `rt_water_wavestren=3`, and gzdoom was
+launched **directly, with no `+exec` of the pins at all** -- the one case pins can
+never cover. The log line:
+
+    RT liquid: style=1 liquids=1 split=1 wave=0.40@0.20 | relief w/n/s/b 0.00/0.00/1.00/1.00  refl 1.00/1.00/0.00/1.00  flow(blood) 1.00
+
+Shipped values, poisoned ini ignored. One clean exit then removed **58** stale
+keys from the config -- the 57 liquid ones plus `rt_clouds_volumetric` -- and
+nothing else was touched.
+
+### Fixed on the way
+
+`rt_vclouds.cpp:393` and the new `rt_main.cpp` Printf both had a **literal newline inside
+a format string** where `
+` was meant -- `error C2001: newline in constant`. The
+`rt_vclouds.cpp` one was pre-existing uncommitted work and was breaking the build before
+this change started.
+
+Stale statements corrected: `RaygenPrimary.inl:1041` said relief 0 "is what water, nukage
+and sludge use" (sludge has shipped at 1 since 72ac4c9); `docs/rt-blood-pools.md` said
+poison and sludge "keep the stylized wave shimmer" and documented `rt_sludge_rough` as
+`0.85` against an actual `0.8`.
+
+
+---
+
+## A hitscan into a liquid: no puff, a coloured splash (2026-08-25)
+
+Reported together: the vanilla `PUFF` sprite shows on water / poison / sludge / blood, and
+the `fluid` splash `docs/rt-impact-fx.md` describes is nowhere in game.
+
+**The splash was never reached.** `P_LineAttack`'s impact hook refused any surface the
+TERRAIN lump calls liquid:
+
+```cpp
+if (Terrains[trace.Sector->GetTerrain(plane)].IsLiquid) { sparkOK = false; }
+```
+
+`D64RTR_v15.WAD` ships a `TERRAIN` lump marking every liquid flat `liquid`, so
+`RT_SpawnImpactSparks` was never called on a pool -- **not even the surface probe**, which
+lives inside the spawn function. So `rt_spark_surface_debug` printed nothing on water
+either, and the feature was indistinguishable from a broken one in every diagnostic. The
+gate also short-circuits on `TRACE_HitWall`, which is why the three FALL sheets were the
+only place the `fluid` class had ever run.
+
+**The gate was NARROWED, not deleted.** The four liquids go through, classified by texture
+NAME; everything else that lump calls liquid still does not -- lava, and `F_SKY1`, which it
+also marks `liquid`. Only a name can tell water from lava, which is why the terrain flag
+alone could never have been the answer.
+
+**Why the TERRAIN route was not taken.** It looks like the cheap fix and is not: every
+`splash "..."` line in that lump is **commented out**, so `Terrains[n].Splash == -1` and
+`P_HitWater` bails at `p_mobj.cpp:6452` having spawned nothing -- and Retribution defines
+none of the actors those lines name (`WaterSplash`, `BloodSplash`, `SlimeChunk`,
+`SludgeChunk`). That route needs new actors AND new sprite art. The impact-debris path
+needs neither: the `fluid` profile was already written, tuned and unused.
+
+**Also ruled out: the RTGL1 fluid sim.** `RT_SpawnFluid` takes no colour -- it is
+frame-global (`RgStartFrameFluidParams::color`) -- and `rt_fluid` is pinned false.
+`blood-persist.md` already says do not re-investigate.
+
+### The changes
+
+| file | what |
+|---|---|
+| `rt_internal.h` | `RT_LiquidIdOfName` / `RT_LiquidFallIdOfName` -- the name->family table, lifted out of a static local inside `l_waterflag` |
+| `rt_draw.cpp` | `l_waterflag` calls the lifted lookup. Its own gates and its fall exclusion stay |
+| `rt_spark_surfaces.cpp` | `RT_LiquidSplashId(FTextureID)`, the playsim-facing answer |
+| `p_map.cpp` | `RT_HitTextureOf()` hoisted out of the hook; puff suppressed on liquid; gate narrowed; liquid id passed through |
+| `rt_sparks.cpp` | force `SurfKind::Fluid`; `LiquidCrestRgb()`; fluid tally; probe bug |
+| `rt_spark_draw.cpp` | `litRgb` skips the sat expansion and the luminance pin |
+| `rt_cvars.inc` | `rt_liquid_nopuff`, `rt_spark_fluid`, `rt_spark_fluid_color`, `rt_spark_fluid_albedo` |
+
+**Only the LOOKUP was lifted, not `l_waterflag` itself.** Tagging a fall
+`RG_MESH_PRIMITIVE_WATER` makes the instance refractive and `ASManager` then drops every
+`INSTANCE_MASK_WORLD_*` bit, so the wall stops blocking shadow rays -- that exclusion is
+structural and had to survive the refactor. A splash sets no primitive flag, so the splash
+path uses the falls freely.
+
+**The colour is the CREST cvar, not the flat's average.** The stylized shader repaints the
+surface from `rt_*_tint_*` to `rt_*_crest_*`, so the source art is not what the player sees
+and a droplet sampled from it would not match the pool it came out of. Water 140,204,255;
+nukage 50,150,50; sludge 120,78,38; blood 255,115,102 -- the same values, in the same 0..3
+order, that `rt_main.cpp` packs into `stylizedLiquidCrest`.
+
+**A literal colour has to escape the debris colour path.** `rt_spark_debris_sat` (3.0) and
+the `rt_spark_debris_albedo` luminance pin exist to rescue a whole-texture MEAN; applied to
+an exact colour they push water's pale crest to raw cyan and then drag it to a mid grey-blue.
+`Spark::litRgb` skips both. **It is cleared in `AllocSpark`**, not by each spawn site: a pool
+slot is reused, and a barrel shard or fire-sky ember inheriting a droplet's `true` would
+silently skip both corrections.
+
+**`rt_liquid_nopuff` lives in `rt_cvars.inc`, not in `p_map.cpp`.** It started as a `CVARD`
+beside `rt_blood_repl` and `check_pins.py` immediately reported the pin as
+**"PINNED BUT NO SUCH CVAR (silently does nothing)"** -- that tool reads the X-macro list
+only. It is reached with a local `EXTERN_CVAR` the way `p_mobj.cpp` reaches `rt_fluid`.
+
+**Two diagnostics were lying about fluid**, both fixed here: the probe computed `pDebris` as
+`pSurf == SurfKind::Concrete` while the real decision uses `SurfThrowsDebris()`, so it
+printed "sparks" for every debris class except concrete; and fluid fell into `s_dbgOther`,
+so a splash appeared in no count anywhere.
+
+### Verified live
+
+`.\tools\launch-retribution-rt.cmd 34 -- +rt_water_debug 1 +rt_sludge_autogoto 1`:
+
+    RT water: tagging "D64S2_64" as RG_MESH_PRIMITIVE_WATER, liquid 2 (sludge)
+
+Frame **64**, not `_01` -- which is the proof the prefix match survived the lift. An exact
+table would have missed it, and that is the trap the original comment block was written for.
+
+### Liquid-only shape knobs (same day)
+
+Asked straight after: *"how can I customize the liquid sparks? size, lifetime etc ONLY for
+those liquids?"* -- and the answer was that you could not. Size, life, count, speed, gravity
+and bounce were all `rt_spark_debris_* x the class row`, and both halves are shared: the
+cvar moves every debris class together and the row needs a rebuild.
+
+Seven multipliers added, `rt_spark_fluid_count/size/life/speed/gravity/bounce/spread`, all
+defaulting to **1.0** so the shipped look did not move. Applied through `FluidK()` at each
+point of use rather than by returning a doctored `DebrisProfile`, because gravity and bounce
+are read in the simulation every tic -- a mutable static standing in for the `constexpr`
+table would have left the printed row disagreeing with what the sim used.
+
+`_spread` is the one with no class row behind it: `rt_spark_spread` is read raw and shared
+by sparks and every debris class, so the fluid row's own "thrown wide" comment described
+something nothing implemented.
+
+`spark-fluidfat` was retargeted onto these. It had been fattening `rt_spark_debris_*`, i.e.
+every class at once -- **an arm that fattens the thing you are not looking at cannot isolate
+the thing you are.**
+
+Retuned the same day, from play: **`rt_spark_fluid_size` 1.0 -> 0.5** and
+**`rt_spark_fluid_life` 1.0 -> 0.1**, i.e. 0.0125 m droplets living 0.6 s against 0.025 m and
+6 s. At 1.0 a droplet was chip-sized and lay around for six seconds, which reads as debris
+that happens to be blue rather than as spray. Both halves moved together -- the `RT_CVAR`
+default and the pin -- because a pin overrides the compiled default and the two disagreeing
+is the failure `check_pins.py` exists to catch. The shipping-value arms (`spark-fluid`,
+`spark-fluidtex`, `spark-nofluid`, `spark-puff`) restate the new numbers; `spark-fluidfat`
+keeps its own deliberate overrides.
+
+This is also the first thing the new knobs bought that was not previously possible: the same
+retune through `rt_spark_debris_size` / `_life` would have taken every concrete chip, wood
+splinter and dirt crumb in the game with it.

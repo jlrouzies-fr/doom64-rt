@@ -41,7 +41,21 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-TARGET = ROOT / "sourcecode/gzdoom-rt/build/RelWithDebInfo/rt/data/textures.json"
+# BOTH copies, and the second one is why this used to look like it never worked.
+#
+# The build dir is what RTGL1 reads, so it has to be written. But
+# build-gzdoom-rt.cmd stages `Retribution-RT-Materials\rt` over `build\...\rt`
+# on EVERY build -- so writing only the build copy means the next build silently
+# reverts it. That is how frame 01 of all eight liquid families kept its
+# roughness 0.8 while frames 02..64 sat at 0.1, through repeated --apply runs
+# that each reported success.
+#
+# First entry is the live one and the one `show` reports.
+TARGETS = [
+    ROOT / "sourcecode/gzdoom-rt/build/RelWithDebInfo/rt/data/textures.json",
+    ROOT / "Doom64-Retribution/Retribution-RT-Materials/rt/data/textures.json",
+]
+TARGET = TARGETS[0]
 
 # EVERY frame of both sequences, not just the one the map names.
 #
@@ -101,7 +115,24 @@ META = {
 #
 # Every liquid family has the same frame-01-only overlays, for the same reason:
 # the PBR tooling worked from the names the maps reference.
-FRAME1_ONLY_MATS = tuple(f"{p}01" for p in _SEQ + _FALLS)
+#
+# BLOOD AND SLUDGE ARE EXEMPT, AND MUST STAY EXEMPT. d64r-liquid-art.wad
+# redefines all 128 frames of each as one unshifted image and
+# tools/gen_liquid_art.py writes _n/_h/_orm for EVERY one of them, so those
+# families are materially uniform by construction -- it is the "regenerate for
+# 128 frames" this comment rejected for the others, done properly. Quarantining
+# frame 01 here would take the overlay off exactly one frame in 64 and recreate
+# the defect this list exists to stop. For blood the _h also carries the flow
+# direction in .g/.b, so losing it stills the flow; for sludge the _n IS the
+# effect (rt_sludge_relief), so losing it puts the water ripple back for 2 tics
+# a cycle.
+#
+# Poison is NOT exempt: the same wad replaces its art, but it gets no relief
+# and no flow, so no overlays are written for it and the quarantine stands.
+_RELIEF_FAMILIES = ("D64B1_", "D64B2_", "D64S1_", "D64S2_")
+FRAME1_ONLY_MATS = tuple(
+    f"{p}01" for p in _SEQ + _FALLS if p not in _RELIEF_FAMILIES
+)
 MAT_SUFFIXES = ("_n.png", "_orm.png", "_h.png")
 
 MAT_DIRS = [
@@ -156,18 +187,9 @@ def show(entries) -> None:
               f"   ({len(names) - len(present)} missing entries)")
 
 
-def main() -> int:
-    if not TARGET.exists():
-        print(f"ERROR: {TARGET} not found -- build gzdoom first")
-        return 1
-
-    data, entries = load(TARGET)
-    mode = sys.argv[1] if len(sys.argv) > 1 else ""
-
-    if mode not in ("--apply", "--revert"):
-        show(entries)
-        print("\nPass --apply to tag them as water, --revert to untag.")
-        return 0
+def retag(path: Path, mode: str) -> list[tuple[str, str]]:
+    """Apply (or revert) the water meta in one textures.json. Returns the changes."""
+    data, entries = load(path)
 
     changed = []
     seen = set()
@@ -199,10 +221,30 @@ def main() -> int:
         if e.get("textureName") in fall_names and e.pop("isWater", None) is not None:
             changed.append((e["textureName"], "untagged (wall sheet)"))
 
-    TARGET.write_text(json.dumps(data, indent=2), encoding="utf-8")
-    for name, what in changed:
-        print(f"  {name:10} {what}")
-    print(f"\n{len(changed)} entr(ies) written to {TARGET.name}.")
+    path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    return changed
+
+
+def main() -> int:
+    if not TARGET.exists():
+        print(f"ERROR: {TARGET} not found -- build gzdoom first")
+        return 1
+
+    mode = sys.argv[1] if len(sys.argv) > 1 else ""
+
+    if mode not in ("--apply", "--revert"):
+        show(load(TARGET)[1])
+        print("\nPass --apply to tag them as water, --revert to untag.")
+        return 0
+
+    changed = []
+    for path in TARGETS:
+        if not path.exists():
+            print(f"  skip (missing): {path}")
+            continue
+        c = retag(path, mode)
+        changed += c
+        print(f"  {len(c):4} entr(ies) -> {path}")
 
     n = quarantine_frame1_mats(restore=(mode == "--revert"))
     print(f"{n} frame-01-only material overlay(s) moved.")
