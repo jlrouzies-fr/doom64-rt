@@ -312,6 +312,41 @@ radius for `angle` tics, which at 2 tics is a noise signal — TV static. Two co
 A/B: `.\tools\ab-smon.cmd <static|statichard|staticcalm|staticoff> [map]` — these vary
 only `rt_dynlight_rndflicker_floor`, so every 9802 monitor is identical between them.
 
+**Unseen Evil has none of those things, so it is GIVEN them.** DOOM II's IWAD carries
+**zero** 9800/9801/9802 things in any map, so nothing there can flicker the way this
+section describes, and the engine's `RT_UnseenEvilMonitorHue` substitute (a steady cyan
+wall-strip light) reads as dead beside Retribution's panels. The fix is NOT a second
+blink implementation in the renderer -- it is `d64ue-monitor-lights.pk3`, which waits one
+tic for the Terraformer and spawns Retribution's own 9802 on each `SMOND*` face, exactly
+as `d64ue-keytrim-lights.pk3` does for the key jambs. Reusing the actor inherits
+`rt_dynlight_blink_floor` and the whole SMON tuning for free; a renderer-side copy would
+drift from it the moment either moved.
+
+    python tools\make_unseenevil_monitorlights.py --write   # -> d64ue-monitor-lights.pk3
+    .\tools\launch-unseenevil-rt.cmd 1 -- +d64ue_rt_monitordebug 1
+
+Measured on UE MAP01: `14 SMOND face(s), 14 Retribution-style 9802 light(s)`. The light's
+arguments are COPIED from Retribution MAP29 (`arg1=255 arg2=180`, radii 24/20, angle 90),
+not chosen. Toggle with `d64ue_rt_monitorlights`.
+
+**Judge it in the lab, never in a shipping map.** MAP01's bank is ~1400 units from the
+player start and read as "nothing" while the engine tally said 30 wall-strip lights were
+uploaded -- an upload counter proves submission, not visibility:
+
+    python tools\build_ue_monitor_lab.py     # -> Doom64-UnseenEvil/d64ue-monitor-lab.wad
+    .\tools\ue-monitor-lab.cmd <steady|ref|both|debug>
+
+MAP96 is one `SMONDA` wall in an empty dark room; MAP97 adds a hand-placed 9802 as the
+reference. The lab wall is textured `SPACEW3`, **not** `SMONDA` -- the Terraformer's one
+SMOND mapping -- because a lab authored in target names never runs the pipeline the
+engine path is gated on. Filler textures are checked against that table too:
+`FLAT2`/`TLITE6_5/6` -> `SFLATAS`, `GRNLITE1` -> `SFLATAQ`, `CEIL3_6`/`FLOOR1_7` ->
+`SFLATCH`, `FLAT22` -> `SPORTB` are all lamp families and would silently add a second
+fixture. And **the room cannot be made dark by lowering `lightlevel`**: `terraformer.zsc`
+calls `SetLightLevel(240)` on every sector unconditionally. It is dark because
+`rt_world_white 1` + `rt_sector_emis 0` keep lightlevel out of albedo -- which is also
+why `rt_wall_strip_minlight` never rejects anything under this mod.
+
 ## The moon, and sky light that leaks
 
 **Read `docs/moon-and-sky-leaks.md` before touching `rt_sun_*`, `rt_moon_*` or

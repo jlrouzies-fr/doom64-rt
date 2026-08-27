@@ -123,6 +123,14 @@ if exist "%PROJ%\Doom64-Retribution\Retribution-RT-Materials\rt" (
   echo === Staging authored RT materials ===
   xcopy /E /I /Y /Q "%PROJ%\Doom64-Retribution\Retribution-RT-Materials\rt" "%OUT%\rt" >nul
 )
+rem    Unseen Evil's generated materials (tools\gen_unseenevil_materials.py) live
+rem    in path-shaped subfolders -- rt\mat\textures\pepy\... -- so they cannot
+rem    collide with a Retribution name, and are staged the same way. The dir is
+rem    gitignored like every other UE overlay; the generator is its source.
+if exist "%PROJ%\Doom64-UnseenEvil\UnseenEvil-RT-Materials\rt" (
+  echo === Staging Unseen Evil RT materials ===
+  xcopy /E /I /Y /Q "%PROJ%\Doom64-UnseenEvil\UnseenEvil-RT-Materials\rt" "%OUT%\rt" >nul
+)
 
 rem 3. The menu overlay. rt\wad is appended AFTER every -file PWAD, so without
 rem    this the stock RT menu art wins over Retribution's.

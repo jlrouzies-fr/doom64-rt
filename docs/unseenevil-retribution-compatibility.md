@@ -92,12 +92,15 @@ edit the mod archive or Retribution's authored materials.
 | Overlay | Generator / purpose | Required by launcher |
 | --- | --- | --- |
 | `d64ue-brightmap-tone.pk3` | `tone_unseenevil_brightmaps.py`; lowers 18 fully pinned brightmaps from 255 to 192 without removing their hue | Yes |
-| `d64ue-texfix.pk3` | `make_unseenevil_texfix.py`; applies only the `FLAT2` retarget above | Optional |
+| `d64ue-texfix.pk3` | `make_unseenevil_texfix.py`; the `FLAT2` retarget above, plus (2026-08-27) the LIQUID retargets: `FWATER*`→`D64W1_01`, `NUKAGE*`→`D64N1_01`, `BLOOD*`→`D64B2_01`, `SLIME01-08`→`D64S1_01`, `LAVA*`→`HLAVA1`, so every RT liquid system keys in by name | Yes |
+| `d64ue-retribution-liquids.pk3` | `make_unseenevil_liquids.py`; Retribution's liquid construction verbatim -- the ten warp patches, HLAVA1-5, the 576 `D64[WNBSL]n_nn` TEXTURES composites and their ANIMDEFS. Followed in the launcher by Retribution's own `d64r-liquid-art.wad` (coagulated blood/poison/sludge), `d64r-poison-fx.pk3` and `d64r-lava-fx.pk3`, all self-contained | Yes |
+| `d64ue-monitor-lights.pk3` | `make_unseenevil_monitorlights.py`; spawns Retribution's own 9802 `PointLightFlicker` on every `SMON*` panel (one per 64-unit tile, per-family colours measured over all 34 maps) plus Retribution's SMON art and ANIMDEFS | Yes |
 | `d64ue-sky-rt.pk3` | `make_unseenevil_skies.py`; bakes Unseen Evil shader skies into textures RTGL1 can draw | Optional |
 | `d64ue-liquid-anim.pk3` | declares the mod's shipped water frames as animations | Optional |
-| `d64ue-pickup-lights.pk3` | Unseen Evil pickup-light supplement | Optional |
+| `d64ue-pickup-lights.pk3` | `make_unseenevil_pickup_lights.py`; pickup glows for the armour/health/powerup classes UE leaves unlit, in **Retribution's own GLDEFS colours** at UE's own sizes | Optional |
 | `d64ue-rt-menu.pk3` | adds a **Ray Tracing** item to UE's existing Options menu | Optional |
 | `d64ue-keytrim-lights.pk3` | `make_unseenevil_keylights.py`; adds Retribution-style 9800 PointLight stacks after the Terraformer | Yes |
+| `d64ue-grille-emis.pk3` | `make_unseenevil_grille.py`; a brightmap cut from the mod's own SFLATAP art plus one GLDEFS line, so the grille pane glows under RT at `rt_ue_grille_emis` -- UE only, because the shared materials give that flat no emissive on purpose | Yes |
 | `d64ue-retribution-hud.pk3` | `make_unseenevil_hud.py`; copies Retribution's existing SBARINFO HUD and supplies only its missing WAD dependencies | Yes |
 | `d64ue-retribution-player.pk3` | `make_unseenevil_player.py`; replaces UE's shader-coloured green player masks with Retribution's traced PLAY art | Yes |
 | `d64ue-muzzleflash.pk3` | `make_unseenevil_muzzleflash.py`; retains UE firing/gameplay actions while restoring Retribution's shotgun, SSG, chaingun, plasma, and Unmaker first-person frames/timing plus RT light triggers | Yes |
@@ -653,3 +656,332 @@ intentionally pending the next short-run allowance.
 - `sourcecode/gzdoom-rt/src/common/rendering/rt/rt_main.cpp`
 - `sourcecode/gzdoom-rt/src/common/rendering/rt/rt_cvars.inc`
 - `deps/RTGL/Source/Shaders/RaygenCommon.h`
+
+## Lighting Unseen Evil's own fixture art (2026-08-27)
+
+The launcher's autolights block states the cost plainly: DOOM 1/2 maps carry no
+light things, so under RT they are dark, and both invented schemes (per-sector
+PointLights, `rt_sector_emis`) were tried and rejected because they light a room
+with no fixture anywhere near the light.  The rule that came out of it is *only
+real emitters light these maps*.
+
+This is the other half of that rule.  Unseen Evil paints plenty of real emitters
+— lit ceiling panes, blinking door indicators, switch lamps, wall light strips —
+and every one of them was dark, because **every fixture classifier in this
+renderer keys off Doom 64 texture names and the Terraformer replaces DOOM's walls
+with art that uses none of them**.
+
+Two features, both gated on `RT_IsUnseenEvil()` (`rt_mod_compat 0` **and**
+`rt_world_white`, the pair only this mod's launcher sets — the same identity
+`RT_UnseenEvilMonitorHue` already used, now factored into one helper).
+
+### SFLATAP as a ceiling pane — `rt_ue_grille_lamps`
+
+`RT_IsCeilingInsetLampTexture` refuses SFLATAP, and **still does**: it is a
+recessed grille, the base game does not light it, and Retribution's own maps use
+it 33 times.  That refusal is about Retribution's content, not about the texture.
+
+Under Unseen Evil the same flat is a different job.  The Terraformer sends
+`CEIL3_4`, `CEIL1_2`, `CEIL1_3`, `TLITE6_1` and `TLITE6_4` onto it — and `FLAT2`
+too, once `d64ue-texfix.pk3` is loaded — so it covers **445 ceiling/floor
+placements across 37 maps**, of which **121 are DOOM's own `TLITE6_*` ceiling
+LIGHT panels** arriving dark.  Counts from
+`tools/export_unseenevil_textures_gallery.py`, which replays the Terraformer over
+both IWADs.
+
+It joins `SoloBulbTextures` with a `ueOnly` flag, at a **measured** offset: flood
+the panel at 72% of peak luminance and its 248 texels centroid at (31.84, 31.87),
+bbox 18..45 on both axes.  That is the tile centre, so the ceiling-flat Y flip is
+a no-op here — luck, not licence; the next texture added there needs the flip
+applied for real.
+
+**Note the tension, and that it is deliberate.**  `d64ue-texfix.pk3` exists to
+move `FLAT2` *off* a lamp flat, because an ordinary grey DOOM II ceiling acting as
+a light is exactly the invented-light failure this project keeps rejecting.
+Lighting SFLATAP puts light back on those 47 `FLAT2` placements — but as one small
+solo bulb per 64-unit tile through a grille, not as an SFLATAS pane.  If that
+still reads as too much, `rt_ue_grille_lamps 0` is the switch, and the texfix's
+own decision is untouched either way.
+
+### Door indicators, switch lamps and light strips — `rt_ue_fixture_lights`
+
+`tools/gen_ue_fixture_lights.py` measures the mod's art and writes
+`rt_ue_fixture_lights.h`; `RT_UploadSwitchLights` consults it beside Retribution's
+own table.  A **separate** table, not extra rows in `rt_switch_lights.h`, because
+`gen_switch_lights.py` rewrites that file wholesale and would destroy them.
+
+**Nothing about the animation is modelled**, and that is the whole design.  The
+walk already asks `TexMan.GetGameTexture(id, /*animate=*/true)` — the frame on the
+wall this instant — so the table is keyed on that frame's own name and a frame
+with no row emits nothing.  The door pulse (a 4-frame ANIMDEFS ping-pong,
+`_0 _1 _2 _1` at 7 tics), a switch lighting only once thrown, and a strip's steady
+burn are one lookup with no phase arithmetic and no state.
+
+Masks come from **the mod's own GLDEFS brightmaps** wherever it ships one (22 of
+27 measured textures), falling back to a colour heuristic otherwise; each row
+records which.  Two traps the measurement catches, both of which invert a blink if
+assumed:
+
+- `d64_bigdoor`'s frames are **not** ordered by brightness — its ANIMDEFS is keyed
+  on `_0` and runs `_0 -> _2 -> _1 -> _2`, with `_0` the brightest and `_1` dark.
+- An **empty or absent** brightmap is an answer, not a miss: `d64_beigedoor_0`
+  ships an all-black one and `d64_bigdoor_1` ships none, because both are the off
+  frame.  Guessing from the albedo there invents a light on the one frame whose
+  job is to be dark.
+
+A switch earns its row by **getting brighter**: only the `on` half of a SWITCHES
+pair is measured, and only where its lit energy beats the `off` half, so a lever
+that changes pose rather than light gets nothing.  30 switches qualified;
+`d64_skullswitch_on` is measured red, everything else green.
+
+Intensity is normalised differently from Retribution's rows and has to be: those
+are 7–70 lit texels because they are all switch faces, these are 17–3328 because a
+full-height strip is a fixture too, and through the `/7` rule `d64_lite_wide` came
+out at 21.8x — a corridor lamp brighter than the sun.  The UE family is measured
+against a door indicator's ~64 texels and capped at 3x.
+
+**Verified live**, not by compiling: MAP12 reports `solo 59 flat(s)` — matching the
+export's static count of 59 SFLATAP placements on that map exactly — and
+`D64_SILVER72SWITCH_ON` logs `LIT` while `*_OFF` switches log `no row`.  On MAP01
+the exit door's indicator logs `x0.65`, then `x1.00`, then drops out entirely: the
+blink, in the log.  `rt_switch_light_debug 1` prints placements;
+`RT_UeFixtureLightFor` tags each distinct Unseen Evil texture once per session,
+hit **or** miss, so "this map has no fixtures" and "every lookup missed" can never
+again look identical.
+
+### The lookup trap that made this look like it did nothing
+
+First landing, the report was *"I see zero difference"* on MAP01 — and the table
+was matching, just not much of it.
+
+**GZDoom fills `FGameTexture::Name` only for a pk3 texture whose basename fits the
+classic 8 characters.**  Unseen Evil's art mostly does not.  `C201` and `SPACEAU`
+out of `textures/d64/` arrive named; `d64_metal7`, `d64_talldoor_2` and
+`d64_greydoor_0` arrive with an **empty name** and are reachable only through the
+file they came from.  Its `TEXTURES` composites are a third case again: the name is
+the declared path, extension and all absent.
+
+Keyed on the name alone, the table matched exactly the composites — every switch,
+and the exit door — and silently missed every plain PNG, which is most of the
+doors and **all fourteen light strips**.  On MAP03 that was 0 lights where there
+should be 15; the walk reported seeing 12 distinct wall textures in a level that
+has 42.
+
+`RT_UeFixtureLightFor` now falls back to
+`fileSystem.GetFileFullName( gtex->GetSourceLump(), false )`, which is what the
+generated table's path rows match, cached per `FGameTexture*` because a filesystem
+call three times per sidedef per frame is not free.
+
+Two diagnostic lessons worth keeping, both of which delayed finding this:
+
+- **A filtered census cannot answer "what does this arrive as."**  The first
+  version only logged names that already looked like this mod's art, so a name the
+  filter rejected was indistinguishable from a name the walk never saw.  Under
+  `rt_switch_light_debug` the filter now comes off and every wall texture in the
+  level is listed once.
+- **A texture with no name is not a non-event.**  Skipping nameless textures
+  before logging is what made an entire family invisible; they are now reported by
+  their FILE.
+
+After the fix, MAP01 goes from 32 distinct textures seen and 3 lights to 54 seen
+and 6 wall lights (plus 34 grille lights), with `d64_lite_thin` and the blinking
+`d64_widedoor` now lit; MAP03 goes from 0 to 15, `d64_metal7` (149 placements on
+that map) among them.
+
+**MAP01 is still a thin place to judge this.**  It carries only 13 lit fixture
+placements in the whole level and its exit door is at the far end, while three
+`SFLATAQ` ceilings already flood it with the bulb lattice's full 1024-light budget
+(`rt_ceiling_edge: uploaded=1058 of 1072 wanted (cap 1024)`).  For a map where this
+work dominates rather than competes, use E2M7 (194 lit placements), MAP03 (162,
+mostly `d64_metal7` strips), E2M2 (95), MAP24 (91), MAP10 (90) or MAP12 (62, of
+which 59 are SFLATAP).
+
+### Second round: white lights, point lights, and half-dark fixtures
+
+Three more defects, all found from play reports rather than from the log, and all
+of them things the counters said were working.
+
+**The green indicators rendered WHITE.**  The hue was a flat average over the lit
+mask, normalised so the brightest channel hit 255.  But an LED is painted as a
+blown-out near-white core inside a saturated rim, so the average came out
+`#7eff7e` — 46% white — and at any intensity a path tracer draws that as a white
+light.  Fixed in two steps, both in `hue_hex`: weight each texel by its own
+saturation so the rim decides the hue and the core barely votes, then lift the
+remaining achromatic component.  The lift is **gated on the measured saturation**
+(≥ 0.25) so it cannot invent a colour: `d64_lite_thin` (0.15) and `d64_silver2`
+(0.11) are genuinely warm whites and are left alone, while the doors go
+`#7eff7e → #1dff1d` and `d64_lite_blue` goes `#7caeff → #186aff`.
+
+This is the trap `RT_KeyTrimHue` already records — *"an averaged colour comes out
+grey and defeats the entire purpose"* — reached from the art instead of from a
+hand-written table, so it still tracks if the art changes.
+
+**A light strip was one bright dot.**  Strips were being placed like a door
+indicator: one sphere per texture repeat, capped at four, at
+`rt_switch_light_radius`'s 0.06 (1.9 map units).  On a 16-texel-wide strip that
+put all four lights inside the first 64 units of the wall and left the rest dark —
+which reads exactly as somebody dropping a dynamic point light on the wall.
+
+Strips now carry a `band` flag and are walked as a **chain**: a segment every
+`rt_ue_strip_seglen` (48) along the whole sidedef, at `rt_ue_strip_radius` 0.35 —
+wide and soft so the pools blend — and a flat `rt_ue_strip_intensity` per segment,
+so a longer strip emits more total light.  The area scale is **not** applied to a
+band, because on a chain the fixture's size is already expressed by how many
+segments it emits.  This is the shape `RT_UploadWallStripLights` settled on and the
+values are matched to it.
+
+*Why not just make the texture emit light?*  Because it cannot.  Under RTGL1 an
+emissive surface casts nothing — `rt_wall_strips` states it outright — and
+`RgLightPolygonalEXT`, a real area light, is compiled out behind
+`#if TRIANGLE_LIGHTS` and hard-errors on upload.  A chain of overlapping spheres is
+the whole of what is available.
+
+**Twelve fixtures were lighting only half of themselves.**  `d64_widedoor` has a
+gem near the top *and* a bar near the floor; `d64_silver2` has two rows of
+rectangles; `d64_d1liteblu1` has two lines; five switches have two lamp rows.  The
+lookup used `unordered_map::emplace` per row, which keeps only the first — so the
+second band of each went dark with no error anywhere.  That is what *"some door
+green lights are ok, some not"* looks like from inside the game.  The map now holds
+a vector per key and every band is placed.
+
+Also this round: door and switch lamps got their own `rt_ue_fixture_radius` (0.14,
+against the 0.06 tuned for Retribution's tiny SWXC eyes) and their intensity
+dropped 70 → 45, and `rt_ue_fixture_max` (320) was added because a chain wants far
+more slots than `rt_switch_light_max`'s 48 — the first corridor was eating the
+whole budget.
+
+**Tuning:** `tools/ab-ue-fixtures.cmd` — `off | on | soft | bright | strips |
+doors | grille | marks`, followed by a map.  Every arm sets every cvar the feature
+owns, so a stale ini line cannot decide an arm.  `marks` is the one that answers a
+placement report: a cyan sphere at every light this system uploads, so a light
+sitting below the lamp it belongs to is visible as a marker below the paint.
+
+**Still open.**  A switch was reported with its light below the painted green
+square.  Both of its bands are lit now, which may be the whole of it, but if not,
+`marks` plus the texture name from `whatsthat` is what pins it down.  The most
+likely candidates are the 18 of 66 rows measured from the colour heuristic rather
+than from one of the mod's own brightmaps — `d64_metal7`, `d64_silver2`,
+`d64_bronzewall_lit` and the four lever switches.
+
+### Third round: one light per lamp, not one per fixture
+
+The remaining play report was a switch whose light sat **below** its green square,
+on bare plate.  It was not a pegging error.  Every lever switch here paints its
+lower element as **two small wedges, one at each side of the housing** — and a
+single centroid over both lands in the dark gap between them.  Same defect on
+`d64_beigedoor` (two groups of ticks), `d64_talldoor` (two bars — the "2 bottom
+blinking" door), and `d64_bigdoor` (two triangles).
+
+This is the failure the ceiling lattice already records for SFLATC: *"perimeter
+lights land between bulbs, in the middle of blank plate, and read as light coming
+from nowhere."*
+
+`bands()` now splits **horizontally as well as vertically**, but only where it has
+to.  Cutting at every column gap was tried first and was worse: it turned
+`d64_beigedoor`'s six ticks into six lights, which then hit the per-texture cap and
+dropped one at random.  The rule that works is centroid-driven — measure the
+centroid; if it lands on lit paint the group is one lamp and stays whole; if it
+lands in a gap, cut at the **widest** gap and re-ask of each half, bounded at two
+cuts.  A regular row of evenly spaced cells (`d64_exitdoor`'s lower strip) cannot
+be helped by cutting — every gap is the same width — so it stays one bar and its
+centroid is snapped to the nearest lit texel.
+
+**The generator now asserts the invariant it exists to maintain**: every lamp's
+position is checked against the mask it came from, and the run prints
+`83 lamps, 83 of them centred on lit paint`.  Two tests of that property
+disagreed at first — the splitter asked "is anything in this column lit" while the
+report asked "is the centroid point lit" — and a small centre element a few rows
+above `d64_brickwarn`'s wedges was enough to vouch for a point that plainly was
+not on paint.  They ask the same question now.
+
+Strips are exempt from all of it: a chain is stepped along the sidedef at a fixed
+interval and never consults `cx`, so a band whose horizontal centre falls between
+two lit runs is not a defect there.
+
+Counts: 33 fixtures → 83 lamps.  `d64_talldoor_2` went from one light in the gap to
+one on each bar; `d64_brown1lever_on` from one to three (bar plus both wedges).
+
+### Fourth round: strips lit along their long axis, and the pane that would not glow
+
+Three reports, three separate causes, and this time all three were found from the
+map data and the log without launching anything.
+
+**"Wall strips show nothing."**  Both `d64_lite_thin` sidedefs on MAP01 are
+**16 units long** (lines 191 and 195, one-sided).  The chain started half a
+segment in — 24 units — and looped `while d <= lineLen`, which on a 16-unit line
+is zero iterations.  Strips that had one light each before the chain had none
+after it; "nothing" was exact.  And the tube is *vertical* (16×128): a chain along
+the wall was the wrong axis regardless.
+
+The generator now emits each lamp's texel **extent** beside its centroid, and the
+engine lights a strip along its long axis: rows up the wall = height over the
+segment length, at least one; along the wall, a band spanning ≥ 75% of the
+texture's width is a continuous chain spread evenly over the line, at least one,
+while a narrower band sits at its own column once per texture repeat.  Checked
+offline against MAP01's real lines: `lite_thin` gets a column of three, `metal7` a
+row every 51 units on a 256-unit wall, `lite_wide` a column of three.
+
+**"Doors and switches barely emit."**  Splitting each fixture into its real lamps
+(round three) halved every lamp's `lit` count, and `areaScale = sqrt(lit/64)`
+halved with it — on top of the 70→45 drop that came with the wider source.
+`d64_talldoor` went from one lamp at ~107 to two at ~49.  `rt_ue_fixture_intensity`
+is now **120**, which puts a typical split lamp back near Retribution's switch gem
+(~150 through its own scale).
+
+**"Zero light for SFLATAP."**  The analytic bulb was there — 34 on MAP01, 96 on
+MAP12 — but `SFLATAS`, the reference the request named, also carries
+`emissiveMult 20` from `SFLATAS_e` and its pane visibly *glows*.  `SFLATAP` has no
+`_e` at all, deliberately, because in Retribution it is a grille the base game
+never lights.  A pane that only casts reads as dead even while it lights the room.
+
+The shared materials cannot carry the fix without lighting Retribution's 33
+placements too, so it rides the overlay path instead: `d64ue-grille-emis.pk3`
+supplies a GZDoom brightmap cut from the mod's own art (72% of peak luminance, the
+248 slat texels) plus one GLDEFS line, and `rt_draw.cpp`'s Unseen-Evil-only
+brightmap fallback — the same path the key trims use — turns it into RT emission
+at `rt_ue_grille_emis` (6; SFLATAS's 20 is for four small bulbs, this is a 28×28
+panel).  Retribution never loads the overlay and sees none of it.
+
+**Still not verified by eye**, by request — everything above is from the WAD, the
+art, the log of the user's own run, and an offline simulation of the placement
+maths.  `.	oolsb-ue-fixtures.cmd marks 3` remains the arm that answers a
+placement report.
+
+## Materials for the mod's own art -- 2026-08-27
+
+**Why Retribution "just worked" and UE did not: names.** Every RT material
+(`rt/mat/<NAME>_e/_n/_h/_orm`, the `textures.json` rows) is keyed on the texture
+name the engine sees. Retribution's textures are all named WAD lumps. Of UE's 442
+wall targets, 80 are bare Doom 64 names (all pixel-identical to Retribution's, so
+they get Retribution's materials for free), 246 are TEXTURES composites named by
+their declared path, and 116 are plain PNGs whose basename exceeds 8 characters --
+which GZDoom leaves **nameless**, so `MakeTextureName` (`rt_buffers.h`) fell to a
+runtime image ID that nothing can match. 362 of 442 (82%) had no material at all.
+
+**Engine:** `MakeTextureName` now keys a nameless texture on
+`fileSystem.GetFileFullName` minus its extension -- `textures/pepy/d64_brown1` --
+and RTGL1's `TextureOverrides::GetTexturePath` accepts `/`, so `rt/mat` gains
+subfolders. Retribution never reaches that branch.
+
+**Generated, automatically, from the mod's own data** by
+`tools/gen_unseenevil_materials.py` into all four material dirs (the build stages
+`Doom64-UnseenEvil/UnseenEvil-RT-Materials/rt` like Retribution's):
+
+| map | source | count |
+|---|---|---|
+| `_e` | the mod's GLDEFS brightmaps (tone overlay wins), as albedo × mask -- the RAW ray-traced contract | 79 |
+| `_n` | Sobel from luma over a 0.6 px blurred albedo, strength 1.2 | 540 |
+
+The `_e` half matters more than it looks: the engine's UE brightmap fallback
+(`l_hasWorldBrightmap`) only flags a primitive emissive with a **multiplier** --
+the brightmap's pixels never reach RTGL1, which takes emission solely from an
+`_e` override. A UE door indicator therefore glowed as its entire face, dimly and
+unmasked. No `_h`, no `_orm`: an ORM needs a surface class per texture, and the
+automatic way has none.
+
+**Never under a bare name.** A bare name is shared with Retribution by
+construction (`DTWMD25` carries a meta row and no file; a generated `_n` there
+would dress Retribution too). Path-shaped subfolders cannot collide. Seventeen
+UE PNGs that are byte-identical to Retribution `DTWMD*` lumps are instead
+retargeted to those names by `make_unseenevil_texfix.py`, so they wear
+Retribution's authored materials outright.

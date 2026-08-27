@@ -52,48 +52,114 @@ RETARGET = {
     "FLAT2": ("SFLATAS", "SFLATAP"),
 }
 
+# THE LIQUIDS, 2026-08-27. UE's own two-frame flats reach the engine's liquid
+# shader by name, and nothing else: the per-frame relief maps, the lava emissive
+# and lights, the poison bubbles and the lava sprays are all keyed on
+# Retribution's names. d64ue-retribution-liquids.pk3 (make_unseenevil_liquids.py)
+# ships that construction; these lines point the mod at it. Targets are
+# Retribution's most-used family of each kind, from a floor census of its maps.
+_LAVA_PNG = "textures/pepy/d64_lava.png"
+RETARGET.update({
+    **{f"FWATER{i}": ("WATERA", "D64W1_01") for i in (1, 2, 3, 4)},
+    **{f"NUKAGE{i}": ("SLIMEB", "D64N1_01") for i in (1, 2, 3)},
+    **{f"BLOOD{i}": ("BLOODB", "D64B2_01") for i in (1, 2, 3)},
+    **{f"SLIME0{i}": ("SLUDGEB", "D64S1_01") for i in (1, 2, 3, 4)},
+    **{f"SLIME0{i}": ("SLUDGEA", "D64S1_01") for i in (5, 6, 7, 8)},
+    **{f"LAVA{i}": (_LAVA_PNG, "HLAVA1") for i in (1, 2, 3, 4)},
+})
+
+# PIXEL-IDENTICAL TWINS, 2026-08-27. Seventeen of the mod's path-named PNGs are
+# byte-for-byte the same picture as a Retribution DTWMD* lump. A path-named PNG
+# reaches the renderer NAMELESS (GZDoom names only 8-char basenames), so nothing
+# in rt/mat or textures.json can ever match it; the Retribution name carries the
+# authored metallic/roughness meta and, for three of them, full _h/_n/_orm
+# relief. Same picture on screen, Retribution's material underneath.
+_TWINS = {
+    "textures/cage/d64_bigbrick1.png": ("DTWMD25", ["BIGBRIK1"]),
+    "textures/cage/d64_bigbrick2.png": ("DTWMD23", ["BIGBRIK2"]),
+    "textures/cage/d64_bigbrick3.png": ("DTWMD26", ["BIGBRIK3"]),
+    "textures/cage/d64_brickedup.png": ("DTWMD35", ["ROCK1", "ROCK2", "ROCK3"]),
+    "textures/cage/d64_brownwall.png": ("DTWMD14", ["BROWN96", "BROVINE2"]),
+    "textures/cage/d64_cement.png": ("DTWMD07", [f"CEMENT{i}" for i in range(1, 7)]),
+    "textures/cage/d64_fleshpanels.png": ("DTWMD31", ["SKINSYMB"]),
+    "textures/cage/d64_hexes.png": ("DTWMD10", ["METAL1"]),
+    "textures/cage/d64_metalsupport.png": ("DTWMD04", ["SUPPORT3"]),
+    "textures/cage/d64_starstruct_red.png": ("DTWMD17", ["STARTAN1", "STARTAN2", "STARBR2"]),
+    "textures/cage/d64_starstruct_tan.png": ("DTWMD18", ["STARGR1", "STARGR2"]),
+    "textures/cage/d64_stonewall.png": ("DTWMD32", ["STONE4", "STONE5"]),
+    "textures/cage/d64_support2.png": ("DTWMD05", ["SUPPORT2"]),
+    "textures/cage/d64_tekgreen.png": ("DTWMD02", ["TEKGREN2", "TEKGREN4", "TEKGREN5"]),
+    "textures/cage/d64_tekgreen2.png": ("DTWMD03", ["TEKGREN1"]),
+    "textures/cage/d64_tekwall2.png": ("DTWMD01", ["TEKWALL2"]),
+    "textures/cage/edits/d64_talldooralpha_0.png": ("DTWMD20", ["SPCDOOR3"]),
+}
+for _png, (_d64, _srcs) in _TWINS.items():
+    RETARGET.update({src: (_png, _d64) for src in _srcs})
+
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--write", action="store_true")
     args = ap.parse_args()
 
+    # EVERY mapping file, not just the .txt. The liquid lines are in the .txt, but
+    # the twins are in the .bricks/.metal/.stone/.doors/.flesh includes, and an
+    # include the overlay does not carry keeps the mod's own copy -- so a retarget
+    # that lands in one of those was silently a no-op until this walked them all.
+    # Only files that actually change are written, so the mod's untouched
+    # includes stay the mod's.
     with zipfile.ZipFile(MOD) as z:
-        raw = z.read(LUMP).decode("latin-1")
+        files = {n: z.read(n).decode("latin-1")
+                 for n in z.namelist() if n.lower().startswith("resources/d64ue_textures.")}
+    if LUMP not in files:
+        raise SystemExit(f"{LUMP} not in {MOD.name}")
 
-    out_lines = []
+    outputs = {}
     changed = []
-    for line in raw.splitlines(keepends=True):
-        stripped = line.strip()
-        if ":" in stripped and not stripped.startswith(("//", "#")):
-            src, _, dst = stripped.partition(":")
-            src = src.strip()
-            if src in RETARGET:
-                old, new = RETARGET[src]
-                if dst.strip() == old:
-                    line = line.replace(f"{src}:{old}", f"{src}:{new}")
-                    changed.append(f"{src}: {old} -> {new}")
-        out_lines.append(line)
+    seen = set()
+    for name, raw in sorted(files.items()):
+        out_lines = []
+        touched = False
+        for line in raw.splitlines(keepends=True):
+            stripped = line.strip()
+            if ":" in stripped and not stripped.startswith(("//", "#")):
+                src, _, dst = stripped.partition(":")
+                src = src.strip()
+                if src in RETARGET:
+                    old, new = RETARGET[src]
+                    if dst.strip() == old:
+                        line = line.replace(f"{src}:{old}", f"{src}:{new}")
+                        changed.append(f"{name.split('.')[-1]:8} {src}: {old} -> {new}")
+                        seen.add(src)
+                        touched = True
+            out_lines.append(line)
+        if touched:
+            outputs[name] = "".join(out_lines)
 
     if not changed:
         raise SystemExit(
             "nothing to change -- the mod's mapping is not what this tool expects; "
-            "re-read resources/d64ue_textures.txt before assuming it is a no-op"
+            "re-read resources/d64ue_textures.* before assuming it is a no-op"
         )
     for c in changed:
         print("  ", c)
+    missed = sorted(set(RETARGET) - seen)
+    if missed:
+        print("   NOT FOUND with the expected old target (check the mod's table):", ", ".join(missed))
 
     # Prove the lamp mappings that SHOULD stay are still intact.
-    kept = [l.strip() for l in out_lines if "SFLATAS" in l]
+    kept = [l.strip() for l in outputs.get(LUMP, files[LUMP]).splitlines() if "SFLATAS" in l]
     print("   still mapped to the lamp flat (correct):", ", ".join(kept) or "none")
+    print(f"   files rewritten: {', '.join(n.split('/')[-1] for n in outputs)}")
 
     if not args.write:
         print("\ncensus only; pass --write to build", OUT.name)
         return
 
     with zipfile.ZipFile(OUT, "w", zipfile.ZIP_DEFLATED) as z:
-        z.writestr(LUMP, "".join(out_lines))
-    print(f"\nwrote {OUT} ({OUT.stat().st_size} bytes)")
+        for name, text in outputs.items():
+            z.writestr(name, text)
+    print(f"\nwrote {OUT} ({OUT.stat().st_size} bytes, {len(outputs)} mapping file(s))")
 
 
 if __name__ == "__main__":

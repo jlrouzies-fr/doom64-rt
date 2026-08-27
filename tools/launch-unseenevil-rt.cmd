@@ -187,6 +187,46 @@ rem stacks after the Terraformer has finished.
 set "KEYLIGHTS=%PROJ%\Doom64-UnseenEvil\d64ue-keytrim-lights.pk3"
 if not exist "%KEYLIGHTS%" set "KEYLIGHTS="
 if defined KEYLIGHTS set "KEYLIGHTS="%KEYLIGHTS%""
+rem SFLATAP grille glow. The mod's Terraformer puts this flat on 445 ceilings and
+rem floors (CEIL3_4, CEIL1_2, CEIL1_3, FLAT2 via the texfix, and DOOM's own TLITE6_1
+rem and TLITE6_4 light panels), and the shared materials give it no emissive on
+rem purpose -- in Retribution it is a grille. This overlay is a brightmap cut from
+rem the mod's own art plus a GLDEFS line, which the engine's UE brightmap fallback
+rem turns into screen glow at rt_ue_grille_emis. The analytic bulb under each pane
+rem is rt_ue_grille_lamps, in the engine. Rebuild: py -3 tools\make_unseenevil_grille.py --write
+set "GRILLE=%PROJ%\Doom64-UnseenEvil\d64ue-grille-emis.pk3"
+if not exist "%GRILLE%" set "GRILLE="
+if defined GRILLE set "GRILLE="%GRILLE%""
+rem THE WALL MONITORS, same idea and the same reason. Retribution lights its SMON
+rem panels with a 9802 PointLightFlicker thing a few units off the face -- SMONDA 25
+rem of 27 -- and DOOM II carries NO 9800/9801/9802 thing in any map, so Unseen Evil
+rem had only the engine's steady wall-strip substitute and the panels read as dead.
+rem This spawns Retribution's own fixture on the SMOND faces the Terraformer makes,
+rem which inherits the blink tuning (rt_dynlight_blink_floor) for free rather than
+rem re-deriving it in the renderer. Toggle with d64ue_rt_monitorlights.
+set "MONLIGHTS=%PROJ%\Doom64-UnseenEvil\d64ue-monitor-lights.pk3"
+if not exist "%MONLIGHTS%" set "MONLIGHTS="
+if defined MONLIGHTS set "MONLIGHTS="%MONLIGHTS%""
+rem THE LIQUIDS, RETRIBUTION'S WAY. UE's own WATERA/SLIMEB/SLUDGE/BLOOD flats reach
+rem the liquid shader by name and nothing else -- no per-frame relief (rt/mat has
+rem 64 x _h/_n/_orm for D64B*/D64S* and none for UE's names), no lava emissive or
+rem lights (RT_IsLavaFlat is HLAVA*/D64LAVA*), no poison bubbles (D64N prefix). So
+rem d64ue-texfix retargets the mod's liquid mapping onto Retribution's names and
+rem this overlay ships Retribution's construction for them. ORDER MATTERS, exactly
+rem as in launch-retribution-rt.cmd: the liquid-art wad redefines the blood/poison/
+rem sludge frames and must load AFTER the overlay; the fx pk3s are self-contained.
+set "LIQUIDS=%PROJ%\Doom64-UnseenEvil\d64ue-retribution-liquids.pk3"
+if not exist "%LIQUIDS%" set "LIQUIDS="
+if defined LIQUIDS set "LIQUIDS="%LIQUIDS%""
+set "LIQUIDART=%PROJ%\Doom64-Retribution\d64r-liquid-art.wad"
+if not exist "%LIQUIDART%" set "LIQUIDART="
+if defined LIQUIDART set "LIQUIDART="%LIQUIDART%""
+set "POISONFX=%PROJ%\Doom64-Retribution\d64r-poison-fx.pk3"
+if not exist "%POISONFX%" set "POISONFX="
+if defined POISONFX set "POISONFX="%POISONFX%""
+set "LAVAFX=%PROJ%\Doom64-Retribution\d64r-lava-fx.pk3"
+if not exist "%LAVAFX%" set "LAVAFX="
+if defined LAVAFX set "LAVAFX="%LAVAFX%""
 set "PINS=%PROJ%\tools\d64rt-pins.cfg"
 rem World lighting for DOOM 1/2 maps. Exec'd AFTER the pins so it wins. Both invented
 rem light schemes -- the per-sector PointLight rig and sector self-emission -- are
@@ -205,7 +245,7 @@ rem "+map bare". Consuming them in a loop removes the ordering entirely.
 set "WANT=doom2.wad"
 set "STARTMODE="
 :flags
-if /i "%~1"=="bare"  ( set "PATCHES=" & set "KEYLIGHTS=" & set "AUTO=" & shift & goto :flags )
+if /i "%~1"=="bare"  ( set "PATCHES=" & set "KEYLIGHTS=" & set "GRILLE=" & set "MONLIGHTS=" & set "LIQUIDS=" & set "LIQUIDART=" & set "POISONFX=" & set "LAVAFX=" & set "AUTO=" & shift & goto :flags )
 if /i "%~1"=="doom1" ( set "WANT=doom.wad" & shift & goto :flags )
 if /i "%~1"=="nolights" ( set "AUTO=" & shift & goto :flags )
 if /i "%~1"=="min" ( set "STARTMODE=/min" & shift & goto :flags )
@@ -387,7 +427,7 @@ rem WINDOWED 960x540, PINNED TOP-LEFT. -width/-height set the RENDER size and do
 rem not size the window at all; only vid_defwidth/vid_defheight do, which is why
 rem the old line above them still opened a full-desktop window.
 start "" %STARTMODE% gzdoom.exe ^
-  -iwad "%IWAD%" -file "%MOD%" %PATCHES% "%TONE%" %TEXFIX% %LIQANIM% %SKYRT% %PICKLT% %RTMENU% %KEYLIGHTS% %AUTO% -rtnolauncher -nostartup ^
+  -iwad "%IWAD%" -file "%MOD%" %PATCHES% "%TONE%" %TEXFIX% %LIQANIM% %SKYRT% %PICKLT% %RTMENU% %KEYLIGHTS% %GRILLE% %MONLIGHTS% %LIQUIDS% %LIQUIDART% %POISONFX% %LAVAFX% %AUTO% -rtnolauncher -nostartup ^
   +vid_fullscreen 0 +vid_defwidth 960 +vid_defheight 540 +win_x 0 +win_y 0 ^
   +logfile "%LOGF%" ^
   +exec "%PINS%" ^
