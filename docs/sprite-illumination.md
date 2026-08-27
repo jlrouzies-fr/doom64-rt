@@ -512,7 +512,7 @@ heights** — worse than the bug this replaced. This is trap 5 with a second way
 | --- | --- | --- |
 | `rt_flame_light_on` | `true` | master switch. Off = flames cast **nothing** (meta is zeroed) |
 | `rt_flame_light_scale` | `1.0` | multiplies the whole table; retune the family here, not one row |
-| `rt_flame_light_radius` | `0.09` | metres. Wider softens the shadows a torch throws down a corridor |
+| `rt_flame_light_radius` | `0` | **`0` = the per-kind radii in `RT_FLAME_KINDS`** (0.42 m standing torch … 0.20 m candle). Positive forces one size on all 18 families; `0.09` is the pre-2026-08-27 look, and it is the torch fizzle — the flame's light sits inside its own `noShadow` billboard, so `2·I/(π·r²)` put 55,000–70,700 on the sprite's own texels. Radius is the lever, not intensity: the far field cancels `r` exactly. `docs/flame-lighting.md` § The fizzle |
 | `rt_flame_light_flicker` | `0.15` | depth, 0..1 of base intensity. `0` = steady |
 | `rt_flame_light_speed` | `0.25` | radians/tic of the base sine (~1.4 Hz); harmonics at 2.37× and 4.11× |
 | `rt_flame_light_wobble` | `2.0` | map units of drift per axis. Past ~4 the light detaches from its sprite |
@@ -521,8 +521,11 @@ heights** — worse than the bug this replaced. This is trap 5 with a second way
 | `rt_flame_light_debug` | `false` | **`RT_CVAR_NOARCH`** — cyan markers at 350 intensity |
 
 All of these are live at runtime; only the table itself needs a rebuild. They are also
-pinned in `tools/launch-retribution-rt.cmd` — every `RT_CVAR` is `CVAR_ARCHIVE`, so a
-compiled-default change alone is not enough once the ini has a value.
+pinned in `tools/d64rt-pins.cfg` — every `RT_CVAR` is `CVAR_ARCHIVE`, so a
+compiled-default change alone is not enough once the ini has a value. `rt_flame_light_radius`
+is the live example: it shipped as `0.09`, so the pin moving to `0` is what actually
+delivers the fix to an install that has run the game before. The release execs the same
+pins file.
 
 **First pass shipped at `0.28` / `0.42` and was too strong and too fast.** The reason is
 worth keeping: a torch is not a prop with a light on it, it is *the ambient light of the

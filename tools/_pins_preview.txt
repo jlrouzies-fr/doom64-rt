@@ -215,7 +215,7 @@ rt_solo_lamp_max 384
 rt_solo_lamp_stride 1
 rt_flame_light_on 1
 rt_flame_light_scale 1.0
-rt_flame_light_radius 0.09
+rt_flame_light_radius 0
 rt_flame_light_flicker 0.15
 rt_flame_light_speed 0.25
 rt_flame_light_wobble 2.0

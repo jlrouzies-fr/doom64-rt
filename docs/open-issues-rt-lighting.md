@@ -362,6 +362,36 @@ Single overlay pk3 + clean install docs (Phase 5) still pending.
 
 Short status: debug match = unfiltered diffuse direct; ceiling lamps confirmed amplifier; soft fades landed; boiling **reverted**; `rt_rr_temporal` **failed** (ghost) then left a **black world** when Compose still sampled empty DiffTemporary after `AccumulateForRR` was removed — ComposeNoisy is now **raw unfiltered only**. Full-tree PBR suspected — **do not strip**. Detail → **`rayreconstruction/rr-noise-investigation.md`**.
 
+### 1.10 Torch sprites fizzle under their own light — **ENGINE FIX 2026-08-27** (needs confirm)
+
+User: *"most torch sprites, e.g. A030, they all have fizzle with their light; we
+had a similar issue with barrels very early."* Correct on both counts — it is
+`screen/barrelsBlinkFizzle.png` again, and the torches were the worse case.
+
+`RT_UploadFlameLights()` places a flame's light at `(actor XY, actor Z + up)`, and
+**every** flame's billboard contains that point (`A03x` at 56 % up the quad, `TL*`
+80 %, `FIRE` 66 %, all measured off the WAD). All 92 flame entries carry
+`noShadow: true` — correct for a billboard, but nothing then occludes the light
+from the surface it is buried in. RTGL1 sphere radiance is `intensity/(π·r²)` and
+the solid angle saturates at `2π` inside the sphere, so `peak = 2·I/(π·r²)`:
+
+| | before | barrel *as reported broken* | barrel after `6a04517` | now |
+|---|---|---|---|---|
+| wall sconce `A030` | 55,000 | 33,000 | 11,500 | **3,855** |
+| standing torch `TL*` | 70,700 | — | — | **3,248** |
+
+**Fix:** per-kind source radius in `RT_FLAME_KINDS` (0.42 m standing torch …
+0.20 m candle, all smaller than their flame's own half-height); `rt_flame_light_radius`
+becomes an override, default `0` = use the table. **Radius, not intensity** — the far
+field's `π·r²/d²` cancels the radiance exactly, so the room's lighting is untouched
+while the sprite falls as `1/r²`. Pin moved to `0` in `tools/d64rt-pins.cfg`; without
+that the fix is invisible on any install whose ini holds the old `0.09`.
+
+**Confirm with** `.	oolsb-flame.cmd marble 18` vs `.	oolsb-flame.cmd on 18`
+at a wall sconce: the sprite should go clean and **the room should not change
+brightness**. If it does, that is a finding. Full write-up: `docs/flame-lighting.md`
+§ "The fizzle".
+
 ### 1.9 A sprite under a solid 3D floor is drawn through it — **OPEN, scope unmeasured (2026-08-26)**
 
 `screen/poison3Dfloor.png`: standing on MAP07's bridge deck by the EXIT signs,

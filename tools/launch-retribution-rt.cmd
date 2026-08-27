@@ -583,6 +583,14 @@ rem of the table until 2026-08-10 on the claim that it is not a GLDEFS flame pro
 rem has flickerlight BIGFIRE at offset 0 32 0 bound to frame FIRE. The four ?FLM loose
 rem fires exist exactly once each and only in MAP34, so MAP11/12/13/18/21/22 are where the
 rem flame work is actually visible. See docs/flame-lighting.md for the placement census.
+rem rt_flame_light_radius is pinned 0 = "use the per-kind radii in RT_FLAME_KINDS", and
+rem THAT PIN IS THE FIX (2026-08-27). It shipped as a flat 0.09 m, and because the light
+rem for a flame sits INSIDE its own noShadow billboard, RTGL1's intensity/(PI*r^2) put
+rem 55,000-70,700 on the torch's own texels -- the barrel fizzle, five to six times over.
+rem Radius is the lever and intensity is not: the far field's solid angle cancels r
+rem exactly, so the room is unchanged and only the sprite falls, as 1/r^2. Every ini that
+rem has ever run this game holds 0.09, so the compiled default alone would do nothing.
+rem A/B it with tools/ab-flame.cmd marble (0.09, the repro) against on.
 rem
 rem rt_switch_light_*: a THROWN switch lights the wall it is set into. Retribution's
 rem switches change art when used (ANIMDEFS CMPSW##A -> ON -> CMPSW##B) and the ON art has

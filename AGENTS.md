@@ -321,7 +321,7 @@ aimed alike — the disc alone casts nothing usable, because RT's sky cubemap is
 not importance-sampled. Aim it with the **`moon`** CCMD, never by setting
 `rt_sun_a/b` directly; per-map aim lives in `RT_MOON_PRESETS` (MAP13 = 90).
 
-Per-map **self-emission colour gate**: `rt_sector_emis_saturation` (global 0.58) is overridden per map by `RT_EMIS_PRESETS` in `rt_presets.cpp` — **MAP08 = 0.80** today. Same shape and same trap as the other preset tables: it writes the cvar at level load, so on a listed map it beats the launcher pin, and `rt_sector_emis_presets 0` is what an A/B of the global value has to pass. Get a new row's number from `whatsthat`, which prints the sector's colormap tint and its saturation next to the threshold in force.
+Per-map **self-emission colour gate**: `rt_sector_emis_saturation` (global 0.58) is overridden per map by `RT_EMIS_PRESETS` in `rt_presets.cpp` — **MAP08, MAP12 and MAP13 all = 0.80** today (all three set by eye on request, not measured). Same shape and same trap as the other preset tables: it writes the cvar at level load, so on a listed map it beats the launcher pin, and `rt_sector_emis_presets 0` is what an A/B of the global value has to pass. Get a new row's number from `whatsthat`, which prints the sector's colormap tint and its saturation next to the threshold in force.
 
 Three things that will otherwise cost you a day:
 
@@ -499,6 +499,18 @@ neither the GLDEFS offset up onto the flame nor a flicker. Consequences that bit
 `rt_flame_light_on 0` means those flames cast **nothing** (use
 `rt_flame_light_flicker 0` for a steady light), and `CAND` is intentionally a red
 light on amber art, so it fails a naive art-vs-light hue audit.
+
+**A light inside a `noShadow` sprite blows that sprite out, and the knob is the
+RADIUS.** Every flame light sits inside its own billboard (a wall sconce's 56 % up
+the quad); RTGL1's sphere radiance is `intensity/(π·r²)` and the solid angle
+saturates at `2π` once the shading point is inside the sphere, so at the old flat
+`0.09 m` the torches' own texels took 55,000–70,700 — five to six times the barrel
+that produced `screen/barrelsBlinkFizzle.png`. The far field cancels `r` exactly, so
+**widening the source costs nothing in the room and 1/r² on the sprite**; intensity
+would have cost the room. Each `RT_FLAME_KINDS` row now carries its own radius and
+`rt_flame_light_radius 0` means "use them" — see `docs/flame-lighting.md` § The
+fizzle. The same shape is `rt_gunglow_pullback` and the `rt_spin_panel_zofs`
+coplanar note; reach for it whenever a prop is lit by a light buried in it.
 
 ## Workspace layout
 

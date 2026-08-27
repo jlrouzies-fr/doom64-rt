@@ -194,7 +194,7 @@ reached the renderer.
 | `rt_sector_emis_minlight` | 160 | Absolute *floor* only. Effective threshold is `max(this, map median + margin)`. |
 | `rt_sector_emis_margin` | 40 | How far above the map's own median a sector must be to self-emit. This is what prevents the whole-image flood. |
 | `rt_sector_emis_saturation` | 0.58 | The COLOUR gate: a lightlevel-qualifying surface self-emits only if its sector's colormap tint is at least this saturated. Stops a plain bright wall reading as a light. Measured on MAP04 sector 68 (tint 255,231,145 = 0.431) against MAP02's red panels. |
-| `rt_sector_emis_presets` | 1 | Apply the **per-map** saturation table `RT_EMIS_PRESETS` (`rt_presets.cpp`) at level load. One row today: **MAP08 at 0.80**. A map with no row keeps the launcher's value; 0 turns the table off, which is what an A/B of the global has to pass. Like every preset table it writes the cvar AFTER the command line is parsed, so on a listed map it **overrides the pin**. |
+| `rt_sector_emis_presets` | 1 | Apply the **per-map** saturation table `RT_EMIS_PRESETS` (`rt_presets.cpp`) at level load. Three rows today: **MAP08, MAP12 and MAP13, all at 0.80**. A map with no row keeps the launcher's value; 0 turns the table off, which is what an A/B of the global has to pass. Like every preset table it writes the cvar AFTER the command line is parsed, so on a listed map it **overrides the pin**. |
 | `rt_wall_strips` | true | Analytic lights on wall-mounted bulb arrays: `SPACEAZ`, `SFLATAQ`, `SFLATAS`, `SFLATAP`. Not `SPACEAR` — see §20. |
 | `rt_wall_strip_intensity` | 500 | High because a strip light is flush against the wall it lights (see §19). |
 | `rt_wall_strip_minlight` | 120 | Was 140, tuned on MAP03's 180s. MAP02 has fixtures at exactly 120. |

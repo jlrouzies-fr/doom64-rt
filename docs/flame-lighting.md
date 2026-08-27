@@ -205,6 +205,115 @@ sets the perceived rate.
 
 ---
 
+## The fizzle: why every row carries a radius (2026-08-27)
+
+Reported as *"most torch sprites — e.g. A030 — all have fizzle with their light; we had a
+similar issue with barrels very early."* That reading is exactly right: it is
+`screen/barrelsBlinkFizzle.png` again, one family later, and the numbers say the torches
+were the worse of the two.
+
+### The mechanism
+
+The light for a flame goes at `(actor XY, actor Z + up)`. **Every flame's own billboard
+contains that point.** Measured off the sprites in `D64RTR_v15.WAD` (`grAb` topoffset ==
+height on all of them, so the quad spans `Z+0 … Z+h`):
+
+| family | sprite | `up` | where that lands |
+| --- | --- | --- | --- |
+| `A030`/`A031`/`A032`/`GTCH` | 16×43 | 24 | 56 % up the quad — **in the dark metal bracket**, ~5 u below the flame |
+| `TL*` | 27×100 | 80 | 80 % — in the flame |
+| `TS*` | 18×85 | 64 | 75 % — in the flame |
+| `?FLM` | 16×35 | 8 | 23 % |
+| `FIRE` | 32×50 | 32 | 66 % |
+| `CAND` | 8×31 | 16 | 52 % |
+
+All 92 of those `textures.json` entries carry `noShadow: true`, which is correct — a
+billboard's shadow collapses to a line and its *shape* turns with the camera
+(`RG_MESH_PRIMITIVE_SHADOW_ONLY`'s own comment in `RTGL1.h` says so) — but it means
+nothing occludes the light from the surface it is buried in.
+
+RTGL1 encodes a sphere light as `radiance = intensity / (π·r²)`
+(`LightManager.cpp`, `EncodeAsSphereLight`), and `calcSolidAngleForSphere` saturates at
+`2π` once the shading point is inside the sphere (`Light.h`). So the ceiling on what a
+flame's own texels can receive is
+
+```
+peak = 2 · intensity / (π · radius²)
+```
+
+| | intensity | radius | peak |
+| --- | --- | --- | --- |
+| wall sconce, before | 700 | 0.09 | **55,000** |
+| standing torch, before | 900 | 0.09 | **70,700** |
+| barrel, *as reported broken* | 520 | 0.10 | 33,000 |
+| barrel, after `6a04517` | 180 | 0.10 | 11,500 |
+| wall sconce, now | 700 | 0.34 | 3,855 |
+| standing torch, now | 900 | 0.42 | 3,248 |
+
+The torches were running at **five to six times the configuration that was already
+reported as broken**. Flicker and wobble then re-roll the hot spot every frame, so it
+never converges and the speckles crawl — the same "they move because the sampling jitters"
+as the barrel.
+
+### Why the radius, and not the intensity
+
+Far from a sphere light the solid angle goes as `π·r²/d²`, which cancels the radiance's
+`1/(π·r²)` **exactly**: how a torch lights its *room* does not depend on the source radius
+at all. Only the near field does, and it falls as `1/r²`. So widening the source is free
+where the tuning lives and 15–20× cheaper where the artefact lives. Dropping intensity — the
+barrel's fix — would have cost the room lighting the whole family was tuned for.
+
+Two things that make this safe rather than a fudge:
+
+- **It cannot leak through the wall a sconce is mounted on.** `sampleSphereLight` samples
+  the hemisphere *facing the shading point*, so the half of the sphere buried in the wall
+  is never picked.
+- **It is view-independent.** Pulling the light off the billboard toward the eye — the
+  `rt_gunglow_pullback` trick — also kills it, and is right for the gun because the gun
+  light is at the viewer. On a static torch it would make the light orbit the prop as the
+  player walks around it, moving the room's shadows and resetting ReSTIR every frame.
+  Rejected for that reason.
+
+### Where the numbers come from
+
+The flame's own extent, measured off the WAD sprites (saturated texels): `A030A0` spans
+5×31 map units, `TLYLA0` 11×24, `FIREA0` 18×36. **Every radius in the table is smaller
+than its flame's half-height.** `0.09` m is 2.9 map units — a marble at the centre of a
+30-unit fire, which is the part that was actually wrong.
+
+`CAND` is the one row not measured: `CAND?0` is 8×31 and most of the amber in it is the
+wax body catching its own light rather than flame — the same reason its *colour* was
+picked by eye — so `0.20` is the intensity ratio against the wall sconce instead.
+
+### Not changed, on purpose
+
+- **`A030`'s `up` stays at GLDEFS' 24**, even though the art puts the flame at Z 28–41 and
+  the light therefore sits in the bracket. The table is the mod's GLDEFS; with the radius
+  corrected the bracket no longer blows out. It is, though, why this family was the one
+  the report named.
+- **`noShadow` stays on all 92 entries.** The barrel's fix removed it; here it is the
+  correct flag and removing it would give every flame a camera-following shadow plane.
+- **Intensity, flicker, wobble and the offsets are untouched.** `marble` vs `on` (below)
+  must therefore show a clean sprite and an *unchanged room*. If the room's brightness
+  moves between those two arms, that is a finding.
+
+### A/B
+
+`tools/ab-flame.cmd` gained two arms:
+
+| arm | what it forces |
+| --- | --- |
+| `marble` | `rt_flame_light_radius 0.09` — the fizzle repro, one cvar away from `on` |
+| `wide` | `0.60` — past what the art supports; the arm that answers "are the corridor shadows mushy yet" |
+
+`ab-flame.cmd marble 18` then `ab-flame.cmd on 18`, standing at a wall sconce, is the
+comparison. `rt_flame_light_debug 1` now also prints whether the radius came from the table
+or from a forced value.
+
+**Not verified in-engine.** Same standing instruction as everything else in this file.
+
+---
+
 ## The three-way invariant
 
 The same decision is encoded in three places. **Change one, change all three**, or a flame
@@ -241,7 +350,7 @@ All live at runtime. Only the table itself needs a rebuild.
 | --- | --- | --- |
 | `rt_flame_light_on` | `true` | master switch. Off = flames cast **nothing** |
 | `rt_flame_light_scale` | `1.0` | multiplies the whole table; retune the family here, not one row |
-| `rt_flame_light_radius` | `0.09` | metres. Wider softens the shadows a torch throws down a corridor |
+| `rt_flame_light_radius` | `0` | **`0` = per-kind radii from the table** (0.42 m standing torch … 0.20 m candle). Any positive value forces one source size on all 18 families; `0.09` is the pre-2026-08-27 look. See [The fizzle](#the-fizzle-why-every-row-carries-a-radius-2026-08-27) |
 | `rt_flame_light_flicker` | `0.15` | depth, 0..1 of base intensity. `0` = steady, position still correct |
 | `rt_flame_light_speed` | `0.25` | radians/tic of the base sine (~1.4 Hz) |
 | `rt_flame_light_wobble` | `2.0` | map units of drift per axis. Past ~4 the light detaches from its sprite |
@@ -265,11 +374,12 @@ value — this is a mistake the project has already paid for more than once.
 Engine (**gitignored — not in git history**):
 
 ```
-sourcecode/gzdoom-rt/src/common/rendering/rt/rt_main.cpp
-  cvar block            rt_flame_light_*
-  FlameLightId_Base     1ull << 43
-  RtFlameKind / RT_FLAME_KINDS / RT_FlameKindOf()
+sourcecode/gzdoom-rt/src/common/rendering/rt/rt_lights_fx.cpp   (moved off rt_main.cpp on `fileSplit`)
+  RtFlameKind / RT_FLAME_KINDS / RT_FlameKindOf()   — the table, now with a radius column
   RT_UploadFlameLights()      called from RT_BeginFrame, after RT_UploadHandGlowLights()
+  FlameLightId_Base     1ull << 43
+sourcecode/gzdoom-rt/src/common/rendering/rt/rt_cvars.inc
+  cvar block            rt_flame_light_*
 ```
 
 Tracked:
@@ -278,7 +388,8 @@ Tracked:
 tools/strip_flame_sprite_lights.py     NEW — zeroes the attached lights, idempotent
 tools/gen_fx_emissives.py              PREFIX_RULES intensities -> 0 for the flame rows
 tools/gen_torch_emissives.py           INTENSITY -> 0
-tools/launch-retribution-rt.cmd        pins + a rationale comment block
+tools/d64rt-pins.cfg                   the nine pins (rt_flame_light_radius 0 is load-bearing)
+tools/ab-flame.cmd                     arms, incl. `marble` / `wide`
 docs/sprite-illumination.md            Case 7, STATUS rows, Tuning entry
 ```
 
@@ -361,3 +472,12 @@ the room.
    world wall textures. See the note under the three-way invariant.
 8. **Four of the sprites in the inventory exist once each, in MAP34.** Do not conclude the
    system is broken from `?FLM` alone. See the placement census.
+9. **`rt_flame_light_radius 0` is not "no radius".** It means *use the table*. It is also a
+   **load-bearing pin**: the cvar shipped as `0.09` until 2026-08-27, so every existing
+   `gzdoom-rt2.ini` holds `0.09`, and `tools/d64rt-pins.cfg` is the only thing that
+   overrides it — for the release too, which execs the same file. Changing the compiled
+   default alone would have made the fix invisible on every install that has ever run.
+10. **The `rt_flame_light_debug` marker is itself a 350-intensity sphere at radius 0.05,
+    at the same point.** That is `peak = 89,000` — hotter than anything this file just
+    fixed. The debug arm therefore *creates* the artefact it is used to look for. Judge
+    the fizzle on `on`/`marble`, and use `debug` only for position and counts.
