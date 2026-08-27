@@ -4398,13 +4398,11 @@
     {
       "textureName": "CFACEA",
       "metallicDefault": 0.0,
-      "roughnessDefault": 0.82,
-      "emissiveMult": 1.0
+      "roughnessDefault": 0.82
     },
     {
       "textureName": "CFACEB",
-      "roughnessDefault": 0.82,
-      "emissiveMult": 1.0
+      "roughnessDefault": 0.82
     },
     {
       "textureName": "CFACEC",

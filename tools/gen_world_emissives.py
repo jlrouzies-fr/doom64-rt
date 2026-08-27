@@ -84,7 +84,12 @@ NAME_RULES: list[tuple[str, float, float, tuple[int, int, int] | None]] = [
     # Dense SMON panels (B/F/LB/LC) stay ~1.0. Sparse green-text LEDs (A/C/D/E)
     # need higher INDIR mult — ~50px masks cast nothing at 1.0 (see screengreentextnolight).
     ("SMON", 1.0, 0, (120, 220, 255)),
-    ("CFACE", 1.0, 0, (255, 200, 80)),
+    # Only CFACEC reaches the emissive path at all (it is the one frame with a
+    # GLDEFS brightmap), and it takes its colour from the albedo, so this tint is
+    # a fallback that nothing currently reads. It is the AUTHORED eye red rather
+    # than the old amber because the amber was the fabrication -- see the CFACE
+    # note in the no-brightmap branch below.
+    ("CFACE", 1.0, 0, (152, 0, 0)),
     ("CRTR", 1.0, 0, (80, 220, 120)),
     ("CRT", 1.0, 0, (80, 220, 120)),
     ("SKEYFLYL", 1.2, 0, (255, 200, 40)),
@@ -1458,17 +1463,35 @@ def main() -> None:
                 # Luma mask + key tint (albedo yellow is brown → GI looked red).
                 eimg = _e_albedo_brightmap(albedo, tint, boost=1.35)
                 src = "albedo"
-            elif u.startswith(("CFACE", "CRT", "CRTR", "D64LOGO")):
+            elif u.startswith(("CRT", "CRTR", "D64LOGO")):
                 eimg = _screen_e_from_albedo(albedo, tint)
                 eimg = _boost_e(eimg, 1.2)
                 src = "albedo"
-            elif u.startswith("SMON"):
-                # No GLDEFS brightmap = authored non-emissive (SMONF*, SMONLB*).
+            elif u.startswith(("CFACE", "SMON")):
+                # No GLDEFS brightmap = authored non-emissive (SMONF*, SMONLB*,
+                # CFACEA, CFACEB).
                 # The generic albedo-luma path painted every bright metal slat
                 # with the cyan tint over ~24% of the tile, washing whole
                 # console walls ice-blue (textureissuelevel7computer.png).
                 # SMONLC* is the brightmapped sibling and glows at 0.5%.
-                by_src["smon_no_brightmap_skip"] += 1
+                #
+                # CFACE joined this branch on 2026-08-27, and it is the C22/C23
+                # over-painting above for the third time. CFACE is a demon face
+                # carved in stone whose EYES blink: ANIMDEFS runs CFACEA 70 tics
+                # -> CFACEB 4 -> CFACEC 70 -> CFACEB 4, and only CFACEC has a
+                # GLDEFS brightmap because only CFACEC has anything lit -- four
+                # albedo pixels of (152,0,0), the two eyes, at (21..22,33) and
+                # (41..42,33). CFACEA and CFACEB have ZERO saturated pixels and
+                # an albedo that peaks at 120: unlit stone, by authorial intent.
+                # Sent down _screen_e_from_albedo they came back with 606 and 620
+                # lit pixels of amber (255,200,80) -- 151x the authored answer,
+                # smeared over the brow, nose and forehead. In game that is 70
+                # tics of a yellow-speckled face, then 70 tics where the speckle
+                # vanishes and two red pixels light: the blink runs backwards and
+                # the "glow" is the carving's own stone highlights wearing a tint.
+                # A CFACE frame without a brightmap emits nothing. Do not put it
+                # back in the screen branch -- these are not screens.
+                by_src["no_brightmap_skip"] += 1
                 continue
             else:
                 # C22/C23 are not in the loose set any more -- see the brightmap branch

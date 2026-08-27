@@ -2782,8 +2782,7 @@
     {
       "textureName": "CFACEA",
       "roughnessDefault": 0.7,
-      "metallicDefault": 0.25,
-      "emissiveMult": 1.0
+      "metallicDefault": 0.25
     },
     {
       "textureName": "STRAKFL",
@@ -3837,10 +3836,6 @@
       "textureName": "SWXAZ2A",
       "roughnessDefault": 0.7,
       "metallicDefault": 0.25
-    },
-    {
-      "textureName": "CFACEB",
-      "emissiveMult": 1.0
     },
     {
       "textureName": "CFACEC",

@@ -958,6 +958,84 @@ enforced at the one place that writes it.
     0 of 757 monster entries carry `metallicDefault`/`roughnessDefault` in either
     `textures.json` tree. `_orm`/`_e` companions are shading data with no playsim reach.
 
+37. **A GENERATED `_e` ON AN ANIMATION FRAME THE ARTISTS LEFT DARK RUNS THE
+    ANIMATION BACKWARDS.** Reported 2026-08-27 as "one of C308 / CFACEA has a
+    broken emissive, not all frames, parts of the texture just look like yellow
+    pixels". `C308` was innocent -- it is the same demon-face carving in
+    blue-grey stone and has no `_e` and no emis meta at all, which is exactly why
+    it was a candidate. The fault was **CFACEA and CFACEB**.
+
+    CFACE is a stone face whose EYES blink. ANIMDEFS runs
+    `CFACEA 70t -> CFACEB 4t -> CFACEC 70t -> CFACEB 4t`, and the mod ships a
+    GLDEFS brightmap for **CFACEC only**, because CFACEC is the only frame with
+    anything lit: four albedo pixels of `(152,0,0)`, the two eyes, at
+    `(21..22,33)` and `(41..42,33)`. CFACEA and CFACEB have **zero** saturated
+    pixels and an albedo peaking at 120 -- unlit stone, by authorial intent.
+    Having no brightmap they fell past the brightmap branch of
+    `gen_world_emissives.py` into `_screen_e_from_albedo`, which thresholds
+    albedo LUMA, and came back with **606 and 620 lit pixels of amber
+    (255,200,80)** -- 151x the authored answer, smeared across the brow, nose and
+    forehead. So the face wore a yellow speckle for 70 tics, then the speckle
+    **vanished** for the 70 tics the eyes were supposed to light. The blink read
+    inverted, and the "glow" was the carving's own stone highlights wearing a
+    tint.
+
+    This is the **C22/C23 over-painting for the third time** (pitfall 17, and the
+    194x/102x note inside `gen_world_emissives.py` itself). SMON already had the
+    guard -- "no GLDEFS brightmap = authored non-emissive" -- and CFACE simply
+    was never added to it. It is now, and the counter that reports it is
+    `no_brightmap_skip` (it was `smon_no_brightmap_skip` while SMON was its only
+    member).
+    **The generalisation is the one worth keeping: on this mod the GLDEFS
+    brightmap set is the authored answer to "what on this texture emits", and a
+    frame's ABSENCE from it is data, not an omission to fill in.** Before adding
+    any world `_e`, count the texture's saturated albedo pixels; if the answer is
+    zero, there is nothing to light.
+
+    Diagnosing it needed no launch: ANIMDEFS gives the frame order, the albedo
+    lumps give the authored glow (`red-dominant` pixel count per frame), and the
+    `_e` PNGs give what we generated. The three numbers side by side name the
+    broken frame outright.
+
+38. **STOCK DOOM II MATERIALS IN `rt/mat` ARE APPLIED TO DOOM 64 ART THAT SHARES
+    A LUMP NAME, AND `mat_dev` DOES NOT SHADOW THEM.** Reported 2026-08-27 as
+    "the chaingun muzzle flash is supposed to be purple -- it is, but there is
+    also a yellow/red classic muzzle flash". Both halves were true and neither
+    was a renderer bug.
+
+    `rt/mat` in a dev build still holds the whole Doom II: Ray Traced material
+    set from the vendor drop -- 149 `*_e.ktx2`, byte-identical to
+    `gzdoom-rt-1.0.2/rt/mat/` and dated to it. RTGL1 keys materials by NAME, and
+    Retribution reuses 13 of id's lump names for its own art. Doom II's warm
+    `CHGFA0_e` therefore landed on Doom 64's BLUE-PURPLE chaingun flash (peak
+    165,148,247). Full set: `CHGFA0 CHGFB0 PISFA0 SHTFA0 SHTFB0 MISFA0..D0
+    BON1D0 BON2B0..D0`. Nothing in this project ever wrote them.
+
+    **`mat_dev` does not shadow `mat` wholesale, and believing it does is what
+    makes this invisible.** Under `developerMode` RTGL1 tries the raw loader
+    first and falls through to the KTX2 loader **per file**
+    (`TextureManager.h:179` builds the tuple, `TextureOverrides.cpp:117` chains
+    to the next loader when the file is absent). `mat` wins for every name
+    `mat_dev` does not define -- and we define none of these 13.
+
+    Two things disguised it. The chaingun **alternates** flash states shot to
+    shot (`A_GunFlash` -> `Flash:` = CHGF A/B, then `A_GunFlash("Flash2")` ->
+    `Flash2:` = CHGF C/D), and Doom II's chaingun flash has only A and B frames,
+    so exactly half the flashes were contaminated and half were right: it read
+    as a flicker between two muzzle flashes. And `package_release.py` drops
+    `rt/mat` by omission from `RT_KEEP_DIRS`, so **no player could ever see it**
+    -- the bug existed only where it was being tested. A defect that is absent
+    from the artefact you ship and present on your own machine will always be
+    reported as "works for everyone else", and that is a clue about the BUILD
+    TREE, not about the renderer or the mod.
+
+    `tools/check_stock_material_collisions.py` is the guard: it flags any map in
+    `rt/mat` that is byte-identical to the vendor drop, whose base name the Doom
+    64 art uses, and which `rt/mat_dev` does not define. `--fix` moves them to
+    `rt/mat_e_quarantine/`; `--root` points it at an installed copy, which
+    matters because an install made by copying the drop (rather than by
+    `package_release.py`) carries the same 13. Run it after any vendor bump.
+
 ## Suggested next work
 
 1. **`RAYRECONSTRUCTION.md`** — RR is working and the worm artifact is solved (a stuck cvar, not a renderer bug). Open levers: `rt_spp_direct`/`rt_spp_indirect`, `rt_restir_initial`.

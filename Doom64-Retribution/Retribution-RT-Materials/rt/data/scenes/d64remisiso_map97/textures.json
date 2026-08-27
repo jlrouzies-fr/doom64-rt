@@ -16,12 +16,7 @@
     {
       "textureName": "CFACEA",
       "roughnessDefault": 0.7,
-      "metallicDefault": 0.25,
-      "emissiveMult": 0.012
-    },
-    {
-      "textureName": "CFACEB",
-      "emissiveMult": 0.012
+      "metallicDefault": 0.25
     },
     {
       "textureName": "CFACEC",

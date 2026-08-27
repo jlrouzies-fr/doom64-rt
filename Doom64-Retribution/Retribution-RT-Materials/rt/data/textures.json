@@ -6602,13 +6602,11 @@
     },
     {
       "textureName": "CFACEA",
-      "emissiveMult": 1,
       "metallicDefault": 1.0,
       "roughnessDefault": 0.8
     },
     {
       "textureName": "CFACEB",
-      "emissiveMult": 1,
       "metallicDefault": 1.0,
       "roughnessDefault": 0.8
     },
