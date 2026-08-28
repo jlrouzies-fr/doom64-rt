@@ -584,6 +584,13 @@ them into Retribution, with a fifth redraw for the Shotgun Guy.
 Only the sprites and sounds are DrPyspy's. The actors and the placement handler are
 written for this project, and Unseen Evil's own `D64UE_MonsterBase` framework is not used.
 
+**It is not in the public download.** Unseen Evil ships no licence statement, so this
+project credits it rather than redistributing it — the release zip carries the actors, the
+materials and the launcher switch, but not the sprites. To play with the monsters, build
+`d64r-ue-monsters.pk3` yourself with `tools/pack_ue_monsters.py` from your own copy of
+`D64UnseenEvil-v1.0.3.pk3` and put it in `mods\`. The startup window's row says as much
+when the file is absent, and the game runs normally without it.
+
 **They replace, they do not add.** Every one of them takes the place of a monster already
 placed in the map, so the total never changes and 100% kills stays reachable. A converted
 Baron is one Baron fewer, not one more monster.

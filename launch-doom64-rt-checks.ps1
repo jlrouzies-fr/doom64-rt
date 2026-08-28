@@ -253,9 +253,13 @@ function Get-Checks {
                    "is unchanged. Which ones is fixed per map, not re-rolled each playthrough, and it unlocks as " +
                    "you go: Chaingunners from MAP05, Revenants from MAP10, one Arch-Vile on a few late maps, one " +
                    "Mastermind on MAP22. Untick to play the stock Retribution roster.")
-             Bad="Not found in this package - re-extract the download, keeping the folders intact."
+             Bad=("Not in the public download, and not by mistake: the sprites are DrPyspy's and " +
+                  "Doom 64: Unseen Evil ships no licence statement, so this project credits them " +
+                  "rather than redistributing them. Build the pk3 yourself with " +
+                  "tools\pack_ue_monsters.py from a copy of D64UnseenEvil-v1.0.3.pk3 and drop it " +
+                  "in the mods folder.")
              Toggle='Play with the Unseen Evil monsters'
-             Link=$null }
+             Link='https://www.moddb.com/mods/doom-64-unseen-evil'; LinkText='Doom 64: Unseen Evil on ModDB' }
 
     return $c
 }

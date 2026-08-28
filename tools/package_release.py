@@ -77,12 +77,29 @@ MODS = [
     "d64r-smonf-blink.wad", "d64r-smonf-lights.wad",
     "d64r-rt-sky.pk3", "d64r-lava-fx.pk3", "d64r-poison-fx.pk3",
     "d64r-blood-persist.pk3",
-    "d64r-ue-monsters.pk3",
     "d64r-widescreen-gfx.pk3", "d64r-mugshot.pk3", "d64r-rt-titlelogo.pk3",
     # Copied always, loaded only when the classic-recolour add-on is ticked --
     # the launcher hangs it off RECOLORARGS. Packaged unconditionally because a
     # player can tick that box at any later start.
     "d64r-caco-ball-recolor.pk3",
+]
+
+# NAMED BY THE LAUNCHER, PACKAGED ONLY IF PRESENT -- and on a clean CI checkout
+# it is not, deliberately.
+#
+# d64r-ue-monsters.pk3 is BUILT from Doom64: Unseen Evil's sprites, and both the
+# built pk3 and the whole Doom64-UnseenEvil/ source folder are gitignored: those
+# sprites are DrPyspy's, Unseen Evil ships no licence statement, and CREDITS.md
+# records the decision -- credited local add-on, ask before redistributing. A
+# GitHub release zip is redistribution, to the public, permanently. So this file
+# is absent from every CI build ON PURPOSE and its absence must not fail the
+# release; it was in MODS, which hard-exits on a missing file, and that is what
+# broke the v0.1.19 build.
+#
+# A local package built on a machine that has the pk3 picks it up and ships it,
+# which is the intended way to hand someone a build with the monsters in it.
+OPTIONAL_MODS = [
+    "d64r-ue-monsters.pk3",
 ]
 
 DOCS = ["README.md", "CREDITS.md", "AI-DECLARATION.md", "DEVELOPERS.md"]
@@ -106,7 +123,7 @@ def check_mods_match_launcher() -> None:
         if name.lower().endswith((".wad", ".pk3")):
             named.add(name)
 
-    listed = set(MODS)
+    listed = set(MODS) | set(OPTIONAL_MODS)
     missing = sorted(named - listed)
     extra = sorted(listed - named)
     if missing or extra:
@@ -358,6 +375,13 @@ def main():
             sys.exit("missing mod file the launcher requires: " + name)
         shutil.copy2(p, mods / name)
         count += 1
+    for name in OPTIONAL_MODS:
+        p = src_mods / name
+        if p.exists():
+            shutil.copy2(p, mods / name)
+            count += 1
+        else:
+            print(f"  NOT PACKAGED  {name} -- see OPTIONAL_MODS. This is expected on CI.")
     # THE PINS ARE A DEVELOPMENT FILE AND MUST BE FILTERED, NOT COPIED.
     # d64rt-pins.cfg is written for launch-retribution-rt.cmd -- the tester's
     # launcher -- and its head carries `sv_cheats 1`, `god` and `notarget`, plus
