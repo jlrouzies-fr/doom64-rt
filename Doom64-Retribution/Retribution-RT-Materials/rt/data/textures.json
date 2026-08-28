@@ -12367,31 +12367,37 @@
     },
     {
       "textureName": "C307B",
+      "emissiveMult": 2.5,
       "metallicDefault": 1.0,
       "roughnessDefault": 0.8
     },
     {
       "textureName": "C307B1",
+      "emissiveMult": 2.5,
       "metallicDefault": 1.0,
       "roughnessDefault": 0.8
     },
     {
       "textureName": "C307B2",
+      "emissiveMult": 2.5,
       "metallicDefault": 1.0,
       "roughnessDefault": 0.8
     },
     {
       "textureName": "C307B3",
+      "emissiveMult": 2.5,
       "metallicDefault": 1.0,
       "roughnessDefault": 0.8
     },
     {
       "textureName": "C307B4",
+      "emissiveMult": 2.5,
       "metallicDefault": 1.0,
       "roughnessDefault": 0.8
     },
     {
       "textureName": "C307B5",
+      "emissiveMult": 2.5,
       "metallicDefault": 1.0,
       "roughnessDefault": 0.8
     },
