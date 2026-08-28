@@ -581,6 +581,23 @@ declaration cannot drift from its definition. Put nothing in that file except an
   `_e` masks — every world emissive fell back to defaults and ceiling lamps read as
   overbright. Nothing errors; the meta simply has fewer entries. After any generator run,
   check `git status Doom64-Retribution/Retribution-RT-Materials/` is not empty.
+- **A new `RT_CVAR` must be PINNED or `RT_CVAR_NOARCH` from the day it is added.**
+  Every `RT_CVAR` is `CVAR_ARCHIVE`, so its FIRST run writes the initial default into
+  the user's ini and that number wins at startup forever — every later change to the
+  default is dead on arrival, with a clean rebuild and a fresh exe. `rt_vile_light_intensity`
+  shipped at 260, was "raised" to 8800, and ran at 260 for every test after that; the
+  Arch-Vile's flame sat at 676 radiance (0.12x a Baron fist) through several rounds of
+  "the light appears too late", and the time went on animation timing and denoiser
+  theories. A pin that merely restates the default costs nothing and makes drift visible.
+  When a cvar change appears to do nothing, grep the ini
+  (`%USERPROFILE%\OneDrive\Documents\My Games\GZDoom\gzdoom-rt2.ini`) before anything else.
+  Note `tools/d64rt-pins.cfg` argues "only the switch is pinned so tuning a default still
+  reaches the game" — that holds only for a cvar no ini has ever recorded, i.e. exactly once.
+- **Radius is never independent of brightness.** RTGL1 encodes a sphere light as
+  `intensity / (PI * radius^2)` (`LightManager.cpp::EncodeAsSphereLight`), so doubling the
+  radius quarters the light. Quote RADIANCE, not intensity, whenever either moves —
+  Baron fist `65/(PI*0.06^2)` = 5748, wall strip `180/(PI*0.35^2)` = 468. A "shape tweak"
+  to the radius silently changes brightness.
 - Log engine patches in `compat-patches.md`. Update plan Status when phases move.
 - Phase 3 (`material-authoring-spec.md`) gates bulk Phase 4 authoring.
 
@@ -1047,6 +1064,42 @@ enforced at the one place that writes it.
     `rt/mat_e_quarantine/`; `--root` points it at an installed copy, which
     matters because an install made by copying the drop (rather than by
     `package_release.py`) carries the same 13. Run it after any vendor bump.
+
+39. **"uploaded=N" is not "visible"** → a light-system debug dump proves SUBMISSION only. `RT_UploadHandGlowLights` happily reported `uploaded=2 of 2` for an Arch-Vile flame that was contributing nothing. Never close a lighting question on an upload count.
+40. **Never judge a lighting result from a run with debug markers on** → `rt_hand_light_debug`'s magenta markers were a fixed `350 / 0.05` = 44563 radiance beside a 676 flame (66x), so debug painted a bright ball exactly where the real light was invisible, and that is what got signed off. Markers now carry the same radiance as the light they mark. The renderer also prints `*** RT DEBUG VIEW ACTIVE ***` for any view that REPAINTS lighting (`rt_svgf_fp 2`, `rt_debug_visibility`, `rt_debug_show`, `rt_lava_debug`, `rt_smoke_debug 2`, `rt_debug_restir_m`) — read that line before trusting what is on screen.
+
+41. **A COLOUR THRESHOLD HAS NO NOTION OF "IS THIS A THING", AND THAT COSTS THREE
+    DIFFERENT BUGS.** Every emissive mask on the Unseen Evil monsters is a per-texel
+    rule, and a per-texel rule cannot tell an eye from a speck, a muzzle from leg
+    armour, or a real 1-texel LED from noise. Three geometric filters do what the
+    colour rule cannot, and each was added only after the corresponding bug shipped:
+
+    - **min blob** (8-connected, `MIN_BLOB`) — the Mastermind's wind-up carried NINE
+      1-3 texel specks at up 26..59 and rendered as a constellation of dots on a
+      monster that had not fired.
+    - **height band** on non-firing frames — eyes and gun flash are the SAME red and
+      only height separates them. Exempt the firing frame; there the low red is the point.
+    - **proximity cluster** around the largest blob — the Mastermind's firing frame also
+      matched leg highlights at lat +-33..+-42 that are 24 and 25 texels, BIGGER than
+      real parts of the flash, so no size rule can drop them; and no lateral window can
+      either, because on side rotations the gun itself sits at lat -48.
+
+    THE FLOOR IS PER MONSTER AND SOMETIMES PER FRAME. The Revenant's right shoulder LED
+    is a SINGLE texel, (90,4,2); a floor of 2 deleted it on the only frame it appears on
+    and it cast no light on any frame, while the 4-texel left LED lit fine — read as "one
+    launcher works, the other doesn't". The same monster's launch flare needs a floor of 3.
+
+    CROSS-CHECK THE MASK AGAINST THE LIGHT TABLE. If `rt_hand_lights.h` places 2 lights on
+    a frame, that frame's `_e` should have 2 blobs. Disagreement between them is the bug.
+
+    AND THE TEST ITSELF FLIPS BY HUE. Red needs PURITY (g and b both under a cap) because
+    a dominance rule matches the red-brown body. Green needs DOMINANCE, because the
+    Chaingunner's backpack is a dark olive peaking at (43,104,27) and a purity rule with a
+    low red cap scores the whole thing ZERO. One test per monster, named in its config.
+
+    Finally, a generator that stops writing an `_e` must DELETE it: RTGL1 keys `_e` on
+    filename, so clearing only the `textures.json` row leaves the frame glowing with
+    nothing to explain it. `tools/gen_ue_glow_emissives.py` does all of this.
 
 ## Suggested next work
 
