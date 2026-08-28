@@ -77,7 +77,12 @@ MODS = [
     "d64r-smonf-blink.wad", "d64r-smonf-lights.wad",
     "d64r-rt-sky.pk3", "d64r-lava-fx.pk3", "d64r-poison-fx.pk3",
     "d64r-blood-persist.pk3",
+    "d64r-ue-monsters.pk3",
     "d64r-widescreen-gfx.pk3", "d64r-mugshot.pk3", "d64r-rt-titlelogo.pk3",
+    # Copied always, loaded only when the classic-recolour add-on is ticked --
+    # the launcher hangs it off RECOLORARGS. Packaged unconditionally because a
+    # player can tick that box at any later start.
+    "d64r-caco-ball-recolor.pk3",
 ]
 
 DOCS = ["README.md", "CREDITS.md", "AI-DECLARATION.md", "DEVELOPERS.md"]

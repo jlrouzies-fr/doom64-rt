@@ -1,0 +1,31 @@
+OptionValue "D64R_UEDebugLevels"
+{
+	0, "Off"
+	1, "Census"
+	2, "Census + monster roster"
+}
+
+// Adds an "Unseen Evil Monsters" page. The percentages are the share of a map's
+// donor monsters that convert; the two map fields are comma-separated lists.
+OptionMenu "D64R_UEMonsterOptions"
+{
+	Title "$D64R_UE_TITLE"
+	StaticText "$D64R_UE_NOTE", "Gold"
+	StaticText ""
+	Option        "$D64R_UE_ENABLE",      "d64_ue_enable", "OnOff"
+	StaticText ""
+	Slider        "$D64R_UE_SERGEANT",    "d64_ue_sergeant_pct",    0, 100, 5, 0
+	Slider        "$D64R_UE_CHAINGUNNER", "d64_ue_chaingunner_pct", 0, 50,  2, 0
+	Slider        "$D64R_UE_REVENANT",    "d64_ue_revenant_pct",    0, 50,  2, 0
+	StaticText ""
+	TextField     "$D64R_UE_ARCHVILE",    "d64_ue_archvile_maps"
+	TextField     "$D64R_UE_MASTERMIND",  "d64_ue_mastermind_maps"
+	StaticText ""
+	Option        "$D64R_UE_VILEFIRE",    "d64_ue_vilefire", "OnOff"
+	Option        "$D64R_UE_DEBUG",       "d64_ue_debug", "D64R_UEDebugLevels"
+}
+
+AddOptionMenu "OptionsMenu"
+{
+	Submenu "$D64R_UE_TITLE", "D64R_UEMonsterOptions"
+}

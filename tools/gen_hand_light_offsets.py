@@ -49,14 +49,33 @@ PROJ_ROOT = Path(__file__).resolve().parents[1]
 
 ROOT = PROJ_ROOT
 WAD = ROOT / r"Doom64-Retribution\D64RTR_v15.WAD"
-BM = ROOT / r"Doom64-Retribution\D64RTR_BRIGHTMAPS.PK3"
+# D64RTR_BRIGHTMAPS.PK3 is not in every checkout of Doom64-Retribution/ -- it is
+# a shipped Retribution asset, and this tree only carries it under ReleaseTest/.
+# Same file either way; fall back rather than fail, so the Baron rows can still be
+# regenerated alongside the Arch-Vile's.
+_BM_CANDIDATES = [
+    ROOT / r"Doom64-Retribution\D64RTR_BRIGHTMAPS.PK3",
+    ROOT / r"ReleaseTest\Doom64-RT\Doom64-Retribution\D64RTR_BRIGHTMAPS.PK3",
+]
+BM = next((p for p in _BM_CANDIDATES if p.is_file()), _BM_CANDIDATES[0])
 OUT = ROOT / r"sourcecode\gzdoom-rt\src\common\rendering\rt\rt_hand_lights.h"
 
-# (sprite, brightmap donor, C++ enum tag, human name)
+# (sprite, brightmap donor, C++ enum tag, human name, mask source)
+#
+# "bm"   -- the mod's authored brightmaps. The artists drew the glow.
+# "fire" -- colour threshold at a per-frame floor reviewed by eye, for art that
+#           ships NO brightmap. Unseen Evil is that case: all 49 of its brightmap
+#           lumps are wall and switch textures, so the Arch-Vile has no authored
+#           source and the floors come out of the review page instead (see
+#           tools/gen_vile_glow_emissives.py, which shares them).
 MONSTERS = [
-    ("BOS2", "BOS2", "RT_HAND_HELLKNIGHT", "Hell Knight"),
-    ("BOSS", "BOS2", "RT_HAND_BARON", "Baron of Hell"),
+    ("BOS2", "BOS2", "RT_HAND_HELLKNIGHT", "Hell Knight", "bm"),
+    ("BOSS", "BOS2", "RT_HAND_BARON", "Baron of Hell", "bm"),
+    ("VILE", None, "RT_HAND_ARCHVILE", "Arch-Vile (Unseen Evil)", "fire"),
 ]
+
+# Our Arch-Vile sprites live in the add-on pk3, not the Retribution WAD.
+UE_PK3 = ROOT / r"Doom64-Retribution\d64r-ue-monsters.pk3"
 
 # Aesthetic override of the sampled colour, per sprite.
 #
@@ -71,12 +90,22 @@ MONSTERS = [
 # BOS2 is pinned to the exact value that was accepted in play. Left unpinned it samples
 # to 09ff4b here, because this script averages only the front rotations while the value
 # in play came from all 40 frames — a small shift, but not one worth making silently.
+#
+# VILE: pinned to ff9028, which is Retribution's OWN flame light -- the colour its
+# Lost Soul fire already casts (the SKUL rows in textures.json). Sampling the art
+# would land somewhere near it anyway, and matching the game's existing flame
+# exactly is worth more than a second, slightly different orange.
 COLOR_OVERRIDE = {
     "BOSS": "e01000",
     "BOS2": "08ff5e",
+    "VILE": "ff9028",
 }
 
-FRAMES = "ABCDEFGH"  # living frames only; I..N are death/gib and carry coloured gore
+# A..P. The Baron family only ever fills A..H -- it has no brightmap past that and
+# I..N are its death/gib frames, which must stay dark because the gore reuses the
+# hand glow's palette ramp. The range runs to P for the Arch-Vile, whose cast is
+# frames G..P. Its own death frames R..Y fall outside the table and so cannot light.
+FRAMES = "ABCDEFGHIJKLMNOP"
 MIN_BLOB = 8  # texels; the eye dots are ~2 and must not become lights
 MAX_HANDS = 2
 
@@ -148,24 +177,42 @@ def main() -> None:
 
     per_monster: list[tuple[str, str, str, list[list[tuple[float, float]]], str]] = []
 
-    for sprite, donor, tag, label in MONSTERS:
-        print(f"=== {label} ({sprite}, mask from {donor}) ===")
+    from gen_vile_glow_emissives import FLOORS as VILE_FLOORS, hot as vile_hot
+    with zipfile.ZipFile(UE_PK3) as z:
+        ue = {n.rsplit("/", 1)[-1].split(".")[0].upper(): z.read(n)
+              for n in z.namelist() if n.startswith("sprites/VILE")}
+
+    for sprite, donor, tag, label, kind in MONSTERS:
+        src = "brightmap " + str(donor) if kind == "bm" else "reviewed colour floors"
+        print(f"=== {label} ({sprite}, mask from {src}) ===")
         rows: list[list[tuple[float, float]]] = []
         lit_all: list[tuple[int, int, int]] = []
 
         for letter in FRAMES:
-            tex, stem = f"{sprite}{letter}1", f"{donor}{letter}1B"
-            if tex not in lumps or stem not in bms:
-                print(f"  {letter}: MISSING ({tex}/{stem}) -> no lights")
-                rows.append([])
-                continue
+            tex = f"{sprite}{letter}1"
+            if kind == "fire":
+                floor = VILE_FLOORS.get(letter)
+                spr = ue.get(tex)
+                if spr is None or floor is None or floor >= 300:
+                    # >=300 is the reviewer saying "no fire on this frame" -- the
+                    # wind-up and the heal gesture. Not a failure.
+                    print(f"  {letter}: no fire -> no lights")
+                    rows.append([])
+                    continue
+            else:
+                stem = f"{donor}{letter}1B"
+                if tex not in lumps or stem not in bms:
+                    print(f"  {letter}: MISSING ({tex}/{stem}) -> no lights")
+                    rows.append([])
+                    continue
+                spr = lumps[tex]
 
-            spr = lumps[tex]
             al = Image.open(io.BytesIO(spr)).convert("RGBA")
-            m = Image.open(io.BytesIO(bms[stem])).convert("RGBA")
-            if m.size != al.size:
-                m = m.resize(al.size, Image.Resampling.NEAREST)
             w, h = al.size
+            if kind == "bm":
+                m = Image.open(io.BytesIO(bms[stem])).convert("RGBA")
+                if m.size != al.size:
+                    m = m.resize(al.size, Image.Resampling.NEAREST)
 
             grab = read_grab(spr)
             if grab is None:
@@ -174,12 +221,15 @@ def main() -> None:
             xoff, yoff = grab
 
             ap = list(al.get_flattened_data())
-            mp = list(m.get_flattened_data())
-            lit = {
-                (i % w, i // w)
-                for i, (r, g, b, a) in enumerate(mp)
-                if a >= 24 and max(r, g, b) >= 40 and ap[i][3] >= 20
-            }
+            if kind == "fire":
+                lit = {(i % w, i // w) for i, px in enumerate(ap) if vile_hot(px, floor)}
+            else:
+                mp = list(m.get_flattened_data())
+                lit = {
+                    (i % w, i // w)
+                    for i, (r, g, b, a) in enumerate(mp)
+                    if a >= 24 and max(r, g, b) >= 40 and ap[i][3] >= 20
+                }
             lit_all += [ap[y * w + x][:3] for (x, y) in lit]
 
             comps = [c for c in blobs(lit) if len(c) >= MIN_BLOB][:MAX_HANDS]

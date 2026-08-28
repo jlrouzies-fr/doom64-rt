@@ -1,0 +1,24 @@
+[enu default]
+
+TAG_D64R_SERGEANT   = "Former Sergeant";
+TAG_D64R_CHAINGUNNER = "Former Commando";
+TAG_D64R_REVENANT   = "Revenant";
+TAG_D64R_ARCHVILE   = "Arch-Vile";
+TAG_D64R_MASTERMIND = "Spider Mastermind";
+
+OBIT_D64R_CHAINGUNNER   = "%o was faded by %k.";
+OBIT_D64R_REVENANT      = "%o could not outrun %k's missiles.";
+OBIT_D64R_REVENANT_MELEE = "%o ate a Revenant's fist.";
+OBIT_D64R_ARCHVILE      = "%o was cauterized by an Arch-Vile.";
+OBIT_D64R_MASTERMIND    = "%o was eliminated by the Spider Mastermind.";
+
+D64R_UE_TITLE       = "Unseen Evil Monsters";
+D64R_UE_ENABLE      = "Enable";
+D64R_UE_SERGEANT    = "Former Sergeants";
+D64R_UE_CHAINGUNNER = "Chaingunners (from MAP05)";
+D64R_UE_REVENANT    = "Revenants (from MAP10)";
+D64R_UE_ARCHVILE    = "Arch-Vile maps";
+D64R_UE_MASTERMIND  = "Spider Mastermind maps";
+D64R_UE_DEBUG       = "Per-map census to console";
+D64R_UE_VILEFIRE    = "Arch-Vile flame visible";
+D64R_UE_NOTE        = "Changes apply on the next map.";

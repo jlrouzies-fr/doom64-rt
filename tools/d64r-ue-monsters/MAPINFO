@@ -1,0 +1,20 @@
+GameInfo
+{
+	AddEventHandlers = "D64R_UEMonsterHandler"
+}
+
+// Editor numbers. ZScript has no DoomEdNum default property -- that was
+// DECORATE's "ACTOR Foo 1234" -- so the numbers live here. 30001+ is clear of
+// everything Retribution uses (its highest is 15008, plus 9902/9907/9910-9912).
+//
+// These exist so the monsters can be PLACED BY HAND: tools/build_uemon_lab.py
+// needs it to stand each one next to the monster it replaces, and it lets a
+// custom map use them directly instead of going through the handler.
+DoomEdNums
+{
+	30001 = "D64R_FormerSergeant"
+	30002 = "D64R_ChaingunGuy"
+	30003 = "D64R_Revenant"
+	30004 = "D64R_Archvile"
+	30005 = "D64R_SpiderMastermind"
+}

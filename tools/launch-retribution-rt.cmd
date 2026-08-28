@@ -68,6 +68,12 @@ set "SKY=%PROJ%\Doom64-Retribution\d64r-rt-sky.pk3"
 set "LAVAFX=%PROJ%\Doom64-Retribution\d64r-lava-fx.pk3"
 set "POISONFX=%PROJ%\Doom64-Retribution\d64r-poison-fx.pk3"
 set "BLOODFX=%PROJ%\Doom64-Retribution\d64r-blood-persist.pk3"
+rem d64r-ue-monsters.pk3: Unseen Evil's D64-style Chaingunner, Revenant,
+rem Arch-Vile, Spider Mastermind and redrawn Shotgun Guy, converted into the
+rem campaign at WorldLoaded by progression. MUST load after %MOD%: CPOS/SKEL/
+rem VILE/SPID are stock Doom 2 sprite names, so the IWAD supplies them unless
+rem this wins the load order. Built by tools/pack_ue_monsters.py.
+set "UEMON=%PROJ%\Doom64-Retribution\d64r-ue-monsters.pk3"
 set "WIDEGFX=%PROJ%\Doom64-Retribution\d64r-widescreen-gfx.pk3"
 set "TITLOGO=%PROJ%\Doom64-Retribution\d64r-rt-titlelogo.pk3"
 rem Doomguy mugshot. Must load AFTER %MOD%: it carries a full copy of
@@ -75,6 +81,33 @@ rem Retribution's SBARINFO (plus the DrawMugShot), and SBARINFO replaces
 rem wholesale, so whichever copy loads last is the entire HUD.
 set "MUGSHOT=%PROJ%\Doom64-Retribution\d64r-mugshot.pk3"
 set "MUS=%PROJ%\Doom64-Retribution\D64MUS.PK3"
+rem THE CACODEMON FIREBALL RECOLOUR AND THE MONSTER RECOLOUR IT WAS DRAWN FOR --
+rem two separate files, and they are gated separately HERE and only here.
+rem
+rem   d64r-caco-ball-recolor.pk3   ours. ON BY DEFAULT in this launcher.
+rem   D64ClassicRecolored.wad      the ModDB monster recolour, the user's own
+rem                                download. Off unless D64RT_RECOLOR=1.
+rem
+rem THIS DELIBERATELY DISAGREES WITH THE SHIPPED LAUNCHER, which hangs both off
+rem one tick-box and ships them off. The reason is that the whole RT side of the
+rem recolour -- the blue half of the ball's cast light, and the half-blue impact
+rem fire -- is gated on d64r-caco-ball-recolor.pk3 BEING LOADED
+rem (RT_CacoBlueFire), so with the pk3 absent none of it is reachable from a dev
+rem launch and "is the blue half working" cannot be asked. A test launcher that
+rem cannot reach a feature is the reason this file exists at all.
+rem
+rem The monster wad stays opt-in because it is not ours to load by default, and
+rem because the two are independent: the fireball is Retribution's own sprite
+rem repainted, and it stands on its own against the stock Cacodemon.
+rem
+rem   D64RT_CACOBALL=0   the shipped default -- stock orange ball, red fire
+rem   D64RT_RECOLOR=1    add the ModDB monster recolour on top, if present
+rem
+rem Each is added on its own `if exist`: the wad may not be there at all, and a
+rem -file naming a missing path is a startup error rather than a quiet skip.
+set "RECOL="
+if "%D64RT_RECOLOR%"=="1" if exist "%PROJ%\Addons\D64ClassicRecolored.wad" set "RECOL="%PROJ%\Addons\D64ClassicRecolored.wad""
+if not "%D64RT_CACOBALL%"=="0" if exist "%PROJ%\Doom64-Retribution\d64r-caco-ball-recolor.pk3" set "RECOL=!RECOL! "%PROJ%\Doom64-Retribution\d64r-caco-ball-recolor.pk3""
 rem Full console transcript (incl. startup) -> shareable log. `logfile` is
 rem whitelisted to run at GS_STARTUP (c_dispatch.cpp), so it captures
 rem everything from boot, including RTGL -rtdebug output.
@@ -689,7 +722,7 @@ rem
 rem Order matters and is preserved: the pins (including god/notarget) run BEFORE
 rem +map, exactly as they did inline, and %EXTRA% runs LAST so an arm still wins.
 start "" gzdoom.exe ^
-  -iwad "%IWAD%" -file "%MOD%" "%BM%" "%SKUL%" "%FLSH%" "%MUS%" "%SEQL%" "%BULBTEX%" "%PANEBRK%" "%CTELFIX%" "%LIQUIDART%" "%SMONFBLINK%" "%SMONFLIT%" "%SKY%" -file "%LAVAFX%" "%POISONFX%" "%BLOODFX%" "%WIDEGFX%" "%MUGSHOT%" "%TITLOGO%" -rtnolauncher -width 1280 -height 720 %RTDEBUG% ^
+  -iwad "%IWAD%" -file "%MOD%" "%BM%" "%SKUL%" "%FLSH%" "%MUS%" "%SEQL%" "%BULBTEX%" "%PANEBRK%" "%CTELFIX%" "%LIQUIDART%" "%SMONFBLINK%" "%SMONFLIT%" "%SKY%" -file "%LAVAFX%" "%POISONFX%" "%BLOODFX%" "%UEMON%" "%WIDEGFX%" "%MUGSHOT%" "%TITLOGO%" %RECOL% -rtnolauncher -width 1280 -height 720 %RTDEBUG% ^
   +logfile "%LOGF%" ^
   +win_y %WINY% ^
   +exec "%PINS%" ^

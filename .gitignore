@@ -232,3 +232,21 @@ music/fluorescentflicker.mp3
 
 dist-test/*
 dist-patch/*
+
+# Unseen Evil monster pk3. It carries DrPyspy's sprites and sounds, and Unseen
+# Evil ships no licence statement, so the ART stays out of this repository --
+# only the generator and the authored lumps (tools/pack_ue_monsters.py,
+# tools/d64r-ue-monsters/) are committed. Build it locally with:
+#     python tools/pack_ue_monsters.py
+# Same rule the Doom64-UnseenEvil/ overlays already follow.
+Doom64-Retribution/d64r-ue-monsters.pk3
+
+# Arch-Vile flame masks and the review page. Both are DERIVED from DrPyspy's
+# Unseen Evil sprites -- the _e files are a recoloured subset of his pixels, and
+# the gallery embeds the frames themselves as base64 data URIs. Same rule as
+# d64r-ue-monsters.pk3 above: the generators are committed, the art is not.
+#   tools\.venv-ai\Scripts\python.exe tools/gen_vile_glow_emissives.py
+#   tools\.venv-ai\Scripts\python.exe tools/build_vile_glow_gallery.py
+Doom64-Retribution/Retribution-RT-Materials/rt/mat/VILE*_e.png
+Doom64-Retribution/Retribution-RT-Materials/rt/mat_dev/VILE*_e.png
+tools/vile-glow-gallery.html

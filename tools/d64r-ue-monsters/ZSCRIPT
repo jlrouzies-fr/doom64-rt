@@ -1,0 +1,4 @@
+version "4.12"
+
+#include "d64rue/monsters.zs"
+#include "d64rue/handler.zs"

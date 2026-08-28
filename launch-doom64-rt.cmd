@@ -246,10 +246,20 @@ rem  the offsets CANNOT be corrected from a companion pk3: gzdoom's SPROFS lump
 rem  only adjusts sprites from its own file, and a TEXTURES redeclaration
 rem  resolves its self-referencing patch to the OLDEST texture of that name --
 rem  Retribution's original -- so the recolour would silently not appear.
+rem
+rem  d64r-caco-ball-recolor.pk3 rides ALONG WITH IT and nowhere else. The add-on
+rem  repaints the monster and stops there -- 71 lumps, not one of them BAL2 --
+rem  so a classic-hued Cacodemon still threw Doom 64's orange fireball. That pk3
+rem  is our own BAL2, cooled to violet and blue at the fringe (it is generated
+rem  from RETRIBUTION's sprite by tools\gen_caco_ball_recolor.py; none of the
+rem  add-on's art is read or redistributed). It is only right next to the
+rem  recoloured monster, so it is only loaded when the box is ticked -- and it
+rem  loads AFTER the add-on wad, which carries no BAL2 to be overridden anyway.
 set "RECOLORARGS="
 if not "%RECOLOR%"=="1" goto :norecolor
 if exist "%ADDONS%\D64ClassicRecolored.wad" set RECOLORARGS="%ADDONS%\D64ClassicRecolored.wad"
 if not defined RECOLORARGS if exist "%ADDONS%\D64ClassicRecolored_OffsetFix.wad" set RECOLORARGS="%ADDONS%\D64ClassicRecolored_OffsetFix.wad"
+if defined RECOLORARGS if exist "%MODS%\d64r-caco-ball-recolor.pk3" set RECOLORARGS=%RECOLORARGS% "%MODS%\d64r-caco-ball-recolor.pk3"
 :norecolor
 
 rem NO -width/-height ON THIS LINE, and no `rem` inside it either -- a rem
@@ -274,6 +284,7 @@ start "" "%ENGINE%\gzdoom.exe" -iwad "%IWAD%" ^
   "%MODS%\d64r-rt-sky.pk3" ^
   -file "%MODS%\d64r-lava-fx.pk3" "%MODS%\d64r-poison-fx.pk3" ^
   "%MODS%\d64r-blood-persist.pk3" ^
+  "%MODS%\d64r-ue-monsters.pk3" ^
   "%MODS%\d64r-widescreen-gfx.pk3" "%MODS%\d64r-mugshot.pk3" "%MODS%\d64r-rt-titlelogo.pk3" ^
   %RECOLORARGS% ^
   -rtnolauncher ^

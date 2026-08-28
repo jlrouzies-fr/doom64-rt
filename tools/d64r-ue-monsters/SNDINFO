@@ -1,0 +1,71 @@
+// Unseen Evil monster sounds, under a d64r/ namespace so nothing here can
+// retune a Retribution monster by accident.
+//
+// TWO EXCEPTIONS, at the bottom: A_SkelFist and A_SkelWhoosh hardcode
+// "skeleton/melee" and "skeleton/swing" rather than reading a property, so the
+// Revenant's punch can only be changed by defining those names globally. The
+// only other actor that uses them is Retribution's 64Revenant, which no Doom 64
+// map ever places, so there is no collateral.
+
+// --- Chaingunner -----------------------------------------------------------
+$random d64r/cpos/sight  { d64r/cpos/sight1 d64r/cpos/sight2 d64r/cpos/sight3 }
+d64r/cpos/sight1   "sounds/d64r/cpos_sight1.ogg"
+d64r/cpos/sight2   "sounds/d64r/cpos_sight2.ogg"
+d64r/cpos/sight3   "sounds/d64r/cpos_sight3.ogg"
+d64r/cpos/active   "sounds/d64r/cpos_active.ogg"
+d64r/cpos/pain     "sounds/d64r/pain.ogg"
+$random d64r/cpos/death  { d64r/cpos/death1 d64r/cpos/death2 d64r/cpos/death3 }
+d64r/cpos/death1   "sounds/d64r/cpos_death1.ogg"
+d64r/cpos/death2   "sounds/d64r/cpos_death2.ogg"
+d64r/cpos/death3   "sounds/d64r/cpos_death3.ogg"
+$pitchset d64r/cpos/sight1 0.9
+$pitchset d64r/cpos/sight2 0.9
+$pitchset d64r/cpos/sight3 0.9
+$pitchset d64r/cpos/active 0.9
+$pitchset d64r/cpos/pain   0.9
+$pitchset d64r/cpos/death1 0.9
+$pitchset d64r/cpos/death2 0.9
+$pitchset d64r/cpos/death3 0.9
+
+// --- Revenant --------------------------------------------------------------
+d64r/skel/sight    "sounds/d64r/skel_sight.ogg"
+d64r/skel/active   "sounds/d64r/skel_active.ogg"
+d64r/skel/pain     "sounds/d64r/pain.ogg"
+d64r/skel/death    "sounds/d64r/skel_death.ogg"
+d64r/skel/melee    "sounds/d64r/skel_melee.ogg"
+d64r/skel/swing    "sounds/d64r/skel_swing.ogg"
+d64r/skel/attack   "sounds/d64r/skel_attack.ogg"
+d64r/skel/tracex   "sounds/d64r/skel_tracex.ogg"
+
+// --- Arch-Vile -------------------------------------------------------------
+d64r/vile/sight    "sounds/d64r/vile_sight.ogg"
+d64r/vile/active   "sounds/d64r/vile_active.ogg"
+d64r/vile/attack   "sounds/d64r/vile_attack.ogg"
+d64r/vile/pain     "sounds/d64r/vile_pain.ogg"
+d64r/vile/death    "sounds/d64r/vile_death.ogg"
+d64r/vile/burn     "sounds/d64r/vile_burn.ogg"
+
+// --- Spider Mastermind -----------------------------------------------------
+d64r/spid/sight    "sounds/d64r/spid_sight.ogg"
+d64r/spid/active   "sounds/d64r/spid_active.ogg"
+d64r/spid/pain     "sounds/d64r/spid_pain.ogg"
+d64r/spid/death    "sounds/d64r/spid_death.ogg"
+d64r/spid/attack   "sounds/d64r/spid_attack.ogg"
+d64r/spid/windup   "sounds/d64r/spid_windup.ogg"
+d64r/spid/laser    "sounds/d64r/spid_laser.ogg"
+d64r/spid/walk     "sounds/d64r/spid_walk.ogg"
+$rolloff d64r/spid/sight  200 2000
+$rolloff d64r/spid/active 200 2000
+$rolloff d64r/spid/pain   200 2000
+$rolloff d64r/spid/death  200 2000
+$rolloff d64r/spid/attack 200 2000
+$rolloff d64r/spid/windup 200 2000
+$rolloff d64r/spid/walk   200 2000
+$rolloff d64r/spid/laser  200 2000
+$volume  d64r/spid/windup 0.8
+$volume  d64r/spid/laser  0.1
+$limit   d64r/spid/laser  0
+
+// --- the two hardcoded names, see the note at the top ----------------------
+skeleton/melee     "sounds/d64r/skel_melee.ogg"
+skeleton/swing     "sounds/d64r/skel_swing.ogg"
