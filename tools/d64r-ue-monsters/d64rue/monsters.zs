@@ -349,6 +349,11 @@ class D64R_Archvile : Archvile
 			A_StartSound("d64r/vile/attack", CHAN_VOICE);
 			A_StartSound("vile/start", CHAN_WEAPON);
 		}
+		// G is lit but draws no fire: its emissive floor is 300 ("no fire drawn
+		// here", the reviewer's call) while rt_hand_lights places its light from
+		// the art at a lower floor. That moves the light one frame earlier, to
+		// the first frame of the cast. TIMING IS UNCHANGED -- an earlier attempt
+		// stretched this to 80 tics to buy 2 seconds and the vile visibly froze.
 		VILE G 10 BRIGHT A_FaceTarget;
 		VILE H 8 BRIGHT A_VileTarget("D64R_ArchvileFire");
 		VILE IJKLMN 8 BRIGHT A_FaceTarget;

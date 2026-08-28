@@ -68,11 +68,100 @@ OUT = ROOT / r"sourcecode\gzdoom-rt\src\common\rendering\rt\rt_hand_lights.h"
 #           lumps are wall and switch textures, so the Arch-Vile has no authored
 #           source and the floors come out of the review page instead (see
 #           tools/gen_vile_glow_emissives.py, which shares them).
+# "muzzle" -- the cool white-to-violet flash painted into the Chaingunner's two
+#             barrels. Same reason as "fire": no brightmap exists. It needs its
+#             own rule rather than the fire one because the flash is BLUE-biased
+#             and the fire test is red-dominant, so the fire rule finds nothing
+#             here and a red-dominant threshold loose enough to catch it would
+#             take his skin instead.
 MONSTERS = [
     ("BOS2", "BOS2", "RT_HAND_HELLKNIGHT", "Hell Knight", "bm"),
     ("BOSS", "BOS2", "RT_HAND_BARON", "Baron of Hell", "bm"),
     ("VILE", None, "RT_HAND_ARCHVILE", "Arch-Vile (Unseen Evil)", "fire"),
+    ("CPOS", None, "RT_HAND_CHAINGUNNER", "Chaingunner (Unseen Evil)", "muzzle"),
+    ("SPID", None, "RT_HAND_MASTERMIND", "Spider Mastermind (Unseen Evil)", "red"),
+    ("SKEL", None, "RT_HAND_REVENANT", "Revenant (Unseen Evil)", "red"),
 ]
+
+# Frames allowed to carry a LIGHT, where the mask alone would say yes to more.
+#
+# The Mastermind's eyes and its gun flash are the SAME RED -- 2 blobs of 9..12
+# texels at lat +-13, up ~89..101 on the walk, against 1187 texels low and wide
+# on H. Colour cannot separate them; the frame can. Without this gate the eyes
+# become two analytic lamps on a walking spider, which is the exact failure
+# gen_enemy_eye_emissives avoids by keeping EYE_LIGHT at 0.
+LIGHT_ONLY_FRAMES = {}
+
+# EYE BAND, in map units above the sprite's feet, per sprite.
+#
+# The Mastermind's eyes and its laser are the same red and the same frames, so
+# neither colour nor frame can separate them -- but HEIGHT can. On the firing
+# frame the eyes are still up at lat +-9, up 82 while all 1313 texels of laser
+# sit below 75. Split there and the eyes get their own light on every frame,
+# which is what they could not have while the mask was one blob.
+#
+# A frame keeps only TWO lights (RtHandPos hands[2]), so on the firing frame the
+# gun wins: it is 1313 texels against 127, and losing a dim eye light for one
+# frame is not visible. Every other frame is eyes.
+EYE_BAND = {"SPID": 75.0}
+
+# Intensity multiplier per frame kind. Eyes are a soft glow, a gun flash is not,
+# and one cvar has to serve both -- so the table carries the ratio.
+EYE_SCALE = 0.10
+
+
+# Reviewed per monster in the detection page, same source as
+# gen_ue_red_emissives.MONSTERS -- keep the two in step or the light will sit at
+# the centroid of a mask different from the one that glows.
+RED_LEVEL = {"SPID": (112, 40), "SKEL": (89, 40)}
+
+# Per-frame override, mirroring gen_ue_red_emissives.level_by_frame. The light
+# must sit at the centroid of the SAME texels that glow -- at 112 the firing
+# frame's mask is mostly armour, so the light would be placed by the armour.
+RED_LEVEL_BY_FRAME = {"SPID": {"H": 235}}
+
+
+def red_hot(px, level: int, cap: int) -> bool:
+    """A texel of a red glow -- eye or gun.
+
+    PURITY, not redness. A dominance test (r>=140, r-g>=60, r-b>=60) matches
+    425..2922 texels per Mastermind frame, which is its red-brown BODY. Requiring
+    green and blue both near zero gives 29 on the walk and 1440 on the firing frame.
+    """
+    r, g, b, a = px
+    return a >= 128 and r >= level and g <= cap and b <= cap
+
+
+def ue_lump(ue: dict, sprite: str, letter: str) -> str | None:
+    """The pk3 lump holding this frame's FRONT rotation.
+
+    A lump can serve two frames -- SPIDA1D1 is frame A rotation 1 AND frame D
+    rotation 1 -- so "<sprite><letter>1" finds only the single-frame ones. Looking
+    just there silently dropped every walk frame of the Mastermind, which is where
+    its eyes are.
+    """
+    direct = f"{sprite}{letter}1"
+    if direct in ue:
+        return direct
+    for name in sorted(ue):
+        if not name.startswith(sprite):
+            continue
+        rest = name[len(sprite):]
+        if len(rest) == 4 and rest[1] == "1" and rest[3] == "1":
+            if rest[0] == letter or rest[2] == letter:
+                return name
+    return None
+
+
+def muzzle_hot(px) -> bool:
+    """A texel of the Chaingunner's muzzle flash.
+
+    Bright, no channel dark, and never warm: the flash runs cool white
+    (216,216,240) to violet (192,168,240), so blue must not fall far below red.
+    That last term is what keeps his orange-lit skin and the red jacket out.
+    """
+    r, g, b, a = px
+    return a >= 128 and max(r, g, b) >= 190 and min(r, g, b) >= 90 and (b - r) >= -20
 
 # Our Arch-Vile sprites live in the add-on pk3, not the Retribution WAD.
 UE_PK3 = ROOT / r"Doom64-Retribution\d64r-ue-monsters.pk3"
@@ -106,8 +195,15 @@ COLOR_OVERRIDE = {
 # hand glow's palette ramp. The range runs to P for the Arch-Vile, whose cast is
 # frames G..P. Its own death frames R..Y fall outside the table and so cannot light.
 FRAMES = "ABCDEFGHIJKLMNOP"
-MIN_BLOB = 8  # texels; the eye dots are ~2 and must not become lights
-MAX_HANDS = 2
+# Texels a blob needs to become a light, per sprite. The Baron's floor of 8 exists
+# to keep its EYE dots out; the Revenant's red IS eyes and shoulder launchers, at
+# 2..5 texels each, so the same floor would reject every one of them.
+MIN_BLOB_DEFAULT = 8
+MIN_BLOB_BY_SPRITE = {"SKEL": 2}
+
+# FOUR, not two. The Revenant wants both eyes AND both shoulder launchers lit at
+# their own positions; two slots can only ever show half of that.
+MAX_HANDS = 4
 
 
 def wad_lumps() -> dict[str, bytes]:
@@ -178,9 +274,18 @@ def main() -> None:
     per_monster: list[tuple[str, str, str, list[list[tuple[float, float]]], str]] = []
 
     from gen_vile_glow_emissives import FLOORS as VILE_FLOORS, hot as vile_hot
+
+    # LIGHT-ONLY floor overrides. The emissive floor is the reviewer's call and
+    # is not touched here -- G is 300 there, meaning "no fire is DRAWN on this
+    # frame", and that stands. But G is the wind-up, and the cast now holds it
+    # for 2 seconds so the light rises before the flame lands; a light needs a
+    # POSITION, and at 170 G resolves to 39 texels spanning x 17..101, y 5..32 --
+    # both raised hands, near the top of a 136-tall sprite. So the light is
+    # placed from the art even where nothing is drawn as burning yet.
+    LIGHT_FLOOR = {"G": 170}
     with zipfile.ZipFile(UE_PK3) as z:
         ue = {n.rsplit("/", 1)[-1].split(".")[0].upper(): z.read(n)
-              for n in z.namelist() if n.startswith("sprites/VILE")}
+              for n in z.namelist() if n.startswith("sprites/")}
 
     for sprite, donor, tag, label, kind in MONSTERS:
         src = "brightmap " + str(donor) if kind == "bm" else "reviewed colour floors"
@@ -190,20 +295,32 @@ def main() -> None:
 
         for letter in FRAMES:
             tex = f"{sprite}{letter}1"
-            if kind == "fire":
-                floor = VILE_FLOORS.get(letter)
+            if kind in ("muzzle", "red"):
+                only = LIGHT_ONLY_FRAMES.get(sprite)
+                if only is not None and letter not in only:
+                    print(f"  {letter}: not a firing frame -> no lights")
+                    rows.append(([], 1.0))
+                    continue
+                found = ue_lump(ue, sprite, letter)
+                spr = ue.get(found) if found else None
+                if spr is None:
+                    print(f"  {letter}: no lump -> no lights")
+                    rows.append(([], 1.0))
+                    continue
+            elif kind == "fire":
+                floor = LIGHT_FLOOR.get(letter, VILE_FLOORS.get(letter))
                 spr = ue.get(tex)
                 if spr is None or floor is None or floor >= 300:
                     # >=300 is the reviewer saying "no fire on this frame" -- the
                     # wind-up and the heal gesture. Not a failure.
                     print(f"  {letter}: no fire -> no lights")
-                    rows.append([])
+                    rows.append(([], 1.0))
                     continue
             else:
                 stem = f"{donor}{letter}1B"
                 if tex not in lumps or stem not in bms:
                     print(f"  {letter}: MISSING ({tex}/{stem}) -> no lights")
-                    rows.append([])
+                    rows.append(([], 1.0))
                     continue
                 spr = lumps[tex]
 
@@ -221,7 +338,13 @@ def main() -> None:
             xoff, yoff = grab
 
             ap = list(al.get_flattened_data())
-            if kind == "fire":
+            if kind == "red":
+                lvl, cap = RED_LEVEL.get(sprite, (120, 40))
+                lvl = RED_LEVEL_BY_FRAME.get(sprite, {}).get(letter, lvl)
+                lit = {(i % w, i // w) for i, px in enumerate(ap) if red_hot(px, lvl, cap)}
+            elif kind == "muzzle":
+                lit = {(i % w, i // w) for i, px in enumerate(ap) if muzzle_hot(px)}
+            elif kind == "fire":
                 lit = {(i % w, i // w) for i, px in enumerate(ap) if vile_hot(px, floor)}
             else:
                 mp = list(m.get_flattened_data())
@@ -232,16 +355,64 @@ def main() -> None:
                 }
             lit_all += [ap[y * w + x][:3] for (x, y) in lit]
 
-            comps = [c for c in blobs(lit) if len(c) >= MIN_BLOB][:MAX_HANDS]
+            band = EYE_BAND.get(sprite)
+            frame_scale = 1.0
+            if band is not None:
+                hi = {p for p in lit if (yoff - p[1]) > band}
+                lo = lit - hi
+                # The gun wins only when it CLEARLY dominates. A bare "more texels
+                # low" made it 33-vs-25 on the wind-up frame, handing that frame to
+                # the gun and leaving the eyes dark for no visible reason.
+                if len(lo) > len(hi) * 3:
+                    lit = lo
+                else:
+                    lit = hi
+                    frame_scale = EYE_SCALE
+
+            floor_n = MIN_BLOB_BY_SPRITE.get(sprite, MIN_BLOB_DEFAULT)
+            comps = [c for c in blobs(lit) if len(c) >= floor_n]
+
+            # ONE PER SIDE, not simply the two biggest. A spread flame breaks into
+            # many blobs, and "largest two" then picks two parts of the SAME arm:
+            # the Arch-Vile's H came out (-49.7, -40.3) and its I (+42.4, +33.7),
+            # both lights stacked on one hand with nothing on the other -- on the
+            # two frames right after the cast starts, which is where the light was
+            # reported missing. Fall back to the two largest only when one side
+            # genuinely has no blob (arms down and the fire central, K..P).
+            def centre(c):
+                return (sum(p[0] for p in c) / len(c), sum(p[1] for p in c) / len(c))
+
+            if len(comps) > MAX_HANDS:
+                # One per side FIRST, then fill by size. The side rule alone is
+                # what stops a spread flame putting both lights on one arm (the
+                # Arch-Vile's H and I did exactly that); filling afterwards is
+                # what lets a Revenant show two shoulders AND two eyes.
+                left = [c for c in comps if centre(c)[0] < xoff]
+                right = [c for c in comps if centre(c)[0] >= xoff]
+                picked = []
+                if left and right:
+                    picked = [left[0], right[0]]
+                for c in comps:
+                    if len(picked) >= MAX_HANDS:
+                        break
+                    if c not in picked:
+                        picked.append(c)
+                comps = picked
+            else:
+                comps = comps[:MAX_HANDS]
+
             hands = []
             for c in comps:
-                cx = sum(p[0] for p in c) / len(c)
-                cy = sum(p[1] for p in c) / len(c)
+                cx, cy = centre(c)
                 hands.append((cx - xoff, yoff - cy))  # lateral (+right), up from feet
 
             desc = ", ".join(f"(lat{lat:+.1f}, up{up:.1f})" for lat, up in hands) or "none"
-            print(f"  {letter}: {w}x{h} grAb=({xoff},{yoff})  {len(comps)} blob(s)  {desc}")
-            rows.append(hands)
+            # NOT `kind` -- that is the monster's mask type and shadowing it here
+            # silently sent every frame after the first down the brightmap branch.
+            band_label = "eyes" if frame_scale != 1.0 else "gun/hands"
+            print(f"  {letter}: {w}x{h} grAb=({xoff},{yoff})  {len(comps)} blob(s)  "
+                  f"{band_label} x{frame_scale}  {desc}")
+            rows.append((hands, frame_scale))
 
         if not lit_all:
             raise SystemExit(f"{sprite}: no lit texels found — aborting")
@@ -282,7 +453,10 @@ def main() -> None:
         "struct RtHandFrame",
         "{",
         "    int        count;",
-        "    RtHandPos  hands[ 2 ];",
+        "    // Intensity multiplier for THIS frame. Eyes and a gun flash share one",
+        "    // cvar, so the ratio lives here: 1.0 is the flash, 0.10 an eye.",
+        "    float      scale;",
+        "    RtHandPos  hands[ 4 ];",
         "};",
         "",
         "enum RtHandMonster",
@@ -302,11 +476,11 @@ def main() -> None:
     for sprite, tag, label, rows, _c in per_monster:
         lines.append(f"    // {label} ({sprite})")
         lines.append("    {")
-        for letter, hands in zip(FRAMES, rows):
+        for letter, (hands, scale) in zip(FRAMES, rows):
             parts = ", ".join(f"{{ {lat:.1f}f, {up:.1f}f, 0.0f }}" for lat, up in hands)
             pad = ", ".join(["{ 0.0f, 0.0f, 0.0f }"] * (MAX_HANDS - len(hands)))
             both = ", ".join(x for x in (parts, pad) if x)
-            lines.append(f"        {{ {len(hands)}, {{ {both} }} }},  // {letter}")
+            lines.append(f"        {{ {len(hands)}, {scale:.2f}f, {{ {both} }} }},  // {letter}")
         lines.append("    },")
     lines += [
         "};",

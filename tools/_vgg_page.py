@@ -119,7 +119,7 @@ SHELL = r"""
     <span class="val" id="gfv">170</span></div>
   <button id="tMask" aria-pressed="true">Mask</button>
   <button id="tAuto" aria-pressed="true">Blobs</button>
-  <button id="tScale">Zoom 6&times;</button>
+  <button id="tScale">Zoom 3&times;</button>
   <button id="clr">Clear points</button>
   <button id="cp">Copy result</button>
   <button id="save" class="primary">Save marks</button>
@@ -142,7 +142,8 @@ const DATA = JSON.parse(document.getElementById('data').textContent);
 const STATE = JSON.parse(document.getElementById('state').textContent);
 const MIN_BLOB = 12;
 
-let scale = 6, showMask = true, showAuto = true;
+const ZOOMS = [1, 2, 3, 4, 6, 10];   // small first: this page is read, not drawn on
+let scale = 3, showMask = true, showAuto = true;
 let globalFloor = STATE.globalFloor || 170;
 const picks = Object.assign({}, STATE.picks || {});
 const floors = Object.assign({}, STATE.floors || {});
@@ -341,7 +342,8 @@ document.getElementById('tAuto').addEventListener('click', e => {
   showAuto = !showAuto; e.currentTarget.setAttribute('aria-pressed', showAuto); repaint();
 });
 document.getElementById('tScale').addEventListener('click', e => {
-  scale = scale === 6 ? 10 : (scale === 10 ? 4 : 6);
+  const i = ZOOMS.indexOf(scale);
+  scale = ZOOMS[(i + 1) % ZOOMS.length];
   e.currentTarget.innerHTML = 'Zoom ' + scale + '×';
   DATA.forEach(sizeBox);
 });

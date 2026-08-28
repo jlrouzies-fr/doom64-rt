@@ -1366,16 +1366,20 @@
       "textureName": "SMRTD0"
     },
     {
-      "textureName": "SPIDH1"
+      "textureName": "SPIDH1",
+      "emissiveMult": 3.0
     },
     {
-      "textureName": "SPIDH2H8"
+      "textureName": "SPIDH2H8",
+      "emissiveMult": 3.0
     },
     {
-      "textureName": "SPIDH3H7"
+      "textureName": "SPIDH3H7",
+      "emissiveMult": 3.0
     },
     {
-      "textureName": "SPIDH4H6"
+      "textureName": "SPIDH4H6",
+      "emissiveMult": 3.0
     },
     {
       "textureName": "SPIDH5"
@@ -6216,51 +6220,35 @@
     },
     {
       "textureName": "CPOSF1",
-      "emissiveMult": 0.35,
-      "lightColorHEX": "ff8c52",
-      "lightIntensity": 520
+      "emissiveMult": 0.35
     },
     {
       "textureName": "CPOSF2",
-      "emissiveMult": 0.35,
-      "lightColorHEX": "ff8c52",
-      "lightIntensity": 520
+      "emissiveMult": 0.35
     },
     {
       "textureName": "CPOSF3",
-      "emissiveMult": 0.35,
-      "lightColorHEX": "ff8c52",
-      "lightIntensity": 520
+      "emissiveMult": 0.35
     },
     {
       "textureName": "CPOSF4",
-      "emissiveMult": 0.35,
-      "lightColorHEX": "ff8c52",
-      "lightIntensity": 520
+      "emissiveMult": 0.35
     },
     {
       "textureName": "CPOSF5",
-      "emissiveMult": 0.35,
-      "lightColorHEX": "ff8c52",
-      "lightIntensity": 520
+      "emissiveMult": 0.35
     },
     {
       "textureName": "CPOSF6",
-      "emissiveMult": 0.35,
-      "lightColorHEX": "ff8c52",
-      "lightIntensity": 520
+      "emissiveMult": 0.35
     },
     {
       "textureName": "CPOSF7",
-      "emissiveMult": 0.35,
-      "lightColorHEX": "ff8c52",
-      "lightIntensity": 520
+      "emissiveMult": 0.35
     },
     {
       "textureName": "CPOSF8",
-      "emissiveMult": 0.35,
-      "lightColorHEX": "ff8c52",
-      "lightIntensity": 520
+      "emissiveMult": 0.35
     },
     {
       "textureName": "SSWVF0",
@@ -16147,13 +16135,15 @@
     },
     {
       "textureName": "VILEP8",
-      "emissiveMult": 4.0
+      "emissiveMult": 8.0
     },
     {
-      "textureName": "VILEZ1"
+      "textureName": "VILEZ1",
+      "emissiveMult": 8.0
     },
     {
-      "textureName": "VILEZ2Z8"
+      "textureName": "VILEZ2Z8",
+      "emissiveMult": 8.0
     },
     {
       "textureName": "VILEZ3Z7"
@@ -16165,13 +16155,16 @@
       "textureName": "VILEZ5"
     },
     {
-      "textureName": "VILE[1"
+      "textureName": "VILE[1",
+      "emissiveMult": 8.0
     },
     {
-      "textureName": "VILE[2[8"
+      "textureName": "VILE[2[8",
+      "emissiveMult": 8.0
     },
     {
-      "textureName": "VILE[3[7"
+      "textureName": "VILE[3[7",
+      "emissiveMult": 8.0
     },
     {
       "textureName": "VILE[4[6"
@@ -16193,6 +16186,201 @@
     },
     {
       "textureName": "VILE^5"
+    },
+    {
+      "textureName": "VILEA1D1",
+      "emissiveMult": 8.0
+    },
+    {
+      "textureName": "VILEA2D8",
+      "emissiveMult": 8.0
+    },
+    {
+      "textureName": "VILEA3D7",
+      "emissiveMult": 8.0
+    },
+    {
+      "textureName": "VILEA7D3",
+      "emissiveMult": 8.0
+    },
+    {
+      "textureName": "VILEA8D2",
+      "emissiveMult": 8.0
+    },
+    {
+      "textureName": "VILEB1E1",
+      "emissiveMult": 8.0
+    },
+    {
+      "textureName": "VILEB2E8",
+      "emissiveMult": 8.0
+    },
+    {
+      "textureName": "VILEB3E7",
+      "emissiveMult": 8.0
+    },
+    {
+      "textureName": "VILEB7E3",
+      "emissiveMult": 8.0
+    },
+    {
+      "textureName": "VILEB8E2",
+      "emissiveMult": 8.0
+    },
+    {
+      "textureName": "VILEC1F1",
+      "emissiveMult": 8.0
+    },
+    {
+      "textureName": "VILEC2F8",
+      "emissiveMult": 8.0
+    },
+    {
+      "textureName": "VILEC3F7",
+      "emissiveMult": 8.0
+    },
+    {
+      "textureName": "VILEC7F3",
+      "emissiveMult": 8.0
+    },
+    {
+      "textureName": "VILEC8F2",
+      "emissiveMult": 8.0
+    },
+    {
+      "textureName": "VILEQ1",
+      "emissiveMult": 8.0
+    },
+    {
+      "textureName": "VILEQ2",
+      "emissiveMult": 8.0
+    },
+    {
+      "textureName": "VILEQ3",
+      "emissiveMult": 8.0
+    },
+    {
+      "textureName": "VILEQ7",
+      "emissiveMult": 8.0
+    },
+    {
+      "textureName": "VILEQ8",
+      "emissiveMult": 8.0
+    },
+    {
+      "textureName": "SPIDA1D1",
+      "emissiveMult": 8.0
+    },
+    {
+      "textureName": "SPIDA2D8",
+      "emissiveMult": 8.0
+    },
+    {
+      "textureName": "SPIDA3D7"
+    },
+    {
+      "textureName": "SPIDA4D6"
+    },
+    {
+      "textureName": "SPIDA5D5"
+    },
+    {
+      "textureName": "SPIDA6D4"
+    },
+    {
+      "textureName": "SPIDA7D3"
+    },
+    {
+      "textureName": "SPIDA8D2",
+      "emissiveMult": 8.0
+    },
+    {
+      "textureName": "SPIDB1E1",
+      "emissiveMult": 8.0
+    },
+    {
+      "textureName": "SPIDB2E8",
+      "emissiveMult": 8.0
+    },
+    {
+      "textureName": "SPIDB3E7"
+    },
+    {
+      "textureName": "SPIDB4E6"
+    },
+    {
+      "textureName": "SPIDB5E5"
+    },
+    {
+      "textureName": "SPIDB6E4"
+    },
+    {
+      "textureName": "SPIDB7E3"
+    },
+    {
+      "textureName": "SPIDB8E2",
+      "emissiveMult": 8.0
+    },
+    {
+      "textureName": "SPIDC1F1",
+      "emissiveMult": 8.0
+    },
+    {
+      "textureName": "SPIDC2F8",
+      "emissiveMult": 8.0
+    },
+    {
+      "textureName": "SPIDC3F7"
+    },
+    {
+      "textureName": "SPIDC4F6"
+    },
+    {
+      "textureName": "SPIDC5F5"
+    },
+    {
+      "textureName": "SPIDC6F4"
+    },
+    {
+      "textureName": "SPIDC7F3"
+    },
+    {
+      "textureName": "SPIDC8F2",
+      "emissiveMult": 8.0
+    },
+    {
+      "textureName": "SPIDG1",
+      "emissiveMult": 8.0
+    },
+    {
+      "textureName": "SPIDG2G8",
+      "emissiveMult": 8.0
+    },
+    {
+      "textureName": "SPIDG3G7"
+    },
+    {
+      "textureName": "SPIDG4G6"
+    },
+    {
+      "textureName": "SPIDG5"
+    },
+    {
+      "textureName": "SPIDZ1",
+      "emissiveMult": 8.0
+    },
+    {
+      "textureName": "SPIDZ2Z8",
+      "emissiveMult": 8.0
+    },
+    {
+      "textureName": "SPIDZ3Z7"
+    },
+    {
+      "textureName": "SPIDZ4Z6"
+    },
+    {
+      "textureName": "SPIDZ5"
     }
   ]
 }

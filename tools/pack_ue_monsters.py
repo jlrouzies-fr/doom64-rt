@@ -199,6 +199,21 @@ def patch_lights() -> int:
                 continue          # they light a frame we do not ship
             entries[target] = {k: v for k, v in row.items() if k != "textureName"}
 
+    # STRIP the centre blob off the Chaingunner's firing frames. Retribution ships
+    # CPOSF* with lightIntensity 520 / ff8c52 for its own 64ChaingunGuy, and RTGL1
+    # pins a sprite's attached light to the CENTRE of the billboard quad -- so it
+    # lands as one warm ball on his chest while both barrels stay dark. The muzzle
+    # is two analytic lights at the barrel ends instead (rt_hand_lights.h, frame F,
+    # lat -19.6 / +19.4), so the row must lose its light or they stack.
+    #
+    # emissiveMult is kept: it is Retribution's own value and it is what makes the
+    # painted flash read as hot. Only the cast light moves.
+    for name, row in by.items():
+        if name.upper().startswith("CPOS") and "lightIntensity" in row:
+            entries[name] = {k: v for k, v in row.items()
+                             if k not in ("textureName", "lightIntensity",
+                                          "lightColorHEX", "lightEvenOnDynamic")}
+
     for mine, donor in LIGHT_BORROW.items():
         row = by.get(donor)
         if not row or "lightIntensity" not in row:
