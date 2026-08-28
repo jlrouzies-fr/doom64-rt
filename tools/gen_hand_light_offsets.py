@@ -40,6 +40,7 @@ import io
 import struct
 import zipfile
 from collections import deque
+from typing import NamedTuple
 from pathlib import Path
 
 from PIL import Image
@@ -225,6 +226,131 @@ MIN_BLOB_BY_SPRITE = {"SKEL": 1}
 MAX_HANDS = 4
 
 
+class Hand(NamedTuple):
+    lat: float
+    up: float
+    fwd: float
+    scale: float
+    colour: str | None   # hex, None = inherit the monster's
+    eye: bool
+
+
+# A SECOND SOURCE ON THE SAME MONSTER. The Chaingunner's backpack indicator is
+# green on a monster whose muzzle light is white-blue, so it cannot ride the
+# monster colour, and it is lit whether or not he is firing, so it cannot ride
+# the muzzle frames either.
+#
+# IT IS POSITIONED FROM THE BACK VIEW, and it has to be: the table is keyed by
+# frame letter and built from rotation 1, and a backpack is INVISIBLE from the
+# front -- rotation 1 has zero green texels on every frame. Rotation 5 is the one
+# that shows it. Screen-x mirrors on a back view (the monster's right appears on
+# your left), hence the negated lateral, and fwd is negative because the pack sits
+# behind the body axis. That is also why fwd exists at all; every other source
+# here leaves it 0 because a front view cannot show forward extension.
+EXTRA_SOURCE = {
+    "CPOS": {
+        "rot": "5",
+        "test": "green",
+        "fwd": -10.0,
+        "scale": 0.45,
+        "colour": "45b42c",   # the TONED green, matching the _e -- not a saturated sample
+        "reserve": [1],       # one slot held back from the muzzle blobs
+    },
+}
+
+
+# Monsters whose only light is their EYES, positioned from the eye masks that
+# gen_enemy_eye_emissives already wrote into rt/mat. Deriving from the _e rather
+# than re-thresholding the albedo is what guarantees the light lands exactly where
+# the glow is -- the cross-check AGENTS.md asks for cannot fail if there is only
+# one source of truth.
+#
+# POSS / SPOS / SSWV / HEAD / PAIN have NO _e at all, so there is no eye glow to
+# match and they are absent on purpose, not by oversight.
+EYE_MONSTERS = [
+    ("TROO", "RT_HAND_IMP", "Imp"),
+    ("TRO2", "RT_HAND_NIGHTMAREIMP", "Nightmare Imp"),
+    ("SARG", "RT_HAND_PINKY", "Pinky"),
+    ("SAR2", "RT_HAND_SPECTRE", "Spectre"),
+    ("FATT", "RT_HAND_MANCUBUS", "Mancubus"),
+    ("BSPI", "RT_HAND_ARACHNOTRON", "Arachnotron"),
+    ("CYBR", "RT_HAND_CYBERDEMON", "Cyberdemon"),
+]
+
+OMAT = PROJ_ROOT / "Doom64-Retribution" / "Retribution-RT-Materials" / "rt" / "mat"
+
+
+def extra_hands(sprite, letter, cfg, lumps, ue):
+    """The Chaingunner's backpack: one light, from the BACK rotation."""
+    name = f"{sprite}{letter}{cfg['rot']}"
+    raw = ue.get(name) or lumps.get(name)
+    if raw is None:
+        return []
+    im = Image.open(io.BytesIO(raw)).convert("RGBA")
+    w, _ = im.size
+    px = list(im.get_flattened_data())
+    lit = [(i % w, i // w) for i, q in enumerate(px)
+           if q[3] >= 128 and q[1] >= 45 and q[1] - q[0] >= 25 and q[1] - q[2] >= 25]
+    if not lit:
+        return []
+    g = read_grab(raw) or (w // 2, im.size[1])
+    cx = sum(q[0] for q in lit) / len(lit)
+    cy = sum(q[1] for q in lit) / len(lit)
+    return [Hand(-(cx - g[0]), g[1] - cy, cfg["fwd"], cfg["scale"], cfg["colour"], False)]
+
+
+def eye_rows(sprite, lumps):
+    """Per-frame eye positions read straight out of the sprite's own _e masks.
+
+    A frame whose eyes GLOW must get a light, and rotation 1 is not always the
+    lump that carries the mask: TROO's F and BSPI's B and D have an _e on other
+    rotations only. Left alone those frames go dark mid-walk while the glow stays
+    on -- the same defect as the Revenant's missing LED, arrived at differently.
+    Eyes sit at a fixed point on a head, so carrying the last measured position
+    forward is accurate; inventing one from a 45-degree rotation's screen-x would
+    not be, because that axis is not the body's lateral axis.
+
+    A frame with NO _e on any rotation is left dark on purpose -- nothing glows
+    there, so there is nothing for a light to sit under.
+    """
+    rows, lit_all = [], []
+    glows = {n.stem[len(sprite):-2][0] for n in OMAT.glob(f"{sprite}*_e.png")}
+    last: list = []
+    for letter in FRAMES:
+        f = OMAT / f"{sprite}{letter}1_e.png"
+        raw = lumps.get(f"{sprite}{letter}1")
+        if not f.exists() or raw is None:
+            if letter in glows and last:
+                rows.append(last)
+                print(f"  {letter}: no rot-1 mask, carried forward from the previous frame")
+            else:
+                rows.append([])
+            continue
+        im = Image.open(f).convert("RGBA")
+        w, _ = im.size
+        px = list(im.get_flattened_data())
+        lit = {(i % w, i // w) for i, q in enumerate(px) if q[3] > 0}
+        if not lit:
+            rows.append([])
+            continue
+        lit_all += [px[y * w + x][:3] for (x, y) in lit]
+        # grAb comes from the WAD sprite: the _e is written by PIL, which DROPS
+        # grAb, so the mask itself cannot say where the feet are.
+        g = read_grab(raw) or (w // 2, im.size[1])
+        comps = [c for c in blobs(lit) if len(c) >= 2][:2]
+        hands = []
+        for c in comps:
+            cx = sum(q[0] for q in c) / len(c)
+            cy = sum(q[1] for q in c) / len(c)
+            hands.append(Hand(cx - g[0], g[1] - cy, 0.0, 1.0, None, True))
+        rows.append(hands)
+        if hands:
+            last = hands
+        print(f"  {letter}: {len(hands)} eye(s)  " +
+              ", ".join(f"(lat{h.lat:+.1f}, up{h.up:.1f})" for h in hands))
+    return rows, lit_all
+
+
 def wad_lumps() -> dict[str, bytes]:
     d = WAD.read_bytes()
     n, o = struct.unpack_from("<II", d, 4)
@@ -318,13 +444,13 @@ def main() -> None:
                 only = LIGHT_ONLY_FRAMES.get(sprite)
                 if only is not None and letter not in only:
                     print(f"  {letter}: not a firing frame -> no lights")
-                    rows.append(([], 1.0))
+                    rows.append([])
                     continue
                 found = ue_lump(ue, sprite, letter)
                 spr = ue.get(found) if found else None
                 if spr is None:
                     print(f"  {letter}: no lump -> no lights")
-                    rows.append(([], 1.0))
+                    rows.append([])
                     continue
             elif kind == "fire":
                 floor = LIGHT_FLOOR.get(letter, VILE_FLOORS.get(letter))
@@ -333,13 +459,13 @@ def main() -> None:
                     # >=300 is the reviewer saying "no fire on this frame" -- the
                     # wind-up and the heal gesture. Not a failure.
                     print(f"  {letter}: no fire -> no lights")
-                    rows.append(([], 1.0))
+                    rows.append([])
                     continue
             else:
                 stem = f"{donor}{letter}1B"
                 if tex not in lumps or stem not in bms:
                     print(f"  {letter}: MISSING ({tex}/{stem}) -> no lights")
-                    rows.append(([], 1.0))
+                    rows.append([])
                     continue
                 spr = lumps[tex]
 
@@ -416,7 +542,8 @@ def main() -> None:
             def centre(c):
                 return (sum(p[0] for p in c) / len(c), sum(p[1] for p in c) / len(c))
 
-            if len(comps) > MAX_HANDS:
+            room = MAX_HANDS - len(EXTRA_SOURCE.get(sprite, {}).get("reserve", []))
+            if len(comps) > room:
                 # One per side FIRST, then fill by size. The side rule alone is
                 # what stops a spread flame putting both lights on one arm (the
                 # Arch-Vile's H and I did exactly that); filling afterwards is
@@ -427,26 +554,31 @@ def main() -> None:
                 if left and right:
                     picked = [left[0], right[0]]
                 for c in comps:
-                    if len(picked) >= MAX_HANDS:
+                    if len(picked) >= room:
                         break
                     if c not in picked:
                         picked.append(c)
                 comps = picked
             else:
-                comps = comps[:MAX_HANDS]
+                comps = comps[:room]
 
             hands = []
             for c in comps:
                 cx, cy = centre(c)
-                hands.append((cx - xoff, yoff - cy))  # lateral (+right), up from feet
+                # lateral (+right), up from feet, fwd, scale, colour(None=monster), eye?
+                hands.append(Hand(cx - xoff, yoff - cy, 0.0, frame_scale, None, False))
 
-            desc = ", ".join(f"(lat{lat:+.1f}, up{up:.1f})" for lat, up in hands) or "none"
+            extra = EXTRA_SOURCE.get(sprite)
+            if extra is not None:
+                hands += extra_hands(sprite, letter, extra, lumps, ue)
+
+            desc = ", ".join(f"(lat{h.lat:+.1f}, up{h.up:.1f})" for h in hands) or "none"
             # NOT `kind` -- that is the monster's mask type and shadowing it here
             # silently sent every frame after the first down the brightmap branch.
             band_label = "eyes" if frame_scale != 1.0 else "gun/hands"
-            print(f"  {letter}: {w}x{h} grAb=({xoff},{yoff})  {len(comps)} blob(s)  "
+            print(f"  {letter}: {w}x{h} grAb=({xoff},{yoff})  {len(hands)} blob(s)  "
                   f"{band_label} x{frame_scale}  {desc}")
-            rows.append((hands, frame_scale))
+            rows.append(hands)
 
         if not lit_all:
             raise SystemExit(f"{sprite}: no lit texels found — aborting")
@@ -456,6 +588,22 @@ def main() -> None:
             print(f"  -> light colour {hexcol}  (override; sampled {sampled})\n")
         else:
             print(f"  -> light colour {hexcol}\n")
+        per_monster.append((sprite, tag, label, rows, hexcol))
+
+    # EYES LAST, so the existing RT_HAND_* indices keep their values. The enum is
+    # generated from this order and the ini archives nothing about it, but a stale
+    # object file compiled against the old numbering would silently light the wrong
+    # monster -- appending is the change that cannot do that.
+    for sprite, tag, label in EYE_MONSTERS:
+        print(f"=== {label} ({sprite}, eyes from the authored _e masks) ===")
+        rows, lit_all = eye_rows(sprite, lumps)
+        if not lit_all:
+            raise SystemExit(f"{sprite}: no eye texels found -- aborting")
+        # Sampled, never hardcoded: the Nightmare Imp's eyes are a cold blue-violet
+        # while every other monster here is red, and that difference lives in the
+        # mask. A literal would drift the cast light off the glow on the next retune.
+        hexcol = COLOR_OVERRIDE.get(sprite, saturated_hex(lit_all))
+        print(f"  -> eye colour {hexcol}\n")
         per_monster.append((sprite, tag, label, rows, hexcol))
 
     lines = [
@@ -482,14 +630,24 @@ def main() -> None:
         "    float lateral;",
         "    float up;",
         "    float fwd;",
+        "    // Intensity multiplier for THIS HAND, not this frame. One monster can",
+        "    // carry sources of different strengths at once -- the Chaingunner has a",
+        "    // muzzle flash AND a backpack indicator, and the Mastermind's eyes sit",
+        "    // at 0.10 of its gun. A per-frame scalar could not express either.",
+        "    float lightScale;",
+        "    // 0 = inherit RT_HAND_COLOR[monster]. Set when a hand's colour differs",
+        "    // from the rest of the monster: the Chaingunner's backpack is green on a",
+        "    // monster whose light is white-blue.",
+        "    unsigned colour;",
+        "    // Eyes draw from rt_eye_light_* instead of the monster's own cvars. They",
+        "    // are a different ORDER of light -- a hint on the face, not a source that",
+        "    // lights a room -- and sharing a monster cvar makes one of the two wrong.",
+        "    bool  isEye;",
         "};",
         "",
         "struct RtHandFrame",
         "{",
         "    int        count;",
-        "    // Intensity multiplier for THIS frame. Eyes and a gun flash share one",
-        "    // cvar, so the ratio lives here: 1.0 is the flash, 0.10 an eye.",
-        "    float      scale;",
         "    RtHandPos  hands[ 4 ];",
         "};",
         "",
@@ -510,11 +668,16 @@ def main() -> None:
     for sprite, tag, label, rows, _c in per_monster:
         lines.append(f"    // {label} ({sprite})")
         lines.append("    {")
-        for letter, (hands, scale) in zip(FRAMES, rows):
-            parts = ", ".join(f"{{ {lat:.1f}f, {up:.1f}f, 0.0f }}" for lat, up in hands)
-            pad = ", ".join(["{ 0.0f, 0.0f, 0.0f }"] * (MAX_HANDS - len(hands)))
+        for letter, hands in zip(FRAMES, rows):
+            parts = ", ".join(
+                "{{ {:.1f}f, {:.1f}f, {:.1f}f, {:.2f}f, {}u, {} }}".format(
+                    h.lat, h.up, h.fwd, h.scale,
+                    f"0x{h.colour}" if h.colour else "0",
+                    "true" if h.eye else "false")
+                for h in hands)
+            pad = ", ".join(["{ 0.0f, 0.0f, 0.0f, 1.00f, 0u, false }"] * (MAX_HANDS - len(hands)))
             both = ", ".join(x for x in (parts, pad) if x)
-            lines.append(f"        {{ {len(hands)}, {scale:.2f}f, {{ {both} }} }},  // {letter}")
+            lines.append(f"        {{ {len(hands)}, {{ {both} }} }},  // {letter}")
         lines.append("    },")
     lines += [
         "};",

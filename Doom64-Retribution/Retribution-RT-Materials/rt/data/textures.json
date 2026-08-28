@@ -6229,15 +6229,15 @@
     },
     {
       "textureName": "CPOSF4",
-      "emissiveMult": 6.0
+      "emissiveMult": 2.5
     },
     {
       "textureName": "CPOSF5",
-      "emissiveMult": 6.0
+      "emissiveMult": 2.5
     },
     {
       "textureName": "CPOSF6",
-      "emissiveMult": 6.0
+      "emissiveMult": 2.5
     },
     {
       "textureName": "CPOSF7"
@@ -16738,19 +16738,19 @@
     },
     {
       "textureName": "CPOSA4",
-      "emissiveMult": 6.0
+      "emissiveMult": 2.5
     },
     {
       "textureName": "CPOSA5",
-      "emissiveMult": 6.0
+      "emissiveMult": 2.5
     },
     {
       "textureName": "CPOSA6",
-      "emissiveMult": 6.0
+      "emissiveMult": 2.5
     },
     {
       "textureName": "CPOSA7",
-      "emissiveMult": 6.0
+      "emissiveMult": 2.5
     },
     {
       "textureName": "CPOSA8"
@@ -16766,15 +16766,15 @@
     },
     {
       "textureName": "CPOSB4",
-      "emissiveMult": 6.0
+      "emissiveMult": 2.5
     },
     {
       "textureName": "CPOSB5",
-      "emissiveMult": 6.0
+      "emissiveMult": 2.5
     },
     {
       "textureName": "CPOSB6",
-      "emissiveMult": 6.0
+      "emissiveMult": 2.5
     },
     {
       "textureName": "CPOSB7"
@@ -16790,19 +16790,19 @@
     },
     {
       "textureName": "CPOSC3",
-      "emissiveMult": 6.0
+      "emissiveMult": 2.5
     },
     {
       "textureName": "CPOSC4",
-      "emissiveMult": 6.0
+      "emissiveMult": 2.5
     },
     {
       "textureName": "CPOSC5",
-      "emissiveMult": 6.0
+      "emissiveMult": 2.5
     },
     {
       "textureName": "CPOSC6",
-      "emissiveMult": 6.0
+      "emissiveMult": 2.5
     },
     {
       "textureName": "CPOSC7"
@@ -16821,15 +16821,15 @@
     },
     {
       "textureName": "CPOSD4",
-      "emissiveMult": 6.0
+      "emissiveMult": 2.5
     },
     {
       "textureName": "CPOSD5",
-      "emissiveMult": 6.0
+      "emissiveMult": 2.5
     },
     {
       "textureName": "CPOSD6",
-      "emissiveMult": 6.0
+      "emissiveMult": 2.5
     },
     {
       "textureName": "CPOSD7"
@@ -16848,15 +16848,15 @@
     },
     {
       "textureName": "CPOSE4",
-      "emissiveMult": 6.0
+      "emissiveMult": 2.5
     },
     {
       "textureName": "CPOSE5",
-      "emissiveMult": 6.0
+      "emissiveMult": 2.5
     },
     {
       "textureName": "CPOSE6",
-      "emissiveMult": 6.0
+      "emissiveMult": 2.5
     },
     {
       "textureName": "CPOSE7"
@@ -16875,19 +16875,19 @@
     },
     {
       "textureName": "CPOSG4",
-      "emissiveMult": 6.0
+      "emissiveMult": 2.5
     },
     {
       "textureName": "CPOSG5",
-      "emissiveMult": 6.0
+      "emissiveMult": 2.5
     },
     {
       "textureName": "CPOSG6",
-      "emissiveMult": 6.0
+      "emissiveMult": 2.5
     },
     {
       "textureName": "CPOSG7",
-      "emissiveMult": 6.0
+      "emissiveMult": 2.5
     },
     {
       "textureName": "CPOSG8"

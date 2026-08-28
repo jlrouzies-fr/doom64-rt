@@ -112,8 +112,13 @@ MONSTERS = {
         # near-black (8,29,4) shading from joining in.
         "test": ("green", 45, 25, 25),
         "min_blob": 4,
-        "eye_mult": 6.0,               # blobs are 5..24 texels, only on rotations 3..7
-        "gun_mult": 6.0,
+        # PEAK 180, NOT THE DEFAULT 255. Saturating this olive to full range gives
+        # (105,255,66) -- a neon, radioactive green that reads nothing like the
+        # painted backpack. The ray-traced path uses _e RAW, so whatever is written
+        # here IS the emitted colour; 180 keeps it a normal mid green, (74,180,46).
+        "peak": 180,
+        "eye_mult": 2.5,               # with peak 180 this is ~1/3 the old 255x6
+        "gun_mult": 2.5,
     },
 }
 
@@ -182,13 +187,17 @@ def centre(c):
 
 def build_e(albedo: Image.Image, test, min_blob: int,
             band: float | None = None, oy: int = 0,
-            cluster: float | None = None) -> tuple[Image.Image, int]:
+            cluster: float | None = None, peak: int = 255) -> tuple[Image.Image, int]:
     """Glowing texels, hue saturated to full range; everything else transparent.
 
     NOT the raw albedo: RsWorld.inl multiplies by baseColor again, and squaring
     dark art annihilates the glow. Same reason gen_hand_glow_emissives saturates,
-    and the reason the Chaingunner's dim olive can work at all -- (43,104,27)
-    saturates to (105,255,66).
+    and the reason the Chaingunner's dim olive can work at all.
+
+    `peak` is how far the saturation goes, and it is a COLOUR decision, not a
+    brightness one. The ray-traced path reads _e RAW, so this value IS the emitted
+    hue: 255 gave the Chaingunner (105,255,66), a radioactive green nothing like
+    the painted backpack. 180 gives (74,180,46). Brightness belongs in the mult.
 
     See the module docstring for why all three filters exist.
     """
@@ -213,7 +222,7 @@ def build_e(albedo: Image.Image, test, min_blob: int,
             out.append((0, 0, 0, 0))
             continue
         r, g, b, _ = p
-        k = 255.0 / max(r, g, b)
+        k = float(peak) / max(r, g, b)
         out.append((min(255, int(r * k)), min(255, int(g * k)), min(255, int(b * k)), 255))
         n += 1
     img = Image.new("RGBA", src.size)
@@ -262,7 +271,7 @@ def main() -> int:
                 floor_n = cfg.get("min_blob_by_frame", {}).get(f, floor_n)
 
             e_img, n = build_e(albedo, test, floor_n,
-                               band, grab_oy(raw), cluster)
+                               band, grab_oy(raw), cluster, cfg.get("peak", 255))
             if n == 0:
                 # CLEAR BOTH SIDES. Clearing only the meta leaves the _e PNG from
                 # an earlier, looser run sitting on disk, and RTGL1 picks an _e up
