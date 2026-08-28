@@ -405,6 +405,13 @@ $win.MaxWidth  = $wa.Width  - 20
 # Dark caption, square corners, blood border -- DWM owns the title bar in WPF
 # exactly as much as it does in WinForms.
 $win.Add_SourceInitialized({
+    # Proof the window really opened. Without it an exception thrown by any
+    # handler AFTER the window is up looks identical, from the .cmd's side, to
+    # WPF being unavailable -- both arrive as exit 2 -- so the launcher silently
+    # opened the WinForms window and the user saw the styling change on a click
+    # with nothing said. Exit 2 either way, since falling back still lets them
+    # play, but the message has to tell the two apart.
+    $script:WindowOpened = $true
     $h = (New-Object System.Windows.Interop.WindowInteropHelper($win)).Handle
     if ($h -eq [System.IntPtr]::Zero) { return }
     foreach ($attr in 20, 19) { $v = 1; try { [void][D64.Win]::DwmSetWindowAttribute($h, $attr, [ref]$v, 4) } catch { } }
@@ -498,13 +505,23 @@ function New-Row($c) {
         if ($cb) {
             # The rows are thrown away and rebuilt on every re-check, so the
             # answer lives in script state, not in the control -- and it is keyed
-            # by the row's Key, not a variable per add-on, so a second toggle is a
-            # row in Get-Checks and nothing else. GetNewClosure is what captures
-            # $k; without it every handler would write the LAST row's key.
-            $k = $c.Key
-            $cb.IsChecked = [bool]$script:Toggles[$k]
-            $cb.Add_Checked({   $script:Toggles[$k] = $true  }.GetNewClosure())
-            $cb.Add_Unchecked({ $script:Toggles[$k] = $false }.GetNewClosure())
+            # by the row's Key, so a second toggle is a row in Get-Checks and
+            # nothing else.
+            #
+            # THE KEY RIDES ON .Tag, NOT IN A CLOSURE, and that is not a style
+            # choice. GetNewClosure() binds the scriptblock to a NEW dynamic
+            # module, and this runs inside a function -- so `$script:` then means
+            # that module's scope, where Toggles does not exist. The handler threw
+            # "Cannot index into a null array" on the first click, the exception
+            # escaped ShowDialog, the catch below exited 2, and the .cmd read 2 as
+            # "the window could not open" and launched the WinForms fallback. The
+            # window appeared to close and reopen in a different style whenever a
+            # box was ticked. $args[0] is the sender, same convention as the
+            # KeyDown handler further down.
+            $cb.Tag       = $c.Key
+            $cb.IsChecked = [bool]$script:Toggles[$c.Key]
+            $cb.Add_Checked({   $script:Toggles[$args[0].Tag] = $true  })
+            $cb.Add_Unchecked({ $script:Toggles[$args[0].Tag] = $false })
         }
     }
     if ($confirm) {
@@ -649,10 +666,18 @@ if ($Settings -and (Test-Path $Settings)) {
 $iwadBox.Text  = $IwadHint
 $skip.IsChecked = Test-ConfigDone
 
+$script:WindowOpened = $false
 Draw-Checks
 try { [void]$win.ShowDialog() }
 catch {
-    [Console]::Error.WriteLine("startup window: could not open ($($_.Exception.Message))")
+    if ($script:WindowOpened) {
+        [Console]::Error.WriteLine(
+            "startup window: FAILED WHILE OPEN -- this is a bug in the window, not a " +
+            "missing WPF. $($_.Exception.Message)")
+        [Console]::Error.WriteLine("  at: $($_.ScriptStackTrace -replace "`r`n", ' | ')")
+    } else {
+        [Console]::Error.WriteLine("startup window: could not open ($($_.Exception.Message))")
+    }
     exit 2
 }
 
