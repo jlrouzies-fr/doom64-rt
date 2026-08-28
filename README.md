@@ -158,7 +158,7 @@ folder is GZDoom's config, at `Documents\My Games\GZDoom\gzdoom-rt2.ini`.
 |---|---|
 | [Doom 64: Retribution v1.5](https://www.moddb.com/mods/doom-64-retribution) | Extract the **whole** download into `game\`, not just the WAD — the brightmaps, the soundfont and the fluidsynth DLLs are all used. |
 | [OGG music pack v1.3](https://www.moddb.com/mods/doom-64-retribution/addons/doom-64-retribution-ogg-music-pack-v13) | `D64MUS.ZIP` on the same page. Unzip it into `game\` too. |
-| *Optional* — [D64ClassicRecolored](https://www.moddb.com/games/doom-64/addons/d64classicrecolored) | Classic-hued Cacodemon and Pain Elemental. Off by default; drop the wad in `Addons\` (and tick it in the startup window on step 4.). |
+| *Optional* — [D64ClassicRecolored](https://www.moddb.com/games/doom-64/addons/d64classicrecolored) | Classic-hued Cacodemon and Pain Elemental — and, ticked with them, our recoloured [fireball](#art). Off by default; drop the wad in `Addons\` (and tick it in the startup window on step 4.). |
 
 **3. Have DOOM II installed**
 
@@ -395,8 +395,8 @@ Three that matter more than the rest:
 
 This project is mostly a lighting mod, but it does redraw a handful of textures — every
 one of them recorded here so none is a quiet change. All ship **enabled**, in the
-launcher's own file list, so this is what the game looks like out of the box. (There is
-also an optional, off-by-default recolour add-on — see [Install and play](#install).)
+launcher's own file list, so this is what the game looks like out of the box — except the
+last one, which rides on the optional recolour add-on and is off until you tick it.
 
 ### SFLATAS — the ceiling lamp pane
 
@@ -516,6 +516,49 @@ thing undercutting the new art. Only water still does it.
 **Why.** `docs/rt-blood-pools.md` — the fullest post-mortem in this repo, including two
 motion-effect designs that were tried, judged not to read as flow, and thrown out before
 the current flow map, and the checkerboard bug above start to finish.
+
+### BAL2 — the Cacodemon fireball *(add-on only)*
+
+<table>
+<tr>
+  <th align="center">Before</th>
+  <th align="center">After</th>
+</tr>
+<tr>
+  <td align="center"><img src="docs/img/features/caco-ball-before.png" alt="Cacodemon fireball, orange throughout" width="300"></td>
+  <td align="center"><img src="docs/img/features/caco-ball-after.png" alt="Cacodemon fireball with a violet and blue fringe" width="300"></td>
+</tr>
+<tr>
+  <td align="center"><sub>Retribution's ball — orange core to maroon fringe</sub></td>
+  <td align="center"><sub>core untouched, midtones violet, extremities blue</sub></td>
+</tr>
+</table>
+
+The one art change here that does **not** ship enabled. D64ClassicRecolored repaints the
+Cacodemon and the Pain Elemental and nothing else — 71 lumps, not one of them BAL2 — so a
+classic-hued Cacodemon went on throwing Doom 64's orange fireball. This is the projectile
+catching up with the monster, and it is loaded on the same tick-box, from the same
+launcher variable: with the add-on off it is not in the file list at all.
+
+Drawn from **Retribution's** sprite, never the add-on's. The core keeps its fire, the
+midtones pass through the violet classic Doom's own BAL2 carries around its rim, and the
+fringe — plus the speckles that fly off the burst — lands on blue. All ten frames, flight
+loop and explosion.
+
+The light follows the paint. In flight the ball throws **two** lights that add at it —
+its warm core, which it always had, and a blue one for the fringe — because a single
+sphere light has a single colour and a mix can only be two. Where it lands, the fire it
+leaves burning **alternates red and blue flame by flame**, and the one light that mark is
+allowed is the average of the two, which is the violet the ball's own midtones pass
+through.
+
+**Why.** `docs/classic-recolored-addon.md` — which of the two add-on downloads to take
+and what each gets wrong, why the offsets cannot be patched from a companion pk3, the
+three things a sprite recolour has to get right that each fail without a word (the `grAb`
+chunk PIL drops, why the gradient runs on the silhouette rather than the palette, and
+keeping the source luma so the hue moves and the drawing does not), and why recolouring
+the ball's dynamic light without overriding its intensity is invisible.
+`docs/plan-projectile-impact-fx.md` §9.8 is the impact fire.
 
 <br>
 
