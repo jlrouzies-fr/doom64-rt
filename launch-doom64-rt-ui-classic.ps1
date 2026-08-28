@@ -313,13 +313,33 @@ if ($Settings -and (Test-Path $Settings)) {
 }
 $form.Controls.Add($recolor)
 
+# The Unseen Evil monsters. Shipped with the package, so unlike the recolour
+# above it is always visible and defaults to ON -- it has been loading
+# unconditionally, and a settings file written before this box existed carries no
+# uemonsters key. Reading that absence as "off" would silently remove them.
+$uemon             = New-Object System.Windows.Forms.CheckBox
+$uemon.Text        = 'Unseen Evil monsters (REPLACE monsters already in each map)'
+$uemon.Font        = New-Object System.Drawing.Font('Consolas', 9)
+$uemon.ForeColor   = $BONE
+$uemon.BackColor   = $BG
+$uemon.FlatStyle   = 'Flat'
+$uemon.AutoSize    = $true
+$uemon.Location    = New-Object System.Drawing.Point(28, ($listTop + $nRows * $rowH + 128))
+$uemon.Checked     = $true
+if ($Settings -and (Test-Path $Settings)) {
+    foreach ($line in Get-Content $Settings) {
+        if ($line -match '^\s*uemonsters\s*=\s*0\s*$') { $uemon.Checked = $false }
+    }
+}
+$form.Controls.Add($uemon)
+
 # --- do not ask me again ----------------------------------------------------
 #  Ticked, this writes configdone.txt and the launcher goes straight to the game
 #  from then on. Enabled only once every required item is green -- see Draw-Checks.
 # The add-on row's space is reserved whether or not the add-on is there: its
 # checkbox can appear on a Re-check, and a layout that closed the gap would
 # have it land on top of this one.
-$skipY = $listTop + $nRows * $rowH + 128
+$skipY = $listTop + $nRows * $rowH + 150
 $skip              = New-Object System.Windows.Forms.CheckBox
 $skip.Text         = 'Setup is done - go straight to the game next time'
 $skip.Font         = New-Object System.Drawing.Font('Consolas', 9)
@@ -353,7 +373,8 @@ $launch = New-Btn 'RIP AND TEAR' 570 ($listTop + $nRows * $rowH + 60) 122 $BLOOD
 $launch.Font = New-Object System.Drawing.Font('Consolas', 10, [System.Drawing.FontStyle]::Bold)
 $launch.Size = New-Object System.Drawing.Size(122, 34)
 $launch.Add_Click({
-    Save-Launch -Recolor $recolor.Checked -SkipNextTime ($skip.Checked -and $script:AllOk)
+    Save-Launch -Recolor $recolor.Checked -UeMonsters $uemon.Checked `
+                -SkipNextTime ($skip.Checked -and $script:AllOk)
     $form.Tag = 'launch'
     $form.Close()
 })

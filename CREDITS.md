@@ -118,8 +118,15 @@ Retribution.
 - **DrPyspy** — Doom 64-style Revenant, Arch-Vile, Chaingunner and Spider Mastermind
   sprites; the redrawn Shotgun Guy; the Arch-Vile flame and Spider Mastermind firing
   sounds. Author of **Doom 64: Unseen Evil**.
-- **Cardboard Marty** — Arch-Vile sound edits, Spider Mastermind sounds.
-- **Aubrey Hodges** — the original unused Doom 64 Arch-Vile sounds.
+- **Cardboard Marty** — Arch-Vile sound edits, the new Spider Mastermind sounds, and the
+  projectile sounds the Revenant tracer uses.
+- **Aubrey Hodges** — the original unused Doom 64 Arch-Vile sounds, and the Doom 64
+  sounds the Revenant reuses.
+
+Credits taken from `CREDITS_D64UE.txt` in `D64UnseenEvil-v1.0.3.pk3`. Unseen Evil credits
+more people than are listed here — its texture set, music conversions and map work are
+not used by this add-on, so only the sprite and sound authors whose work actually ships
+in `d64r-ue-monsters.pk3` are named.
 
 Unseen Evil ships no licence statement, so this is a credited local add-on. **Ask DrPyspy
 before redistributing it.** `tools/pack_ue_monsters.py` builds the pk3 from a local copy

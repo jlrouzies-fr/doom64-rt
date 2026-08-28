@@ -497,10 +497,14 @@ function New-Row($c) {
         $cb = $row.FindName('opt')
         if ($cb) {
             # The rows are thrown away and rebuilt on every re-check, so the
-            # answer lives in a script variable, not in the control.
-            $cb.IsChecked = $script:RecolorOn
-            $cb.Add_Checked({   $script:RecolorOn = $true })
-            $cb.Add_Unchecked({ $script:RecolorOn = $false })
+            # answer lives in script state, not in the control -- and it is keyed
+            # by the row's Key, not a variable per add-on, so a second toggle is a
+            # row in Get-Checks and nothing else. GetNewClosure is what captures
+            # $k; without it every handler would write the LAST row's key.
+            $k = $c.Key
+            $cb.IsChecked = [bool]$script:Toggles[$k]
+            $cb.Add_Checked({   $script:Toggles[$k] = $true  }.GetNewClosure())
+            $cb.Add_Unchecked({ $script:Toggles[$k] = $false }.GetNewClosure())
         }
     }
     if ($confirm) {
@@ -587,7 +591,9 @@ $btnRecheck.Add_Click({ Draw-Checks })
 $btnFolder.Add_Click({ Open-GameFolder })
 $btnQuit.Add_Click({ $win.Tag = 'quit'; $win.Close() })
 $btnLaunch.Add_Click({
-    Save-Launch -Recolor $script:RecolorOn -SkipNextTime ([bool]$skip.IsChecked -and $script:AllOk)
+    Save-Launch -Recolor ([bool]$script:Toggles.recolor) `
+                -UeMonsters ([bool]$script:Toggles.uemonsters) `
+                -SkipNextTime ([bool]$skip.IsChecked -and $script:AllOk)
     $win.Tag = 'launch'
     $win.Close()
 })
@@ -624,12 +630,19 @@ $win.Add_KeyDown({
 #  Re-check, and the row turns green AND grows its checkbox -- which is the whole
 #  point, and did not work while the checkbox was created once at startup.
 #
-#  Whatever was ticked last time. The launcher clears the value when unticked,
-#  so an absent line means off, not "never asked".
-$script:RecolorOn = $false
+#  Whatever was ticked last time. Both keys are written on every launch, both
+#  ways, so an unticked box can turn a previous 1 back off.
+#
+#  DEFAULTS DIFFER, and deliberately. The recolour is a file the user went and
+#  downloaded, so off until they say yes. The Unseen Evil monsters SHIP with the
+#  package and have been loading unconditionally, so their default is ON -- a
+#  settings file written before this row existed has no uemonsters key, and
+#  reading that absence as "off" would silently remove them on upgrade.
+$script:Toggles = @{ recolor = $false; uemonsters = $true }
 if ($Settings -and (Test-Path $Settings)) {
     foreach ($line in Get-Content $Settings) {
-        if ($line -match '^\s*recolor\s*=\s*1\s*$') { $script:RecolorOn = $true }
+        if ($line -match '^\s*recolor\s*=\s*(\d)\s*$')    { $script:Toggles.recolor    = ($Matches[1] -eq '1') }
+        if ($line -match '^\s*uemonsters\s*=\s*(\d)\s*$') { $script:Toggles.uemonsters = ($Matches[1] -eq '1') }
     }
 }
 

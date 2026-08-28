@@ -71,6 +71,13 @@ rem --- the startup check window ----------------------------------------------
 rem  It owns the whole verification: registry lookup for Steam and GOG, the file
 rem  checks, Browse and Re-check. It writes the IWAD it settled on back to the
 rem  settings file, so the next launch starts from the answer.
+rem  ON unless the settings file says otherwise. This pk3 shipped loading
+rem  unconditionally, so a settings file written before the tick box existed has
+rem  no uemonsters key -- and reading that absence as "off" would silently remove
+rem  the monsters from an existing install on upgrade. RECOLOR has the opposite
+rem  default for the opposite reason: it is a file the user goes and downloads.
+set "UEMON=1"
+
 rem The ModDB download is named D64RTR[v1.5].WAD; this repo also carries a
 rem shell-safe D64RTR_v15.WAD copy. Accept whichever the user actually has.
 set "MOD="
@@ -89,6 +96,7 @@ if exist "%SETTINGS%" (
   for /f "usebackq tokens=1,* delims==" %%A in ("%SETTINGS%") do (
     set "K=%%A"
     if not "!K:iwad=!"=="!K!"    set "IWAD=%%B"
+    if not "!K:uemonsters=!"=="!K!" set "UEMON=%%B"
     if not "!K:mod=!"=="!K!"     set "MOD=%%B"
     if not "!K:recolor=!"=="!K!" set "RECOLOR=%%B"
   )
@@ -142,6 +150,7 @@ if defined SHOWUI if exist "%SETTINGS%" (
   for /f "usebackq tokens=1,* delims==" %%A in ("%SETTINGS%") do (
     set "K=%%A"
     if not "!K:iwad=!"=="!K!" set "IWAD=%%B"
+    if not "!K:uemonsters=!"=="!K!" set "UEMON=%%B"
     if not "!K:mod=!"=="!K!"  set "MOD=%%B"
     rem Written on every launch, so an unticked box CLEARS a previous 1.
     if not "!K:recolor=!"=="!K!" set "RECOLOR=%%B"
@@ -235,6 +244,7 @@ echo   Doom 64 - Ray Traced
 echo   engine    : %ENGINE%
 echo   iwad      : %IWAD%
 echo   log       : %LOGF%
+if "%UEMON%"=="1" (echo   monsters  : Retribution + Unseen Evil replacements) else (echo   monsters  : Retribution only)
 echo   upscaler  : %D64RT_UPSCALER%   ^(override with D64RT_UPSCALER=dlss^|fsr^|none^)
 echo.
 
@@ -255,6 +265,13 @@ rem  from RETRIBUTION's sprite by tools\gen_caco_ball_recolor.py; none of the
 rem  add-on's art is read or redistributed). It is only right next to the
 rem  recoloured monster, so it is only loaded when the box is ticked -- and it
 rem  loads AFTER the add-on wad, which carries no BAL2 to be overridden anyway.
+rem --- optional: the Unseen Evil monsters -------------------------------------
+rem  Ticked in the startup window. They REPLACE monsters already placed in each
+rem  map rather than adding to it -- see d64rue/handler.zs -- so switching them
+rem  off restores the stock Retribution roster and changes nothing else.
+set "UEMONARGS="
+if "%UEMON%"=="1" if exist "%MODS%\d64r-ue-monsters.pk3" set UEMONARGS="%MODS%\d64r-ue-monsters.pk3"
+
 set "RECOLORARGS="
 if not "%RECOLOR%"=="1" goto :norecolor
 if exist "%ADDONS%\D64ClassicRecolored.wad" set RECOLORARGS="%ADDONS%\D64ClassicRecolored.wad"
@@ -284,7 +301,7 @@ start "" "%ENGINE%\gzdoom.exe" -iwad "%IWAD%" ^
   "%MODS%\d64r-rt-sky.pk3" ^
   -file "%MODS%\d64r-lava-fx.pk3" "%MODS%\d64r-poison-fx.pk3" ^
   "%MODS%\d64r-blood-persist.pk3" ^
-  "%MODS%\d64r-ue-monsters.pk3" ^
+  %UEMONARGS% ^
   "%MODS%\d64r-widescreen-gfx.pk3" "%MODS%\d64r-mugshot.pk3" "%MODS%\d64r-rt-titlelogo.pk3" ^
   %RECOLORARGS% ^
   -rtnolauncher ^
