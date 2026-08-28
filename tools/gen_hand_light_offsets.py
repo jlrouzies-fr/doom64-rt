@@ -105,6 +105,15 @@ LIGHT_ONLY_FRAMES = {}
 # frame is not visible. Every other frame is eyes.
 EYE_BAND = {"SPID": 75.0}
 
+# Keep only blobs within R texels of the LARGEST blob, per sprite and frame.
+# The Mastermind's firing frame is why: its muzzle is three blobs clustered at
+# lat ~-1, up 27..55, but the same threshold also matches four armour highlights
+# on the LEGS (lat +-33..+-42) and a row under the ribcage (up 72..77). Those are
+# 25 and 24 texels, big enough to outrank real parts of the flash, so a size rule
+# cannot separate them -- distance can. A lateral window cannot either: on the
+# side rotations the gun itself sits at lat -48 or -65.
+CLUSTER_RADIUS = {"SPID": {"H": 30.0}}
+
 # Intensity multiplier per frame kind. Eyes are a soft glow, a gun flash is not,
 # and one cvar has to serve both -- so the table carries the ratio.
 EYE_SCALE = 0.10
@@ -113,7 +122,12 @@ EYE_SCALE = 0.10
 # Reviewed per monster in the detection page, same source as
 # gen_ue_red_emissives.MONSTERS -- keep the two in step or the light will sit at
 # the centroid of a mask different from the one that glows.
-RED_LEVEL = {"SPID": (112, 40), "SKEL": (89, 40)}
+RED_LEVEL = {"SPID": (112, 40), "SKEL": (70, 25)}
+# SKEL's cap is TIGHT on purpose. Its LEDs are near-pure -- (135,4,2), (146,17,10),
+# (119,2,1) -- while its bones run a dull desaturated red, (108,44,44) / (83,43,44).
+# A cap of 45 lets the bones through and frame J goes from 130 texels to 618: the
+# whole ribcage. The cap does the discriminating; the level only sets how dim an
+# LED may be, and 70 is what recovers the eyes on frames B, E and F.
 
 # Per-frame override, mirroring gen_ue_red_emissives.level_by_frame. The light
 # must sit at the centroid of the SAME texels that glow -- at 112 the firing
@@ -199,7 +213,12 @@ FRAMES = "ABCDEFGHIJKLMNOP"
 # to keep its EYE dots out; the Revenant's red IS eyes and shoulder launchers, at
 # 2..5 texels each, so the same floor would reject every one of them.
 MIN_BLOB_DEFAULT = 8
-MIN_BLOB_BY_SPRITE = {"SKEL": 2}
+# SKEL is 1, and that is not a typo. Its right shoulder LED is a SINGLE texel on
+# frame A -- (90,4,2) at lat +20, up 115 -- and on frame B the artist drew that
+# same spot unlit, cool grey (93,94,113). So a floor of 2 deleted the only frame
+# the LED ever appears on, and it cast no light on ANY frame while the 4-texel
+# left LED lit fine. That is the whole "one launcher works, the other doesn't".
+MIN_BLOB_BY_SPRITE = {"SKEL": 1}
 
 # FOUR, not two. The Revenant wants both eyes AND both shoulder launchers lit at
 # their own positions; two slots can only ever show half of that.
@@ -371,6 +390,21 @@ def main() -> None:
 
             floor_n = MIN_BLOB_BY_SPRITE.get(sprite, MIN_BLOB_DEFAULT)
             comps = [c for c in blobs(lit) if len(c) >= floor_n]
+
+            radius = CLUSTER_RADIUS.get(sprite, {}).get(letter)
+            if radius and comps:
+                comps.sort(key=len, reverse=True)
+                hx, hy = (sum(q[0] for q in comps[0]) / len(comps[0]),
+                          sum(q[1] for q in comps[0]) / len(comps[0]))
+                near = []
+                for c in comps:
+                    cx = sum(q[0] for q in c) / len(c)
+                    cy = sum(q[1] for q in c) / len(c)
+                    if ((cx - hx) ** 2 + (cy - hy) ** 2) ** 0.5 <= radius:
+                        near.append(c)
+                if len(near) != len(comps):
+                    print(f"  {letter}: cluster r={radius:.0f} kept {len(near)}/{len(comps)} blobs")
+                comps = near
 
             # ONE PER SIDE, not simply the two biggest. A spread flame breaks into
             # many blobs, and "largest two" then picks two parts of the SAME arm:
