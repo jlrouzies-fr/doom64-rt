@@ -279,6 +279,26 @@ EYE_MONSTERS = [
 
 OMAT = PROJ_ROOT / "Doom64-Retribution" / "Retribution-RT-Materials" / "rt" / "mat"
 
+# HOW FAR FORWARD OF THE BODY AXIS AN EYE SITS, per monster, in map units.
+#
+# fwd is 0 everywhere else in this file because a FRONT rotation cannot show
+# forward extension -- and left at 0 the eye light sits in the middle of the
+# skull, so it reads as a lamp inside the head and stays fully visible from the
+# side and behind. A sphere light is omnidirectional and can never be hidden by
+# viewing angle, but moving it to the face fixes both halves of that: it lights
+# what the monster is LOOKING AT, and because sprites cast shadows in RTGL the
+# sprite itself then occludes it from behind.
+#
+# The side rotations cannot supply the number: TRO2 and SAR2 ship deliberately
+# TRANSPARENT masks on every rotation but the front (the softblend treatment),
+# and what FATT and BSPI do have there is 3 and 9 texels on a three-quarter view.
+# So it is ESTIMATED from the one depth cue a front view does give -- the eye
+# SEPARATION, which is measured, per-frame stable to under a texel, and scales
+# with the monster: Imp 6.6, Mancubus 8.6, Pinky 10.2, Arachnotron 12.8,
+# Cyberdemon 15.0. A skull is roughly as deep as it is wide, so that separation
+# stands in for its half-depth. Override here if one looks wrong; None = derive.
+EYE_FWD: dict[str, float | None] = {}
+
 
 def extra_hands(sprite, letter, cfg, lumps, ue):
     """The Chaingunner's backpack: one light, from the BACK rotation."""
@@ -597,6 +617,14 @@ def main() -> None:
     for sprite, tag, label in EYE_MONSTERS:
         print(f"=== {label} ({sprite}, eyes from the authored _e masks) ===")
         rows, lit_all = eye_rows(sprite, lumps)
+
+        fwd = EYE_FWD.get(sprite)
+        if fwd is None:
+            seps = [abs(r[0].lat - r[1].lat) for r in rows if len(r) >= 2]
+            fwd = round(sum(seps) / len(seps), 1) if seps else 0.0
+        rows = [[h._replace(fwd=fwd) for h in r] for r in rows]
+        print(f"  eyes pushed {fwd:.1f} forward of the body axis "
+              f"(estimated from the eye separation)")
         if not lit_all:
             raise SystemExit(f"{sprite}: no eye texels found -- aborting")
         # Sampled, never hardcoded: the Nightmare Imp's eyes are a cold blue-violet
