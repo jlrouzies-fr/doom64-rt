@@ -299,6 +299,18 @@ OMAT = PROJ_ROOT / "Doom64-Retribution" / "Retribution-RT-Materials" / "rt" / "m
 # stands in for its half-depth. Override here if one looks wrong; None = derive.
 EYE_FWD: dict[str, float | None] = {}
 
+# Reviewed on screen, ADDED to the derived value. A bias rather than an absolute
+# override on purpose: the derivation stays readable and it stays obvious which
+# numbers were measured and which were nudged by eye.
+#
+# Both imps: the estimate is the eye SEPARATION, and an imp's snout runs well
+# ahead of its eyes -- separation understates the head's depth on a face that
+# pointed. The bigger monsters are blunter and did not need it.
+EYE_FWD_BIAS: dict[str, float] = {
+    "TROO": 3.0,
+    "TRO2": 3.0,
+}
+
 
 def extra_hands(sprite, letter, cfg, lumps, ue):
     """The Chaingunner's backpack: one light, from the BACK rotation."""
@@ -622,9 +634,12 @@ def main() -> None:
         if fwd is None:
             seps = [abs(r[0].lat - r[1].lat) for r in rows if len(r) >= 2]
             fwd = round(sum(seps) / len(seps), 1) if seps else 0.0
+        bias = EYE_FWD_BIAS.get(sprite, 0.0)
+        fwd += bias
         rows = [[h._replace(fwd=fwd) for h in r] for r in rows]
+        note = f" (+{bias:.1f} reviewed)" if bias else ""
         print(f"  eyes pushed {fwd:.1f} forward of the body axis "
-              f"(estimated from the eye separation)")
+              f"(estimated from the eye separation{note})")
         if not lit_all:
             raise SystemExit(f"{sprite}: no eye texels found -- aborting")
         # Sampled, never hardcoded: the Nightmare Imp's eyes are a cold blue-violet
