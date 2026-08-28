@@ -1101,6 +1101,32 @@ enforced at the one place that writes it.
     filename, so clearing only the `textures.json` row leaves the frame glowing with
     nothing to explain it. `tools/gen_ue_glow_emissives.py` does all of this.
 
+42. **A DEV LAUNCHER'S `+cvar 0` LANDS IN THE PLAYER'S INI AND DISABLES THE FEATURE
+    IN NORMAL PLAY.** Every launcher in this tree shares ONE ini with the release build
+    (`Documents\My Games\GZDoom\gzdoom-rt2.ini`), and an archived cvar set with `+` on a
+    dev command line is written there on exit. `tools/uemon-lab.cmd` runs
+    `+d64_ue_enable 0` on purpose — the lab needs the placement handler off so its
+    reference monsters survive — and that 0 became `d64_ue_enable=false` in the player
+    config. The Unseen Evil monsters then stopped appearing in normal play with the pk3
+    loaded, the launcher box ticked, the handler present and NOTHING reported. It reads
+    as "the feature does not work", never as "a lab you ran last week turned it off".
+
+    This is pitfall-class with the RT_CVAR rule above, but it is a DIFFERENT direction:
+    that one is about a default that can never be retuned, this one is about a dev tool
+    reaching into the player's settings. The same ini also froze
+    `d64_ue_mastermind_maps` at the superseded `MAP24,OUT10` long after the default
+    became `MAP22,OUT10`, so the Mastermind was pointed at a map with no unwired
+    Arachnotron.
+
+    **The fix is that the launcher STATES the value rather than hoping the ini agrees** —
+    `launch-doom64-rt.cmd` now passes `+d64_ue_enable 1` whenever it loads the pk3,
+    exactly as it writes BOTH upscaler cvars rather than one. Any player-visible feature
+    with an archived switch and a dev launcher that flips it needs the same treatment.
+    Do not try to make the lab restore the value: a game that is killed never writes it.
+
+    When a feature "does not work" and the code is plainly present, **grep the ini before
+    reading any more code.**
+
 ## Suggested next work
 
 1. **`RAYRECONSTRUCTION.md`** — RR is working and the worm artifact is solved (a stuck cvar, not a renderer bug). Open levers: `rt_spp_direct`/`rt_spp_indirect`, `rt_restir_initial`.

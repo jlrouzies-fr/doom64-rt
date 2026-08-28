@@ -270,7 +270,21 @@ rem  Ticked in the startup window. They REPLACE monsters already placed in each
 rem  map rather than adding to it -- see d64rue/handler.zs -- so switching them
 rem  off restores the stock Retribution roster and changes nothing else.
 set "UEMONARGS="
-if "%UEMON%"=="1" if exist "%MODS%\d64r-ue-monsters.pk3" set UEMONARGS="%MODS%\d64r-ue-monsters.pk3"
+set "UEMONCVAR="
+if "%UEMON%"=="1" if exist "%MODS%\d64r-ue-monsters.pk3" (
+  set UEMONARGS="%MODS%\d64r-ue-monsters.pk3"
+  rem AND ASSERT THE CVAR, for the same reason both upscaler cvars are written
+  rem at the top of this file: d64_ue_enable is `server bool`, so it ARCHIVES,
+  rem and the ini is shared with every dev launcher in the source tree.
+  rem tools\uemon-lab.cmd runs `+d64_ue_enable 0` on purpose -- the lab needs the
+  rem handler off so its reference monsters survive -- and that 0 was written
+  rem straight into the player ini, where it then disabled the monsters in normal
+  rem play with the pk3 loaded, the box ticked and nothing said. The tick box is
+  rem the persistent switch, so it states its answer every launch instead of
+  rem hoping the ini agrees. Only ever 1: with the box unticked the pk3 is not
+  rem loaded, so the cvar does not exist and setting it would just be an error.
+  set "UEMONCVAR=+d64_ue_enable 1"
+)
 
 set "RECOLORARGS="
 if not "%RECOLOR%"=="1" goto :norecolor
@@ -305,6 +319,6 @@ start "" "%ENGINE%\gzdoom.exe" -iwad "%IWAD%" ^
   "%MODS%\d64r-widescreen-gfx.pk3" "%MODS%\d64r-mugshot.pk3" "%MODS%\d64r-rt-titlelogo.pk3" ^
   %RECOLORARGS% ^
   -rtnolauncher ^
-  +exec "%PINS%" %UPSCALE% %RECORDER% %MAPARG%%REST%
+  +exec "%PINS%" %UPSCALE% %UEMONCVAR% %RECORDER% %MAPARG%%REST%
 
 endlocal

@@ -44,6 +44,14 @@ rem
 rem THE HANDLER IS OFF IN HERE (d64_ue_enable 0), on purpose: otherwise it would
 rem convert the reference monsters on the left and there would be nothing to
 rem compare against. The right-hand ones are placed by editor number instead.
+rem
+rem AND THAT 0 FOLLOWS YOU OUT OF THE LAB. d64_ue_enable is `server bool`, so it
+rem ARCHIVES, and every launcher here shares one ini with the release build --
+rem so running this lab once wrote d64_ue_enable=false into the player config and
+rem the monsters silently stopped appearing in normal play, with the pk3 loaded
+rem and the launcher box ticked. launch-doom64-rt.cmd now asserts +d64_ue_enable 1
+rem whenever it loads the pk3, which is the fix; do not rely on this file leaving
+rem the value as it found it, because a game that is killed never writes it back.
 
 set "ARM=%~1"
 if "%ARM%"=="" set "ARM=help"
