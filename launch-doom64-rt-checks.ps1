@@ -239,6 +239,28 @@ function Get-Checks {
              Toggle='Play with the recoloured Cacodemon / Pain Elemental'
              Link='https://www.moddb.com/games/doom-64/addons/d64classicrecolored'; LinkText='D64ClassicRecolored on ModDB' }
 
+    # SHIPPED WITH THE PACKAGE, unlike the recolour above -- but still Opt, because
+    # the game is complete without it and a missing pk3 must not block a launch.
+    # The detail text has to say REPLACES: these monsters are not added on top of
+    # the roster, they take the place of ones already in the map, and a player who
+    # does not know that will read a converted Baron as a missing Baron.
+    $script:UeMonWad = @("$ModsDir\d64r-ue-monsters.pk3") |
+                       Where-Object { Test-Path $_ } | Select-Object -First 1
+    $c += @{ Key='uemonsters'; Name='Unseen Evil monsters'; Req=$false; Opt=$true
+             Ok=[bool]$script:UeMonWad
+             Good=("Chaingunner, Revenant, Arch-Vile and Spider Mastermind, drawn in the Doom 64 style by DrPyspy. " +
+                   "They REPLACE monsters already placed in each map rather than adding to it, so the kill count " +
+                   "is unchanged. Which ones is fixed per map, not re-rolled each playthrough, and it unlocks as " +
+                   "you go: Chaingunners from MAP05, Revenants from MAP10, one Arch-Vile on a few late maps, one " +
+                   "Mastermind on MAP22. Untick to play the stock Retribution roster.")
+             Bad=("Not in the public download, and not by mistake: the sprites are DrPyspy's and " +
+                  "Doom 64: Unseen Evil ships no licence statement, so this project credits them " +
+                  "rather than redistributing them. Build the pk3 yourself with " +
+                  "tools\pack_ue_monsters.py from a copy of D64UnseenEvil-v1.0.3.pk3 and drop it " +
+                  "in the mods folder.")
+             Toggle='Play with the Unseen Evil monsters'
+             Link='https://www.moddb.com/mods/doom-64-unseen-evil'; LinkText='Doom 64: Unseen Evil on ModDB' }
+
     return $c
 }
 
@@ -280,7 +302,9 @@ function Write-TextNoBom {
 }
 
 function Save-Launch {
-    param([bool] $Recolor, [bool] $SkipNextTime)
+    # $UeMonsters defaults to $true so the WinForms fallback, which does not pass
+    # it, cannot silently switch the monsters off.
+    param([bool] $Recolor, [bool] $SkipNextTime, [bool] $UeMonsters = $true)
 
     $lines = @()
     if ($script:IwadPath) { $lines += "iwad=$($script:IwadPath)" }
@@ -290,6 +314,11 @@ function Save-Launch {
     # Always written, both ways: the launcher reads this file into RECOLOR, so
     # an unticked box has to be able to turn a previous 1 back off.
     $lines += "recolor=$([int]$Recolor)"
+    # Always written, both ways, same as recolor -- an unticked box has to be able
+    # to turn a previous 1 back off. Note the launcher treats an ABSENT key as ON:
+    # this shipped always-loaded, and a settings file written before this row
+    # existed must not read as "the user turned it off".
+    $lines += "uemonsters=$([int]$UeMonsters)"
     if ($Settings -and $lines) { Write-TextNoBom $Settings $lines }
 
     $done = Get-ConfigDonePath

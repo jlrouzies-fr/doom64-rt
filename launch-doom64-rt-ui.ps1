@@ -405,6 +405,13 @@ $win.MaxWidth  = $wa.Width  - 20
 # Dark caption, square corners, blood border -- DWM owns the title bar in WPF
 # exactly as much as it does in WinForms.
 $win.Add_SourceInitialized({
+    # Proof the window really opened. Without it an exception thrown by any
+    # handler AFTER the window is up looks identical, from the .cmd's side, to
+    # WPF being unavailable -- both arrive as exit 2 -- so the launcher silently
+    # opened the WinForms window and the user saw the styling change on a click
+    # with nothing said. Exit 2 either way, since falling back still lets them
+    # play, but the message has to tell the two apart.
+    $script:WindowOpened = $true
     $h = (New-Object System.Windows.Interop.WindowInteropHelper($win)).Handle
     if ($h -eq [System.IntPtr]::Zero) { return }
     foreach ($attr in 20, 19) { $v = 1; try { [void][D64.Win]::DwmSetWindowAttribute($h, $attr, [ref]$v, 4) } catch { } }
@@ -497,10 +504,24 @@ function New-Row($c) {
         $cb = $row.FindName('opt')
         if ($cb) {
             # The rows are thrown away and rebuilt on every re-check, so the
-            # answer lives in a script variable, not in the control.
-            $cb.IsChecked = $script:RecolorOn
-            $cb.Add_Checked({   $script:RecolorOn = $true })
-            $cb.Add_Unchecked({ $script:RecolorOn = $false })
+            # answer lives in script state, not in the control -- and it is keyed
+            # by the row's Key, so a second toggle is a row in Get-Checks and
+            # nothing else.
+            #
+            # THE KEY RIDES ON .Tag, NOT IN A CLOSURE, and that is not a style
+            # choice. GetNewClosure() binds the scriptblock to a NEW dynamic
+            # module, and this runs inside a function -- so `$script:` then means
+            # that module's scope, where Toggles does not exist. The handler threw
+            # "Cannot index into a null array" on the first click, the exception
+            # escaped ShowDialog, the catch below exited 2, and the .cmd read 2 as
+            # "the window could not open" and launched the WinForms fallback. The
+            # window appeared to close and reopen in a different style whenever a
+            # box was ticked. $args[0] is the sender, same convention as the
+            # KeyDown handler further down.
+            $cb.Tag       = $c.Key
+            $cb.IsChecked = [bool]$script:Toggles[$c.Key]
+            $cb.Add_Checked({   $script:Toggles[$args[0].Tag] = $true  })
+            $cb.Add_Unchecked({ $script:Toggles[$args[0].Tag] = $false })
         }
     }
     if ($confirm) {
@@ -587,7 +608,9 @@ $btnRecheck.Add_Click({ Draw-Checks })
 $btnFolder.Add_Click({ Open-GameFolder })
 $btnQuit.Add_Click({ $win.Tag = 'quit'; $win.Close() })
 $btnLaunch.Add_Click({
-    Save-Launch -Recolor $script:RecolorOn -SkipNextTime ([bool]$skip.IsChecked -and $script:AllOk)
+    Save-Launch -Recolor ([bool]$script:Toggles.recolor) `
+                -UeMonsters ([bool]$script:Toggles.uemonsters) `
+                -SkipNextTime ([bool]$skip.IsChecked -and $script:AllOk)
     $win.Tag = 'launch'
     $win.Close()
 })
@@ -624,22 +647,37 @@ $win.Add_KeyDown({
 #  Re-check, and the row turns green AND grows its checkbox -- which is the whole
 #  point, and did not work while the checkbox was created once at startup.
 #
-#  Whatever was ticked last time. The launcher clears the value when unticked,
-#  so an absent line means off, not "never asked".
-$script:RecolorOn = $false
+#  Whatever was ticked last time. Both keys are written on every launch, both
+#  ways, so an unticked box can turn a previous 1 back off.
+#
+#  DEFAULTS DIFFER, and deliberately. The recolour is a file the user went and
+#  downloaded, so off until they say yes. The Unseen Evil monsters SHIP with the
+#  package and have been loading unconditionally, so their default is ON -- a
+#  settings file written before this row existed has no uemonsters key, and
+#  reading that absence as "off" would silently remove them on upgrade.
+$script:Toggles = @{ recolor = $false; uemonsters = $true }
 if ($Settings -and (Test-Path $Settings)) {
     foreach ($line in Get-Content $Settings) {
-        if ($line -match '^\s*recolor\s*=\s*1\s*$') { $script:RecolorOn = $true }
+        if ($line -match '^\s*recolor\s*=\s*(\d)\s*$')    { $script:Toggles.recolor    = ($Matches[1] -eq '1') }
+        if ($line -match '^\s*uemonsters\s*=\s*(\d)\s*$') { $script:Toggles.uemonsters = ($Matches[1] -eq '1') }
     }
 }
 
 $iwadBox.Text  = $IwadHint
 $skip.IsChecked = Test-ConfigDone
 
+$script:WindowOpened = $false
 Draw-Checks
 try { [void]$win.ShowDialog() }
 catch {
-    [Console]::Error.WriteLine("startup window: could not open ($($_.Exception.Message))")
+    if ($script:WindowOpened) {
+        [Console]::Error.WriteLine(
+            "startup window: FAILED WHILE OPEN -- this is a bug in the window, not a " +
+            "missing WPF. $($_.Exception.Message)")
+        [Console]::Error.WriteLine("  at: $($_.ScriptStackTrace -replace "`r`n", ' | ')")
+    } else {
+        [Console]::Error.WriteLine("startup window: could not open ($($_.Exception.Message))")
+    }
     exit 2
 }
 

@@ -71,6 +71,13 @@ rem --- the startup check window ----------------------------------------------
 rem  It owns the whole verification: registry lookup for Steam and GOG, the file
 rem  checks, Browse and Re-check. It writes the IWAD it settled on back to the
 rem  settings file, so the next launch starts from the answer.
+rem  ON unless the settings file says otherwise. This pk3 shipped loading
+rem  unconditionally, so a settings file written before the tick box existed has
+rem  no uemonsters key -- and reading that absence as "off" would silently remove
+rem  the monsters from an existing install on upgrade. RECOLOR has the opposite
+rem  default for the opposite reason: it is a file the user goes and downloads.
+set "UEMON=1"
+
 rem The ModDB download is named D64RTR[v1.5].WAD; this repo also carries a
 rem shell-safe D64RTR_v15.WAD copy. Accept whichever the user actually has.
 set "MOD="
@@ -89,6 +96,7 @@ if exist "%SETTINGS%" (
   for /f "usebackq tokens=1,* delims==" %%A in ("%SETTINGS%") do (
     set "K=%%A"
     if not "!K:iwad=!"=="!K!"    set "IWAD=%%B"
+    if not "!K:uemonsters=!"=="!K!" set "UEMON=%%B"
     if not "!K:mod=!"=="!K!"     set "MOD=%%B"
     if not "!K:recolor=!"=="!K!" set "RECOLOR=%%B"
   )
@@ -142,6 +150,7 @@ if defined SHOWUI if exist "%SETTINGS%" (
   for /f "usebackq tokens=1,* delims==" %%A in ("%SETTINGS%") do (
     set "K=%%A"
     if not "!K:iwad=!"=="!K!" set "IWAD=%%B"
+    if not "!K:uemonsters=!"=="!K!" set "UEMON=%%B"
     if not "!K:mod=!"=="!K!"  set "MOD=%%B"
     rem Written on every launch, so an unticked box CLEARS a previous 1.
     if not "!K:recolor=!"=="!K!" set "RECOLOR=%%B"
@@ -235,6 +244,7 @@ echo   Doom 64 - Ray Traced
 echo   engine    : %ENGINE%
 echo   iwad      : %IWAD%
 echo   log       : %LOGF%
+if "%UEMON%"=="1" (echo   monsters  : Retribution + Unseen Evil replacements) else (echo   monsters  : Retribution only)
 echo   upscaler  : %D64RT_UPSCALER%   ^(override with D64RT_UPSCALER=dlss^|fsr^|none^)
 echo.
 
@@ -246,10 +256,41 @@ rem  the offsets CANNOT be corrected from a companion pk3: gzdoom's SPROFS lump
 rem  only adjusts sprites from its own file, and a TEXTURES redeclaration
 rem  resolves its self-referencing patch to the OLDEST texture of that name --
 rem  Retribution's original -- so the recolour would silently not appear.
+rem
+rem  d64r-caco-ball-recolor.pk3 rides ALONG WITH IT and nowhere else. The add-on
+rem  repaints the monster and stops there -- 71 lumps, not one of them BAL2 --
+rem  so a classic-hued Cacodemon still threw Doom 64's orange fireball. That pk3
+rem  is our own BAL2, cooled to violet and blue at the fringe (it is generated
+rem  from RETRIBUTION's sprite by tools\gen_caco_ball_recolor.py; none of the
+rem  add-on's art is read or redistributed). It is only right next to the
+rem  recoloured monster, so it is only loaded when the box is ticked -- and it
+rem  loads AFTER the add-on wad, which carries no BAL2 to be overridden anyway.
+rem --- optional: the Unseen Evil monsters -------------------------------------
+rem  Ticked in the startup window. They REPLACE monsters already placed in each
+rem  map rather than adding to it -- see d64rue/handler.zs -- so switching them
+rem  off restores the stock Retribution roster and changes nothing else.
+set "UEMONARGS="
+set "UEMONCVAR="
+if "%UEMON%"=="1" if exist "%MODS%\d64r-ue-monsters.pk3" (
+  set UEMONARGS="%MODS%\d64r-ue-monsters.pk3"
+  rem AND ASSERT THE CVAR, for the same reason both upscaler cvars are written
+  rem at the top of this file: d64_ue_enable is `server bool`, so it ARCHIVES,
+  rem and the ini is shared with every dev launcher in the source tree.
+  rem tools\uemon-lab.cmd runs `+d64_ue_enable 0` on purpose -- the lab needs the
+  rem handler off so its reference monsters survive -- and that 0 was written
+  rem straight into the player ini, where it then disabled the monsters in normal
+  rem play with the pk3 loaded, the box ticked and nothing said. The tick box is
+  rem the persistent switch, so it states its answer every launch instead of
+  rem hoping the ini agrees. Only ever 1: with the box unticked the pk3 is not
+  rem loaded, so the cvar does not exist and setting it would just be an error.
+  set "UEMONCVAR=+d64_ue_enable 1"
+)
+
 set "RECOLORARGS="
 if not "%RECOLOR%"=="1" goto :norecolor
 if exist "%ADDONS%\D64ClassicRecolored.wad" set RECOLORARGS="%ADDONS%\D64ClassicRecolored.wad"
 if not defined RECOLORARGS if exist "%ADDONS%\D64ClassicRecolored_OffsetFix.wad" set RECOLORARGS="%ADDONS%\D64ClassicRecolored_OffsetFix.wad"
+if defined RECOLORARGS if exist "%MODS%\d64r-caco-ball-recolor.pk3" set RECOLORARGS=%RECOLORARGS% "%MODS%\d64r-caco-ball-recolor.pk3"
 :norecolor
 
 rem NO -width/-height ON THIS LINE, and no `rem` inside it either -- a rem
@@ -274,9 +315,10 @@ start "" "%ENGINE%\gzdoom.exe" -iwad "%IWAD%" ^
   "%MODS%\d64r-rt-sky.pk3" ^
   -file "%MODS%\d64r-lava-fx.pk3" "%MODS%\d64r-poison-fx.pk3" ^
   "%MODS%\d64r-blood-persist.pk3" ^
+  %UEMONARGS% ^
   "%MODS%\d64r-widescreen-gfx.pk3" "%MODS%\d64r-mugshot.pk3" "%MODS%\d64r-rt-titlelogo.pk3" ^
   %RECOLORARGS% ^
   -rtnolauncher ^
-  +exec "%PINS%" %UPSCALE% %RECORDER% %MAPARG%%REST%
+  +exec "%PINS%" %UPSCALE% %UEMONCVAR% %RECORDER% %MAPARG%%REST%
 
 endlocal

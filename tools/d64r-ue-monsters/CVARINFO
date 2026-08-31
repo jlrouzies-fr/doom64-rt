@@ -1,0 +1,50 @@
+// Doom64-RT: Unseen Evil monsters in Retribution.
+//
+// These are settings a player picks once, not A/B arms, so they ARCHIVE -- and
+// for the same reason they must NOT be pinned in tools/d64rt-pins.cfg, or the
+// pin would silently override whatever the menu says.
+//
+// Every value is read at WorldLoaded, so a change takes effect on the next map,
+// not on the one you are standing in.
+
+// Master switch.
+server bool d64_ue_enable = true;
+
+// Share of each map's Shotgun Guys that become UE's redrawn Former Sergeant.
+// Purely visual -- same stats, same behaviour, different art.
+server int d64_ue_sergeant_pct = 35;
+
+// Share of Shotgun Guys that become Chaingunners, from MAP05. Ramps by roughly
+// +10 points between MAP05 and MAP20. Taken BEFORE the Sergeant share, out of
+// the same pool.
+server int d64_ue_chaingunner_pct = 12;
+
+// Share of Nightmare Imps that become Revenants, from MAP10. Hell Knights are
+// converted at four fifths of this.
+server int d64_ue_revenant_pct = 10;
+
+// Maps that get exactly one Arch-Vile, comma separated. It takes a Baron of
+// Hell, or a Hell Knight where the map has no Baron. Roughly one every five
+// maps; MAP25 is skipped because its entire roster is Nightmare Imps and one
+// Cyberdemon, with no Baron or Hell Knight to take.
+server string d64_ue_archvile_maps = "MAP15,MAP20,MAP23,MAP30,ABS05,OUT05,RDM05,REC05,RTR05,RTR10";
+
+// Maps that get one Spider Mastermind. It is radius 128 -- more than twice
+// Retribution's widest non-boss -- so it is fit-tested and will decline a spot
+// it cannot stand in. It takes an Arachnotron, or a Cyberdemon or Mancubus if
+// the map has no free Arachnotron. Keep this list short, and note that only
+// these maps have unwired Arachnotrons at all: MAP13/14/15/21/22/23/33,
+// ABS02/04/05, OUT07/10, RDM01/07/08.
+server string d64_ue_mastermind_maps = "MAP22,OUT10";
+
+// Per-map census to the console. 1 = what converted, what was refused for fit,
+// the donor pool sizes and the monster total before and after. 2 = also every
+// monster class the map spawned, with counts -- which is how you check a donor
+// name against Retribution's actual actor set instead of guessing at it.
+server noarchive int d64_ue_debug = 0;
+
+// The Arch-Vile's flame warps onto its victim every tic, so at point-blank it
+// fills the screen. Off hides it -- the flame still exists and A_VileAttack still
+// reads it for the blast, so the fight is unchanged; you just get to see what the
+// Arch-Vile itself looks like while it casts. Applies immediately, not next map.
+server bool d64_ue_vilefire = true;

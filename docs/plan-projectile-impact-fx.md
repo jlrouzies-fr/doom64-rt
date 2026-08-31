@@ -636,7 +636,7 @@ scorch that **fades** — the only impact in the game that does not mark a wall 
 | BAL3 | `64NightmareImpBall` | `64NightmareImp` | violet | `BAL3 D0-I0` |
 | BAL7 | `64BaronBall` | **`64HellKnight`** | green | `BAL7 C0-H0` |
 | BAL8 | `64BaronBall2` | **`64BaronOfHell`** | red | `BAL8 C0-H0` |
-| BAL2 | `64CacodemonBall` | `64Cacodemon` | red | **BAL8's** -- see below |
+| BAL2 | `64CacodemonBall` | `64Cacodemon` | red — **half blue** under the classic-recolour add-on | **BAL8's**, plus a derived blue — see below and §9.8 |
 
 **The hell knight throws the GREEN one and the baron throws the RED one.** That inversion is
 Doom 64's, the class names actively invite getting it backwards, and this project has already
@@ -863,6 +863,109 @@ monster (`64DoomImp`, `64NightmareImp`, `64HellKnight`, `64BaronOfHell`) and let
 tracked-with-no-marks is a probe failure. Verified live: all four classify correctly, and a
 shot that detonates on the player produces **no mark**, which is the designed outcome for an
 impact with no surface.
+
+### 9.8 The Cacodemon burns half blue — and only when its ball does (2026-08-28)
+
+The optional classic-recolour add-on repaints the Cacodemon, and this project's own
+`d64r-caco-ball-recolor.pk3` repaints its **fireball** to match: a warm core inside a
+violet-to-blue fringe (`docs/classic-recolored-addon.md`). A ball with a blue fringe
+leaving a purely red fire is the same class of mismatch as the white-to-orange flame the
+table above rejected, so the mark follows the art.
+
+**Seven flames, alternating by index — four red, three blue.** `ArcStyle` grew a second
+ramp, `ramp2`, and `ImpactFx::Fire` is the only thing that reads it. Null on every other
+row, and null is what turns the whole split off, so the alternation costs one
+already-loaded pointer test per mark everywhere else in the game.
+
+- **The split is by index, not by a hash.** Everything else about a spot is hashed off
+  `eh`, and that is wrong here: `rt_fire_count` is 7, so a fair coin per flame deals 6-1
+  or 7-0 about one mark in eight, and "half blue" that is occasionally all red is a bug
+  report. The flames are scattered in space by `rt_fire_scatter` anyway, so alternating in
+  index order shows no pattern.
+- **The mark's one light is the AVERAGE of the two ramps.** A fire mark casts one light —
+  the density arithmetic in `rt_fire_glow`'s help — so with two colours burning there is
+  no honest single colour but their mean, which lands on the violet the ball's own
+  midtones pass through. Sampled at the same point on both ramps, because the two halves
+  cool together. Taking flame 0's colour instead would have made the wall red and the
+  fire two-coloured, which reads as the light belonging to something else.
+- **The per-flame halo takes the flame's own colour**, not the mix. It is the glow around
+  one flame; a blue flame sitting in a red one is worse than no halo.
+
+**`ArcFlavor::FireCaco` exists so the BARON is not dragged along.** BAL2 shared
+`FireRed` with `64BaronBall2`, and that sharing is deliberate and still documented in
+`RT_ARC_SOURCES` — but a second ramp on `FireRed` would have given the baron blue flames
+too. `FireCaco`'s **first** ramp *is* `RT_FIRE_RED_RAMP`, byte for byte, so with the
+add-on off the two rows are the same flavour twice and nothing about the caco has moved.
+
+**The blue ramp is DERIVED, which is the opposite of this file's rule, and the reason is
+worth keeping.** Reading it off the recoloured burst was tried first: the cool pixels of
+that art are a *two-dimensional* family — source ramp entry crossed with fringe position —
+so ten luminance quantiles through them walk in and out of violet (`A037A7`, `5E37CA`,
+`812AA1`, `4432C1` …). Nobody would catch that on a five-frame spark; on a mark held on a
+wall for seconds it reads as the fire changing its mind. What the fringe *is*, is the
+ball's own ramp run through the recolour's `cold_twin` at full strength — same transform,
+same luma match, same gain — so applying it to `RT_FIRE_RED_RAMP` gives the same hues on a
+monotone ladder and ties the two halves of the fire to the two halves of the sprite by
+construction. `py -3 tools/gen_caco_ball_recolor.py --ramp` prints it, and fails rather
+than emit a stale table if the header's red ramp has moved under it.
+
+**The ball IN FLIGHT casts a mix too, and it takes two lights to do it.** One sphere light
+has one colour, so red-and-blue can only happen by adding two:
+
+| | source | colour | intensity |
+|---|---|---|---|
+| the core | RTGL1 attached light, `textures.json` `BAL2*` | `ff5a28` | 900 |
+| the fringe | the ball's own GLDEFS light, recoloured in `rt_lights_sector.cpp` | `RT_FIRE_CACO_BLUE_RAMP[0]` | `rt_fire_caco_blue_light`, 450 |
+
+The first is **keyed by name and cannot be made conditional** — `MakeTextureName` returns
+`BAL2A0` whether the sprite came from the WAD or from our pk3, which is also why the
+recoloured art keeps its emissive and its light for free. So the conditional half is the
+second one, and it reuses the light the ball already carries (`CACOBALL`, and
+`CACOBALL_X1..X5` down its death frames) rather than adding an id range and a walk for
+something the game is already doing.
+
+**Recolouring it without the intensity override is invisible, and that is the trap here.**
+`CACOBALL`'s 64-unit radius comes out of `rt_lights_sector`'s arithmetic at about **49** —
+clamped to `rt_dynlight_max` 500, then multiplied by `(rt_dynlight_rsoft / hi)^2 =
+(20/64)^2` — against the attached light's 900. A hue swap on a light eighteen times dimmer
+than the one beside it does nothing you can see, and **radius cannot buy it back**: above
+`rt_dynlight_rsoft` a wider light is a *dimmer* one, and under `rt_dynlight_minradius` it
+is dropped outright. Hence an absolute override rather than a multiplier. The blue is
+faded by the ball's own death ramp, so it dies on the curve `CACOBALL_X1..X5` already draw
+instead of snapping off at the burst.
+
+**The gate reads the player's choice back rather than being told it.** `RT_CacoBlueFire()`
+asks the file system whether `d64r-caco-ball-recolor.pk3` is loaded, which the launcher
+passes only when the recolour box is ticked. A pin carrying the same fact would be a
+second source of truth that goes stale the first time somebody unticks the box.
+
+**And that lookup shipped wrong once, in the exact shape this page keeps warning about.**
+It was `fileSystem.CheckIfResourceFileLoaded( "d64r-caco-ball-recolor" )`, which compares
+against `ExtractBaseName( name, true )` — and that second parameter is
+**`include_extension`**, so the helper wants `"…-recolor.pk3"` and answers *not loaded* to
+the stem. The pk3 was loaded, the sprite was blue, the ball's light was blue, and **every
+flame came out red with nothing anywhere saying why**. Reported from play as "impact
+flames are still just fire red ones".
+
+Two things came out of it, and the second matters more than the first:
+
+- It is a **substring walk over `GetResourceFileName`** now, matching the stem. That also
+  survives the file being renamed to a `.wad` or gaining a suffix, neither of which should
+  quietly turn a feature off.
+- **The gate prints itself once, under `rt_verbose`** — `RT caco fire: … loaded` or
+  `… no d64r-caco-ball-recolor.pk3 …`. It costs one line per session and it is the only
+  thing that separates *"the gate is off"* from *"the split is broken"*, which are
+  identical on screen and cost a rebuild to tell apart. Verified in both directions: the
+  default dev launch prints the first line, `D64RT_CACOBALL=0` prints the second. **A
+  feature whose ON/OFF cannot be read out of the log is one that fails silently**, and
+  reading `adding …recolor.pk3, 11 lumps` out of the log was NOT that check — it proved
+  the file was there, which was never the thing in doubt.
+`rt_fire_caco_blue` is the override: 1 follows the add-on, 0 forces the stock red fire (the
+honest before-picture), 2 forces the split on without it. `rt_fire_caco_blue_light` is the
+in-flight half, 0 to leave the ball's red light alone.
+
+Colours, ramps and a mark drawn with the game's own flame sheet:
+`tools/_caco_recolor/bal2-impact-fire.png`.
 
 ### 9.7 Known limits
 

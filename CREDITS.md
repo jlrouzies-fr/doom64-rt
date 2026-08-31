@@ -103,6 +103,35 @@ Retribution's own credits, in full (from `D64RTR_README.TXT`):
   **JFDuke3D** (JonoF) and **Ken Silverman**'s BUILD engine.
 - **Doom 64 CE** — PBR material source for the AI PBR pilot (local, not redistributed).
 
+## Doom 64: Unseen Evil — the monsters Retribution does not have
+
+`d64r-ue-monsters.pk3` brings four monsters Doom 64 never had, and one redrawn, into
+Retribution: the Chaingunner, Revenant, Arch-Vile, Spider Mastermind and a second
+Shotgun Guy. Retribution declares those four classes, but only as scale tweaks on the
+stock Doom 2 monsters, so the Doom 64-styled versions exist nowhere else.
+
+Only sprites and sounds are taken. The actor code and the placement handler are written
+for this project (`tools/d64r-ue-monsters/`) and are not a copy of Unseen Evil's, whose
+monsters descend from a `D64UE_MonsterBase` framework that does not belong in
+Retribution.
+
+- **DrPyspy** — Doom 64-style Revenant, Arch-Vile, Chaingunner and Spider Mastermind
+  sprites; the redrawn Shotgun Guy; the Arch-Vile flame and Spider Mastermind firing
+  sounds. Author of **Doom 64: Unseen Evil**.
+- **Cardboard Marty** — Arch-Vile sound edits, the new Spider Mastermind sounds, and the
+  projectile sounds the Revenant tracer uses.
+- **Aubrey Hodges** — the original unused Doom 64 Arch-Vile sounds, and the Doom 64
+  sounds the Revenant reuses.
+
+Credits taken from `CREDITS_D64UE.txt` in `D64UnseenEvil-v1.0.3.pk3`. Unseen Evil credits
+more people than are listed here — its texture set, music conversions and map work are
+not used by this add-on, so only the sprite and sound authors whose work actually ships
+in `d64r-ue-monsters.pk3` are named.
+
+Unseen Evil ships no licence statement, so this is a credited local add-on. **Ask DrPyspy
+before redistributing it.** `tools/pack_ue_monsters.py` builds the pk3 from a local copy
+of `D64UnseenEvil-v1.0.3.pk3`; no Unseen Evil asset is committed to this repository.
+
 ## This project
 
 Path-tracing integration, RT material authoring, the lighting-repair tooling and the

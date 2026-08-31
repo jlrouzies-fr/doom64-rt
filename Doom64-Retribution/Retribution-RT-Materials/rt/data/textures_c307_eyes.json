@@ -1,0 +1,29 @@
+{
+  "version": 0,
+  "array": [
+    {
+      "emissiveMult": 2.5,
+      "textureName": "C307B"
+    },
+    {
+      "emissiveMult": 2.5,
+      "textureName": "C307B1"
+    },
+    {
+      "emissiveMult": 2.5,
+      "textureName": "C307B2"
+    },
+    {
+      "emissiveMult": 2.5,
+      "textureName": "C307B3"
+    },
+    {
+      "emissiveMult": 2.5,
+      "textureName": "C307B4"
+    },
+    {
+      "emissiveMult": 2.5,
+      "textureName": "C307B5"
+    }
+  ]
+}

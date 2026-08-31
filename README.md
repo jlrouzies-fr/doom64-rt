@@ -158,7 +158,7 @@ folder is GZDoom's config, at `Documents\My Games\GZDoom\gzdoom-rt2.ini`.
 |---|---|
 | [Doom 64: Retribution v1.5](https://www.moddb.com/mods/doom-64-retribution) | Extract the **whole** download into `game\`, not just the WAD — the brightmaps, the soundfont and the fluidsynth DLLs are all used. |
 | [OGG music pack v1.3](https://www.moddb.com/mods/doom-64-retribution/addons/doom-64-retribution-ogg-music-pack-v13) | `D64MUS.ZIP` on the same page. Unzip it into `game\` too. |
-| *Optional* — [D64ClassicRecolored](https://www.moddb.com/games/doom-64/addons/d64classicrecolored) | Classic-hued Cacodemon and Pain Elemental. Off by default; drop the wad in `Addons\` (and tick it in the startup window on step 4.). |
+| *Optional* — [D64ClassicRecolored](https://www.moddb.com/games/doom-64/addons/d64classicrecolored) | Classic-hued Cacodemon and Pain Elemental — and, ticked with them, our recoloured [fireball](#art). Off by default; drop the wad in `Addons\` (and tick it in the startup window on step 4.). |
 
 **3. Have DOOM II installed**
 
@@ -177,8 +177,15 @@ game next time**. Tick it and the check stops appearing: it writes `configdone.t
 beside the launcher, and from then on a double-click goes straight into Doom 64.
 The files are still tested on every start, so if one of them later moves or is
 deleted the window comes back on its own with the reason. To open it deliberately
-— to point at a different `doom2.wad`, or to turn the recolour add-on on or off —
+— to point at a different `doom2.wad`, or to turn either add-on on or off —
 run `launch-doom64-rt.cmd setup`, or just delete `configdone.txt`.
+
+Two things in that window are yours to choose. **Unseen Evil monsters** is on by
+default and adds the Chaingunner, Revenant, Arch-Vile and Spider Mastermind — but
+they *replace* monsters already placed in each map rather than adding to it, so the
+kill count is unchanged and a converted Baron is one Baron fewer. Untick it for the
+stock Retribution roster. The **classic recolour** is off until you drop its wad in
+`Addons\` and tick it. See [the monsters](#unseen-evil) for what is placed where.
 
 <br>
 
@@ -395,8 +402,8 @@ Three that matter more than the rest:
 
 This project is mostly a lighting mod, but it does redraw a handful of textures — every
 one of them recorded here so none is a quiet change. All ship **enabled**, in the
-launcher's own file list, so this is what the game looks like out of the box. (There is
-also an optional, off-by-default recolour add-on — see [Install and play](#install).)
+launcher's own file list, so this is what the game looks like out of the box — except the
+last one, which rides on the optional recolour add-on and is off until you tick it.
 
 ### SFLATAS — the ceiling lamp pane
 
@@ -517,6 +524,118 @@ thing undercutting the new art. Only water still does it.
 motion-effect designs that were tried, judged not to read as flow, and thrown out before
 the current flow map, and the checkerboard bug above start to finish.
 
+### BAL2 — the Cacodemon fireball *(add-on only)*
+
+<table>
+<tr>
+  <th align="center">Before</th>
+  <th align="center">After</th>
+</tr>
+<tr>
+  <td align="center"><img src="docs/img/features/caco-ball-before.png" alt="Cacodemon fireball, orange throughout" width="300"></td>
+  <td align="center"><img src="docs/img/features/caco-ball-after.png" alt="Cacodemon fireball with a violet and blue fringe" width="300"></td>
+</tr>
+<tr>
+  <td align="center"><sub>Retribution's ball — orange core to maroon fringe</sub></td>
+  <td align="center"><sub>core untouched, midtones violet, extremities blue</sub></td>
+</tr>
+</table>
+
+The one art change here that does **not** ship enabled. D64ClassicRecolored repaints the
+Cacodemon and the Pain Elemental and nothing else — 71 lumps, not one of them BAL2 — so a
+classic-hued Cacodemon went on throwing Doom 64's orange fireball. This is the projectile
+catching up with the monster, and it is loaded on the same tick-box, from the same
+launcher variable: with the add-on off it is not in the file list at all.
+
+Drawn from **Retribution's** sprite, never the add-on's. The core keeps its fire, the
+midtones pass through the violet classic Doom's own BAL2 carries around its rim, and the
+fringe — plus the speckles that fly off the burst — lands on blue. All ten frames, flight
+loop and explosion.
+
+The light follows the paint. In flight the ball throws **two** lights that add at it —
+its warm core, which it always had, and a blue one for the fringe — because a single
+sphere light has a single colour and a mix can only be two. Where it lands, the fire it
+leaves burning **alternates red and blue flame by flame**, and the one light that mark is
+allowed is the average of the two, which is the violet the ball's own midtones pass
+through.
+
+**Why.** `docs/classic-recolored-addon.md` — which of the two add-on downloads to take
+and what each gets wrong, why the offsets cannot be patched from a companion pk3, the
+three things a sprite recolour has to get right that each fail without a word (the `grAb`
+chunk PIL drops, why the gradient runs on the silhouette rather than the palette, and
+keeping the source luma so the hue moves and the drawing does not), and why recolouring
+the ball's dynamic light without overriding its intensity is invisible.
+`docs/plan-projectile-impact-fx.md` §9.8 is the impact fire.
+
+<br>
+
+---
+
+<a id="unseen-evil"></a>
+## 👿 &nbsp;The Unseen Evil monsters
+
+Doom 64 never had a Chaingunner, a Revenant, an Arch-Vile or a Spider Mastermind.
+Retribution *declares* those four classes, but only as scale tweaks on the stock Doom II
+monsters, so they use Doom II's art and are never placed in any Doom 64 map. **DrPyspy**
+drew all four in the Doom 64 style for [Doom 64: Unseen
+Evil](https://www.moddb.com/mods/doom-64-unseen-evil), and `d64r-ue-monsters.pk3` brings
+them into Retribution, with a fifth redraw for the Shotgun Guy.
+
+Only the sprites and sounds are DrPyspy's. The actors and the placement handler are
+written for this project, and Unseen Evil's own `D64UE_MonsterBase` framework is not used.
+
+**It is not in the public download.** Unseen Evil ships no licence statement, so this
+project credits it rather than redistributing it — the release zip carries the actors, the
+materials and the launcher switch, but not the sprites. To play with the monsters, build
+`d64r-ue-monsters.pk3` yourself with `tools/pack_ue_monsters.py` from your own copy of
+`D64UnseenEvil-v1.0.3.pk3` and put it in `mods\`. The startup window's row says as much
+when the file is absent, and the game runs normally without it.
+
+**They replace, they do not add.** Every one of them takes the place of a monster already
+placed in the map, so the total never changes and 100% kills stays reachable. A converted
+Baron is one Baron fewer, not one more monster.
+
+**It is not a fresh roll each playthrough.** Selection runs off a private LCG seeded from
+the map name and its `levelnum`, never `random()`, and the candidate list is sorted by
+position before anything is drawn — because `ThinkerIterator` order is not contractual.
+The same map therefore lays out identically on every load, and identically for every
+client in a netgame. What it is *not* is hand-placed: within a map the choice is a
+seeded Fisher-Yates shuffle over the eligible monsters, so which particular Shotgun Guy
+becomes a Chaingunner is arbitrary — just arbitrary in the same way every time.
+
+**It unlocks as you go**, so the early maps still feel like Doom 64:
+
+| Monster | From | Takes the place of | How many |
+| --- | --- | --- | --- |
+| Former Sergeant | MAP01 | Shotgun Guy | 35% |
+| Chaingunner | MAP05 | Shotgun Guy | 12%, ramping to 22% by MAP20 |
+| Revenant | MAP10 | Nightmare Imp, Hell Knight | 10% / 8% |
+| Arch-Vile | listed maps only | Baron of Hell, Hell Knight if none | **1 per map** |
+| Spider Mastermind | MAP22, OUT10 | Arachnotron, then Cyberdemon or Mancubus | **1 per map**, fit-tested |
+
+The Sergeant and the Chaingunner draw from the same Shotgun Guy pool, so it is
+partitioned once — Chaingunners first, Sergeants from the remainder — rather than letting
+the two percentages compound.
+
+The Mastermind takes an **Arachnotron** first and not a Cyberdemon, which looks backwards
+until you check: every Cyberdemon in Retribution but one is wired to a TID or an ACS
+special, because they are all scripted boss fights, so the handler correctly refuses them
+and a Cyberdemon-first order simply never fires. The Arachnotron is also the closest
+footprint the game actually places.
+
+Three things it refuses to do. It never converts a monster carrying a TID or an ACS
+special, because a map script is addressing that actor by name. It fit-tests every
+replacement with `TestMobjLocation` and leaves the original where the new one will not
+fit, which is what makes a Spider Mastermind safe to try at all. And it calls
+`ClearCounters()` before destroying the original, because a plain `Destroy()` does not
+decrement `total_monsters` and the kill percentage would drift.
+
+Everything above is tunable: `d64_ue_enable`, `d64_ue_sergeant_pct`,
+`d64_ue_chaingunner_pct`, `d64_ue_revenant_pct`, `d64_ue_archvile_maps`,
+`d64_ue_mastermind_maps` and `d64_ue_debug`, on their own page under **Options**. They take
+effect on the next map load. Untick **Unseen Evil monsters** in the startup window to
+switch the whole thing off and play the stock Retribution roster.
+
 <br>
 
 ---
@@ -553,6 +672,15 @@ path tracer. **[CREDITS.md](CREDITS.md) is the full list** — this is the short
       <b>Kaiser</b> (Doom 64 EX, WadGen, Absolution TC), <b>Elbryan42</b>,
       <b>AgentSpork</b>, <b>Steven Searle</b>, <b>Dreadflame</b>, <b>Footman</b>,
       <b>Cage</b>, <b>Almonds</b>, <b>NMN</b> and others.</td>
+</tr>
+<tr>
+  <td><b>Doom 64: Unseen Evil</b> &mdash; the extra monsters</td>
+  <td><b>DrPyspy</b> &mdash; the Doom 64-styled Chaingunner, Revenant, Arch-Vile and Spider
+      Mastermind sprites, the redrawn Shotgun Guy, and the Arch-Vile flame and Mastermind
+      firing sounds. Sound edits by <b>Cardboard Marty</b>; the original unused Arch-Vile
+      sounds are <b>Aubrey Hodges</b>'. Sprites and sounds only &mdash; the actors and the
+      placement handler are written for this project. Ships no licence statement, so
+      <b>ask DrPyspy before redistributing</b>. See <a href="CREDITS.md">CREDITS.md</a>.</td>
 </tr>
 <tr>
   <td><b>Doom 64</b> (1997) — the original</td>

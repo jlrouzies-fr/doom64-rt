@@ -1143,6 +1143,12 @@ def _authored_emis_keep(extra: set[str] | None = None) -> set[str]:
         overlay_dir / "textures_fx.json",
         overlay_dir / "textures_explosions.json",
         overlay_dir / "textures_statue_eyes.json",
+        # The C307 demon-face wall's eyes. Written by
+        # tools/gen_c307_eye_emissives.py; listed here because the scrub below
+        # deletes every emissiveMult it does not recognise, and "the eyes stopped
+        # glowing again after someone regenerated the world emissives" is exactly
+        # the silent revert AGENTS pitfall 13 is about.
+        overlay_dir / "textures_c307_eyes.json",
     ):
         if not p.exists():
             continue

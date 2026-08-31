@@ -321,7 +321,7 @@ aimed alike — the disc alone casts nothing usable, because RT's sky cubemap is
 not importance-sampled. Aim it with the **`moon`** CCMD, never by setting
 `rt_sun_a/b` directly; per-map aim lives in `RT_MOON_PRESETS` (MAP13 = 90).
 
-Per-map **self-emission colour gate**: `rt_sector_emis_saturation` (global 0.58) is overridden per map by `RT_EMIS_PRESETS` in `rt_presets.cpp` — **MAP08, MAP12 and MAP13 all = 0.80** today (all three set by eye on request, not measured). Same shape and same trap as the other preset tables: it writes the cvar at level load, so on a listed map it beats the launcher pin, and `rt_sector_emis_presets 0` is what an A/B of the global value has to pass. Get a new row's number from `whatsthat`, which prints the sector's colormap tint and its saturation next to the threshold in force.
+Per-map **self-emission colour gate**: `rt_sector_emis_saturation` (global **0.80** since 2026-08-28) is overridden per map by `RT_EMIS_PRESETS` in `rt_presets.cpp` — **one row, MAP02 = 0.58**. The table used to run the other way (global 0.58, with MAP08/MAP12/MAP13 each raised to 0.80); three maps in a row asking for the same number was the table saying the global was wrong, so 0.80 is the default everywhere and MAP02 — the red corridor panels the feature was written for — keeps the loose gate. Same shape and same trap as the other preset tables: it writes the cvar at level load, so on a listed map it beats the launcher pin, and `rt_sector_emis_presets 0` is what an A/B of the global value has to pass. Get a new row's number from `whatsthat`, which prints the sector's colormap tint and its saturation next to the threshold in force.
 
 Three things that will otherwise cost you a day:
 
@@ -581,6 +581,23 @@ declaration cannot drift from its definition. Put nothing in that file except an
   `_e` masks — every world emissive fell back to defaults and ceiling lamps read as
   overbright. Nothing errors; the meta simply has fewer entries. After any generator run,
   check `git status Doom64-Retribution/Retribution-RT-Materials/` is not empty.
+- **A new `RT_CVAR` must be PINNED or `RT_CVAR_NOARCH` from the day it is added.**
+  Every `RT_CVAR` is `CVAR_ARCHIVE`, so its FIRST run writes the initial default into
+  the user's ini and that number wins at startup forever — every later change to the
+  default is dead on arrival, with a clean rebuild and a fresh exe. `rt_vile_light_intensity`
+  shipped at 260, was "raised" to 8800, and ran at 260 for every test after that; the
+  Arch-Vile's flame sat at 676 radiance (0.12x a Baron fist) through several rounds of
+  "the light appears too late", and the time went on animation timing and denoiser
+  theories. A pin that merely restates the default costs nothing and makes drift visible.
+  When a cvar change appears to do nothing, grep the ini
+  (`%USERPROFILE%\OneDrive\Documents\My Games\GZDoom\gzdoom-rt2.ini`) before anything else.
+  Note `tools/d64rt-pins.cfg` argues "only the switch is pinned so tuning a default still
+  reaches the game" — that holds only for a cvar no ini has ever recorded, i.e. exactly once.
+- **Radius is never independent of brightness.** RTGL1 encodes a sphere light as
+  `intensity / (PI * radius^2)` (`LightManager.cpp::EncodeAsSphereLight`), so doubling the
+  radius quarters the light. Quote RADIANCE, not intensity, whenever either moves —
+  Baron fist `65/(PI*0.06^2)` = 5748, wall strip `180/(PI*0.35^2)` = 468. A "shape tweak"
+  to the radius silently changes brightness.
 - Log engine patches in `compat-patches.md`. Update plan Status when phases move.
 - Phase 3 (`material-authoring-spec.md`) gates bulk Phase 4 authoring.
 
@@ -1047,6 +1064,68 @@ enforced at the one place that writes it.
     `rt/mat_e_quarantine/`; `--root` points it at an installed copy, which
     matters because an install made by copying the drop (rather than by
     `package_release.py`) carries the same 13. Run it after any vendor bump.
+
+39. **"uploaded=N" is not "visible"** → a light-system debug dump proves SUBMISSION only. `RT_UploadHandGlowLights` happily reported `uploaded=2 of 2` for an Arch-Vile flame that was contributing nothing. Never close a lighting question on an upload count.
+40. **Never judge a lighting result from a run with debug markers on** → `rt_hand_light_debug`'s magenta markers were a fixed `350 / 0.05` = 44563 radiance beside a 676 flame (66x), so debug painted a bright ball exactly where the real light was invisible, and that is what got signed off. Markers now carry the same radiance as the light they mark. The renderer also prints `*** RT DEBUG VIEW ACTIVE ***` for any view that REPAINTS lighting (`rt_svgf_fp 2`, `rt_debug_visibility`, `rt_debug_show`, `rt_lava_debug`, `rt_smoke_debug 2`, `rt_debug_restir_m`) — read that line before trusting what is on screen.
+
+41. **A COLOUR THRESHOLD HAS NO NOTION OF "IS THIS A THING", AND THAT COSTS THREE
+    DIFFERENT BUGS.** Every emissive mask on the Unseen Evil monsters is a per-texel
+    rule, and a per-texel rule cannot tell an eye from a speck, a muzzle from leg
+    armour, or a real 1-texel LED from noise. Three geometric filters do what the
+    colour rule cannot, and each was added only after the corresponding bug shipped:
+
+    - **min blob** (8-connected, `MIN_BLOB`) — the Mastermind's wind-up carried NINE
+      1-3 texel specks at up 26..59 and rendered as a constellation of dots on a
+      monster that had not fired.
+    - **height band** on non-firing frames — eyes and gun flash are the SAME red and
+      only height separates them. Exempt the firing frame; there the low red is the point.
+    - **proximity cluster** around the largest blob — the Mastermind's firing frame also
+      matched leg highlights at lat +-33..+-42 that are 24 and 25 texels, BIGGER than
+      real parts of the flash, so no size rule can drop them; and no lateral window can
+      either, because on side rotations the gun itself sits at lat -48.
+
+    THE FLOOR IS PER MONSTER AND SOMETIMES PER FRAME. The Revenant's right shoulder LED
+    is a SINGLE texel, (90,4,2); a floor of 2 deleted it on the only frame it appears on
+    and it cast no light on any frame, while the 4-texel left LED lit fine — read as "one
+    launcher works, the other doesn't". The same monster's launch flare needs a floor of 3.
+
+    CROSS-CHECK THE MASK AGAINST THE LIGHT TABLE. If `rt_hand_lights.h` places 2 lights on
+    a frame, that frame's `_e` should have 2 blobs. Disagreement between them is the bug.
+
+    AND THE TEST ITSELF FLIPS BY HUE. Red needs PURITY (g and b both under a cap) because
+    a dominance rule matches the red-brown body. Green needs DOMINANCE, because the
+    Chaingunner's backpack is a dark olive peaking at (43,104,27) and a purity rule with a
+    low red cap scores the whole thing ZERO. One test per monster, named in its config.
+
+    Finally, a generator that stops writing an `_e` must DELETE it: RTGL1 keys `_e` on
+    filename, so clearing only the `textures.json` row leaves the frame glowing with
+    nothing to explain it. `tools/gen_ue_glow_emissives.py` does all of this.
+
+42. **A DEV LAUNCHER'S `+cvar 0` LANDS IN THE PLAYER'S INI AND DISABLES THE FEATURE
+    IN NORMAL PLAY.** Every launcher in this tree shares ONE ini with the release build
+    (`Documents\My Games\GZDoom\gzdoom-rt2.ini`), and an archived cvar set with `+` on a
+    dev command line is written there on exit. `tools/uemon-lab.cmd` runs
+    `+d64_ue_enable 0` on purpose — the lab needs the placement handler off so its
+    reference monsters survive — and that 0 became `d64_ue_enable=false` in the player
+    config. The Unseen Evil monsters then stopped appearing in normal play with the pk3
+    loaded, the launcher box ticked, the handler present and NOTHING reported. It reads
+    as "the feature does not work", never as "a lab you ran last week turned it off".
+
+    This is pitfall-class with the RT_CVAR rule above, but it is a DIFFERENT direction:
+    that one is about a default that can never be retuned, this one is about a dev tool
+    reaching into the player's settings. The same ini also froze
+    `d64_ue_mastermind_maps` at the superseded `MAP24,OUT10` long after the default
+    became `MAP22,OUT10`, so the Mastermind was pointed at a map with no unwired
+    Arachnotron.
+
+    **The fix is that the launcher STATES the value rather than hoping the ini agrees** —
+    `launch-doom64-rt.cmd` now passes `+d64_ue_enable 1` whenever it loads the pk3,
+    exactly as it writes BOTH upscaler cvars rather than one. Any player-visible feature
+    with an archived switch and a dev launcher that flips it needs the same treatment.
+    Do not try to make the lab restore the value: a game that is killed never writes it.
+
+    When a feature "does not work" and the code is plainly present, **grep the ini before
+    reading any more code.**
 
 ## Suggested next work
 
