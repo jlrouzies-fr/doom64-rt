@@ -321,7 +321,7 @@ aimed alike — the disc alone casts nothing usable, because RT's sky cubemap is
 not importance-sampled. Aim it with the **`moon`** CCMD, never by setting
 `rt_sun_a/b` directly; per-map aim lives in `RT_MOON_PRESETS` (MAP13 = 90).
 
-Per-map **self-emission colour gate**: `rt_sector_emis_saturation` (global 0.58) is overridden per map by `RT_EMIS_PRESETS` in `rt_presets.cpp` — **MAP08, MAP12 and MAP13 all = 0.80** today (all three set by eye on request, not measured). Same shape and same trap as the other preset tables: it writes the cvar at level load, so on a listed map it beats the launcher pin, and `rt_sector_emis_presets 0` is what an A/B of the global value has to pass. Get a new row's number from `whatsthat`, which prints the sector's colormap tint and its saturation next to the threshold in force.
+Per-map **self-emission colour gate**: `rt_sector_emis_saturation` (global **0.80** since 2026-08-28) is overridden per map by `RT_EMIS_PRESETS` in `rt_presets.cpp` — **one row, MAP02 = 0.58**. The table used to run the other way (global 0.58, with MAP08/MAP12/MAP13 each raised to 0.80); three maps in a row asking for the same number was the table saying the global was wrong, so 0.80 is the default everywhere and MAP02 — the red corridor panels the feature was written for — keeps the loose gate. Same shape and same trap as the other preset tables: it writes the cvar at level load, so on a listed map it beats the launcher pin, and `rt_sector_emis_presets 0` is what an A/B of the global value has to pass. Get a new row's number from `whatsthat`, which prints the sector's colormap tint and its saturation next to the threshold in force.
 
 Three things that will otherwise cost you a day:
 
